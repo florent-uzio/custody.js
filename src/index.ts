@@ -1,9 +1,13 @@
+import { config } from "dotenv"
 import { v4 as uuidv4 } from "uuid"
+import { ApiService } from "./services"
 import { AuthService } from "./services/auth.service"
 import { CryptoService } from "./services/keypair.service"
+config()
 
 const privateKey = process.env.PRIVATE_KEY ?? ""
 const publicKey = process.env.PUBLIC_KEY ?? ""
+const domain = process.env.DOMAIN ?? ""
 
 const main = async () => {
   try {
@@ -14,7 +18,7 @@ const main = async () => {
 
     // Initialize services
     const authService = new AuthService()
-    // const apiService = new ApiService(authService)
+    const apiService = new ApiService(authService, domain)
 
     // Initial authentication
     const authData = {
@@ -28,8 +32,8 @@ const main = async () => {
     console.log("Initial authentication successful")
 
     // Make API calls
-    // const domains = await apiService.getDomains()
-    // console.log("Domains:", domains)
+    const domains = await apiService.getDomains()
+    console.log("Domains:", domains)
 
     // const users = await apiService.getUsers()
     // console.log("Users:", users)

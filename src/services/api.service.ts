@@ -4,11 +4,13 @@ import { AuthService } from "./auth.service"
 
 export class ApiService {
   private apiClient: AxiosInstance
-  private baseUrl = "https://metaco.com"
+  private baseUrl = "https://api.metaco.8rey67.m3t4c0.services"
   private authService: AuthService
+  private domain: string
 
-  constructor(authService: AuthService) {
+  constructor(authService: AuthService, domain: string) {
     this.authService = authService
+    this.domain = domain
     this.apiClient = axios.create({
       baseURL: this.baseUrl,
       headers: {
@@ -58,7 +60,7 @@ export class ApiService {
 
   async getDomains(): Promise<any> {
     try {
-      const response = await this.apiClient.get("/domains")
+      const response = await this.apiClient.get("/v1/domains")
       return response.data
     } catch (error) {
       console.error("Error fetching domains:", error)
@@ -68,7 +70,7 @@ export class ApiService {
 
   async getUsers(): Promise<any> {
     try {
-      const response = await this.apiClient.get("/users")
+      const response = await this.apiClient.get(`/v1/domains/${this.domain}/users`)
       return response.data
     } catch (error) {
       console.error("Error fetching users:", error)
