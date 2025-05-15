@@ -7,30 +7,26 @@ export class CryptoService {
    * Generates a secp256k1 key pair
    * @returns {KeyPair} Object containing private key in PEM format and public key in base64
    */
-  generateKeyPair(): KeyPair {
+  generateSecp256k1KeyPair(): KeyPair {
     try {
       const { privateKey, publicKey } = generateKeyPairSync("ec", {
         namedCurve: "secp256k1",
         publicKeyEncoding: {
           type: "spki",
-          format: "pem",
+          format: "der",
         },
         privateKeyEncoding: {
-          type: "pkcs8",
+          type: "sec1",
           format: "pem",
         },
       })
 
-      const publicKeyBase64 = Buffer.from(
-        publicKey
-          .replace("-----BEGIN PUBLIC KEY-----", "")
-          .replace("-----END PUBLIC KEY-----", "")
-          .replace(/\n/g, ""),
-      ).toString("base64")
+      // Encode the DER buffer to base64
+      const publicKeyDerBase64 = publicKey.toString("base64")
 
       return {
-        privateKeyPem: privateKey,
-        publicKeyBase64: publicKeyBase64,
+        privateKey: privateKey,
+        publicKey: publicKeyDerBase64,
       }
     } catch (error) {
       console.error("Key pair generation error:", error)
