@@ -3,12 +3,12 @@ import { AuthRequest, AuthResponse } from "./auth.service.types"
 
 export class AuthService {
   private authClient: AxiosInstance
-  private baseUrl = "https://auth.metaco.8rey67.m3t4c0.services"
+  // private baseUrl = "https://auth.metaco.8rey67.m3t4c0.services"
   private accesstoken: string | null = null
   private tokenExpiration: number | null = null // timestamp in milliseconds
   private readonly TOKEN_VALIDITY = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 
-  constructor() {
+  constructor(private baseUrl: string) {
     this.authClient = axios.create({
       baseURL: this.baseUrl,
       headers: {

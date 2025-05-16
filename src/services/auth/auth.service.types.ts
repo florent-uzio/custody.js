@@ -8,3 +8,8 @@ export interface AuthResponse {
   access_token: string
   expiresIn: number // in seconds
 }
+
+export interface AuthCredentials {
+  privateKey?: string
+  publicKey?: string
+}

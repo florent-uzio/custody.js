@@ -1,25 +1,30 @@
-import axios, { AxiosInstance } from "axios"
-import { SDKConfig } from "./models"
-import { AuthService } from "./services"
+import { ApiService, AuthCredentials, AuthService, DomainService } from "./services"
+
+export interface SDKConfig {
+  credentials: AuthCredentials
+  baseUrl?: string // Default: 'https://metaco.com'
+  authBaseUrl?: string // Default: 'https://auth.metaco.com'
+}
 
 export class RippleCustody {
-  private apiClient: AxiosInstance
   private authService: AuthService
+  private apiService: ApiService
+  // private userService: UserService
+  private domainService: DomainService
 
-  constructor(config: SDKConfig) {
-    const baseUrl = config.baseUrl || "https://metaco.com"
-    const authBaseUrl = config.authBaseUrl || "https://auth.metaco.com"
+  constructor(config?: SDKConfig) {
+    const {
+      baseUrl = "https://api.metaco.8rey67.m3t4c0.services",
+      authBaseUrl = "https://auth.metaco.8rey67.m3t4c0.services",
+    } = config ?? {}
 
-    this.authService = new AuthService()
-    this.apiClient = axios.create({
-      baseURL: baseUrl,
-      headers: { "Content-Type": "application/json" },
-    })
+    this.authService = new AuthService(authBaseUrl)
+    this.apiService = new ApiService(this.authService, baseUrl)
+    // this.userService = new UserService(this.apiService)
+    this.domainService = new DomainService(this.apiService)
+  }
 
-    // this.apiClient.interceptors.request.use(async (axiosConfig) => {
-    // const token = await this.authService.getToken(config.credentials) // Challenge should come from API in real scenario
-    // axiosConfig.headers.Authorization = `Bearer ${token}`
-    // return axiosConfig
-    // })
+  public async getDomains() {
+    return this.domainService.getDomains()
   }
 }

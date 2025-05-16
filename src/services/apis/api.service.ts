@@ -1,16 +1,14 @@
 // src/services/ApiService.ts
 import axios, { AxiosError, AxiosInstance } from "axios"
-import { AuthService } from "./auth.service"
+import { AuthService } from "../auth/auth.service"
 
 export class ApiService {
   private apiClient: AxiosInstance
-  private baseUrl = "https://api.metaco.8rey67.m3t4c0.services"
-  private authService: AuthService
-  private domain: string
 
-  constructor(authService: AuthService, domain: string) {
-    this.authService = authService
-    this.domain = domain
+  constructor(
+    private authService: AuthService,
+    private baseUrl: string,
+  ) {
     this.apiClient = axios.create({
       baseURL: this.baseUrl,
       headers: {
@@ -58,23 +56,33 @@ export class ApiService {
     return this.authService.getCurrentToken() || ""
   }
 
-  async getDomains(): Promise<any> {
-    try {
-      const response = await this.apiClient.get("/v1/domains")
-      return response.data
-    } catch (error) {
-      console.error("Error fetching domains:", error)
-      throw new Error("Failed to fetch domains")
-    }
+  public async get<T>(url: string): Promise<T> {
+    const response = await this.apiClient.get<T>(url)
+    return response.data
   }
 
-  async getUsers(): Promise<any> {
-    try {
-      const response = await this.apiClient.get(`/v1/domains/${this.domain}/users`)
-      return response.data
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      throw new Error("Failed to fetch users")
-    }
+  public async post<T>(url: string, body: any): Promise<T> {
+    const response = await this.apiClient.post<T>(url, body)
+    return response.data
   }
+
+  // async getDomains(): Promise<any> {
+  //   try {
+  //     const response = await this.apiClient.get("/v1/domains")
+  //     return response.data
+  //   } catch (error) {
+  //     console.error("Error fetching domains:", error)
+  //     throw new Error("Failed to fetch domains")
+  //   }
+  // }
+
+  // async getUsers(): Promise<any> {
+  //   try {
+  //     const response = await this.apiClient.get(`/v1/domains/${this.domain}/users`)
+  //     return response.data
+  //   } catch (error) {
+  //     console.error("Error fetching users:", error)
+  //     throw new Error("Failed to fetch users")
+  //   }
+  // }
 }

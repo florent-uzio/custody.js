@@ -1,6 +1,6 @@
 // src/services/CryptoService.ts
 import { generateKeyPairSync, sign } from "crypto"
-import { KeyPair, SignatureResult } from "./keypair.service.types"
+import { KeyPair, SignatureResult } from "../keypair.service.types"
 
 export class Secp256k1Service {
   /**
