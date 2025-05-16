@@ -17,6 +17,12 @@ export class AuthService {
     })
   }
 
+  /**
+   * Fetch a JWT token using the provided authentication data from Ripple Custody backend.
+   * @param authData
+   * @returns {Promise<string>} The JWT token.
+   * @throws {Error} If authentication fails.
+   */
   private async fetchToken(authData: AuthRequest): Promise<string> {
     const formData = new URLSearchParams()
     formData.append("grant_type", "password")
