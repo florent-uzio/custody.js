@@ -2,7 +2,7 @@
 import { generateKeyPairSync, sign } from "crypto"
 import { KeyPair, SignatureResult } from "./keypair.service.types"
 
-export class CryptoService {
+export class Secp256k1Service {
   /**
    * Generates a secp256k1 key pair
    * @returns {KeyPair} Object containing private key in PEM format and public key in base64

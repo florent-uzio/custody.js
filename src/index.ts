@@ -1,7 +1,7 @@
 import { config } from "dotenv"
 import { v4 as uuidv4 } from "uuid"
 import { ApiService, AuthService } from "./services"
-import { CryptoService } from "./services/keypair.service"
+import { Secp256k1Service } from "./services/keypair.service"
 config()
 
 const privateKey = process.env.PRIVATE_KEY ?? ""
@@ -14,7 +14,7 @@ const main = async () => {
   try {
     const uuid = uuidv4()
 
-    const keypairService = new CryptoService()
+    const keypairService = new Secp256k1Service()
     if (!run) {
       const res = keypairService.generateSecp256k1KeyPair()
 
