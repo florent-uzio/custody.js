@@ -1,10 +1,5 @@
-import { ApiService, AuthCredentials, AuthService, DomainService } from "./services"
-
-export interface SDKConfig {
-  credentials: AuthCredentials
-  baseUrl?: string // Default: 'https://metaco.com'
-  authBaseUrl?: string // Default: 'https://auth.metaco.com'
-}
+import { SDKConfig } from "./ripple-custody.types"
+import { ApiService, AuthService, CryptoAlgorithm, DomainService } from "./services"
 
 export class RippleCustody {
   private authService: AuthService
@@ -14,12 +9,18 @@ export class RippleCustody {
 
   constructor(config?: SDKConfig) {
     const {
-      baseUrl = "https://api.metaco.8rey67.m3t4c0.services",
+      apiBaseUrl = "https://api.metaco.8rey67.m3t4c0.services",
       authBaseUrl = "https://auth.metaco.8rey67.m3t4c0.services",
+      cryptoAlgorithm = CryptoAlgorithm.SECP256K1,
+      authData,
     } = config ?? {}
 
+    if (!authData) {
+      throw new Error("authData is required to initialize RippleCustody")
+    }
+
     this.authService = new AuthService(authBaseUrl)
-    this.apiService = new ApiService(this.authService, baseUrl)
+    this.apiService = new ApiService(this.authService, apiBaseUrl, cryptoAlgorithm, authData)
     // this.userService = new UserService(this.apiService)
     this.domainService = new DomainService(this.apiService)
   }

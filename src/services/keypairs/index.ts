@@ -1,1 +1,2 @@
-export * from "./secp256k1.service"
+export * from "./keypair.service"
+export * from "./keypairs.types"

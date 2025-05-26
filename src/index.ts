@@ -9,9 +9,28 @@ const domain = process.env.DOMAIN ?? ""
 const run = true
 
 const main = async () => {
-  const custody = new RippleCustody()
+  const custody = new RippleCustody({
+    authData: {
+      privateKey,
+      publicKey,
+    },
+    credentials: {
+      privateKey,
+      publicKey,
+    },
+  })
   const domains = await custody.getDomains()
   console.log("Domains:", domains)
+
+  // try {
+  //   const keypairService = new KeypairService()
+  //   const uuid = "2ba68f22-e0f7-43ab-bdfe-9775354a6ccf"
+  //   const signature = keypairService.sign(privateKey, uuid)
+  //   console.log("Signature:", signature)
+  // } catch (error) {
+  //   console.error("Error signing message:", error)
+  // }
+
   // try {
   //   const uuid = uuidv4()
 

@@ -1,8 +1,8 @@
 // src/services/CryptoService.ts
 import { generateKeyPairSync, sign } from "crypto"
-import { KeyPair, KeypairProvider } from "./keypairs.types"
+import { KeyPair, KeypairDefinition } from "./keypairs.types"
 
-export class Secp256k1Service implements KeypairProvider {
+export class Secp256k1Service implements KeypairDefinition {
   /**
    * Generates a secp256k1 key pair
    * @returns {KeyPair} Object containing private key in PEM format and public key in base64

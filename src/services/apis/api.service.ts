@@ -1,13 +1,19 @@
-// src/services/ApiService.ts
 import axios, { AxiosError, AxiosInstance } from "axios"
+import { v4 as uuidv4 } from "uuid"
+import { AuthData } from "../../ripple-custody.types"
 import { AuthService } from "../auth/auth.service"
+import { CryptoAlgorithm, KeypairService } from "../keypairs"
 
 export class ApiService {
   private apiClient: AxiosInstance
+  private cryptoService: KeypairService
+  private challenge: string
 
   constructor(
-    private authService: AuthService,
-    private baseUrl: string,
+    private readonly authService: AuthService,
+    private readonly baseUrl: string,
+    private readonly algorithm: CryptoAlgorithm = CryptoAlgorithm.SECP256K1,
+    private readonly authData: AuthData,
   ) {
     this.apiClient = axios.create({
       baseURL: this.baseUrl,
@@ -20,6 +26,7 @@ export class ApiService {
     this.apiClient.interceptors.request.use(
       async (config) => {
         const token = await this.getValidToken()
+        console.log({ token })
         config.headers.Authorization = `Bearer ${token}`
         return config
       },
@@ -42,14 +49,20 @@ export class ApiService {
         return Promise.reject(error)
       },
     )
+
+    this.cryptoService = new KeypairService(this.algorithm)
+
+    // uuid
+    this.challenge = !this.authData.challenge ? uuidv4() : this.authData.challenge
   }
 
   private async getValidToken(forceRefresh = false): Promise<string> {
+    const signature = this.cryptoService.sign(this.authData.privateKey, this.challenge)
     if (forceRefresh || this.authService.isTokenExpired()) {
       const authData = {
-        signature: "your-signature", // In production, store these securely
-        challenge: "your-challenge",
-        publicKey: "your-public-key",
+        signature, // In production, store these securely
+        challenge: this.challenge,
+        publicKey: this.authData.publicKey,
       }
       return await this.authService.getToken(authData)
     }
@@ -65,24 +78,4 @@ export class ApiService {
     const response = await this.apiClient.post<T>(url, body)
     return response.data
   }
-
-  // async getDomains(): Promise<any> {
-  //   try {
-  //     const response = await this.apiClient.get("/v1/domains")
-  //     return response.data
-  //   } catch (error) {
-  //     console.error("Error fetching domains:", error)
-  //     throw new Error("Failed to fetch domains")
-  //   }
-  // }
-
-  // async getUsers(): Promise<any> {
-  //   try {
-  //     const response = await this.apiClient.get(`/v1/domains/${this.domain}/users`)
-  //     return response.data
-  //   } catch (error) {
-  //     console.error("Error fetching users:", error)
-  //     throw new Error("Failed to fetch users")
-  //   }
-  // }
 }

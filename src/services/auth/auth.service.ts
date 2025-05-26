@@ -4,13 +4,13 @@ import { AuthRequest, AuthResponse } from "./auth.service.types"
 export class AuthService {
   private authClient: AxiosInstance
   // private baseUrl = "https://auth.metaco.8rey67.m3t4c0.services"
-  private accesstoken: string | null = null
+  private accessToken: string | null = null
   private tokenExpiration: number | null = null // timestamp in milliseconds
   private readonly TOKEN_VALIDITY = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 
-  constructor(private baseUrl: string) {
+  constructor(private authBaseUrl: string) {
     this.authClient = axios.create({
-      baseURL: this.baseUrl,
+      baseURL: this.authBaseUrl,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
@@ -32,17 +32,19 @@ export class AuthService {
     formData.append("public_key", authData.publicKey)
 
     const response = await this.authClient.post<AuthResponse>("/token", formData)
-    this.accesstoken = response.data.access_token
+    this.accessToken = response.data.access_token
+
+    // Set token expiration to 4 hours from now
     this.tokenExpiration = Date.now() + this.TOKEN_VALIDITY
-    return this.accesstoken
+    return this.accessToken
   }
 
   async getToken(authData: AuthRequest): Promise<string> {
     try {
-      if (!this.accesstoken || this.isTokenExpired()) {
+      if (!this.accessToken || this.isTokenExpired()) {
         return await this.fetchToken(authData)
       }
-      return this.accesstoken
+      return this.accessToken
     } catch (error) {
       console.error("Authentication error:", error)
       throw new Error("Failed to obtain JWT token")
@@ -51,12 +53,14 @@ export class AuthService {
 
   isTokenExpired(): boolean {
     if (!this.tokenExpiration) return true
+
     // Consider token expired 5 minutes before actual expiration for safety
     const bufferTime = 5 * 60 * 1000
+
     return Date.now() > this.tokenExpiration - bufferTime
   }
 
   getCurrentToken(): string | null {
-    return this.accesstoken
+    return this.accessToken
   }
 }
