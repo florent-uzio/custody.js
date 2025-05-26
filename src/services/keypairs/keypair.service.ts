@@ -1,20 +1,20 @@
 // src/services/crypto/crypto.service.ts
-import { CryptoAlgorithm, KeyPair, KeypairDefinition } from "./keypairs.types"
+import { KeyPair, KeypairAlgorithm, KeypairDefinition } from "./keypairs.types"
 import { Secp256k1Service } from "./secp256k1.service"
 
 export class KeypairService {
-  private providers: Record<CryptoAlgorithm, KeypairDefinition>
+  private providers: Record<KeypairAlgorithm, KeypairDefinition>
 
-  constructor(private algorithm: CryptoAlgorithm = CryptoAlgorithm.SECP256K1) {
+  constructor(private algorithm: KeypairAlgorithm = KeypairAlgorithm.SECP256K1) {
     // @ts-expect-error to implement
     this.providers = {
-      [CryptoAlgorithm.SECP256K1]: new Secp256k1Service(),
+      [KeypairAlgorithm.SECP256K1]: new Secp256k1Service(),
       //   [CryptoAlgorithm.SECP256R1]: new Secp256r1Service(),
       //   [CryptoAlgorithm.ED25519]: new Ed25519Service(),
     }
   }
 
-  generate(algorithm: CryptoAlgorithm): KeyPair {
+  generate(algorithm: KeypairAlgorithm): KeyPair {
     const provider = this.providers[algorithm]
     if (!provider) throw new Error(`Unsupported algorithm: ${algorithm}`)
     return provider.generate()

@@ -1,20 +1,37 @@
 import axios, { AxiosError, AxiosInstance } from "axios"
 import { v4 as uuidv4 } from "uuid"
-import { AuthData } from "../../ripple-custody.types"
+import { AuthFormData } from "../auth"
 import { AuthService } from "../auth/auth.service"
-import { CryptoAlgorithm, KeypairService } from "../keypairs"
+import { KeypairAlgorithm, KeypairService } from "../keypairs"
+
+type PartialAuthFormData = //Omit<AuthFormData, "signature" | "challenge"> &
+  Pick<AuthFormData, "publicKey"> & Partial<Pick<AuthFormData, "challenge">>
+
+type ApiServiceOptions = {
+  authService: AuthService
+  apiBaseUrl: string
+  keypairAlgorithm?: KeypairAlgorithm
+  authFormData: PartialAuthFormData
+  privateKey: string
+}
 
 export class ApiService {
-  private apiClient: AxiosInstance
-  private cryptoService: KeypairService
-  private challenge: string
+  private readonly apiClient: AxiosInstance
+  private readonly authFormData: PartialAuthFormData
+  private readonly authService: AuthService
+  private readonly baseUrl: string
+  private readonly challenge: string
+  private readonly keypairAlgorithm: KeypairAlgorithm
+  private readonly keypairService: KeypairService
+  private readonly privateKey: string
 
-  constructor(
-    private readonly authService: AuthService,
-    private readonly baseUrl: string,
-    private readonly algorithm: CryptoAlgorithm = CryptoAlgorithm.SECP256K1,
-    private readonly authData: AuthData,
-  ) {
+  constructor(options: ApiServiceOptions) {
+    this.authService = options.authService
+    this.baseUrl = options.apiBaseUrl
+    this.keypairAlgorithm = options.keypairAlgorithm ?? KeypairAlgorithm.SECP256K1
+    this.authFormData = options.authFormData
+    this.privateKey = options.privateKey
+
     this.apiClient = axios.create({
       baseURL: this.baseUrl,
       headers: {
@@ -25,8 +42,7 @@ export class ApiService {
     // Add request interceptor for token handling
     this.apiClient.interceptors.request.use(
       async (config) => {
-        const token = await this.getValidToken()
-        console.log({ token })
+        const token = await this.getValidToken(this.privateKey)
         config.headers.Authorization = `Bearer ${token}`
         return config
       },
@@ -39,7 +55,7 @@ export class ApiService {
       async (error: AxiosError) => {
         if (error.response?.status === 401) {
           // Force token refresh on 401
-          const token = await this.getValidToken(true)
+          const token = await this.getValidToken(this.privateKey, true)
           const originalRequest = error.config
           if (originalRequest && token) {
             originalRequest.headers.Authorization = `Bearer ${token}`
@@ -50,21 +66,21 @@ export class ApiService {
       },
     )
 
-    this.cryptoService = new KeypairService(this.algorithm)
+    this.keypairService = new KeypairService(this.keypairAlgorithm)
 
     // uuid
-    this.challenge = !this.authData.challenge ? uuidv4() : this.authData.challenge
+    this.challenge = !this.authFormData.challenge ? uuidv4() : this.authFormData.challenge
   }
 
-  private async getValidToken(forceRefresh = false): Promise<string> {
-    const signature = this.cryptoService.sign(this.authData.privateKey, this.challenge)
+  private async getValidToken(privateKey: string, forceRefresh = false): Promise<string> {
+    const signature = this.keypairService.sign(privateKey, this.challenge)
     if (forceRefresh || this.authService.isTokenExpired()) {
       const authData = {
         signature, // In production, store these securely
         challenge: this.challenge,
-        publicKey: this.authData.publicKey,
+        publicKey: this.authFormData.publicKey,
       }
-      return await this.authService.getToken(authData)
+      return await this.authService.getToken(authData, signature)
     }
     return this.authService.getCurrentToken() || ""
   }

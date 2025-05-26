@@ -1,7 +1,13 @@
-export interface AuthRequest {
-  signature: string
+// export type AuthRequest = {
+//   // signature: string
+//   challenge: string
+//   // publicKey: string
+// } & Pick<KeyPair, "publicKey">
+
+export type AuthFormData = {
   challenge: string
   publicKey: string
+  signature: string
 }
 
 export interface AuthResponse {
@@ -9,7 +15,13 @@ export interface AuthResponse {
   expiresIn: number // in seconds
 }
 
-export interface AuthCredentials {
-  privateKey?: string
-  publicKey?: string
-}
+// export interface AuthCredentials {
+//   privateKey?: string
+//   publicKey?: string
+// }
+
+// export type AuthData = KeyPair & {
+//   challenge?: string
+//   // publicKey: string
+//   // privateKey: string
+// }

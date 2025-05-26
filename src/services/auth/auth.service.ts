@@ -1,14 +1,13 @@
 import axios, { AxiosInstance } from "axios"
-import { AuthRequest, AuthResponse } from "./auth.service.types"
+import { AuthFormData, AuthResponse } from "./auth.service.types"
 
 export class AuthService {
   private authClient: AxiosInstance
-  // private baseUrl = "https://auth.metaco.8rey67.m3t4c0.services"
   private accessToken: string | null = null
   private tokenExpiration: number | null = null // timestamp in milliseconds
   private readonly TOKEN_VALIDITY = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 
-  constructor(private authBaseUrl: string) {
+  constructor(private readonly authBaseUrl: string) {
     this.authClient = axios.create({
       baseURL: this.authBaseUrl,
       headers: {
@@ -23,11 +22,11 @@ export class AuthService {
    * @returns {Promise<string>} The JWT token.
    * @throws {Error} If authentication fails.
    */
-  private async fetchToken(authData: AuthRequest): Promise<string> {
+  private async fetchToken(authData: AuthFormData, signature: string): Promise<string> {
     const formData = new URLSearchParams()
     formData.append("grant_type", "password")
     formData.append("client_id", "customer_api")
-    formData.append("signature", authData.signature)
+    formData.append("signature", signature)
     formData.append("challenge", authData.challenge)
     formData.append("public_key", authData.publicKey)
 
@@ -39,14 +38,13 @@ export class AuthService {
     return this.accessToken
   }
 
-  async getToken(authData: AuthRequest): Promise<string> {
+  async getToken(authData: AuthFormData, signature: string): Promise<string> {
     try {
       if (!this.accessToken || this.isTokenExpired()) {
-        return await this.fetchToken(authData)
+        return await this.fetchToken(authData, signature)
       }
       return this.accessToken
     } catch (error) {
-      console.error("Authentication error:", error)
       throw new Error("Failed to obtain JWT token")
     }
   }

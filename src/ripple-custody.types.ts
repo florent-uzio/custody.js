@@ -1,15 +1,8 @@
-import { AuthCredentials, CryptoAlgorithm } from "./services"
+import { AuthFormData, KeypairAlgorithm } from "./services"
 
-export interface SDKConfig {
-  credentials: AuthCredentials
-  apiBaseUrl?: string
-  authBaseUrl?: string
-  authData: AuthData
-  cryptoAlgorithm?: CryptoAlgorithm
-}
-
-export type AuthData = {
-  challenge?: string
-  publicKey: string
+export type SDKConfig = {
+  apiBaseUrl: string
+  authBaseUrl: string
+  keypairAlgorithm?: KeypairAlgorithm
   privateKey: string
-}
+} & Pick<AuthFormData, "publicKey">
