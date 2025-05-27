@@ -1,6 +1,6 @@
-export interface KeypairDefinition {
+export type KeypairDefinition = {
   generate: () => KeyPair
-  sign: (privateKeyPem: string, message: string) => string
+  sign: (privateKey: string, message: string) => string
 }
 
 export type KeyPair = {

@@ -1,4 +1,5 @@
-import { AuthFormData, KeypairAlgorithm } from "./services"
+import { AuthFormData } from "./services/auth/auth.service.types"
+import { KeypairAlgorithm } from "./services/keypairs/keypairs.types"
 
 export type SDKConfig = {
   apiBaseUrl: string

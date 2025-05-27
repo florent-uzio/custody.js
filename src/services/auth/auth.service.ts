@@ -8,6 +8,7 @@ export class AuthService {
   private readonly TOKEN_VALIDITY = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 
   constructor(private readonly authBaseUrl: string) {
+    // Initialize Axios client for auth requests
     this.authClient = axios.create({
       baseURL: this.authBaseUrl,
       headers: {
@@ -18,11 +19,13 @@ export class AuthService {
 
   /**
    * Fetch a JWT token using the provided authentication data from Ripple Custody backend.
-   * @param authData
+   * @param authData - The authentication data (challenge, publicKey, signature)
+   * @param signature - The signature for the challenge
    * @returns {Promise<string>} The JWT token.
    * @throws {Error} If authentication fails.
    */
   private async fetchToken(authData: AuthFormData, signature: string): Promise<string> {
+    // Prepare form data for token request
     const formData = new URLSearchParams()
     formData.append("grant_type", "password")
     formData.append("client_id", "customer_api")
@@ -30,6 +33,7 @@ export class AuthService {
     formData.append("challenge", authData.challenge)
     formData.append("public_key", authData.publicKey)
 
+    // Send POST request to obtain token
     const response = await this.authClient.post<AuthResponse>("/token", formData)
     this.accessToken = response.data.access_token
 
@@ -38,6 +42,9 @@ export class AuthService {
     return this.accessToken
   }
 
+  /**
+   * Get a valid JWT token, refreshing if expired or missing.
+   */
   async getToken(authData: AuthFormData, signature: string): Promise<string> {
     try {
       if (!this.accessToken || this.isTokenExpired()) {
@@ -49,6 +56,9 @@ export class AuthService {
     }
   }
 
+  /**
+   * Check if the current token is expired or about to expire.
+   */
   isTokenExpired(): boolean {
     if (!this.tokenExpiration) return true
 
@@ -58,6 +68,9 @@ export class AuthService {
     return Date.now() > this.tokenExpiration - bufferTime
   }
 
+  /**
+   * Get the current JWT token, if available.
+   */
   getCurrentToken(): string | null {
     return this.accessToken
   }

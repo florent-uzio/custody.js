@@ -1,15 +1,17 @@
 import { ApiService } from "../apis/api.service"
 import { Domain } from "./domain.types"
 
+// Service for interacting with domain-related API endpoints
 export class DomainService {
   constructor(private api: ApiService) {}
 
+  /**
+   * Fetches the list of domains from the backend.
+   * @returns {Promise<Domain>} The domain data from the API.
+   * @throws {Error} If the API call fails.
+   */
   async getDomains(): Promise<any> {
-    try {
-      const response = await this.api.get<Domain>("/v1/domains")
-      return response
-    } catch (error) {
-      throw new Error("Failed to fetch domains")
-    }
+    // Call the API to get domains
+    return this.api.get<Domain>("/v1/domains")
   }
 }
