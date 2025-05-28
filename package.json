@@ -1,14 +1,21 @@
 {
   "name": "custody",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.0.1",
+  "description": "An SDK to interact with the Ripple Custody API",
+  "homepage": "https://github.com/florent-uzio/custody.js",
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "ci": "npm run build && npm run check-format",
+    "check-format": "prettier --check .",
+    "format": "prettier --write ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "Ripple Custody",
+    "Custody"
+  ],
+  "author": "Florent Uzio",
+  "license": "MIT",
   "devDependencies": {
     "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
@@ -21,5 +28,10 @@
     "qs": "^6.14.0",
     "uuid": "^11.1.0",
     "xrpl": "^4.2.0"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/florent-uzio/custody.js"
   }
 }
