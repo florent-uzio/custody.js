@@ -1,5 +1,5 @@
-import { KeyPair, KeypairAlgorithm, KeypairDefinition } from "./keypairs.types"
-import { Secp256k1Service } from "./secp256k1.service"
+import { KeypairAlgorithm, type KeyPair, type KeypairDefinition } from "./keypairs.types.js"
+import { Secp256k1Service } from "./secp256k1.service.js"
 
 /**
  * KeypairService provides a unified interface for keypair operations (generation, signing)
@@ -11,7 +11,7 @@ export class KeypairService {
 
   constructor(private readonly algorithm: KeypairAlgorithm) {
     // Initialize providers for each supported algorithm
-    // @ts-expect-error: Other algorithms to be implemented in the future
+    // @ts-expect-error TODO: Implement other algorithms when needed
     this.providers = {
       [KeypairAlgorithm.SECP256K1]: new Secp256k1Service(),
       //   [CryptoAlgorithm.SECP256R1]: new Secp256r1Service(),

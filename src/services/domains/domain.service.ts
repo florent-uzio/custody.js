@@ -1,5 +1,5 @@
-import { ApiService } from "../apis/api.service"
-import { Domain } from "./domain.types"
+import { ApiService } from "../apis/api.service.js"
+import type { Domain } from "./domain.types.js"
 
 // Service for interacting with domain-related API endpoints
 export class DomainService {
