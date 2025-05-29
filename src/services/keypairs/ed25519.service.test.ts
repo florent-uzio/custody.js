@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { Secp256k1Service } from "./secp256k1.service"
+import { Ed25519Service } from "./ed25519.service"
 
-describe("Secp256k1Service", () => {
-  const service = new Secp256k1Service()
+describe("Ed25519Service", () => {
+  const service = new Ed25519Service()
 
   it("should generate a valid key pair", () => {
     const keyPair = service.generate()
@@ -10,7 +10,7 @@ describe("Secp256k1Service", () => {
     expect(keyPair).toHaveProperty("publicKey")
     expect(typeof keyPair.privateKey).toBe("string")
     expect(typeof keyPair.publicKey).toBe("string")
-    expect(keyPair.privateKey).toMatch(/-----BEGIN EC PRIVATE KEY-----/)
+    expect(keyPair.privateKey).toMatch(/-----BEGIN PRIVATE KEY-----/)
     expect(keyPair.publicKey.length).toBeGreaterThan(0)
   })
 
