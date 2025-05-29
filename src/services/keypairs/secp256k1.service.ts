@@ -47,7 +47,7 @@ export class Secp256k1Service implements KeypairDefinition {
 
       return signature.toString("base64")
     } catch (error) {
-      throw new Error("Failed to sign message")
+      throw new Error("Failed to sign message", { cause: error })
     }
   }
 }

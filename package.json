@@ -26,7 +26,7 @@
     "dev": "vitest",
     "format": "prettier --write .",
     "sort-package": "npx sort-package-json",
-    "start": "ts-node src/index.ts",
+    "start": "npm run build && node dist/index.js",
     "test": "vitest run"
   },
   "dependencies": {

@@ -1,3 +1,4 @@
+import { Ed25519Service } from "./ed25519.service.js"
 import { KeypairAlgorithm, type KeyPair, type KeypairDefinition } from "./keypairs.types.js"
 import { Secp256k1Service } from "./secp256k1.service.js"
 
@@ -14,8 +15,8 @@ export class KeypairService {
     // @ts-expect-error TODO: Implement other algorithms when needed
     this.providers = {
       [KeypairAlgorithm.SECP256K1]: new Secp256k1Service(),
+      [KeypairAlgorithm.ED25519]: new Ed25519Service(),
       //   [CryptoAlgorithm.SECP256R1]: new Secp256r1Service(),
-      //   [CryptoAlgorithm.ED25519]: new Ed25519Service(),
     }
   }
 

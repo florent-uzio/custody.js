@@ -1,9 +1,9 @@
-import axios, { AxiosInstance } from "axios"
-import { AuthFormData, AuthResponse } from "./auth.service.types"
+import axios, { type AxiosInstance } from "axios"
+import { type AuthFormData, type AuthResponse } from "./auth.service.types.js"
 
 export class AuthService {
   private authClient: AxiosInstance
-  private accessToken: string | null = null
+  private accessToken: string = ""
   private tokenExpiration: number | null = null // timestamp in milliseconds
   private readonly TOKEN_VALIDITY = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 

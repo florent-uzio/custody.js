@@ -1,8 +1,8 @@
-import axios, { AxiosError, AxiosInstance } from "axios"
+import axios, { AxiosError, type AxiosInstance } from "axios"
 import { v4 as uuidv4 } from "uuid"
-import { AuthService } from "../auth/auth.service"
-import { KeypairAlgorithm, KeypairService } from "../keypairs"
-import { ApiServiceOptions, PartialAuthFormData } from "./api.service.types"
+import { AuthService } from "../auth/auth.service.js"
+import { KeypairAlgorithm, KeypairService } from "../keypairs/index.js"
+import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
 
 /**
  * ApiService handles authenticated API requests and token management
@@ -104,8 +104,7 @@ export class ApiService {
         // Handle Axios error
         throw new Error(`GET API request failed: ${error.message}`)
       } else {
-        // Handle unexpected error
-        throw new Error("An unexpected error occurred")
+        throw error
       }
     }
   }
@@ -125,8 +124,7 @@ export class ApiService {
         // Handle Axios error
         throw new Error(`POST API request failed: ${error.message}`)
       } else {
-        // Handle unexpected error
-        throw new Error("An unexpected error occurred")
+        throw error
       }
     }
   }
