@@ -18,7 +18,7 @@ const main = async () => {
     publicKey,
   })
   const domains = await custody.getDomains()
-  console.log("Domains:", domains)
+  console.log("Domains:", JSON.stringify(domains))
 }
 
 main()

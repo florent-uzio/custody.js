@@ -24,12 +24,12 @@ export class AuthService {
    * @returns {Promise<string>} The JWT token.
    * @throws {Error} If authentication fails.
    */
-  private async fetchToken(authData: AuthFormData, signature: string): Promise<string> {
+  private async fetchToken(authData: AuthFormData): Promise<string> {
     // Prepare form data for token request
     const formData = new URLSearchParams()
     formData.append("grant_type", "password")
     formData.append("client_id", "customer_api")
-    formData.append("signature", signature)
+    formData.append("signature", authData.signature)
     formData.append("challenge", authData.challenge)
     formData.append("public_key", authData.publicKey)
 
@@ -45,15 +45,11 @@ export class AuthService {
   /**
    * Get a valid JWT token, refreshing if expired or missing.
    */
-  async getToken(authData: AuthFormData, signature: string): Promise<string> {
-    try {
-      if (!this.accessToken || this.isTokenExpired()) {
-        return await this.fetchToken(authData, signature)
-      }
-      return this.accessToken
-    } catch (error) {
-      throw new Error("Failed to obtain JWT token")
+  async getToken(authData: AuthFormData): Promise<string> {
+    if (!this.accessToken || this.isTokenExpired()) {
+      return this.fetchToken(authData)
     }
+    return this.accessToken
   }
 
   /**

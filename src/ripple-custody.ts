@@ -26,7 +26,33 @@ export class RippleCustody {
     this.domainService = new DomainService(this.apiService)
   }
 
+  // Auth-related methods
+
+  /**
+   * @returns The current JWT token.
+   */
+  public getCurrentToken() {
+    return this.authService.getCurrentToken()
+  }
+
+  // Domain-related methods
+
+  /**
+   * Fetches the list of available domains.
+   *
+   * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
+   */
   public async getDomains() {
     return this.domainService.getDomains()
+  }
+
+  /**
+   * Fetches a specific domain by its ID.
+   *
+   * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
+   * @param domainId - The UUID of the domain to fetch.
+   */
+  public async getDomain(domainId: string) {
+    return this.domainService.getDomain(domainId)
   }
 }

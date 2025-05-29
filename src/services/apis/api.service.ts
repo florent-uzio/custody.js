@@ -76,15 +76,13 @@ export class ApiService {
    * @returns {Promise<string>} The valid JWT token.
    */
   private async getValidToken(privateKey: string, forceRefresh = false): Promise<string> {
-    const signature = this.keypairService.sign(privateKey, this.challenge)
-
     if (forceRefresh || this.authService.isTokenExpired()) {
       const authData = {
-        signature,
+        signature: this.keypairService.sign(privateKey, this.challenge),
         challenge: this.challenge,
         publicKey: this.authFormData.publicKey,
       }
-      return await this.authService.getToken(authData, signature)
+      return await this.authService.getToken(authData)
     }
     return this.authService.getCurrentToken() || ""
   }

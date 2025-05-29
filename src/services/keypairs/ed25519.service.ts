@@ -60,8 +60,20 @@ export class Ed25519Service implements KeypairDefinition {
       // The returned signature is already in raw format (64 bytes)
       const signature = sign(null, messageBuffer, privateKeyPem)
 
+      // Split compact signature into r and s (32 bytes each)
+      const r = signature.subarray(0, 32)
+      const s = signature.subarray(32)
+
+      // DER-encode: 0x30 44 02 20 <r> 02 20 <s>
+      const derSignature = Buffer.concat([
+        Buffer.from([0x30, 0x44, 0x02, 0x20]),
+        r,
+        Buffer.from([0x02, 0x20]),
+        s,
+      ])
+
       // Return Base64-encoded signature
-      return signature.toString("base64")
+      return derSignature.toString("base64")
     } catch (error) {
       throw new Error("Failed to sign message", { cause: error })
     }
