@@ -28,7 +28,6 @@ export class Secp256k1Service implements KeypairDefinition {
         publicKey: publicKeyDerBase64,
       }
     } catch (error) {
-      console.error("Key pair generation error:", error)
       throw new Error("Failed to generate key pair")
     }
   }
@@ -48,7 +47,6 @@ export class Secp256k1Service implements KeypairDefinition {
 
       return signature.toString("base64")
     } catch (error) {
-      console.error("Signing error:", error)
       throw new Error("Failed to sign message")
     }
   }
