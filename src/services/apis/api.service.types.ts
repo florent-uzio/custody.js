@@ -1,5 +1,5 @@
-import { AuthFormData, AuthService } from "../auth"
-import { KeypairAlgorithm } from "../keypairs"
+import { type AuthFormData, AuthService } from "../auth/index.js"
+import { type KeypairAlgorithm } from "../keypairs/index.js"
 
 export type PartialAuthFormData = //Omit<AuthFormData, "signature" | "challenge"> &
   Pick<AuthFormData, "publicKey"> & Partial<Pick<AuthFormData, "challenge">>

@@ -1,2 +1,2 @@
-export * from "./keypair.service"
-export * from "./keypairs.types"
+export * from "./keypair.service.js"
+export * from "./keypairs.types.js"
