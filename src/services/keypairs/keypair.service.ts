@@ -1,3 +1,4 @@
+import { isString } from "../../helpers/index.js"
 import { Ed25519Service } from "./ed25519.service.js"
 import { KeypairAlgorithm, type KeyPair, type KeypairDefinition } from "./keypairs.types.js"
 import { Secp256k1Service } from "./secp256k1.service.js"
@@ -43,5 +44,24 @@ export class KeypairService {
     const provider = this.providers[this.algorithm]
     if (!provider) throw new Error(`Unsupported algorithm: ${this.algorithm}`)
     return provider.sign(privateKeyPem, message)
+  }
+
+  detectKeyType(privateKey: Buffer | string): "ed25519" | "secp256k1" | "secp256r1" | "unknown" {
+    let hex: string
+
+    if (isString(privateKey)) {
+      // Strip PEM headers
+      const b64 = privateKey.replace(/-----(BEGIN|END)[\s\S]+?-----/g, "").replace(/\s+/g, "")
+      const buf = Buffer.from(b64, "base64")
+      hex = buf.toString("hex")
+    } else {
+      hex = privateKey.toString("hex")
+    }
+
+    if (hex.includes("2b6570")) return "ed25519" // OID 1.3.101.112
+    if (hex.includes("2b8104000a")) return "secp256k1" // OID 1.3.132.0.10
+    if (hex.includes("2a8648ce3d030107")) return "secp256r1" // OID 1.2.840.10045.3.1.7
+
+    return "unknown"
   }
 }
