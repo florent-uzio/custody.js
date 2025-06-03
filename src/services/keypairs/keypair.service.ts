@@ -1,6 +1,6 @@
 import { isString } from "../../helpers/index.js"
 import { Ed25519Service } from "./ed25519.service.js"
-import { KeypairAlgorithm, type KeyPair, type KeypairDefinition } from "./keypairs.types.js"
+import { type KeyPair, type KeypairAlgorithm, type KeypairDefinition } from "./keypairs.types.js"
 import { Secp256k1Service } from "./secp256k1.service.js"
 
 /**
@@ -15,9 +15,9 @@ export class KeypairService {
     // Initialize providers for each supported algorithm
     // @ts-expect-error TODO: Implement other algorithms when needed
     this.providers = {
-      [KeypairAlgorithm.SECP256K1]: new Secp256k1Service(),
-      [KeypairAlgorithm.ED25519]: new Ed25519Service(),
-      //   [CryptoAlgorithm.SECP256R1]: new Secp256r1Service(),
+      ["secp256k1"]: new Secp256k1Service(),
+      ["ed25519"]: new Ed25519Service(),
+      //   ["secp256r1"]: new Secp256r1Service(),
     }
   }
 
@@ -46,7 +46,7 @@ export class KeypairService {
     return provider.sign(privateKeyPem, message)
   }
 
-  detectKeyType(privateKey: Buffer | string): "ed25519" | "secp256k1" | "secp256r1" | "unknown" {
+  static detectKeyType(privateKey: Buffer | string): KeypairAlgorithm | "unknown" {
     let hex: string
 
     if (isString(privateKey)) {

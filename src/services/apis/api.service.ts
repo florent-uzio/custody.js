@@ -1,7 +1,7 @@
 import axios, { AxiosError, type AxiosInstance } from "axios"
 import { v4 as uuidv4 } from "uuid"
 import { AuthService } from "../auth/auth.service.js"
-import { KeypairAlgorithm, KeypairService } from "../keypairs/index.js"
+import { KeypairService } from "../keypairs/index.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
 
 /**
@@ -13,14 +13,12 @@ export class ApiService {
   private readonly authService: AuthService
   private readonly baseUrl: string
   private readonly challenge: string
-  private readonly keypairAlgorithm: KeypairAlgorithm
   private readonly keypairService: KeypairService
   private readonly privateKey: string
 
   constructor(options: ApiServiceOptions) {
     this.authService = options.authService
     this.baseUrl = options.apiBaseUrl
-    this.keypairAlgorithm = options.keypairAlgorithm ?? KeypairAlgorithm.SECP256K1
     this.authFormData = options.authFormData
     this.privateKey = options.privateKey
 
@@ -62,8 +60,14 @@ export class ApiService {
       },
     )
 
+    // Validate provided private key
+    const privateKeyAlgorithm = KeypairService.detectKeyType(this.privateKey)
+    if (privateKeyAlgorithm === "unknown") {
+      throw new Error("Unsupported private key algorithm. Please provide a valid private key.")
+    }
+
     // Initialize keypair service for signing
-    this.keypairService = new KeypairService(this.keypairAlgorithm)
+    this.keypairService = new KeypairService(privateKeyAlgorithm)
 
     // Use provided challenge or generate a new one
     this.challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()

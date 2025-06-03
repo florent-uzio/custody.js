@@ -27,7 +27,7 @@
     "format": "prettier --write .",
     "sort-package": "npx sort-package-json",
     "start": "npm run build && node dist/index.js",
-    "test": "vitest run"
+    "test": "vitest run --reporter verbose"
   },
   "dependencies": {
     "axios": "^1.8.4",

@@ -8,7 +8,7 @@ export class RippleCustody {
   private domainService: DomainService
 
   constructor(config: SDKConfig) {
-    const { apiBaseUrl, authBaseUrl, keypairAlgorithm, privateKey } = config
+    const { apiBaseUrl, authBaseUrl, privateKey } = config
 
     this.authService = new AuthService(authBaseUrl)
 
@@ -19,7 +19,6 @@ export class RippleCustody {
       },
       authService: this.authService,
       privateKey,
-      keypairAlgorithm,
     })
 
     // this.userService = new UserService(this.apiService)

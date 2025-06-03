@@ -1,15 +1,15 @@
 import { config } from "dotenv"
-import { KeypairAlgorithm, KeypairService } from "./services/index.js"
+import { KeypairService } from "./services/index.js"
 config()
 
 const privateKey = process.env.PRIVATE_KEY ?? ""
 const publicKey = process.env.PUBLIC_KEY ?? ""
 
 const main = async () => {
-  const ke = new KeypairService(KeypairAlgorithm.SECP256K1)
+  const ke = new KeypairService("secp256k1")
   const { privateKey, publicKey } = ke.generate()
 
-  const resp = ke.detectKeyType(privateKey)
+  const resp = KeypairService.detectKeyType(privateKey)
   console.log("Detected Key Type:", resp)
   // console.log("Generated Keypair:", { privateKey, publicKey })
   // const custody = new RippleCustody({
