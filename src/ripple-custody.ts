@@ -1,4 +1,4 @@
-import type { SDKConfig } from "./ripple-custody.types.js"
+import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService, AuthService, DomainService } from "./services/index.js"
 
 export class RippleCustody {
@@ -7,15 +7,15 @@ export class RippleCustody {
   // private userService: UserService
   private domainService: DomainService
 
-  constructor(config: SDKConfig) {
-    const { apiBaseUrl, authBaseUrl, privateKey } = config
+  constructor(options: RippleCustodyClientOptions) {
+    const { baseUrl, privateKey, publicKey } = options
 
-    this.authService = new AuthService(authBaseUrl)
+    this.authService = new AuthService(baseUrl)
 
     this.apiService = new ApiService({
-      apiBaseUrl,
+      baseUrl,
       authFormData: {
-        publicKey: config?.publicKey ?? "",
+        publicKey,
       },
       authService: this.authService,
       privateKey,

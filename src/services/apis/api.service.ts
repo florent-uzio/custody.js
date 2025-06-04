@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from "axios"
 import { v4 as uuidv4 } from "uuid"
+import { getHostname } from "../../helpers/index.js"
 import { AuthService } from "../auth/auth.service.js"
 import { KeypairService } from "../keypairs/index.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
@@ -11,20 +12,20 @@ export class ApiService {
   private readonly apiClient: AxiosInstance
   private readonly authFormData: PartialAuthFormData
   private readonly authService: AuthService
-  private readonly baseUrl: string
+  private readonly apiUrl: string
   private readonly challenge: string
   private readonly keypairService: KeypairService
   private readonly privateKey: string
 
   constructor(options: ApiServiceOptions) {
     this.authService = options.authService
-    this.baseUrl = options.apiBaseUrl
+    this.apiUrl = `https://api.${getHostname(options.baseUrl)}`
     this.authFormData = options.authFormData
     this.privateKey = options.privateKey
 
     // Create Axios instance for API requests
     this.apiClient = axios.create({
-      baseURL: this.baseUrl,
+      baseURL: this.apiUrl,
       headers: {
         "Content-Type": "application/json",
       },

@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from "axios"
+import { getHostname } from "../../helpers/index.js"
 import { type AuthFormData, type AuthResponse } from "./auth.service.types.js"
 
 export class AuthService {
@@ -7,10 +8,10 @@ export class AuthService {
   private tokenExpiration: number | null = null // timestamp in milliseconds
   private readonly TOKEN_VALIDITY = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 
-  constructor(private readonly authBaseUrl: string) {
+  constructor(private readonly baseUrl: string) {
     // Initialize Axios client for auth requests
     this.authClient = axios.create({
-      baseURL: this.authBaseUrl,
+      baseURL: `https://auth.${getHostname(this.baseUrl)}`,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
