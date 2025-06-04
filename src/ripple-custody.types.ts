@@ -1,5 +1,3 @@
-import type { AuthFormData } from "./services/auth/auth.service.types.js"
-
 export type RippleCustodyClientOptions = {
   /**
    * Base URL for the API endpoints
@@ -11,4 +9,8 @@ export type RippleCustodyClientOptions = {
    * Private key for signing requests
    */
   privateKey: string
-} & Pick<AuthFormData, "publicKey">
+  /**
+   * Public key for authentication
+   */
+  publicKey: string
+}
