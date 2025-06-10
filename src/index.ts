@@ -21,4 +21,4 @@ const main = async () => {
   console.log("Domains:", JSON.stringify(domains))
 }
 
-main()
+// main()
