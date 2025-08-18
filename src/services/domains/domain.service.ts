@@ -10,7 +10,7 @@ export class DomainService {
    * Fetches the list of domains from the backend.
    * @returns {Promise<Domains>} The domains data from the API.
    */
-  async getDomains(params: GetDomainsQueryParams): Promise<Domains> {
+  async getDomains(params?: GetDomainsQueryParams): Promise<Domains> {
     // Call the API to get domains
     return this.api.get<Domains>(URLs.domains, { params })
   }
