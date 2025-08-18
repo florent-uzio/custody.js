@@ -383,20 +383,18 @@ export const TransactionOrderParametersXrplSchema = z.object({
 })
 
 // Ethereum Fee Strategy Schemas (simplified)
-export const EthereumFeeStrategySchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Ethereum fee strategy
-  })
+export const EthereumFeeStrategySchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Ethereum fee strategy
+})
 
 // Ethereum Resource Strategy Schema (simplified)
-export const EthereumResourceStrategySchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Ethereum resource strategy
-  })
+export const EthereumResourceStrategySchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Ethereum resource strategy
+})
 
 // Ethereum Transaction Order Parameters Schema
 export const TransactionOrderParametersEthereumSchema = z.object({
@@ -420,30 +418,27 @@ export const TransactionOrderParametersEthereumSchema = z.object({
 })
 
 // Bitcoin Output Parameters Schema (simplified)
-export const BitcoinOutputParametersSchema = z
-  .looseObject({
-    /** Address */
-    address: z.string(),
-    /** Amount */
-    amount: z.string(),
-    // Additional properties would be specific to Bitcoin output
-  })
+export const BitcoinOutputParametersSchema = z.looseObject({
+  /** Address */
+  address: z.string(),
+  /** Amount */
+  amount: z.string(),
+  // Additional properties would be specific to Bitcoin output
+})
 
 // Bitcoin Fee Strategy Schema (simplified)
-export const BitcoinFeeStrategySchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Bitcoin fee strategy
-  })
+export const BitcoinFeeStrategySchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Bitcoin fee strategy
+})
 
 // Bitcoin Resource Strategy Schema (simplified)
-export const BitcoinResourceStrategySchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Bitcoin resource strategy
-  })
+export const BitcoinResourceStrategySchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Bitcoin resource strategy
+})
 
 // Bitcoin Transaction Order Parameters Schema
 export const TransactionOrderParametersBitcoinSchema = z.object({
@@ -490,20 +485,18 @@ export const TransactionOrderParametersSolanaSchema = z.object({
 })
 
 // Hedera Operation Schema (simplified)
-export const HederaOperationSchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Hedera operation
-  })
+export const HederaOperationSchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Hedera operation
+})
 
 // Hedera Fee Strategy Schema (simplified)
-export const HederaFeeStrategySchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Hedera fee strategy
-  })
+export const HederaFeeStrategySchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Hedera fee strategy
+})
 
 // Hedera Transaction Order Parameters Schema
 export const TransactionOrderParametersHederaSchema = z.object({
@@ -520,20 +513,18 @@ export const TransactionOrderParametersHederaSchema = z.object({
 })
 
 // Cardano Operation Schema (simplified)
-export const CardanoOperationSchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Cardano operation
-  })
+export const CardanoOperationSchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Cardano operation
+})
 
 // Cardano Fee Strategy Schema (simplified)
-export const CardanoFeeStrategySchema = z
-  .looseObject({
-    /** Type */
-    type: z.string(),
-    // Additional properties would be specific to Cardano fee strategy
-  })
+export const CardanoFeeStrategySchema = z.looseObject({
+  /** Type */
+  type: z.string(),
+  // Additional properties would be specific to Cardano fee strategy
+})
 
 // Cardano Transaction Order Parameters Schema
 export const TransactionOrderParametersCardanoSchema = z.object({
