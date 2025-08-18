@@ -1,17 +1,20 @@
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
-import { ApiService, AuthService, DomainService } from "./services/index.js"
+import { ApiService } from "./services/apis/index.js"
+import { AuthService } from "./services/auth/index.js"
+import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
+import { IntentsService } from "./services/intents/index.js"
+import type { ApproveIntentRequest, CreateIntentRequest, RejectIntentRequest } from "./services/intents/types/index.js"
 
 export class RippleCustody {
   private authService: AuthService
   private apiService: ApiService
-  // private userService: UserService
   private domainService: DomainService
+  private intentService: IntentsService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
 
     this.authService = new AuthService(baseUrl)
-
     this.apiService = new ApiService({
       baseUrl,
       authFormData: {
@@ -20,9 +23,8 @@ export class RippleCustody {
       authService: this.authService,
       privateKey,
     })
-
-    // this.userService = new UserService(this.apiService)
     this.domainService = new DomainService(this.apiService)
+    this.intentService = new IntentsService(this.apiService)
   }
 
   // Auth-related methods
@@ -41,8 +43,8 @@ export class RippleCustody {
    *
    * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
    */
-  public async getDomains() {
-    return this.domainService.getDomains()
+  public async getDomains(params?: GetDomainsQueryParams) {
+    return this.domainService.getDomains(params)
   }
 
   /**
@@ -53,5 +55,34 @@ export class RippleCustody {
    */
   public async getDomain(domainId: string) {
     return this.domainService.getDomain(domainId)
+  }
+
+  // Intent-related methods
+
+  /**
+   * Creates a new intent.
+   *
+   * @param params - The parameters for the intent.
+   */
+  public async createIntent(params: CreateIntentRequest) {
+    return this.intentService.createIntent(params)
+  }
+
+  /**
+   * Approves an intent.
+   *
+   * @param params - The parameters for the intent.
+   */
+  public async approveIntent(params: ApproveIntentRequest) {
+    return this.intentService.approveIntent(params)
+  }
+
+  /**
+   * Rejects an intent.
+   *
+   * @param params - The parameters for the intent.
+   */
+  public async rejectIntent(params: RejectIntentRequest) {
+    return this.intentService.rejectIntent(params)
   }
 }

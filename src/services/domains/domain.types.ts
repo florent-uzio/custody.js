@@ -1,89 +1,85 @@
-/** Lock status of the domain */
-export type DomainStatus = "Unlocked" | "Locked" | "Archived"
+import { z } from "zod"
 
 /** Governing strategy for the domain */
 export type GoverningStrategy = "ConsiderDescendants" | "CoerceDescendants"
 
-/** Read access permissions */
-export type ReadAccess = {
-  /** Domains with read access */
-  domains: string[]
-  /** Users with read access */
-  users: string[]
-  /** Endpoints with read access */
-  endpoints: string[]
-  /** Policies with read access */
-  policies: string[]
-  /** Accounts with read access */
-  accounts: string[]
-  /** Transactions with read access */
-  transactions: string[]
-  /** Requests with read access */
-  requests: string[]
-  /** Events with read access */
-  events: string[]
-}
+// Zod schemas for Domain Status and Governing Strategy
+export const DomainStatusSchema = z.enum(["Unlocked", "Locked", "Archived"])
+export const GoverningStrategySchema = z.enum(["ConsiderDescendants", "CoerceDescendants"])
 
-/** Creator or modifier information */
-export type AuditUser = {
-  /** User ID (UUID) */
-  id: string
-  /** Domain ID (UUID) */
-  domainId: string
-}
+// Zod schema for Domain
+export const DomainSchema = z.object({
+  data: z.object({
+    id: z.string(),
+    parentId: z.string(),
+    alias: z.string().min(1).max(75),
+    lock: DomainStatusSchema,
+    governingStrategy: GoverningStrategySchema.optional(),
+    permissions: z.object({
+      readAccess: z.object({
+        domains: z.array(z.string()),
+        users: z.array(z.string()),
+        endpoints: z.array(z.string()),
+        policies: z.array(z.string()),
+        accounts: z.array(z.string()),
+        transactions: z.array(z.string()),
+        requests: z.array(z.string()),
+        events: z.array(z.string()),
+      }),
+    }),
+    metadata: z.object({
+      description: z.string().max(250),
+      revision: z.number().int().min(1),
+      createdAt: z.string(),
+      createdBy: z.object({
+        id: z.string(),
+        domainId: z.string(),
+      }),
+      lastModifiedAt: z.string(),
+      lastModifiedBy: z.object({
+        id: z.string(),
+        domainId: z.string(),
+      }),
+      customProperties: z.record(z.string(), z.string()),
+    }),
+  }),
+  signature: z.string(),
+  signingKey: z.string(),
+})
 
-/** Metadata for the domain or item */
-export type Metadata = {
-  /** Description (0..250 characters) */
-  description: string
-  /** Revision number (int64 >= 1) */
-  revision: number
-  /** Creation date-time (ISO) */
-  createdAt: string
-  /** Creator information */
-  createdBy: AuditUser
-  /** Last modification date-time (ISO) */
-  lastModifiedAt: string
-  /** Last modifier information */
-  lastModifiedBy: AuditUser
-  /** Custom key-value properties */
-  customProperties: { [key: string]: string }
-}
+// Domain type
+export type Domain = z.infer<typeof DomainSchema>
 
-/** Domain or item data object */
-export type DomainData = {
-  /** Unique identifier (UUID) */
-  id: string
-  /** Parent identifier (UUID) */
-  parentId: string
-  /** Alias (1..75 characters) */
-  alias: string
-  /** Lock status, "Unlocked", "Locked" or "Archived" */
-  lock: DomainStatus
-  /** Governing strategy */
-  governingStrategy?: GoverningStrategy
-  /** Permissions */
-  permissions: { readAccess: ReadAccess }
-  /** Metadata */
-  metadata: Metadata
-}
+// Zod schema for Domains (response)
+export const DomainsSchema = z.object({
+  items: z.array(DomainSchema),
+  count: z.number(),
+  currentStartingAfter: z.string().optional(),
+  nextStartingAfter: z.string().optional(),
+})
 
-/** A single domain entity */
-export type Domain = {
-  /** Domain data */
-  data: DomainData
-  /** Base64-encoded signature */
-  signature: string
-}
+// Get Domains Query Parameters Schema
+export const GetDomainsQueryParamsSchema = z.object({
+  /** Maximum number of items to return (default: 100, max: 100) */
+  limit: z.number().int().min(1).max(100).optional(),
+  /** Cursor for pagination - return items after this cursor */
+  startingAfter: z.string().optional(),
+  /** Filter by domain alias (case-insensitive partial match) */
+  alias: z.string().optional(),
+  /** Filter by lock status */
+  lock: DomainStatusSchema.optional(),
+  /** Filter by governing strategy */
+  governingStrategy: GoverningStrategySchema.optional(),
+  /** Filter by parent domain ID */
+  parentId: z.string().optional(),
+  /** Include archived domains in results (default: false) */
+  includeArchived: z.boolean().optional(),
+  /** Sort order: "asc" or "desc" (default: "asc") */
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+  /** Sort field: "alias", "createdAt", "lastModifiedAt" (default: "alias") */
+  sortBy: z.enum(["alias", "createdAt", "lastModifiedAt"]).optional(),
+})
 
-/** Paginated list of domains */
-export type Domains = {
-  /** Array of domain entries */
-  items: Domain[]
-  /** Total number of items */
-  count: number
-  /** Pagination: current page's cursor */
-  currentStartingAfter?: string
-  /** Pagination: next page's cursor */
-  nextStartingAfter?: string
-}
+// Inferred TypeScript types from Zod schemas
+export type GetDomainsQueryParams = z.infer<typeof GetDomainsQueryParamsSchema>
+export type Domains = z.infer<typeof DomainsSchema>
