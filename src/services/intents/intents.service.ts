@@ -1,8 +1,8 @@
 import { URLs } from "../../constants/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type { ApproveIntentRequest } from "./types/approve-intent.types.js"
-import type { CreateIntentRequest } from "./types/create-intents.types.js"
 import type { IntentResponse } from "./types/common.types.js"
+import type { CreateIntentRequest } from "./types/create-intents.types.js"
 import type { RejectIntentRequest } from "./types/reject-intent.types.js"
 
 export class IntentsService {

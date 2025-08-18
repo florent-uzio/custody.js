@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { UserReferenceSchema, ErrorMessageSchema } from "./common.types.js"
+import { ErrorMessageSchema, UserReferenceSchema } from "./common.types.js"
 
 // Reject Schema (Core_Reject)
 export const RejectSchema = z.object({

@@ -1,6 +1,6 @@
 import { URLs } from "../../constants/index.js"
 import { ApiService } from "../apis/api.service.js"
-import type { Domains, Domain, GetDomainsQueryParams } from "./domain.types.js"
+import type { Domain, Domains, GetDomainsQueryParams } from "./domain.types.js"
 
 // Service for interacting with domain-related API endpoints
 export class DomainService {

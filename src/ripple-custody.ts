@@ -3,7 +3,11 @@ import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
 import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
 import { IntentsService } from "./services/intents/index.js"
-import type { ApproveIntentRequest, CreateIntentRequest, RejectIntentRequest } from "./services/intents/types/index.js"
+import type {
+  ApproveIntentRequest,
+  CreateIntentRequest,
+  RejectIntentRequest,
+} from "./services/intents/types/index.js"
 
 export class RippleCustody {
   private authService: AuthService

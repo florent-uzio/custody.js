@@ -27,8 +27,6 @@ export const ApproveIntentRequestSchema = z.object({
   signature: z.string(),
 })
 
-
-
 // All error responses use the same Core_ErrorMessage structure
 export const ApproveIntentErrorResponseSchema = ErrorMessageSchema
 
