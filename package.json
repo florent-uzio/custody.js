@@ -25,6 +25,8 @@
     "ci": "npm run build && npm run check-format && npm run check-exports && npm run test",
     "dev": "vitest",
     "format": "prettier --write .",
+    "local-release": "changeset version && changeset publish",
+    "prepublishOnly": "npm run ci",
     "sort-package": "npx sort-package-json",
     "start": "npm run build && node dist/index.js",
     "test": "vitest run --reporter verbose"
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.1",
+    "@changesets/cli": "^2.29.6",
     "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
     "ts-node": "^10.9.2",
