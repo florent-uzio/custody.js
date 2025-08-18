@@ -35,31 +35,32 @@ const main = async () => {
               currency: {
                 code: "sss",
                 issuer: "d",
-                type: "Currency"
+                type: "Currency",
               },
-              value: "11000"
+              value: "11000",
             },
             enableRippling: true,
-            flags: ["tfClearFreeze"]
-          },feeStrategy: {
+            flags: ["tfClearFreeze"],
+          },
+          feeStrategy: {
             priority: "Medium",
-            "type": "Priority"
+            type: "Priority",
           },
           memos: [],
         },
         accountId: "2",
-       id: "1",
-       customProperties: {}
+        id: "1",
+        customProperties: {},
       },
       author: {
         id: "1",
-        domainId: "1"
+        domainId: "1",
       },
       expiryAt: "2025-08-18T00:00:00Z",
       customProperties: {},
-      id: "1"
+      id: "1",
     },
-    signature: ""
+    signature: "",
   })
 }
 

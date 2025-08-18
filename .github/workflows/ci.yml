@@ -1,4 +1,4 @@
-name: CI
+name: Build, Formatting, Exports and Tests
 
 on:
   pull_request:

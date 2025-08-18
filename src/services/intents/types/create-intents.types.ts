@@ -1,9 +1,7 @@
 import { z } from "zod"
-import { UserReferenceSchema, IntentResponseSchema, type UserReference, type IntentResponse } from "./common.types.js"
+import { UserReferenceSchema } from "./common.types.js"
 
 // Core schemas based on OpenAPI specification
-
-
 
 // Strings Map Schema
 export const StringsMapSchema = z.record(z.string(), z.string())
@@ -25,21 +23,69 @@ export const GoverningStrategySchema = z.enum(["ConsiderDescendants", "CoerceDes
 // Read Access Schema
 export const ReadAccessSchema = z.object({
   /** Domains with read access */
-  domains: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  domains: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
   /** Users with read access */
-  users: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  users: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
   /** Endpoints with read access */
-  endpoints: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  endpoints: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
   /** Policies with read access */
-  policies: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  policies: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
   /** Accounts with read access */
-  accounts: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  accounts: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
   /** Transactions with read access */
-  transactions: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  transactions: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
   /** Requests with read access */
-  requests: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  requests: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
   /** Events with read access */
-  events: z.array(z.string().min(1).max(50).regex(/[a-z0-9\-]+/)),
+  events: z.array(
+    z
+      .string()
+      .min(1)
+      .max(50)
+      .regex(/[a-z0-9\-]+/),
+  ),
 })
 
 // Permissions Schema
@@ -95,11 +141,13 @@ export const CreateDomainGenesisPolicySchema = z.object({
 })
 
 // Transaction Destination Schema (placeholder - would need to be expanded)
-export const TransactionDestinationSchema = z.object({
-  /** Address */
-  address: z.string(),
-  // Additional properties would be specific to each blockchain
-}).passthrough()
+export const TransactionDestinationSchema = z
+  .object({
+    /** Address */
+    address: z.string(),
+    // Additional properties would be specific to each blockchain
+  })
+  .passthrough()
 
 // XRPL Transaction Destination Schemas
 export const XrplTransactionDestinationAccountSchema = z.object({
@@ -152,11 +200,7 @@ export const XrplCurrencySchema = z.discriminatedUnion("type", [
 ])
 
 // XRPL Trust Set Flag Schema
-export const XrplTrustSetFlagSchema = z.enum([
-  "tfSetFreeze",
-  "tfClearFreeze", 
-  "tfSetfAuth"
-])
+export const XrplTrustSetFlagSchema = z.enum(["tfSetFreeze", "tfClearFreeze", "tfSetfAuth"])
 
 // XRPL Limit Amount Schema (simplified)
 export const XrplLimitAmountSchema = z.looseObject({
@@ -181,7 +225,7 @@ export const XrplOfferCreateFlagSchema = z.enum([
   "tfPassive",
   "tfImmediateOrCancel",
   "tfFillOrKill",
-  "tfSell"
+  "tfSell",
 ])
 
 // XRPL Account Set Flag Schema (simplified)
@@ -195,7 +239,7 @@ export const XrplAccountSetFlagSchema = z.enum([
   "asfGlobalFreeze",
   "asfDefaultRipple",
   "asfDepositAuth",
-  "asfAuthorizedMinter"
+  "asfAuthorizedMinter",
 ])
 
 // Fee Priority Schema
@@ -224,11 +268,20 @@ export const XrplFeeStrategySchema = z.discriminatedUnion("type", [
 // XRPL Memo Schema
 export const XrplMemoSchema = z.object({
   /** Memo data (hex encoded) */
-  memoData: z.string().regex(/^[A-Fa-f0-9]*$/).optional(),
+  memoData: z
+    .string()
+    .regex(/^[A-Fa-f0-9]*$/)
+    .optional(),
   /** Memo format (hex encoded) */
-  memoFormat: z.string().regex(/^[A-Fa-f0-9]*$/).optional(),
+  memoFormat: z
+    .string()
+    .regex(/^[A-Fa-f0-9]*$/)
+    .optional(),
   /** Memo type (hex encoded) */
-  memoType: z.string().regex(/^[A-Fa-f0-9]*$/).optional(),
+  memoType: z
+    .string()
+    .regex(/^[A-Fa-f0-9]*$/)
+    .optional(),
 })
 
 // XRPL Operation Schemas with correct fields
@@ -330,18 +383,18 @@ export const TransactionOrderParametersXrplSchema = z.object({
 })
 
 // Ethereum Fee Strategy Schemas (simplified)
-export const EthereumFeeStrategySchema = z.object({
+export const EthereumFeeStrategySchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Ethereum fee strategy
-}).passthrough()
+})
 
 // Ethereum Resource Strategy Schema (simplified)
-export const EthereumResourceStrategySchema = z.object({
+export const EthereumResourceStrategySchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Ethereum resource strategy
-}).passthrough()
+})
 
 // Ethereum Transaction Order Parameters Schema
 export const TransactionOrderParametersEthereumSchema = z.object({
@@ -356,33 +409,36 @@ export const TransactionOrderParametersEthereumSchema = z.object({
   /** Maximum fee */
   maximumFee: z.string().optional(),
   /** Data (hex encoded) */
-  data: z.string().regex(/^0[xX]([a-fA-F0-9]*)$/).optional(),
+  data: z
+    .string()
+    .regex(/^0[xX]([a-fA-F0-9]*)$/)
+    .optional(),
   /** Resource strategy */
   resourceStrategy: EthereumResourceStrategySchema.optional(),
 })
 
 // Bitcoin Output Parameters Schema (simplified)
-export const BitcoinOutputParametersSchema = z.object({
+export const BitcoinOutputParametersSchema = z.looseObject({
   /** Address */
   address: z.string(),
   /** Amount */
   amount: z.string(),
   // Additional properties would be specific to Bitcoin output
-}).passthrough()
+})
 
 // Bitcoin Fee Strategy Schema (simplified)
-export const BitcoinFeeStrategySchema = z.object({
+export const BitcoinFeeStrategySchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Bitcoin fee strategy
-}).passthrough()
+})
 
 // Bitcoin Resource Strategy Schema (simplified)
-export const BitcoinResourceStrategySchema = z.object({
+export const BitcoinResourceStrategySchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Bitcoin resource strategy
-}).passthrough()
+})
 
 // Bitcoin Transaction Order Parameters Schema
 export const TransactionOrderParametersBitcoinSchema = z.object({
@@ -429,18 +485,18 @@ export const TransactionOrderParametersSolanaSchema = z.object({
 })
 
 // Hedera Operation Schema (simplified)
-export const HederaOperationSchema = z.object({
+export const HederaOperationSchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Hedera operation
-}).passthrough()
+})
 
 // Hedera Fee Strategy Schema (simplified)
-export const HederaFeeStrategySchema = z.object({
+export const HederaFeeStrategySchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Hedera fee strategy
-}).passthrough()
+})
 
 // Hedera Transaction Order Parameters Schema
 export const TransactionOrderParametersHederaSchema = z.object({
@@ -457,18 +513,18 @@ export const TransactionOrderParametersHederaSchema = z.object({
 })
 
 // Cardano Operation Schema (simplified)
-export const CardanoOperationSchema = z.object({
+export const CardanoOperationSchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Cardano operation
-}).passthrough()
+})
 
 // Cardano Fee Strategy Schema (simplified)
-export const CardanoFeeStrategySchema = z.object({
+export const CardanoFeeStrategySchema = z.looseObject({
   /** Type */
   type: z.string(),
   // Additional properties would be specific to Cardano fee strategy
-}).passthrough()
+})
 
 // Cardano Transaction Order Parameters Schema
 export const TransactionOrderParametersCardanoSchema = z.object({
@@ -587,18 +643,22 @@ export const TransactionOrderParametersTronSchema = z.object({
 })
 
 // Algorand Operation Schema (simplified)
-export const AlgorandOperationSchema = z.object({
-  /** Type */
-  type: z.string(),
-  // Additional properties would be specific to Algorand operation
-}).passthrough()
+export const AlgorandOperationSchema = z
+  .object({
+    /** Type */
+    type: z.string(),
+    // Additional properties would be specific to Algorand operation
+  })
+  .passthrough()
 
 // Algorand Fee Strategy Schema (simplified)
-export const AlgorandFeeStrategySchema = z.object({
-  /** Type */
-  type: z.string(),
-  // Additional properties would be specific to Algorand fee strategy
-}).passthrough()
+export const AlgorandFeeStrategySchema = z
+  .object({
+    /** Type */
+    type: z.string(),
+    // Additional properties would be specific to Algorand fee strategy
+  })
+  .passthrough()
 
 // Algorand Transaction Order Parameters Schema
 export const TransactionOrderParametersAlgorandSchema = z.object({
@@ -671,7 +731,7 @@ export const IntentTypeSchema = z.enum([
   "v0_SetSystemProperty",
   "v0_CreateLedger",
   "v0_UpdateLedger",
-  "v0_AddTrustedPublicKeysForMigration"
+  "v0_AddTrustedPublicKeysForMigration",
 ])
 
 // Individual Intent Payload Schemas
@@ -1151,10 +1211,6 @@ export const CreateIntentRequestSchema = z.object({
   signature: z.string(),
 })
 
-
-
-
-
 // Inferred TypeScript types from Zod schemas
 
 export type StringsMap = z.infer<typeof StringsMapSchema>
@@ -1164,14 +1220,24 @@ export type GoverningStrategy = z.infer<typeof GoverningStrategySchema>
 export type ReadAccess = z.infer<typeof ReadAccessSchema>
 export type Permissions = z.infer<typeof PermissionsSchema>
 export type AccountKeyStrategy = z.infer<typeof AccountKeyStrategySchema>
-export type CreateAccountProviderDetailsPayloadVault = z.infer<typeof CreateAccountProviderDetailsPayloadVaultSchema>
-export type CreateAccountProviderDetailsPayload = z.infer<typeof CreateAccountProviderDetailsPayloadSchema>
+export type CreateAccountProviderDetailsPayloadVault = z.infer<
+  typeof CreateAccountProviderDetailsPayloadVaultSchema
+>
+export type CreateAccountProviderDetailsPayload = z.infer<
+  typeof CreateAccountProviderDetailsPayloadSchema
+>
 export type CreateDomainGenesisUser = z.infer<typeof CreateDomainGenesisUserSchema>
 export type CreateDomainGenesisPolicy = z.infer<typeof CreateDomainGenesisPolicySchema>
 export type TransactionDestination = z.infer<typeof TransactionDestinationSchema>
-export type XrplTransactionDestinationAccount = z.infer<typeof XrplTransactionDestinationAccountSchema>
-export type XrplTransactionDestinationAddress = z.infer<typeof XrplTransactionDestinationAddressSchema>
-export type XrplTransactionDestinationEndpoint = z.infer<typeof XrplTransactionDestinationEndpointSchema>
+export type XrplTransactionDestinationAccount = z.infer<
+  typeof XrplTransactionDestinationAccountSchema
+>
+export type XrplTransactionDestinationAddress = z.infer<
+  typeof XrplTransactionDestinationAddressSchema
+>
+export type XrplTransactionDestinationEndpoint = z.infer<
+  typeof XrplTransactionDestinationEndpointSchema
+>
 export type XrplTransactionDestination = z.infer<typeof XrplTransactionDestinationSchema>
 export type XrplCurrencyCurrency = z.infer<typeof XrplCurrencyCurrencySchema>
 export type XrplCurrencyTickerId = z.infer<typeof XrplCurrencyTickerIdSchema>
@@ -1183,7 +1249,9 @@ export type XrplOfferCreateFlag = z.infer<typeof XrplOfferCreateFlagSchema>
 export type XrplAccountSetFlag = z.infer<typeof XrplAccountSetFlagSchema>
 export type FeePriority = z.infer<typeof FeePrioritySchema>
 export type XrplFeeStrategyPriority = z.infer<typeof XrplFeeStrategyPrioritySchema>
-export type XrplFeeStrategySpecifiedAdditionalFee = z.infer<typeof XrplFeeStrategySpecifiedAdditionalFeeSchema>
+export type XrplFeeStrategySpecifiedAdditionalFee = z.infer<
+  typeof XrplFeeStrategySpecifiedAdditionalFeeSchema
+>
 export type XrplFeeStrategy = z.infer<typeof XrplFeeStrategySchema>
 export type XrplMemo = z.infer<typeof XrplMemoSchema>
 export type XrplOperationPayment = z.infer<typeof XrplOperationPaymentSchema>
@@ -1194,23 +1262,37 @@ export type XrplOperationClawback = z.infer<typeof XrplOperationClawbackSchema>
 export type XrplOperationDepositPreauth = z.infer<typeof XrplOperationDepositPreauthSchema>
 export type XrplOperation = z.infer<typeof XrplOperationSchema>
 export type TransactionOrderParametersXrpl = z.infer<typeof TransactionOrderParametersXrplSchema>
-export type TransactionOrderParametersEthereum = z.infer<typeof TransactionOrderParametersEthereumSchema>
-export type TransactionOrderParametersBitcoin = z.infer<typeof TransactionOrderParametersBitcoinSchema>
-export type TransactionOrderParametersSolana = z.infer<typeof TransactionOrderParametersSolanaSchema>
-export type TransactionOrderParametersHedera = z.infer<typeof TransactionOrderParametersHederaSchema>
-export type TransactionOrderParametersCardano = z.infer<typeof TransactionOrderParametersCardanoSchema>
-export type TransactionOrderParametersStellar = z.infer<typeof TransactionOrderParametersStellarSchema>
-export type TransactionOrderParametersSubstrate = z.infer<typeof TransactionOrderParametersSubstrateSchema>
+export type TransactionOrderParametersEthereum = z.infer<
+  typeof TransactionOrderParametersEthereumSchema
+>
+export type TransactionOrderParametersBitcoin = z.infer<
+  typeof TransactionOrderParametersBitcoinSchema
+>
+export type TransactionOrderParametersSolana = z.infer<
+  typeof TransactionOrderParametersSolanaSchema
+>
+export type TransactionOrderParametersHedera = z.infer<
+  typeof TransactionOrderParametersHederaSchema
+>
+export type TransactionOrderParametersCardano = z.infer<
+  typeof TransactionOrderParametersCardanoSchema
+>
+export type TransactionOrderParametersStellar = z.infer<
+  typeof TransactionOrderParametersStellarSchema
+>
+export type TransactionOrderParametersSubstrate = z.infer<
+  typeof TransactionOrderParametersSubstrateSchema
+>
 export type TransactionOrderParametersTezos = z.infer<typeof TransactionOrderParametersTezosSchema>
 export type TransactionOrderParametersTron = z.infer<typeof TransactionOrderParametersTronSchema>
-export type TransactionOrderParametersAlgorand = z.infer<typeof TransactionOrderParametersAlgorandSchema>
+export type TransactionOrderParametersAlgorand = z.infer<
+  typeof TransactionOrderParametersAlgorandSchema
+>
 export type TransactionOrderParameters = z.infer<typeof TransactionOrderParametersSchema>
 export type IntentType = z.infer<typeof IntentTypeSchema>
 export type ProposeUserIntentPayload = z.infer<typeof ProposeUserIntentPayloadSchema>
 export type Propose = z.infer<typeof ProposeSchema>
 export type CreateIntentRequest = z.infer<typeof CreateIntentRequestSchema>
-
-
 
 // Individual intent type exports
 export type V0CreateAccount = z.infer<typeof V0CreateAccountSchema>
