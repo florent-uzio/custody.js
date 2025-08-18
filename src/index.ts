@@ -19,6 +19,48 @@ const main = async () => {
   })
   const domains = await custody.getDomains()
   console.log("Domains:", JSON.stringify(domains))
+
+  const id = await custody.createIntent({
+    request: {
+      type: "Propose",
+      targetDomainId: "",
+      payload: {
+        type: "v0_CreateTransactionOrder",
+        parameters: {
+          type: "XRPL",
+          amount: "1000",
+          operation: {
+            type: "TrustSet",
+            limitAmount: {
+              currency: {
+                code: "sss",
+                issuer: "d",
+                type: "Currency"
+              },
+              value: "11000"
+            },
+            enableRippling: true,
+            flags: ["tfClearFreeze"]
+          },feeStrategy: {
+            priority: "Medium",
+            "type": "Priority"
+          },
+          memos: [],
+        },
+        accountId: "2",
+       id: "1",
+       customProperties: {}
+      },
+      author: {
+        id: "1",
+        domainId: "1"
+      },
+      expiryAt: "2025-08-18T00:00:00Z",
+      customProperties: {},
+      id: "1"
+    },
+    signature: ""
+  })
 }
 
 // main()
