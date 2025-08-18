@@ -98,9 +98,9 @@ export class ApiService {
    * @returns {Promise<T>} The response data.
    * @throws {Error} If the request fails.
    */
-  public async get<T>(url: string): Promise<T> {
+  public async get<T>(url: string, params?: any): Promise<T> {
     try {
-      const response = await this.apiClient.get<T>(url)
+      const response = await this.apiClient.get<T>(url, { params })
       return response.data
     } catch (error) {
       if (axios.isAxiosError(error)) {

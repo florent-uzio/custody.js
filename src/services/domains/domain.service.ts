@@ -1,6 +1,6 @@
 import { URLs } from "../../constants/index.js"
 import { ApiService } from "../apis/api.service.js"
-import type { Domains } from "./domain.types.js"
+import type { Domains, Domain, GetDomainsQueryParams } from "./domain.types.js"
 
 // Service for interacting with domain-related API endpoints
 export class DomainService {
@@ -10,9 +10,9 @@ export class DomainService {
    * Fetches the list of domains from the backend.
    * @returns {Promise<Domains>} The domains data from the API.
    */
-  async getDomains(): Promise<Domains> {
+  async getDomains(params: GetDomainsQueryParams): Promise<Domains> {
     // Call the API to get domains
-    return this.api.get<Domains>(URLs.domains)
+    return this.api.get<Domains>(URLs.domains, { params })
   }
 
   /**
@@ -22,8 +22,8 @@ export class DomainService {
    * @param domainId
    * @returns
    */
-  async getDomain(domainId: string): Promise<any> {
+  async getDomain(domainId: string): Promise<Domain> {
     // Call the API to get a specific domain
-    return this.api.get<DomainService>(`${URLs.domains}/${domainId}`)
+    return this.api.get<Domain>(`${URLs.domains}/${domainId}`)
   }
 }
