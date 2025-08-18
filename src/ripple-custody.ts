@@ -2,7 +2,8 @@ import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
 import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
-import { IntentsService, type CreateIntentRequest } from "./services/intents/index.js"
+import { IntentsService } from "./services/intents/index.js"
+import type { ApproveIntentRequest, CreateIntentRequest, RejectIntentRequest } from "./services/intents/types/index.js"
 
 export class RippleCustody {
   private authService: AuthService
@@ -65,5 +66,23 @@ export class RippleCustody {
    */
   public async createIntent(params: CreateIntentRequest) {
     return this.intentService.createIntent(params)
+  }
+
+  /**
+   * Approves an intent.
+   *
+   * @param params - The parameters for the intent.
+   */
+  public async approveIntent(params: ApproveIntentRequest) {
+    return this.intentService.approveIntent(params)
+  }
+
+  /**
+   * Rejects an intent.
+   *
+   * @param params - The parameters for the intent.
+   */
+  public async rejectIntent(params: RejectIntentRequest) {
+    return this.intentService.rejectIntent(params)
   }
 }

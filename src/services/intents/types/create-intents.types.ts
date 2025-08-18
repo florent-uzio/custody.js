@@ -1,15 +1,9 @@
 import { z } from "zod"
-import { IntentResponseSchema, type IntentResponse } from "./common.types.js"
+import { UserReferenceSchema, IntentResponseSchema, type UserReference, type IntentResponse } from "./common.types.js"
 
 // Core schemas based on OpenAPI specification
 
-// User Reference Schema
-export const UserReferenceSchema = z.object({
-  /** User ID */
-  id: z.uuid(),
-  /** Domain ID */
-  domainId: z.uuid(),
-})
+
 
 // Strings Map Schema
 export const StringsMapSchema = z.record(z.string(), z.string())
@@ -1162,7 +1156,7 @@ export const CreateIntentRequestSchema = z.object({
 
 
 // Inferred TypeScript types from Zod schemas
-export type UserReference = z.infer<typeof UserReferenceSchema>
+
 export type StringsMap = z.infer<typeof StringsMapSchema>
 export type EntityIdAndRevision = z.infer<typeof EntityIdAndRevisionSchema>
 export type IntentLockStatus = z.infer<typeof IntentLockStatusSchema>

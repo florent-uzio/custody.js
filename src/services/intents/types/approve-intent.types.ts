@@ -1,13 +1,5 @@
 import { z } from "zod"
-import { ErrorMessageSchema } from "./common.types.js"
-
-// User Reference Schema
-export const UserReferenceSchema = z.object({
-  /** User ID */
-  id: z.uuid(),
-  /** Domain ID */
-  domainId: z.uuid(),
-})
+import { ErrorMessageSchema, UserReferenceSchema } from "./common.types.js"
 
 // Approve Schema (Core_Approve)
 export const ApproveSchema = z.object({
@@ -41,7 +33,6 @@ export const ApproveIntentRequestSchema = z.object({
 export const ApproveIntentErrorResponseSchema = ErrorMessageSchema
 
 // Inferred TypeScript types from Zod schemas
-export type UserReference = z.infer<typeof UserReferenceSchema>
 export type Approve = z.infer<typeof ApproveSchema>
 export type ApproveIntentRequest = z.infer<typeof ApproveIntentRequestSchema>
 export type ApproveIntentErrorResponse = z.infer<typeof ApproveIntentErrorResponseSchema>
