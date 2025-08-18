@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { IntentResponseSchema, type IntentResponse } from "./common.types.js"
 
 // Core schemas based on OpenAPI specification
 
@@ -1156,19 +1157,9 @@ export const CreateIntentRequestSchema = z.object({
   signature: z.string(),
 })
 
-// Intent Response Schema (Core_IntentResponse)
-export const IntentResponseSchema = z.object({
-  /** Request ID */
-  requestId: z.uuid(),
-})
 
-// Error Message Schema (Core_ErrorMessage)
-export const ErrorMessageSchema = z.object({
-  /** Error reason */
-  reason: z.string(),
-  /** Error message */
-  message: z.string().optional(),
-})
+
+
 
 // Inferred TypeScript types from Zod schemas
 export type UserReference = z.infer<typeof UserReferenceSchema>
@@ -1224,8 +1215,8 @@ export type IntentType = z.infer<typeof IntentTypeSchema>
 export type ProposeUserIntentPayload = z.infer<typeof ProposeUserIntentPayloadSchema>
 export type Propose = z.infer<typeof ProposeSchema>
 export type CreateIntentRequest = z.infer<typeof CreateIntentRequestSchema>
-export type IntentResponse = z.infer<typeof IntentResponseSchema>
-export type ErrorMessage = z.infer<typeof ErrorMessageSchema>
+
+
 
 // Individual intent type exports
 export type V0CreateAccount = z.infer<typeof V0CreateAccountSchema>
