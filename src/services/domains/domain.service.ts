@@ -1,3 +1,4 @@
+import { URLs } from "../../constants/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type { Domains } from "./domain.types.js"
 
@@ -11,7 +12,7 @@ export class DomainService {
    */
   async getDomains(): Promise<Domains> {
     // Call the API to get domains
-    return this.api.get<Domains>("/v1/domains")
+    return this.api.get<Domains>(URLs.domains)
   }
 
   /**
@@ -23,6 +24,6 @@ export class DomainService {
    */
   async getDomain(domainId: string): Promise<any> {
     // Call the API to get a specific domain
-    return this.api.get<DomainService>(`/v1/domains/${domainId}`)
+    return this.api.get<DomainService>(`${URLs.domains}/${domainId}`)
   }
 }
