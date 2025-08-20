@@ -26,6 +26,7 @@
     "dev": "vitest",
     "format": "prettier --write .",
     "local-release": "changeset version && changeset publish",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run ci",
     "sort-package": "npx sort-package-json",
     "start": "npm run build && node dist/index.js",
