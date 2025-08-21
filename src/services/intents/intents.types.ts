@@ -29,3 +29,10 @@ export type Core_GetIntentsQueryParams = operations["getIntents"]["parameters"][
 // Dry run
 export type Core_IntentDryRunRequest = components["schemas"]["Core_IntentDryRunRequest"]
 export type Core_IntentDryRunResponse = components["schemas"]["Core_IntentDryRunResponse"]
+
+// Remaining users
+export type Core_RemainingUsersIntentPathParams =
+  operations["getRemainingUsers"]["parameters"]["path"]
+export type Core_RemainingUsersIntentQueryParams =
+  operations["getRemainingUsers"]["parameters"]["query"]
+export type Core_RemainingDomainUsers = components["schemas"]["Core_RemainingDomainUsers"]

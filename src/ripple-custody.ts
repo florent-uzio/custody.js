@@ -9,8 +9,13 @@ import {
   type Core_GetIntentsPathParams,
   type Core_GetIntentsQueryParams,
   type Core_IntentDryRunRequest,
+  type Core_IntentDryRunResponse,
+  type Core_IntentResponse,
   type Core_ProposeIntentBody,
   type Core_RejectIntentBody,
+  type Core_RemainingDomainUsers,
+  type Core_RemainingUsersIntentPathParams,
+  type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
 
 export class RippleCustody {
@@ -68,42 +73,59 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    propose: (params: Core_ProposeIntentBody) => this.intentService.proposeIntent(params),
+    propose: (params: Core_ProposeIntentBody): Promise<Core_IntentResponse> =>
+      this.intentService.proposeIntent(params),
 
     /**
      * Approves an intent.
      *
      * @param params - The parameters for the intent.
      */
-    approve: (params: Core_ApproveIntentBody) => this.intentService.approveIntent(params),
+    approve: (params: Core_ApproveIntentBody): Promise<Core_IntentResponse> =>
+      this.intentService.approveIntent(params),
 
     /**
      * Rejects an intent.
      *
      * @param params - The parameters for the intent.
      */
-    reject: (params: Core_RejectIntentBody) => this.intentService.rejectIntent(params),
+    reject: (params: Core_RejectIntentBody): Promise<Core_IntentResponse> =>
+      this.intentService.rejectIntent(params),
 
     /**
      * Gets an intent.
      *
      * @param params - The parameters for the intent.
      */
-    get: (params: Core_GetIntentPathParams) => this.intentService.getIntent(params),
+    get: (params: Core_GetIntentPathParams): Promise<Core_IntentResponse> =>
+      this.intentService.getIntent(params),
 
     /**
      * Gets a list of intents.
      *
      * @param query - The query parameters for the intents.
      */
-    list: (params: Core_GetIntentsPathParams, query?: Core_GetIntentsQueryParams) =>
-      this.intentService.getIntents(params, query),
+    list: (
+      params: Core_GetIntentsPathParams,
+      query?: Core_GetIntentsQueryParams,
+    ): Promise<Core_IntentResponse> => this.intentService.getIntents(params, query),
 
     /**
      * Dry runs an intent.
      *
      * @param params - The parameters for the intent.
      */
-    dryRun: (params: Core_IntentDryRunRequest) => this.intentService.dryRunIntent(params),
+    dryRun: (params: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> =>
+      this.intentService.dryRunIntent(params),
+
+    /**
+     * Gets the remaining users for an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    remainingUsers: (
+      params: Core_RemainingUsersIntentPathParams,
+      query?: Core_RemainingUsersIntentQueryParams,
+    ): Promise<Core_RemainingDomainUsers> => this.intentService.remainingUsersIntent(params, query),
   }
 }

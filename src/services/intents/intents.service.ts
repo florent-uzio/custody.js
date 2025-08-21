@@ -11,6 +11,9 @@ import type {
   Core_IntentResponse,
   Core_ProposeIntentBody,
   Core_RejectIntentBody,
+  Core_RemainingDomainUsers,
+  Core_RemainingUsersIntentPathParams,
+  Core_RemainingUsersIntentQueryParams,
 } from "./intents.types.js"
 
 export class IntentsService {
@@ -76,5 +79,21 @@ export class IntentsService {
    */
   dryRunIntent(params: Core_IntentDryRunRequest) {
     return this.api.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, params)
+  }
+
+  /**
+   * Remaining users for an intent
+   * @param params - The parameters for the intent
+   * @returns The intent response
+   */
+  remainingUsersIntent(
+    params: Core_RemainingUsersIntentPathParams,
+    query?: Core_RemainingUsersIntentQueryParams,
+  ) {
+    const url = replacePathParams(URLs.intentRemainingUsers, {
+      domainId: params.domainId,
+      intentId: params.intentId,
+    })
+    return this.api.get<Core_RemainingDomainUsers>(url, { params: query })
   }
 }
