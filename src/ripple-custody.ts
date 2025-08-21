@@ -5,6 +5,7 @@ import { DomainService, type GetDomainsQueryParams } from "./services/domains/in
 import {
   IntentsService,
   type Core_GetIntentPathParams,
+  type Core_GetIntentsPathParams,
   type Core_GetIntentsQueryParams,
   type Core_ProposeIntentBody,
 } from "./services/intents/index.js"
@@ -86,7 +87,14 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    get: (params: Core_GetIntentPathParams, query?: Core_GetIntentsQueryParams) =>
-      this.intentService.getIntent(params, query),
+    get: (params: Core_GetIntentPathParams) => this.intentService.getIntent(params),
+
+    /**
+     * Gets a list of intents.
+     *
+     * @param query - The query parameters for the intents.
+     */
+    list: (params: Core_GetIntentsPathParams, query?: Core_GetIntentsQueryParams) =>
+      this.intentService.getIntents(params, query),
   }
 }

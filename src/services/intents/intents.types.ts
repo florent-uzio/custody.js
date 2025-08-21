@@ -22,4 +22,6 @@ export type Core_RejectIntentBody = RequiredExceptFor<
 export type Core_IntentResponse = components["schemas"]["Core_IntentResponse"]
 
 export type Core_GetIntentPathParams = operations["getIntent"]["parameters"]["path"]
+
+export type Core_GetIntentsPathParams = operations["getIntents"]["parameters"]["path"]
 export type Core_GetIntentsQueryParams = operations["getIntents"]["parameters"]["query"]

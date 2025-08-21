@@ -4,6 +4,7 @@ import { ApiService } from "../apis/api.service.js"
 import type {
   Core_ApproveIntentBody,
   Core_GetIntentPathParams,
+  Core_GetIntentsPathParams,
   Core_GetIntentsQueryParams,
   Core_IntentResponse,
   Core_ProposeIntentBody,
@@ -49,6 +50,13 @@ export class IntentsService {
     const url = replacePathParams(URLs.getIntent, {
       domainId: params.domainId,
       intentId: params.intentId,
+    })
+    return this.api.get<Core_IntentResponse>(url, { params: query })
+  }
+
+  getIntents(params: Core_GetIntentsPathParams, query?: Core_GetIntentsQueryParams) {
+    const url = replacePathParams(URLs.domainIntents, {
+      domainId: params.domainId,
     })
     return this.api.get<Core_IntentResponse>(url, { params: query })
   }
