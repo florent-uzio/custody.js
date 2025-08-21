@@ -4,7 +4,8 @@ import { AuthService } from "./services/auth/index.js"
 import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
 import {
   IntentsService,
-  type Core_GetIntentParams,
+  type Core_GetIntentPathParams,
+  type Core_GetIntentsQueryParams,
   type Core_ProposeIntentBody,
 } from "./services/intents/index.js"
 import type { ApproveIntentRequest, RejectIntentRequest } from "./services/intents/types/index.js"
@@ -85,6 +86,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    get: (params: Core_GetIntentParams) => this.intentService.getIntent(params),
+    get: (params: Core_GetIntentPathParams, query?: Core_GetIntentsQueryParams) =>
+      this.intentService.getIntent(params, query),
   }
 }
