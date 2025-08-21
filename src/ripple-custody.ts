@@ -2,7 +2,11 @@ import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
 import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
-import { IntentsService, type Core_ProposeIntentBody } from "./services/intents/index.js"
+import {
+  IntentsService,
+  type Core_GetIntentParams,
+  type Core_ProposeIntentBody,
+} from "./services/intents/index.js"
 import type { ApproveIntentRequest, RejectIntentRequest } from "./services/intents/types/index.js"
 
 export class RippleCustody {
@@ -27,62 +31,60 @@ export class RippleCustody {
     this.intentService = new IntentsService(this.apiService)
   }
 
-  // Auth-related methods
-
-  /**
-   * @returns The current JWT token.
-   */
-  public getCurrentToken() {
-    return this.authService.getCurrentToken()
+  // Auth namespace
+  public readonly auth = {
+    /**
+     * @returns The current JWT token.
+     */
+    getCurrentToken: () => this.authService.getCurrentToken(),
   }
 
-  // Domain-related methods
+  // Domains namespace
+  public readonly domains = {
+    /**
+     * Fetches the list of available domains.
+     *
+     * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
+     */
+    list: (params?: GetDomainsQueryParams) => this.domainService.getDomains(params),
 
-  /**
-   * Fetches the list of available domains.
-   *
-   * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
-   */
-  public getDomains(params?: GetDomainsQueryParams) {
-    return this.domainService.getDomains(params)
+    /**
+     * Fetches a specific domain by its ID.
+     *
+     * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
+     * @param domainId - The UUID of the domain to fetch.
+     */
+    get: (domainId: string) => this.domainService.getDomain(domainId),
   }
 
-  /**
-   * Fetches a specific domain by its ID.
-   *
-   * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
-   * @param domainId - The UUID of the domain to fetch.
-   */
-  public getDomain(domainId: string) {
-    return this.domainService.getDomain(domainId)
-  }
+  // Intents namespace
+  public readonly intents = {
+    /**
+     * Creates a new intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    propose: (params: Core_ProposeIntentBody) => this.intentService.proposeIntent(params),
 
-  // Intent-related methods
+    /**
+     * Approves an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    approve: (params: ApproveIntentRequest) => this.intentService.approveIntent(params),
 
-  /**
-   * Creates a new intent.
-   *
-   * @param params - The parameters for the intent.
-   */
-  public proposeIntent(params: Core_ProposeIntentBody) {
-    return this.intentService.proposeIntent(params)
-  }
+    /**
+     * Rejects an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    reject: (params: RejectIntentRequest) => this.intentService.rejectIntent(params),
 
-  /**
-   * Approves an intent.
-   *
-   * @param params - The parameters for the intent.
-   */
-  public approveIntent(params: ApproveIntentRequest) {
-    return this.intentService.approveIntent(params)
-  }
-
-  /**
-   * Rejects an intent.
-   *
-   * @param params - The parameters for the intent.
-   */
-  public rejectIntent(params: RejectIntentRequest) {
-    return this.intentService.rejectIntent(params)
+    /**
+     * Gets an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    get: (params: Core_GetIntentParams) => this.intentService.getIntent(params),
   }
 }
