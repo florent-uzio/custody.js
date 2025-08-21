@@ -6,6 +6,8 @@ import type {
   Core_GetIntentPathParams,
   Core_GetIntentsPathParams,
   Core_GetIntentsQueryParams,
+  Core_IntentDryRunRequest,
+  Core_IntentDryRunResponse,
   Core_IntentResponse,
   Core_ProposeIntentBody,
   Core_RejectIntentBody,
@@ -54,10 +56,25 @@ export class IntentsService {
     return this.api.get<Core_IntentResponse>(url, { params: query })
   }
 
+  /**
+   * Get a list of intents
+   * @param params - The parameters for the intents
+   * @param query - The query parameters for the intents
+   * @returns The list of intents
+   */
   getIntents(params: Core_GetIntentsPathParams, query?: Core_GetIntentsQueryParams) {
     const url = replacePathParams(URLs.domainIntents, {
       domainId: params.domainId,
     })
     return this.api.get<Core_IntentResponse>(url, { params: query })
+  }
+
+  /**
+   * Dry run an intent
+   * @param params - The parameters for the intent
+   * @returns The intent response
+   */
+  dryRunIntent(params: Core_IntentDryRunRequest) {
+    return this.api.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, params)
   }
 }

@@ -25,3 +25,7 @@ export type Core_GetIntentPathParams = operations["getIntent"]["parameters"]["pa
 
 export type Core_GetIntentsPathParams = operations["getIntents"]["parameters"]["path"]
 export type Core_GetIntentsQueryParams = operations["getIntents"]["parameters"]["query"]
+
+// Dry run
+export type Core_IntentDryRunRequest = components["schemas"]["Core_IntentDryRunRequest"]
+export type Core_IntentDryRunResponse = components["schemas"]["Core_IntentDryRunResponse"]

@@ -7,6 +7,7 @@ import {
   type Core_GetIntentPathParams,
   type Core_GetIntentsPathParams,
   type Core_GetIntentsQueryParams,
+  type Core_IntentDryRunRequest,
   type Core_ProposeIntentBody,
 } from "./services/intents/index.js"
 import type { ApproveIntentRequest, RejectIntentRequest } from "./services/intents/types/index.js"
@@ -96,5 +97,12 @@ export class RippleCustody {
      */
     list: (params: Core_GetIntentsPathParams, query?: Core_GetIntentsQueryParams) =>
       this.intentService.getIntents(params, query),
+
+    /**
+     * Dry runs an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    dryRun: (params: Core_IntentDryRunRequest) => this.intentService.dryRunIntent(params),
   }
 }
