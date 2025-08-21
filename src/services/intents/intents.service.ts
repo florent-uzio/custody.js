@@ -1,9 +1,11 @@
 import { URLs } from "../../constants/index.js"
 import { ApiService } from "../apis/api.service.js"
-import type { ApproveIntentRequest } from "./types/approve-intent.types.js"
-import type { IntentResponse } from "./types/common.types.js"
-import type { CreateIntentRequest } from "./types/create-intents.types.js"
-import type { RejectIntentRequest } from "./types/reject-intent.types.js"
+import type {
+  Core_ApproveIntentBody,
+  Core_IntentResponse,
+  Core_ProposeIntentBody,
+  Core_RejectIntentBody,
+} from "./intents.types.js"
 
 export class IntentsService {
   constructor(private api: ApiService) {}
@@ -13,8 +15,8 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  async createIntent(params: CreateIntentRequest): Promise<IntentResponse> {
-    return this.api.post<IntentResponse>(URLs.intents, params)
+  proposeIntent(params: Core_ProposeIntentBody) {
+    return this.api.post<Core_IntentResponse>(URLs.intents, params)
   }
 
   /**
@@ -22,8 +24,8 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  async approveIntent(params: ApproveIntentRequest): Promise<IntentResponse> {
-    return this.api.post<IntentResponse>(URLs.intentsApprove, params)
+  approveIntent(params: Core_ApproveIntentBody) {
+    return this.api.post<Core_IntentResponse>(URLs.intentsApprove, params)
   }
 
   /**
@@ -31,7 +33,7 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  async rejectIntent(params: RejectIntentRequest): Promise<IntentResponse> {
-    return this.api.post<IntentResponse>(URLs.intentsReject, params)
+  rejectIntent(params: Core_RejectIntentBody) {
+    return this.api.post<Core_IntentResponse>(URLs.intentsReject, params)
   }
 }

@@ -2,12 +2,8 @@ import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
 import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
-import { IntentsService } from "./services/intents/index.js"
-import type {
-  ApproveIntentRequest,
-  CreateIntentRequest,
-  RejectIntentRequest,
-} from "./services/intents/types/index.js"
+import { IntentsService, type Core_ProposeIntentBody } from "./services/intents/index.js"
+import type { ApproveIntentRequest, RejectIntentRequest } from "./services/intents/types/index.js"
 
 export class RippleCustody {
   private authService: AuthService
@@ -47,7 +43,7 @@ export class RippleCustody {
    *
    * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
    */
-  public async getDomains(params?: GetDomainsQueryParams) {
+  public getDomains(params?: GetDomainsQueryParams) {
     return this.domainService.getDomains(params)
   }
 
@@ -57,7 +53,7 @@ export class RippleCustody {
    * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
    * @param domainId - The UUID of the domain to fetch.
    */
-  public async getDomain(domainId: string) {
+  public getDomain(domainId: string) {
     return this.domainService.getDomain(domainId)
   }
 
@@ -68,8 +64,8 @@ export class RippleCustody {
    *
    * @param params - The parameters for the intent.
    */
-  public async createIntent(params: CreateIntentRequest) {
-    return this.intentService.createIntent(params)
+  public proposeIntent(params: Core_ProposeIntentBody) {
+    return this.intentService.proposeIntent(params)
   }
 
   /**
@@ -77,7 +73,7 @@ export class RippleCustody {
    *
    * @param params - The parameters for the intent.
    */
-  public async approveIntent(params: ApproveIntentRequest) {
+  public approveIntent(params: ApproveIntentRequest) {
     return this.intentService.approveIntent(params)
   }
 
@@ -86,7 +82,7 @@ export class RippleCustody {
    *
    * @param params - The parameters for the intent.
    */
-  public async rejectIntent(params: RejectIntentRequest) {
+  public rejectIntent(params: RejectIntentRequest) {
     return this.intentService.rejectIntent(params)
   }
 }
