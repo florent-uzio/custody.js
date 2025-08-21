@@ -1,9 +1,20 @@
 import { URLs } from "../../constants/index.js"
+import { replacePathParams } from "../../helpers/url/index.js"
 import { ApiService } from "../apis/api.service.js"
-import type { ApproveIntentRequest } from "./types/approve-intent.types.js"
-import type { IntentResponse } from "./types/common.types.js"
-import type { CreateIntentRequest } from "./types/create-intents.types.js"
-import type { RejectIntentRequest } from "./types/reject-intent.types.js"
+import type {
+  Core_ApproveIntentBody,
+  Core_GetIntentPathParams,
+  Core_GetIntentsPathParams,
+  Core_GetIntentsQueryParams,
+  Core_IntentDryRunRequest,
+  Core_IntentDryRunResponse,
+  Core_IntentResponse,
+  Core_ProposeIntentBody,
+  Core_RejectIntentBody,
+  Core_RemainingDomainUsers,
+  Core_RemainingUsersIntentPathParams,
+  Core_RemainingUsersIntentQueryParams,
+} from "./intents.types.js"
 
 export class IntentsService {
   constructor(private api: ApiService) {}
@@ -13,8 +24,8 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  async createIntent(params: CreateIntentRequest): Promise<IntentResponse> {
-    return this.api.post<IntentResponse>(URLs.intents, params)
+  proposeIntent(params: Core_ProposeIntentBody) {
+    return this.api.post<Core_IntentResponse>(URLs.intents, params)
   }
 
   /**
@@ -22,8 +33,8 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  async approveIntent(params: ApproveIntentRequest): Promise<IntentResponse> {
-    return this.api.post<IntentResponse>(URLs.intentsApprove, params)
+  approveIntent(params: Core_ApproveIntentBody) {
+    return this.api.post<Core_IntentResponse>(URLs.intentsApprove, params)
   }
 
   /**
@@ -31,7 +42,58 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  async rejectIntent(params: RejectIntentRequest): Promise<IntentResponse> {
-    return this.api.post<IntentResponse>(URLs.intentsReject, params)
+  rejectIntent(params: Core_RejectIntentBody) {
+    return this.api.post<Core_IntentResponse>(URLs.intentsReject, params)
+  }
+
+  /**
+   * Get an intent
+   * @param params - The parameters for the intent
+   * @returns The intent response
+   */
+  getIntent(params: Core_GetIntentPathParams, query?: Core_GetIntentsQueryParams) {
+    const url = replacePathParams(URLs.getIntent, {
+      domainId: params.domainId,
+      intentId: params.intentId,
+    })
+    return this.api.get<Core_IntentResponse>(url, { params: query })
+  }
+
+  /**
+   * Get a list of intents
+   * @param params - The parameters for the intents
+   * @param query - The query parameters for the intents
+   * @returns The list of intents
+   */
+  getIntents(params: Core_GetIntentsPathParams, query?: Core_GetIntentsQueryParams) {
+    const url = replacePathParams(URLs.domainIntents, {
+      domainId: params.domainId,
+    })
+    return this.api.get<Core_IntentResponse>(url, { params: query })
+  }
+
+  /**
+   * Dry run an intent
+   * @param params - The parameters for the intent
+   * @returns The intent response
+   */
+  dryRunIntent(params: Core_IntentDryRunRequest) {
+    return this.api.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, params)
+  }
+
+  /**
+   * Remaining users for an intent
+   * @param params - The parameters for the intent
+   * @returns The intent response
+   */
+  remainingUsersIntent(
+    params: Core_RemainingUsersIntentPathParams,
+    query?: Core_RemainingUsersIntentQueryParams,
+  ) {
+    const url = replacePathParams(URLs.intentRemainingUsers, {
+      domainId: params.domainId,
+      intentId: params.intentId,
+    })
+    return this.api.get<Core_RemainingDomainUsers>(url, { params: query })
   }
 }

@@ -1,4 +1,4 @@
-import axios, { AxiosError, type AxiosInstance } from "axios"
+import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios"
 import { v4 as uuidv4 } from "uuid"
 import { getHostname } from "../../helpers/index.js"
 import { AuthService } from "../auth/auth.service.js"
@@ -98,7 +98,7 @@ export class ApiService {
    * @returns {Promise<T>} The response data.
    * @throws {Error} If the request fails.
    */
-  public async get<T>(url: string, params?: any): Promise<T> {
+  public async get<T>(url: string, params?: AxiosRequestConfig["params"]): Promise<T> {
     try {
       const response = await this.apiClient.get<T>(url, { params })
       return response.data

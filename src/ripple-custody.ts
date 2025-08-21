@@ -2,12 +2,21 @@ import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
 import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
-import { IntentsService } from "./services/intents/index.js"
-import type {
-  ApproveIntentRequest,
-  CreateIntentRequest,
-  RejectIntentRequest,
-} from "./services/intents/types/index.js"
+import {
+  IntentsService,
+  type Core_ApproveIntentBody,
+  type Core_GetIntentPathParams,
+  type Core_GetIntentsPathParams,
+  type Core_GetIntentsQueryParams,
+  type Core_IntentDryRunRequest,
+  type Core_IntentDryRunResponse,
+  type Core_IntentResponse,
+  type Core_ProposeIntentBody,
+  type Core_RejectIntentBody,
+  type Core_RemainingDomainUsers,
+  type Core_RemainingUsersIntentPathParams,
+  type Core_RemainingUsersIntentQueryParams,
+} from "./services/intents/index.js"
 
 export class RippleCustody {
   private authService: AuthService
@@ -31,62 +40,92 @@ export class RippleCustody {
     this.intentService = new IntentsService(this.apiService)
   }
 
-  // Auth-related methods
-
-  /**
-   * @returns The current JWT token.
-   */
-  public getCurrentToken() {
-    return this.authService.getCurrentToken()
+  // Auth namespace
+  public readonly auth = {
+    /**
+     * @returns The current JWT token.
+     */
+    getCurrentToken: () => this.authService.getCurrentToken(),
   }
 
-  // Domain-related methods
+  // Domains namespace
+  public readonly domains = {
+    /**
+     * Fetches the list of available domains.
+     *
+     * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
+     */
+    list: (params?: GetDomainsQueryParams) => this.domainService.getDomains(params),
 
-  /**
-   * Fetches the list of available domains.
-   *
-   * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
-   */
-  public async getDomains(params?: GetDomainsQueryParams) {
-    return this.domainService.getDomains(params)
+    /**
+     * Fetches a specific domain by its ID.
+     *
+     * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
+     * @param domainId - The UUID of the domain to fetch.
+     */
+    get: (domainId: string) => this.domainService.getDomain(domainId),
   }
 
-  /**
-   * Fetches a specific domain by its ID.
-   *
-   * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
-   * @param domainId - The UUID of the domain to fetch.
-   */
-  public async getDomain(domainId: string) {
-    return this.domainService.getDomain(domainId)
-  }
+  // Intents namespace
+  public readonly intents = {
+    /**
+     * Proposes a new intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    propose: (params: Core_ProposeIntentBody): Promise<Core_IntentResponse> =>
+      this.intentService.proposeIntent(params),
 
-  // Intent-related methods
+    /**
+     * Approves an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    approve: (params: Core_ApproveIntentBody): Promise<Core_IntentResponse> =>
+      this.intentService.approveIntent(params),
 
-  /**
-   * Creates a new intent.
-   *
-   * @param params - The parameters for the intent.
-   */
-  public async createIntent(params: CreateIntentRequest) {
-    return this.intentService.createIntent(params)
-  }
+    /**
+     * Rejects an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    reject: (params: Core_RejectIntentBody): Promise<Core_IntentResponse> =>
+      this.intentService.rejectIntent(params),
 
-  /**
-   * Approves an intent.
-   *
-   * @param params - The parameters for the intent.
-   */
-  public async approveIntent(params: ApproveIntentRequest) {
-    return this.intentService.approveIntent(params)
-  }
+    /**
+     * Gets an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    get: (params: Core_GetIntentPathParams): Promise<Core_IntentResponse> =>
+      this.intentService.getIntent(params),
 
-  /**
-   * Rejects an intent.
-   *
-   * @param params - The parameters for the intent.
-   */
-  public async rejectIntent(params: RejectIntentRequest) {
-    return this.intentService.rejectIntent(params)
+    /**
+     * Gets a list of intents.
+     *
+     * @param query - The query parameters for the intents.
+     */
+    list: (
+      params: Core_GetIntentsPathParams,
+      query?: Core_GetIntentsQueryParams,
+    ): Promise<Core_IntentResponse> => this.intentService.getIntents(params, query),
+
+    /**
+     * Dry runs an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    dryRun: (params: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> =>
+      this.intentService.dryRunIntent(params),
+
+    /**
+     * Gets the remaining users for an intent.
+     *
+     * @param params - The parameters for the intent.
+     */
+    remainingUsers: (
+      params: Core_RemainingUsersIntentPathParams,
+      query?: Core_RemainingUsersIntentQueryParams,
+    ): Promise<Core_RemainingDomainUsers> => this.intentService.remainingUsersIntent(params, query),
   }
 }
