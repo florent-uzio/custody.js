@@ -64,7 +64,7 @@ export class RippleCustody {
   // Intents namespace
   public readonly intents = {
     /**
-     * Creates a new intent.
+     * Proposes a new intent.
      *
      * @param params - The parameters for the intent.
      */
