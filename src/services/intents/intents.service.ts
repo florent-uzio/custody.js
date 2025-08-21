@@ -1,7 +1,9 @@
 import { URLs } from "../../constants/index.js"
+import { replacePathParams } from "../../helpers/url/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type {
   Core_ApproveIntentBody,
+  Core_GetIntentParams,
   Core_IntentResponse,
   Core_ProposeIntentBody,
   Core_RejectIntentBody,
@@ -35,5 +37,18 @@ export class IntentsService {
    */
   rejectIntent(params: Core_RejectIntentBody) {
     return this.api.post<Core_IntentResponse>(URLs.intentsReject, params)
+  }
+
+  /**
+   * Get an intent
+   * @param params - The parameters for the intent
+   * @returns The intent response
+   */
+  getIntent(params: Core_GetIntentParams) {
+    const url = replacePathParams(URLs.getIntent, {
+      domainId: params.domainId,
+      intentId: params.intentId,
+    })
+    return this.api.get<Core_IntentResponse>(url)
   }
 }
