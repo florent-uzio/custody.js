@@ -14,21 +14,19 @@ export class DomainService {
 
   /**
    * Fetches the list of domains from the backend.
-   * @returns {Promise<Domains>} The domains data from the API.
+   * @returns {Promise<Core_TrustedDomainsCollection>} The domains data from the API.
    */
-  getDomains(params?: GetDomainsQueryParams): Promise<Core_TrustedDomainsCollection> {
+  async getDomains(params?: GetDomainsQueryParams): Promise<Core_TrustedDomainsCollection> {
     // Call the API to get domains
     return this.api.get<Core_TrustedDomainsCollection>(URLs.domains, { params })
   }
 
   /**
    * Fetches a specific domain by its ID.
-   * @param {string} domainId - The UUID of the domain to fetch.
-   * @returns {Promise<Domain>} The domain data from the API.
-   * @param domainId
-   * @returns
+   * @param {GetDomainPathParams} params - The parameters containing the domain ID.
+   * @returns {Promise<Core_TrustedDomain>} The domain data from the API.
    */
-  getDomain({ domainId }: GetDomainPathParams): Promise<Core_TrustedDomain> {
+  async getDomain({ domainId }: GetDomainPathParams): Promise<Core_TrustedDomain> {
     // Call the API to get a specific domain
     return this.api.get<Core_TrustedDomain>(replacePathParams(URLs.domain, { domainId }))
   }
