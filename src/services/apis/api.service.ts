@@ -1,4 +1,5 @@
-import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios"
+import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
+import canonicalize from "canonicalize"
 import { v4 as uuidv4 } from "uuid"
 import { getHostname } from "../../helpers/index.js"
 import { AuthService } from "../auth/auth.service.js"
@@ -39,26 +40,6 @@ export class ApiService {
         return config
       },
       (error) => Promise.reject(error),
-    )
-
-    // Add response interceptor to handle 401 errors by refreshing token and retrying
-    this.apiClient.interceptors.response.use(
-      (response) => response,
-      async (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          // Force token refresh on 401 Unauthorized
-          const token = await this.getValidToken(this.privateKey, true)
-          const originalRequest = error.config
-
-          if (originalRequest && token) {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            // Retry the original request with new token
-            return this.apiClient(originalRequest)
-          }
-        }
-        // Propagate error if not handled
-        return Promise.reject(error)
-      },
     )
 
     // Validate provided private key
@@ -120,12 +101,30 @@ export class ApiService {
    */
   public async post<T>(url: string, body: any): Promise<T> {
     try {
+      // Sign the request if signature is missing
+      if (!body.signature || body.signature === "") {
+        // Canonicalize the request body
+        // @ts-expect-error canonicalize works fine but has complex types
+        const canonicalizedRequest = canonicalize(body.request)
+
+        if (!canonicalizedRequest) {
+          throw new Error("Failed to canonicalize request body")
+        }
+
+        // Sign the canonicalized request
+        const signature = this.keypairService.sign(this.privateKey, canonicalizedRequest)
+
+        body.signature = signature
+      }
+
       const response = await this.apiClient.post<T>(url, body)
       return response.data
     } catch (error) {
       if (axios.isAxiosError(error)) {
         // Handle Axios error
-        throw new Error(`POST API request failed: ${error.message}`)
+        throw new Error(
+          `POST API request failed.\nReason: ${error.response?.data.reason}\nMessage: ${error.response?.data.message}`,
+        )
       } else {
         throw error
       }
