@@ -24,7 +24,7 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  proposeIntent(params: Core_ProposeIntentBody) {
+  async proposeIntent(params: Core_ProposeIntentBody): Promise<Core_IntentResponse> {
     return this.api.post<Core_IntentResponse>(URLs.intents, params)
   }
 
@@ -33,7 +33,7 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  approveIntent(params: Core_ApproveIntentBody) {
+  async approveIntent(params: Core_ApproveIntentBody): Promise<Core_IntentResponse> {
     return this.api.post<Core_IntentResponse>(URLs.intentsApprove, params)
   }
 
@@ -42,16 +42,20 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  rejectIntent(params: Core_RejectIntentBody) {
+  async rejectIntent(params: Core_RejectIntentBody): Promise<Core_IntentResponse> {
     return this.api.post<Core_IntentResponse>(URLs.intentsReject, params)
   }
 
   /**
    * Get an intent
    * @param params - The parameters for the intent
+   * @param query - The query parameters for the intent
    * @returns The intent response
    */
-  getIntent(params: Core_GetIntentPathParams, query?: Core_GetIntentsQueryParams) {
+  async getIntent(
+    params: Core_GetIntentPathParams,
+    query?: Core_GetIntentsQueryParams,
+  ): Promise<Core_IntentResponse> {
     const url = replacePathParams(URLs.getIntent, {
       domainId: params.domainId,
       intentId: params.intentId,
@@ -65,7 +69,10 @@ export class IntentsService {
    * @param query - The query parameters for the intents
    * @returns The list of intents
    */
-  getIntents(params: Core_GetIntentsPathParams, query?: Core_GetIntentsQueryParams) {
+  async getIntents(
+    params: Core_GetIntentsPathParams,
+    query?: Core_GetIntentsQueryParams,
+  ): Promise<Core_IntentResponse> {
     const url = replacePathParams(URLs.domainIntents, {
       domainId: params.domainId,
     })
@@ -77,19 +84,20 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  dryRunIntent(params: Core_IntentDryRunRequest) {
+  async dryRunIntent(params: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> {
     return this.api.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, params)
   }
 
   /**
    * Remaining users for an intent
    * @param params - The parameters for the intent
-   * @returns The intent response
+   * @param query - The query parameters for remaining users
+   * @returns The remaining users response
    */
-  remainingUsersIntent(
+  async remainingUsersIntent(
     params: Core_RemainingUsersIntentPathParams,
     query?: Core_RemainingUsersIntentQueryParams,
-  ) {
+  ): Promise<Core_RemainingDomainUsers> {
     const url = replacePathParams(URLs.intentRemainingUsers, {
       domainId: params.domainId,
       intentId: params.intentId,

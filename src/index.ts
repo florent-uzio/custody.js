@@ -16,3 +16,11 @@ export type {
   Core_RemainingUsersIntentPathParams,
   Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
+
+// domains types
+export type {
+  Core_TrustedDomain,
+  Core_TrustedDomainsCollection,
+  GetDomainPathParams,
+  GetDomainsQueryParams,
+} from "./services/domains/index.js"
