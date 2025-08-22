@@ -1,6 +1,12 @@
 import { URLs } from "../../constants/index.js"
+import { replacePathParams } from "../../helpers/index.js"
 import { ApiService } from "../apis/api.service.js"
-import type { Domain, Domains, GetDomainsQueryParams } from "./domain.types.js"
+import type {
+  Core_TrustedDomain,
+  Core_TrustedDomainsCollection,
+  GetDomainPathParams,
+  GetDomainsQueryParams,
+} from "./domain.types.js"
 
 // Service for interacting with domain-related API endpoints
 export class DomainService {
@@ -10,9 +16,9 @@ export class DomainService {
    * Fetches the list of domains from the backend.
    * @returns {Promise<Domains>} The domains data from the API.
    */
-  async getDomains(params?: GetDomainsQueryParams): Promise<Domains> {
+  getDomains(params?: GetDomainsQueryParams): Promise<Core_TrustedDomainsCollection> {
     // Call the API to get domains
-    return this.api.get<Domains>(URLs.domains, { params })
+    return this.api.get<Core_TrustedDomainsCollection>(URLs.domains, { params })
   }
 
   /**
@@ -22,8 +28,8 @@ export class DomainService {
    * @param domainId
    * @returns
    */
-  async getDomain(domainId: string): Promise<Domain> {
+  getDomain({ domainId }: GetDomainPathParams): Promise<Core_TrustedDomain> {
     // Call the API to get a specific domain
-    return this.api.get<Domain>(`${URLs.domains}/${domainId}`)
+    return this.api.get<Core_TrustedDomain>(replacePathParams(URLs.domain, { domainId }))
   }
 }

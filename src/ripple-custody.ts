@@ -1,7 +1,11 @@
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
-import { DomainService, type GetDomainsQueryParams } from "./services/domains/index.js"
+import {
+  DomainService,
+  type GetDomainPathParams,
+  type GetDomainsQueryParams,
+} from "./services/domains/index.js"
 import {
   IntentsService,
   type Core_ApproveIntentBody,
@@ -55,15 +59,15 @@ export class RippleCustody {
      *
      * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
      */
-    list: (params?: GetDomainsQueryParams) => this.domainService.getDomains(params),
+    list: (query?: GetDomainsQueryParams) => this.domainService.getDomains(query),
 
     /**
      * Fetches a specific domain by its ID.
      *
      * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
-     * @param domainId - The UUID of the domain to fetch.
+     * @param params - The parameters for the domain.
      */
-    get: (domainId: string) => this.domainService.getDomain(domainId),
+    get: (params: GetDomainPathParams) => this.domainService.getDomain(params),
   }
 
   // Intents namespace
