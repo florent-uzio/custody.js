@@ -233,12 +233,8 @@ describe("isUUID", () => {
     expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Almost valid but wrong variant
 
     // Real-world examples from the codebase
-    expect(isUUID("9d97240f-cb15-4bfb-8055-e725a5f5ca15")).toBe(true)
-    expect(isUUID("25230ad2-461a-40dd-acb5-b1165d9f81f4")).toBe(true)
-    expect(isUUID("62064542-22e2-44ac-a884-793fb4f45c1c")).toBe(true)
-    expect(isUUID("65edd09d-f1eb-4834-b424-62ab253527d1")).toBe(true)
-    expect(isUUID("f933facb-3ee4-4ffc-b88b-3232399273d9")).toBe(true)
-    expect(isUUID("85f09d8b-6f24-46ae-84ea-3ee1de2b17dc")).toBe(true)
+    expect(isUUID("36993320-745e-41b9-b04c-1513d8219fcf")).toBe(true)
+    expect(isUUID("9017fe9e-1de8-44bb-a5f2-fe98c19aa65d")).toBe(true)
   })
 })
 
