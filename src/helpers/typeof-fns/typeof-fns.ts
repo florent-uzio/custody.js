@@ -38,3 +38,22 @@ export const isDate = isTypeof<Date>(
   "object",
   (maybeDate) => maybeDate instanceof Date && !isNaN(+maybeDate),
 )
+
+/** Determines if a value is a UUID. */
+export const isUUID = (str: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(str)
+}
+
+/** Determines if a value is a stringified object. */
+export const isStringifiedObject = (str: unknown): boolean => {
+  if (!isString(str) || !str.startsWith("{") || !str.endsWith("}")) {
+    return false
+  }
+  try {
+    const parsed = JSON.parse(str)
+    return isObject(parsed)
+  } catch {
+    return false
+  }
+}

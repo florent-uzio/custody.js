@@ -1,4 +1,5 @@
-import { generateKeyPairSync, sign } from "crypto"
+import crypto, { generateKeyPairSync } from "crypto"
+import { isString, isStringifiedObject } from "../../helpers/index.js"
 import type { KeyPair, KeypairDefinition } from "./keypairs.types.js"
 
 /**
@@ -36,43 +37,60 @@ export class Ed25519Service implements KeypairDefinition {
 
   /**
    * Signs a message using the provided PEM-encoded Ed25519 private key.
+   * This implementation follows the Ripple Custody documentation exactly:
+   * 1. Create SHA256 hash of canonicalized JSON
+   * 2. Sign the hash with Ed25519
+   * 3. Format as DER signature
+   * 4. Base64 encode
+   *
    * @param {string} privateKeyPem - PEM-encoded private key.
-   * @param {string} message - Message to sign.
+   * @param {string} message - Message to sign (should be canonicalized JSON).
    * @returns {string} Base64-encoded signature.
    */
   sign(privateKeyPem: string, message: string): string {
     try {
       // Validate inputs
-      if (typeof message !== "string") {
+      if (!isString(message)) {
         throw new Error("Message must be a string")
       }
-      if (
-        typeof privateKeyPem !== "string" ||
-        !privateKeyPem.includes("-----BEGIN PRIVATE KEY-----")
-      ) {
+      if (!isString(privateKeyPem) || !privateKeyPem.includes("-----BEGIN PRIVATE KEY-----")) {
         throw new Error("Invalid private key: Must be PEM-encoded")
       }
 
-      // Convert message to Buffer
-      const messageBuffer = Buffer.from(message)
+      // Following the documentation:
+      // https://docs.ripple.com/products/custody/resources/openssl-examples#sign-a-payload-for-intent-submission
+      let messageHash: Buffer
 
-      // Sign the message with Ed25519
-      // The returned signature is already in raw format (64 bytes)
-      const signature = sign(null, messageBuffer, privateKeyPem)
+      if (isStringifiedObject(message)) {
+        // Step 1а: Create SHA256 hash of the message (canonicalized JSON)
+        // This matches: cat v0_CreateAccount_Sorted.json | sha256sum | xxd -r -p > ${tmp}
+        messageHash = crypto.createHash("sha256").update(message).digest()
+      } else {
+        // Step 1b: Use the message as is if it's a UUID (typically for JWT)
+        messageHash = Buffer.from(message)
+      }
 
-      // Split compact signature into r and s (32 bytes each)
-      const r = signature.subarray(0, 32)
-      const s = signature.subarray(32)
+      // Step 2: Sign the hash using Ed25519
+      // This matches: openssl pkeyutl -sign -inkey privateKey.pem -rawin -in ${tmp}
+      const rawSignature = crypto.sign(null, messageHash, privateKeyPem)
 
-      // DER-encode: 0x30 44 02 20 <r> 02 20 <s>
-      const derSignature = Buffer.concat([
-        Buffer.from([0x30, 0x44, 0x02, 0x20]),
-        r,
-        Buffer.from([0x02, 0x20]),
-        s,
-      ])
+      // Step 3: Convert to hex format (matches hexdump -v -e '/1 "%02x"')
+      const hexSignature = rawSignature.toString("hex")
 
-      // Return Base64-encoded signature
+      // Step 4: Apply the DER encoding transformation from the documentation
+      // This matches: sed 's/\(.\{64\}\)\(.\{64\}\)/30440220\10220\2/g'
+      // The pattern splits the 128-character hex string into two 64-character parts
+      // and wraps them in DER format: 0x30 44 02 20 <r> 02 20 <s>
+      const r = hexSignature.substring(0, 64) // First 64 chars (32 bytes)
+      const s = hexSignature.substring(64, 128) // Second 64 chars (32 bytes)
+
+      // Create DER format: 0x30 44 02 20 <r> 02 20 <s>
+      const derHex = `30440220${r}0220${s}`
+
+      // Step 5: Convert hex back to binary (matches xxd -r -p)
+      const derSignature = Buffer.from(derHex, "hex")
+
+      // Step 6: Base64 encode (matches base64 -w0)
       return derSignature.toString("base64")
     } catch (error) {
       throw new Error("Failed to sign message", { cause: error })
