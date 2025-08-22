@@ -60,7 +60,7 @@ export class IntentsService {
       domainId: params.domainId,
       intentId: params.intentId,
     })
-    return this.api.get<Core_IntentResponse>(url, { params: query })
+    return this.api.get<Core_IntentResponse>(url, query)
   }
 
   /**
@@ -76,7 +76,7 @@ export class IntentsService {
     const url = replacePathParams(URLs.domainIntents, {
       domainId: params.domainId,
     })
-    return this.api.get<Core_IntentResponse>(url, { params: query })
+    return this.api.get<Core_IntentResponse>(url, query)
   }
 
   /**
@@ -102,6 +102,6 @@ export class IntentsService {
       domainId: params.domainId,
       intentId: params.intentId,
     })
-    return this.api.get<Core_RemainingDomainUsers>(url, { params: query })
+    return this.api.get<Core_RemainingDomainUsers>(url, query)
   }
 }
