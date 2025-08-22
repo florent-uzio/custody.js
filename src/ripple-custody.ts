@@ -59,7 +59,7 @@ export class RippleCustody {
      *
      * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomains
      */
-    list: (query?: GetDomainsQueryParams) => this.domainService.getDomains(query),
+    list: async (query?: GetDomainsQueryParams) => this.domainService.getDomains(query),
 
     /**
      * Fetches a specific domain by its ID.
@@ -67,7 +67,7 @@ export class RippleCustody {
      * https://docs.ripple.com/products/custody/api/reference/openapi/domains/getdomain
      * @param params - The parameters for the domain.
      */
-    get: (params: GetDomainPathParams) => this.domainService.getDomain(params),
+    get: async (params: GetDomainPathParams) => this.domainService.getDomain(params),
   }
 
   // Intents namespace
@@ -77,7 +77,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    propose: (params: Core_ProposeIntentBody): Promise<Core_IntentResponse> =>
+    propose: async (params: Core_ProposeIntentBody): Promise<Core_IntentResponse> =>
       this.intentService.proposeIntent(params),
 
     /**
@@ -85,7 +85,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    approve: (params: Core_ApproveIntentBody): Promise<Core_IntentResponse> =>
+    approve: async (params: Core_ApproveIntentBody): Promise<Core_IntentResponse> =>
       this.intentService.approveIntent(params),
 
     /**
@@ -93,7 +93,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    reject: (params: Core_RejectIntentBody): Promise<Core_IntentResponse> =>
+    reject: async (params: Core_RejectIntentBody): Promise<Core_IntentResponse> =>
       this.intentService.rejectIntent(params),
 
     /**
@@ -101,7 +101,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    get: (params: Core_GetIntentPathParams): Promise<Core_IntentResponse> =>
+    get: async (params: Core_GetIntentPathParams): Promise<Core_IntentResponse> =>
       this.intentService.getIntent(params),
 
     /**
@@ -109,7 +109,7 @@ export class RippleCustody {
      *
      * @param query - The query parameters for the intents.
      */
-    list: (
+    list: async (
       params: Core_GetIntentsPathParams,
       query?: Core_GetIntentsQueryParams,
     ): Promise<Core_IntentResponse> => this.intentService.getIntents(params, query),
@@ -119,7 +119,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    dryRun: (params: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> =>
+    dryRun: async (params: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> =>
       this.intentService.dryRunIntent(params),
 
     /**
@@ -127,7 +127,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    remainingUsers: (
+    remainingUsers: async (
       params: Core_RemainingUsersIntentPathParams,
       query?: Core_RemainingUsersIntentQueryParams,
     ): Promise<Core_RemainingDomainUsers> => this.intentService.remainingUsersIntent(params, query),
