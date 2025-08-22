@@ -7,6 +7,7 @@ import {
   isObject,
   isString,
   isUndefined,
+  isUUID,
 } from "./typeof-fns"
 
 describe("isFunction", () => {
@@ -151,5 +152,91 @@ describe("isDate", () => {
     // Date
     expect(isDate(new Date())).toBe(true)
     expect(isDate(new Date("1/1/2001"))).toBe(true)
+  })
+})
+
+describe("isUUID", () => {
+  it("correctly identifies valid UUIDs", () => {
+    // Valid UUIDs (RFC 4122 compliant)
+    expect(isUUID("123e4567-e89b-12d3-a456-426614174000")).toBe(true)
+    expect(isUUID("550e8400-e29b-41d4-a716-446655440000")).toBe(true)
+    expect(isUUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")).toBe(true)
+    expect(isUUID("6ba7b811-9dad-11d1-80b4-00c04fd430c8")).toBe(true)
+    expect(isUUID("6ba7b812-9dad-11d1-80b4-00c04fd430c8")).toBe(true)
+    expect(isUUID("6ba7b814-9dad-11d1-80b4-00c04fd430c8")).toBe(true)
+    expect(isUUID("6ba7b815-9dad-11d1-80b4-00c04fd430c8")).toBe(true)
+
+    // UUIDs with uppercase letters (should be case-insensitive)
+    expect(isUUID("123E4567-E89B-12D3-A456-426614174000")).toBe(true)
+    expect(isUUID("550E8400-E29B-41D4-A716-446655440000")).toBe(true)
+
+    // Mixed case UUIDs
+    expect(isUUID("123e4567-E89b-12D3-a456-426614174000")).toBe(true)
+  })
+
+  it("correctly rejects invalid UUIDs", () => {
+    // Non-string values
+    expect(isUUID(undefined as any)).toBe(false)
+    expect(isUUID(null as any)).toBe(false)
+    expect(isUUID(123 as any)).toBe(false)
+    expect(isUUID({} as any)).toBe(false)
+    expect(isUUID([] as any)).toBe(false)
+    expect(isUUID(true as any)).toBe(false)
+    expect(isUUID(false as any)).toBe(false)
+
+    // Invalid string formats
+    expect(isUUID("")).toBe(false)
+    expect(isUUID("not-a-uuid")).toBe(false)
+    expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Missing version digit
+    expect(isUUID("12345678-1234-1234-1234-12345678901")).toBe(false) // Too short
+    expect(isUUID("12345678-1234-1234-1234-1234567890123")).toBe(false) // Too long
+
+    // Invalid version numbers (must be 1-5)
+    expect(isUUID("12345678-1234-0234-1234-123456789012")).toBe(false) // Version 0
+    expect(isUUID("12345678-1234-6234-1234-123456789012")).toBe(false) // Version 6
+    expect(isUUID("12345678-1234-7234-1234-123456789012")).toBe(false) // Version 7
+    expect(isUUID("12345678-1234-8234-1234-123456789012")).toBe(false) // Version 8
+    expect(isUUID("12345678-1234-9234-1234-123456789012")).toBe(false) // Version 9
+    expect(isUUID("12345678-1234-a234-1234-123456789012")).toBe(false) // Version a
+    expect(isUUID("12345678-1234-b234-1234-123456789012")).toBe(false) // Version b
+    expect(isUUID("12345678-1234-c234-1234-123456789012")).toBe(false) // Version c
+    expect(isUUID("12345678-1234-d234-1234-123456789012")).toBe(false) // Version d
+    expect(isUUID("12345678-1234-e234-1234-123456789012")).toBe(false) // Version e
+    expect(isUUID("12345678-1234-f234-1234-123456789012")).toBe(false) // Version f
+
+    // Invalid variant bits (must be 8, 9, a, or b)
+    expect(isUUID("12345678-1234-1234-0234-123456789012")).toBe(false) // Variant 0
+    expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Variant 1
+    expect(isUUID("12345678-1234-1234-2234-123456789012")).toBe(false) // Variant 2
+    expect(isUUID("12345678-1234-1234-3234-123456789012")).toBe(false) // Variant 3
+    expect(isUUID("12345678-1234-1234-4234-123456789012")).toBe(false) // Variant 4
+    expect(isUUID("12345678-1234-1234-5234-123456789012")).toBe(false) // Variant 5
+    expect(isUUID("12345678-1234-1234-6234-123456789012")).toBe(false) // Variant 6
+    expect(isUUID("12345678-1234-1234-7234-123456789012")).toBe(false) // Variant 7
+    expect(isUUID("12345678-1234-1234-c234-123456789012")).toBe(false) // Variant c
+    expect(isUUID("12345678-1234-1234-d234-123456789012")).toBe(false) // Variant d
+    expect(isUUID("12345678-1234-1234-e234-123456789012")).toBe(false) // Variant e
+    expect(isUUID("12345678-1234-1234-f234-123456789012")).toBe(false) // Variant f
+
+    // Malformed UUIDs
+    expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Missing hyphens
+    expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Extra hyphens
+    expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Wrong positions
+    expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Invalid characters
+  })
+
+  it("handles edge cases correctly", () => {
+    // Edge cases
+    expect(isUUID("00000000-0000-1000-8000-000000000000")).toBe(true) // All zeros with valid version/variant
+    expect(isUUID("ffffffff-ffff-5fff-bfff-ffffffffffff")).toBe(true) // All f's with valid version/variant
+    expect(isUUID("12345678-1234-1234-1234-123456789012")).toBe(false) // Almost valid but wrong variant
+
+    // Real-world examples from the codebase
+    expect(isUUID("9d97240f-cb15-4bfb-8055-e725a5f5ca15")).toBe(true)
+    expect(isUUID("25230ad2-461a-40dd-acb5-b1165d9f81f4")).toBe(true)
+    expect(isUUID("62064542-22e2-44ac-a884-793fb4f45c1c")).toBe(true)
+    expect(isUUID("65edd09d-f1eb-4834-b424-62ab253527d1")).toBe(true)
+    expect(isUUID("f933facb-3ee4-4ffc-b88b-3232399273d9")).toBe(true)
+    expect(isUUID("85f09d8b-6f24-46ae-84ea-3ee1de2b17dc")).toBe(true)
   })
 })
