@@ -1,5 +1,6 @@
 import type { components, operations } from "../../models/custody-types.js"
 
+// Request types
 export type GetDomainsQueryParams = operations["getDomains"]["parameters"]["query"]
 export type GetDomainPathParams = operations["getDomain"]["parameters"]["path"]
 
