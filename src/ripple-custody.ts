@@ -21,12 +21,19 @@ import {
   type Core_RemainingUsersIntentPathParams,
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
+import { TransactionsService } from "./services/transactions/index.js"
+import type {
+  Core_TrustedTransactionOrdersCollection,
+  GetTransactionOrdersPathParams,
+  GetTransactionOrdersQueryParams,
+} from "./services/transactions/transactions.types.js"
 
 export class RippleCustody {
   private authService: AuthService
   private apiService: ApiService
   private domainService: DomainService
   private intentService: IntentsService
+  private transactionsService: TransactionsService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -42,6 +49,7 @@ export class RippleCustody {
     })
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
+    this.transactionsService = new TransactionsService(this.apiService)
   }
 
   // Auth namespace
@@ -131,5 +139,20 @@ export class RippleCustody {
       params: Core_RemainingUsersIntentPathParams,
       query?: Core_RemainingUsersIntentQueryParams,
     ): Promise<Core_RemainingDomainUsers> => this.intentService.remainingUsersIntent(params, query),
+  }
+
+  // Transactions namespace
+  public readonly transactions = {
+    /**
+     * Get transaction orders
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The transaction orders
+     */
+    orders: async (
+      params: GetTransactionOrdersPathParams,
+      query: GetTransactionOrdersQueryParams,
+    ): Promise<Core_TrustedTransactionOrdersCollection> =>
+      this.transactionsService.getTransactionOrders(params, query),
   }
 }
