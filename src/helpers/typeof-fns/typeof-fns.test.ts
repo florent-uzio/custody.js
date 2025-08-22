@@ -6,6 +6,7 @@ import {
   isNumber,
   isObject,
   isString,
+  isStringifiedObject,
   isUndefined,
   isUUID,
 } from "./typeof-fns"
@@ -238,5 +239,119 @@ describe("isUUID", () => {
     expect(isUUID("65edd09d-f1eb-4834-b424-62ab253527d1")).toBe(true)
     expect(isUUID("f933facb-3ee4-4ffc-b88b-3232399273d9")).toBe(true)
     expect(isUUID("85f09d8b-6f24-46ae-84ea-3ee1de2b17dc")).toBe(true)
+  })
+})
+
+describe("isStringifiedObject", () => {
+  it("correctly identifies valid stringified objects", () => {
+    // Simple objects
+    expect(isStringifiedObject("{}")).toBe(true)
+    expect(isStringifiedObject('{"key": "value"}')).toBe(true)
+    expect(isStringifiedObject('{"number": 123}')).toBe(true)
+    expect(isStringifiedObject('{"boolean": true}')).toBe(true)
+    expect(isStringifiedObject('{"null": null}')).toBe(true)
+
+    // Complex objects
+    expect(isStringifiedObject('{"nested": {"key": "value"}}')).toBe(true)
+    expect(isStringifiedObject('{"array": [1, 2, 3]}')).toBe(true)
+    expect(
+      isStringifiedObject('{"mixed": {"string": "test", "number": 42, "boolean": false}}'),
+    ).toBe(true)
+
+    // Objects with special characters
+    expect(isStringifiedObject('{"key": "value with spaces"}')).toBe(true)
+    expect(isStringifiedObject('{"key": "value with \\"quotes\\""}')).toBe(true)
+    expect(isStringifiedObject('{"key": "value with \\n newlines"}')).toBe(true)
+    expect(isStringifiedObject('{"key": "value with unicode: 🚀"}')).toBe(true)
+
+    // Objects with various data types
+    expect(
+      isStringifiedObject(
+        '{"string": "test", "number": 42, "boolean": true, "null": null, "array": [], "object": {}}',
+      ),
+    ).toBe(true)
+  })
+
+  it("correctly rejects non-stringified objects", () => {
+    // Non-string values
+    expect(isStringifiedObject(undefined as any)).toBe(false)
+    expect(isStringifiedObject(null as any)).toBe(false)
+    expect(isStringifiedObject(123 as any)).toBe(false)
+    expect(isStringifiedObject(true as any)).toBe(false)
+    expect(isStringifiedObject(false as any)).toBe(false)
+    expect(isStringifiedObject({} as any)).toBe(false)
+    expect(isStringifiedObject([] as any)).toBe(false)
+    expect(isStringifiedObject((() => {}) as any)).toBe(false)
+
+    // Strings that don't start/end with braces
+    expect(isStringifiedObject("")).toBe(false)
+    expect(isStringifiedObject("not an object")).toBe(false)
+    expect(isStringifiedObject("{}extra")).toBe(false)
+    expect(isStringifiedObject("extra{}")).toBe(false)
+    expect(isStringifiedObject("{not closed")).toBe(false)
+    expect(isStringifiedObject("not opened}")).toBe(false)
+
+    // Invalid JSON strings
+    expect(isStringifiedObject("{")).toBe(false)
+    expect(isStringifiedObject("}")).toBe(false)
+    expect(isStringifiedObject('{"key":}')).toBe(false) // Missing value
+    expect(isStringifiedObject('{"key": "value",}')).toBe(false) // Trailing comma
+    expect(isStringifiedObject('{"key": "value", "another":}')).toBe(false) // Missing value
+    expect(isStringifiedObject('{"key": "value" "another": "value"}')).toBe(false) // Missing comma
+
+    // Strings that are not objects
+    expect(isStringifiedObject('"just a string"')).toBe(false)
+    expect(isStringifiedObject("123")).toBe(false)
+    expect(isStringifiedObject("true")).toBe(false)
+    expect(isStringifiedObject("false")).toBe(false)
+    expect(isStringifiedObject("null")).toBe(false)
+    expect(isStringifiedObject("[1, 2, 3]")).toBe(false) // Arrays are not objects
+    expect(isStringifiedObject('["string", 123, true]')).toBe(false) // Arrays are not objects
+  })
+
+  it("handles edge cases correctly", () => {
+    // Edge cases
+    expect(isStringifiedObject("{}")).toBe(true) // Empty object
+    expect(isStringifiedObject('{"": ""}')).toBe(true) // Empty key
+    expect(isStringifiedObject('{"key": ""}')).toBe(true) // Empty value
+    expect(isStringifiedObject('{"key": "   "}')).toBe(true) // Whitespace value
+    expect(isStringifiedObject('{"   ": "value"}')).toBe(true) // Whitespace key
+
+    // Objects with special JSON characters
+    expect(isStringifiedObject('{"key": "value with \\"escaped quotes\\""}')).toBe(true)
+    expect(isStringifiedObject('{"key": "value with \\\\ backslashes"}')).toBe(true)
+    expect(isStringifiedObject('{"key": "value with \\n \\t \\r"}')).toBe(true)
+
+    // Objects with unicode
+    expect(isStringifiedObject('{"key": "🚀 rocket"}')).toBe(true)
+    expect(isStringifiedObject('{"🚀": "value"}')).toBe(true)
+    expect(isStringifiedObject('{"key": "café"}')).toBe(true)
+    expect(isStringifiedObject('{"key": "测试"}')).toBe(true)
+
+    // Objects with numbers as keys
+    expect(isStringifiedObject('{"123": "value"}')).toBe(true)
+    expect(isStringifiedObject('{"0": "value"}')).toBe(true)
+
+    // Objects with boolean/null values
+    expect(isStringifiedObject('{"key": true}')).toBe(true)
+    expect(isStringifiedObject('{"key": false}')).toBe(true)
+    expect(isStringifiedObject('{"key": null}')).toBe(true)
+    expect(isStringifiedObject('{"true": "value"}')).toBe(true)
+    expect(isStringifiedObject('{"false": "value"}')).toBe(true)
+    expect(isStringifiedObject('{"null": "value"}')).toBe(true)
+  })
+
+  it("handles real-world examples from the codebase", () => {
+    // Examples similar to what might be used in the Ripple Custody API
+    const intentRequest =
+      '{"author":{"id":"fb42b7dc-401a-458e-bc17-6815be91edf6","domainId":"73dbd185-f66f-454a-bc24-633da4176860"},"expiryAt":"2025-09-21T10:48:11.910Z","targetDomainId":"0c560752-672b-486b-a743-e4398b22f352","id":"2afe022a-e91f-4a4f-b47c-909c12c7194e","payload":{"id":"65edd09d-f1eb-4834-b424-62ab253527d1","accountId":"bf9a7faa-a768-4235-800b-4e6fc274a88d","tickerId":"d9a3b9e4-b9f9-4844-a7d2-518a43eff2ba","outputs":[{"amount":"100","destination":{"accountId":"4d911c86-410e-4296-9c3e-a9e9bacd99dd","type":"Account"}}],"customProperties":{},"feeStrategy":"Low","type":"v0_CreateTransferOrder","description":"SDK"},"customProperties":{},"type":"Propose"}'
+
+    expect(isStringifiedObject(intentRequest)).toBe(true)
+
+    // Canonicalized version (sorted keys)
+    const canonicalizedRequest =
+      '{"author":{"domainId":"2ff463fe-0fcb-40cf-b1ee-6389d237256f","id":"29023174-83a7-46d9-ba6f-bf562343438d"},"customProperties":{},"expiryAt":"2025-09-21T10:48:11.910Z","id":"43064342-22e2-41ac-a884-793fb4f45c1c","payload":{"accountId":"7dc3fa14-0dfe-4d17-b4f3-e8040426e53d","customProperties":{},"description":"SDK","feeStrategy":"Low","id":"bd028e19-69b4-434a-bded-00f1ba59e941","outputs":[{"amount":"100","destination":{"accountId":"852fa38a-82d8-41d3-97c1-5ec3698cd54c","type":"Account"}}],"tickerId":"c9092abe-4de8-43bc-bfa2-6ce9a078d34a","type":"v0_CreateTransferOrder"},"targetDomainId":"1ed4d8e3-b1c6-4044-aa43-aa0634dc3fe5","type":"Propose"}'
+
+    expect(isStringifiedObject(canonicalizedRequest)).toBe(true)
   })
 })

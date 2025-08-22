@@ -46,8 +46,8 @@ export const isUUID = (str: string): boolean => {
 }
 
 /** Determines if a value is a stringified object. */
-export const isStringifiedObject = (str: string): boolean => {
-  if (!str.startsWith("{") || !str.endsWith("}")) {
+export const isStringifiedObject = (str: unknown): boolean => {
+  if (!isString(str) || !str.startsWith("{") || !str.endsWith("}")) {
     return false
   }
   try {
