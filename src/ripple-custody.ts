@@ -1,4 +1,33 @@
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
+import {
+  AccountsService,
+  type Core_AccountAddress,
+  type Core_AccountsCollection,
+  type Core_AddressesCollection,
+  type Core_AddressReferenceCollection,
+  type Core_ApiAccount,
+  type Core_ApiManifest,
+  type Core_BalancesCollection,
+  type Core_ManifestsCollection,
+  type ForceUpdateAccountBalancesPathParams,
+  type ForceUpdateAccountBalancesQueryParams,
+  type GenerateNewAccountExternalAddressDeprecatedPathParams,
+  type GenerateNewAccountExternalAddressDeprecatedQueryParams,
+  type GenerateNewExternalAddressPathParams,
+  type GetAccountAddressPathParams,
+  type GetAccountBalancesPathParams,
+  type GetAccountBalancesQueryParams,
+  type GetAccountPathParams,
+  type GetAccountQueryParams,
+  type GetAccountsPathParams,
+  type GetAccountsQueryParams,
+  type GetAddressesPathParams,
+  type GetAddressesQueryParams,
+  type GetAllDomainsAddressesQueryParams,
+  type GetManifestPathParams,
+  type GetManifestsPathParams,
+  type GetManifestsQueryParams,
+} from "./services/accounts/index.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
 import {
@@ -44,6 +73,7 @@ import type {
 import { TransactionsService } from "./services/transactions/index.js"
 
 export class RippleCustody {
+  private accountsService: AccountsService
   private authService: AuthService
   private apiService: ApiService
   private domainService: DomainService
@@ -62,6 +92,7 @@ export class RippleCustody {
       authService: this.authService,
       privateKey,
     })
+    this.accountsService = new AccountsService(this.apiService)
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
@@ -230,5 +261,123 @@ export class RippleCustody {
       params: DryRunTransactionPathParams,
       body: Core_DryRunTransactionParameters,
     ): Promise<Core_TransactionDryRun> => this.transactionsService.dryRunTransaction(params, body),
+  }
+
+  // Accounts namespace
+  public readonly accounts = {
+    /**
+     * Get accounts
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The accounts
+     */
+    list: async (
+      params: GetAccountsPathParams,
+      query: GetAccountsQueryParams,
+    ): Promise<Core_AccountsCollection> => this.accountsService.getAccounts(params, query),
+
+    /**
+     * Get all domains addresses
+     * @param query - The query parameters for the request
+     * @returns The all domains addresses
+     */
+    allDomainsAddresses: async (
+      query: GetAllDomainsAddressesQueryParams,
+    ): Promise<Core_AddressReferenceCollection> =>
+      this.accountsService.getAllDomainsAddresses(query),
+
+    /**
+     * Get account
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account
+     */
+    get: async (
+      params: GetAccountPathParams,
+      query: GetAccountQueryParams,
+    ): Promise<Core_ApiAccount> => this.accountsService.getAccount(params, query),
+
+    /**
+     * Get addresses
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The addresses
+     */
+    addresses: async (
+      params: GetAddressesPathParams,
+      query: GetAddressesQueryParams,
+    ): Promise<Core_AddressesCollection> => this.accountsService.getAddresses(params, query),
+
+    /**
+     * Generate new account external address
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account address
+     * @deprecated Use generateNewExternalAddress instead
+     */
+    generateNewExternalAddressDeprecated: async (
+      params: GenerateNewAccountExternalAddressDeprecatedPathParams,
+      query: GenerateNewAccountExternalAddressDeprecatedQueryParams,
+    ): Promise<Core_AccountAddress> =>
+      this.accountsService.generateNewExternalAddressDeprecated(params, query),
+
+    /**
+     * Generate new external address
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account address
+     */
+    generateNewExternalAddress: async (
+      params: GenerateNewExternalAddressPathParams,
+    ): Promise<Core_AccountAddress> => this.accountsService.generateNewExternalAddress(params),
+
+    /**
+     * Get account address
+     * @param params - The parameters for the request
+     * @returns The account address
+     */
+    getAccountAddress: async (params: GetAccountAddressPathParams): Promise<Core_AccountAddress> =>
+      this.accountsService.getAccountAddress(params),
+
+    /**
+     * Get account confirmed balance
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account confirmed balance
+     */
+    getAccountBalances: async (
+      params: GetAccountBalancesPathParams,
+      query: GetAccountBalancesQueryParams,
+    ): Promise<Core_BalancesCollection> => this.accountsService.getAccountBalances(params, query),
+
+    /**
+     * Update account balance forcefully
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns void
+     */
+    forceUpdateAccountBalances: async (
+      params: ForceUpdateAccountBalancesPathParams,
+      query: ForceUpdateAccountBalancesQueryParams,
+    ): Promise<void> => this.accountsService.forceUpdateAccountBalances(params, query),
+
+    /**
+     * Get manifests
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The manifests
+     */
+    getManifests: async (
+      params: GetManifestsPathParams,
+      query: GetManifestsQueryParams,
+    ): Promise<Core_ManifestsCollection> => this.accountsService.getManifests(params, query),
+
+    /**
+     * Get manifest
+     * @param params - The parameters for the request
+     * @returns The manifest
+     */
+    getManifest: async (params: GetManifestPathParams): Promise<Core_ApiManifest> =>
+      this.accountsService.getManifest(params),
   }
 }
