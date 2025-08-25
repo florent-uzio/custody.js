@@ -42,8 +42,10 @@ console.log("secp256k1 Private Key:", secp256k1Keypair.privateKey)
 console.log("secp256k1 Public Key:", secp256k1Keypair.publicKey)
 ```
 
-Use those keypairs in Ripple Custody when setting up your API user.
-Note: As of August 2025, secp256r1 is not supported yet by the SDK.
+Use those keypairs in Ripple Custody when setting up your API user.  
+Use a `.env` file to store your public and private key.
+
+**Note**: As of August 2025, secp256r1 is not supported yet by the SDK.
 
 ### 2. Initialize the RippleCustody Client
 
