@@ -1,4 +1,4 @@
-import type { components, operations } from "../../models/custody-types.js"
+import type { operations } from "../../models/custody-types.js"
 
 // Request types
 
@@ -39,16 +39,20 @@ export type GetManifestPathParams = operations["getManifest"]["parameters"]["pat
 
 // Response types
 
-export type Core_AccountsCollection = components["schemas"]["Core_AccountsCollection"]
+export type Core_AccountsCollection =
+  operations["getAccounts"]["responses"]["200"]["content"]["application/json"]
 
 export type Core_AddressReferenceCollection =
-  components["schemas"]["Core_AddressReferenceCollection"]
+  operations["getAllDomainsAddresses"]["responses"]["200"]["content"]["application/json"]
 
-export type Core_ApiAccount = components["schemas"]["Core_ApiAccount"]
+export type Core_ApiAccount =
+  operations["getAccount"]["responses"]["200"]["content"]["application/json"]
 
-export type Core_AddressesCollection = components["schemas"]["Core_AddressesCollection"]
+export type Core_AddressesCollection =
+  operations["getAddresses"]["responses"]["200"]["content"]["application/json"]
 
-export type Core_AccountAddress = components["schemas"]["Core_AccountAddress"]
+export type Core_AccountAddress =
+  operations["getAccountAddress"]["responses"]["200"]["content"]["application/json"]
 
 export type Core_BalancesCollection =
   operations["getAccountBalances"]["responses"]["200"]["content"]["application/json"]
