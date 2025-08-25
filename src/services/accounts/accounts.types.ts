@@ -32,6 +32,9 @@ export type ForceUpdateAccountBalancesPathParams =
 export type ForceUpdateAccountBalancesQueryParams =
   operations["forceUpdateAccountBalances"]["parameters"]["query"]
 
+export type GetManifestsPathParams = operations["getManifests"]["parameters"]["path"]
+export type GetManifestsQueryParams = operations["getManifests"]["parameters"]["query"]
+
 // Response types
 
 export type Core_AccountsCollection = components["schemas"]["Core_AccountsCollection"]
@@ -47,3 +50,6 @@ export type Core_AccountAddress = components["schemas"]["Core_AccountAddress"]
 
 export type Core_BalancesCollection =
   operations["getAccountBalances"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_ManifestsCollection =
+  operations["getManifests"]["responses"]["200"]["content"]["application/json"]

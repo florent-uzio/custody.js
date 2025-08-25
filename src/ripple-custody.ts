@@ -7,6 +7,7 @@ import {
   type Core_AddressReferenceCollection,
   type Core_ApiAccount,
   type Core_BalancesCollection,
+  type Core_ManifestsCollection,
   type ForceUpdateAccountBalancesPathParams,
   type ForceUpdateAccountBalancesQueryParams,
   type GenerateNewAccountExternalAddressDeprecatedPathParams,
@@ -22,6 +23,8 @@ import {
   type GetAddressesPathParams,
   type GetAddressesQueryParams,
   type GetAllDomainsAddressesQueryParams,
+  type GetManifestsPathParams,
+  type GetManifestsQueryParams,
 } from "./services/accounts/index.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
@@ -355,5 +358,16 @@ export class RippleCustody {
       params: ForceUpdateAccountBalancesPathParams,
       query: ForceUpdateAccountBalancesQueryParams,
     ): Promise<void> => this.accountsService.forceUpdateAccountBalances(params, query),
+
+    /**
+     * Get manifests
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The manifests
+     */
+    getManifests: async (
+      params: GetManifestsPathParams,
+      query: GetManifestsQueryParams,
+    ): Promise<Core_ManifestsCollection> => this.accountsService.getManifests(params, query),
   }
 }

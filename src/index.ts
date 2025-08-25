@@ -33,6 +33,7 @@ export type {
   Core_AddressesCollection,
   Core_ApiAccount,
   Core_BalancesCollection,
+  Core_ManifestsCollection,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
   GenerateNewAccountExternalAddressDeprecatedPathParams,
@@ -48,6 +49,8 @@ export type {
   GetAddressesPathParams,
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
+  GetManifestsPathParams,
+  GetManifestsQueryParams,
 } from "./services/accounts/index.js"
 
 // transactions types
