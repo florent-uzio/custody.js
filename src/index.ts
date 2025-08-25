@@ -29,11 +29,14 @@ export type {
 export type {
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
+  Core_AddressesCollection,
   Core_ApiAccount,
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,
   GetAccountsQueryParams,
+  GetAddressesPathParams,
+  GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
 } from "./services/accounts/index.js"
 
