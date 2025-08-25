@@ -32,6 +32,7 @@ export type {
   Core_AddressReferenceCollection,
   Core_AddressesCollection,
   Core_ApiAccount,
+  Core_ApiManifest,
   Core_BalancesCollection,
   Core_ManifestsCollection,
   ForceUpdateAccountBalancesPathParams,
@@ -49,6 +50,7 @@ export type {
   GetAddressesPathParams,
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
+  GetManifestPathParams,
   GetManifestsPathParams,
   GetManifestsQueryParams,
 } from "./services/accounts/index.js"

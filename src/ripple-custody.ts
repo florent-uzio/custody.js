@@ -6,6 +6,7 @@ import {
   type Core_AddressesCollection,
   type Core_AddressReferenceCollection,
   type Core_ApiAccount,
+  type Core_ApiManifest,
   type Core_BalancesCollection,
   type Core_ManifestsCollection,
   type ForceUpdateAccountBalancesPathParams,
@@ -23,6 +24,7 @@ import {
   type GetAddressesPathParams,
   type GetAddressesQueryParams,
   type GetAllDomainsAddressesQueryParams,
+  type GetManifestPathParams,
   type GetManifestsPathParams,
   type GetManifestsQueryParams,
 } from "./services/accounts/index.js"
@@ -369,5 +371,13 @@ export class RippleCustody {
       params: GetManifestsPathParams,
       query: GetManifestsQueryParams,
     ): Promise<Core_ManifestsCollection> => this.accountsService.getManifests(params, query),
+
+    /**
+     * Get manifest
+     * @param params - The parameters for the request
+     * @returns The manifest
+     */
+    getManifest: async (params: GetManifestPathParams): Promise<Core_ApiManifest> =>
+      this.accountsService.getManifest(params),
   }
 }

@@ -35,6 +35,8 @@ export type ForceUpdateAccountBalancesQueryParams =
 export type GetManifestsPathParams = operations["getManifests"]["parameters"]["path"]
 export type GetManifestsQueryParams = operations["getManifests"]["parameters"]["query"]
 
+export type GetManifestPathParams = operations["getManifest"]["parameters"]["path"]
+
 // Response types
 
 export type Core_AccountsCollection = components["schemas"]["Core_AccountsCollection"]
@@ -53,3 +55,6 @@ export type Core_BalancesCollection =
 
 export type Core_ManifestsCollection =
   operations["getManifests"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_ApiManifest =
+  operations["getManifest"]["responses"]["200"]["content"]["application/json"]

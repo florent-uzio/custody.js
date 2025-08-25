@@ -7,6 +7,7 @@ import type {
   Core_AddressesCollection,
   Core_AddressReferenceCollection,
   Core_ApiAccount,
+  Core_ApiManifest,
   Core_BalancesCollection,
   Core_ManifestsCollection,
   ForceUpdateAccountBalancesPathParams,
@@ -24,6 +25,7 @@ import type {
   GetAddressesPathParams,
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
+  GetManifestPathParams,
   GetManifestsPathParams,
   GetManifestsQueryParams,
 } from "./accounts.types.js"
@@ -178,6 +180,21 @@ export class AccountsService {
     return this.api.get<Core_ManifestsCollection>(
       replacePathParams(URLs.accountManifests, { domainId, accountId }),
       queryParams,
+    )
+  }
+
+  /**
+   * Get manifest
+   * @param pathParams - The path parameters for the request
+   * @returns The manifest
+   */
+  async getManifest({
+    domainId,
+    accountId,
+    manifestId,
+  }: GetManifestPathParams): Promise<Core_ApiManifest> {
+    return this.api.get<Core_ApiManifest>(
+      replacePathParams(URLs.accountManifest, { domainId, accountId, manifestId }),
     )
   }
 }
