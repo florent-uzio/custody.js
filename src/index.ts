@@ -27,10 +27,14 @@ export type {
 
 // accounts types
 export type {
+  Core_AccountAddress,
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
   Core_AddressesCollection,
   Core_ApiAccount,
+  GenerateNewAccountExternalAddressDeprecatedPathParams,
+  GenerateNewAccountExternalAddressDeprecatedQueryParams,
+  GenerateNewExternalAddressPathParams,
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,

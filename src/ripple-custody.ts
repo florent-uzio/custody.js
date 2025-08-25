@@ -1,10 +1,14 @@
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import {
   AccountsService,
+  type Core_AccountAddress,
   type Core_AccountsCollection,
   type Core_AddressesCollection,
   type Core_AddressReferenceCollection,
   type Core_ApiAccount,
+  type GenerateNewAccountExternalAddressDeprecatedPathParams,
+  type GenerateNewAccountExternalAddressDeprecatedQueryParams,
+  type GenerateNewExternalAddressPathParams,
   type GetAccountPathParams,
   type GetAccountQueryParams,
   type GetAccountsPathParams,
@@ -292,5 +296,28 @@ export class RippleCustody {
       params: GetAddressesPathParams,
       query: GetAddressesQueryParams,
     ): Promise<Core_AddressesCollection> => this.accountsService.getAddresses(params, query),
+
+    /**
+     * Generate new account external address
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account address
+     * @deprecated Use generateNewExternalAddress instead
+     */
+    generateNewExternalAddressDeprecated: async (
+      params: GenerateNewAccountExternalAddressDeprecatedPathParams,
+      query: GenerateNewAccountExternalAddressDeprecatedQueryParams,
+    ): Promise<Core_AccountAddress> =>
+      this.accountsService.generateNewExternalAddressDeprecated(params, query),
+
+    /**
+     * Generate new external address
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account address
+     */
+    generateNewExternalAddress: async (
+      params: GenerateNewExternalAddressPathParams,
+    ): Promise<Core_AccountAddress> => this.accountsService.generateNewExternalAddress(params),
   }
 }

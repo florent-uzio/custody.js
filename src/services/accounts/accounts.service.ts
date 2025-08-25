@@ -2,10 +2,14 @@ import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type {
+  Core_AccountAddress,
   Core_AccountsCollection,
   Core_AddressesCollection,
   Core_AddressReferenceCollection,
   Core_ApiAccount,
+  GenerateNewAccountExternalAddressDeprecatedPathParams,
+  GenerateNewAccountExternalAddressDeprecatedQueryParams,
+  GenerateNewExternalAddressPathParams,
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,
@@ -73,6 +77,39 @@ export class AccountsService {
     return this.api.get<Core_AddressesCollection>(
       replacePathParams(URLs.accountAddresses, { domainId, accountId }),
       queryParams,
+    )
+  }
+
+  /**
+   * Generate new account external address
+   * @param pathParams - The path parameters for the request
+   * @param queryParams - The query parameters for the request
+   * @returns The account address
+   * @deprecated Use generateNewExternalAddress instead
+   */
+  async generateNewExternalAddressDeprecated(
+    { domainId, accountId }: GenerateNewAccountExternalAddressDeprecatedPathParams,
+    queryParams: GenerateNewAccountExternalAddressDeprecatedQueryParams,
+  ): Promise<Core_AccountAddress> {
+    return this.api.post<Core_AccountAddress>(
+      replacePathParams(URLs.accountAddresses, { domainId, accountId }),
+      queryParams,
+    )
+  }
+
+  /**
+   * Generate new external address
+   * @param pathParams - The path parameters for the request
+   * @returns The account address
+   */
+  async generateNewExternalAddress({
+    domainId,
+    accountId,
+    ledgerId,
+  }: GenerateNewExternalAddressPathParams): Promise<Core_AccountAddress> {
+    return this.api.post<Core_AccountAddress>(
+      replacePathParams(URLs.accountAddressesByLedger, { domainId, accountId, ledgerId }),
+      null,
     )
   }
 }
