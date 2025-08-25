@@ -6,10 +6,13 @@ import {
   type Core_AddressesCollection,
   type Core_AddressReferenceCollection,
   type Core_ApiAccount,
+  type Core_BalancesCollection,
   type GenerateNewAccountExternalAddressDeprecatedPathParams,
   type GenerateNewAccountExternalAddressDeprecatedQueryParams,
   type GenerateNewExternalAddressPathParams,
   type GetAccountAddressPathParams,
+  type GetAccountBalancesPathParams,
+  type GetAccountBalancesQueryParams,
   type GetAccountPathParams,
   type GetAccountQueryParams,
   type GetAccountsPathParams,
@@ -328,5 +331,16 @@ export class RippleCustody {
      */
     getAccountAddress: async (params: GetAccountAddressPathParams): Promise<Core_AccountAddress> =>
       this.accountsService.getAccountAddress(params),
+
+    /**
+     * Get account confirmed balance
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account confirmed balance
+     */
+    getAccountBalances: async (
+      params: GetAccountBalancesPathParams,
+      query: GetAccountBalancesQueryParams,
+    ): Promise<Core_BalancesCollection> => this.accountsService.getAccountBalances(params, query),
   }
 }

@@ -24,6 +24,9 @@ export type GenerateNewExternalAddressPathParams =
 
 export type GetAccountAddressPathParams = operations["getAccountAddress"]["parameters"]["path"]
 
+export type GetAccountBalancesPathParams = operations["getAccountBalances"]["parameters"]["path"]
+export type GetAccountBalancesQueryParams = operations["getAccountBalances"]["parameters"]["query"]
+
 // Response types
 
 export type Core_AccountsCollection = components["schemas"]["Core_AccountsCollection"]
@@ -36,3 +39,6 @@ export type Core_ApiAccount = components["schemas"]["Core_ApiAccount"]
 export type Core_AddressesCollection = components["schemas"]["Core_AddressesCollection"]
 
 export type Core_AccountAddress = components["schemas"]["Core_AccountAddress"]
+
+export type Core_BalancesCollection =
+  operations["getAccountBalances"]["responses"]["200"]["content"]["application/json"]

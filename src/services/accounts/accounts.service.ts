@@ -7,10 +7,13 @@ import type {
   Core_AddressesCollection,
   Core_AddressReferenceCollection,
   Core_ApiAccount,
+  Core_BalancesCollection,
   GenerateNewAccountExternalAddressDeprecatedPathParams,
   GenerateNewAccountExternalAddressDeprecatedQueryParams,
   GenerateNewExternalAddressPathParams,
   GetAccountAddressPathParams,
+  GetAccountBalancesPathParams,
+  GetAccountBalancesQueryParams,
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,
@@ -125,6 +128,22 @@ export class AccountsService {
   }: GetAccountAddressPathParams): Promise<Core_AccountAddress> {
     return this.api.get<Core_AccountAddress>(
       replacePathParams(URLs.accountAddress, { domainId, accountId, accountAddressId }),
+    )
+  }
+
+  /**
+   * Get account confirmed balance
+   * @param pathParams - The path parameters for the request
+   * @param queryParams - The query parameters for the request
+   * @returns The account confirmed balance
+   */
+  async getAccountBalances(
+    { domainId, accountId }: GetAccountBalancesPathParams,
+    queryParams: GetAccountBalancesQueryParams,
+  ): Promise<Core_BalancesCollection> {
+    return this.api.get<Core_BalancesCollection>(
+      replacePathParams(URLs.accountBalances, { domainId, accountId }),
+      queryParams,
     )
   }
 }
