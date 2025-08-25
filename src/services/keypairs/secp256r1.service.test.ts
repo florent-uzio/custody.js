@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { Secp256k1Service } from "./secp256k1.service.js"
+import { Secp256r1Service } from "./secp256r1.service.js"
 
-describe("Secp256k1Service", () => {
-  const service = new Secp256k1Service()
+describe("Secp256r1Service", () => {
+  const service = new Secp256r1Service()
 
   it("should generate a valid key pair", () => {
     const keypair = service.generate()
@@ -30,7 +30,7 @@ describe("Secp256k1Service", () => {
 
     expect(() => {
       service.sign(invalidPrivateKey, message)
-    }).toThrow("Failed to sign message with secp256k1")
+    }).toThrow("Failed to sign message with secp256r1")
   })
 
   it("should handle non-stringified object messages", () => {

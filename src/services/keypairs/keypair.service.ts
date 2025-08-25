@@ -2,6 +2,7 @@ import { isString } from "../../helpers/index.js"
 import { Ed25519Service } from "./ed25519.service.js"
 import { type KeyPair, type KeypairAlgorithm, type KeypairDefinition } from "./keypairs.types.js"
 import { Secp256k1Service } from "./secp256k1.service.js"
+import { Secp256r1Service } from "./secp256r1.service.js"
 
 /**
  * KeypairService provides a unified interface for keypair operations (generation, signing)
@@ -13,11 +14,10 @@ export class KeypairService {
 
   constructor(private readonly algorithm: KeypairAlgorithm) {
     // Initialize providers for each supported algorithm
-    // @ts-expect-error TODO: Implement other algorithms when needed
     this.providers = {
       ["secp256k1"]: new Secp256k1Service(),
       ["ed25519"]: new Ed25519Service(),
-      //   ["secp256r1"]: new Secp256r1Service(),
+      ["secp256r1"]: new Secp256r1Service(),
     }
   }
 

@@ -44,7 +44,7 @@ export class Ed25519Service implements KeypairDefinition {
    * 4. Base64 encode
    *
    * @param {string} privateKeyPem - PEM-encoded private key.
-   * @param {string} message - Message to sign (should be canonicalized JSON).
+   * @param {string} message - Message to sign (should be canonicalized JSON for a request).
    * @returns {string} Base64-encoded signature.
    */
   sign(privateKeyPem: string, message: string): string {
