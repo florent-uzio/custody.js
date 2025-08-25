@@ -23,7 +23,9 @@ import {
 } from "./services/intents/index.js"
 import { TransactionsService } from "./services/transactions/index.js"
 import type {
+  Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
+  GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
   GetTransactionOrdersQueryParams,
 } from "./services/transactions/transactions.types.js"
@@ -154,5 +156,15 @@ export class RippleCustody {
       query: GetTransactionOrdersQueryParams,
     ): Promise<Core_TrustedTransactionOrdersCollection> =>
       this.transactionsService.getTransactionOrders(params, query),
+
+    /**
+     * Get transaction order details
+     * @param params - The parameters for the request
+     * @returns The transaction order details
+     */
+    order: async (
+      params: GetTransactionOrderDetailsPathParams,
+    ): Promise<Core_TrustedTransactionOrderDetails> =>
+      this.transactionsService.getTransactionOrderDetails(params),
   }
 }
