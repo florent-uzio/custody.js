@@ -21,14 +21,17 @@ import {
   type Core_RemainingUsersIntentPathParams,
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
-import { TransactionsService } from "./services/transactions/index.js"
 import type {
+  Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
   GetTransactionOrdersQueryParams,
-} from "./services/transactions/transactions.types.js"
+  TransferTransactionOrderPathParams,
+  TransferTransactionOrderQueryParams,
+} from "./services/transactions/index.js"
+import { TransactionsService } from "./services/transactions/index.js"
 
 export class RippleCustody {
   private authService: AuthService
@@ -166,5 +169,16 @@ export class RippleCustody {
       params: GetTransactionOrderDetailsPathParams,
     ): Promise<Core_TrustedTransactionOrderDetails> =>
       this.transactionsService.getTransactionOrderDetails(params),
+
+    /**
+     * Get transfers
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The transfers
+     */
+    transfers: async (
+      params: TransferTransactionOrderPathParams,
+      query: TransferTransactionOrderQueryParams,
+    ): Promise<Core_TransfersCollection> => this.transactionsService.getTransfers(params, query),
   }
 }
