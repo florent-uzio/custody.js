@@ -39,12 +39,12 @@ export class Secp256k1Service implements KeypairDefinition {
   /**
    * Signs a message using the provided PEM-encoded secp256k1 private key.
    * This implementation follows the pattern:
-   * 1. Create SHA256 hash of canonicalized JSON (if applicable)
-   * 2. Sign the hash with secp256k1
-   * 3. Return DER-encoded, Base64-formatted signature
+   * 1. Create a Buffer from the message
+   * 2. Sign the message with secp256k1
+   * 3. Return Base64-encoded DER signature
    *
    * @param {string} privateKeyPem - PEM-encoded private key.
-   * @param {string} message - Message to sign (should be canonicalized JSON).
+   * @param {string} message - Message to sign (should be canonicalized JSON for a request).
    * @returns {string} Base64-encoded DER signature.
    */
   sign(privateKeyPem: string, message: string): string {
@@ -57,11 +57,11 @@ export class Secp256k1Service implements KeypairDefinition {
         throw new Error("Invalid private key: Must be PEM-encoded secp256k1 private key")
       }
 
-      // Step 1: Create a Buffer from the message (already a string)
-      const messageHash = Buffer.from(message)
+      // Step 1: Create a Buffer from the message
+      const messageBuffer = Buffer.from(message)
 
-      // Step 2: Sign the hash using secp256k1 (already a string)
-      const signature = sign(null, messageHash, {
+      // Step 2: Sign the message using secp256k1
+      const signature = sign(null, messageBuffer, {
         key: privateKeyPem,
         dsaEncoding: "der",
       })
