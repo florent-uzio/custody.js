@@ -22,12 +22,15 @@ import {
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
 import type {
+  Core_DryRunTransactionParameters,
   Core_TransactionDetails,
+  Core_TransactionDryRun,
   Core_TransactionsCollection,
   Core_TransferDetails,
   Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
+  DryRunTransactionPathParams,
   GetTransactionDetailsPathParams,
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
@@ -216,5 +219,16 @@ export class RippleCustody {
     transaction: async (
       params: GetTransactionDetailsPathParams,
     ): Promise<Core_TransactionDetails> => this.transactionsService.getTransactionDetails(params),
+
+    /**
+     * Dry run transaction
+     * @param params - The parameters for the request
+     * @param body - The body parameters for the request
+     * @returns The transaction details
+     */
+    dryRun: async (
+      params: DryRunTransactionPathParams,
+      body: Core_DryRunTransactionParameters,
+    ): Promise<Core_TransactionDryRun> => this.transactionsService.dryRunTransaction(params, body),
   }
 }

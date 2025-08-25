@@ -17,6 +17,10 @@ export type GetTransactionsQueryParams = operations["getTransactions"]["paramete
 export type GetTransactionDetailsPathParams = operations["getTransaction"]["parameters"]["path"]
 export type GetTransactionDetailsQueryParams = operations["getTransaction"]["parameters"]["query"]
 
+export type DryRunTransactionPathParams = operations["dryRunTransaction"]["parameters"]["path"]
+export type Core_DryRunTransactionParameters =
+  operations["dryRunTransaction"]["requestBody"]["content"]["application/json"]
+
 // Response types
 export type Core_TrustedTransactionOrdersCollection =
   components["schemas"]["Core_TrustedTransactionOrdersCollection"]
@@ -31,3 +35,5 @@ export type Core_TransferDetails = components["schemas"]["Core_ApiTransfer"]
 export type Core_TransactionsCollection = components["schemas"]["Core_TransactionsCollection"]
 
 export type Core_TransactionDetails = components["schemas"]["Core_ApiTransaction"]
+
+export type Core_TransactionDryRun = components["schemas"]["Core_TransactionDryRun"]

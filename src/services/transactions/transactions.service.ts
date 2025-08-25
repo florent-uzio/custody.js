@@ -2,12 +2,15 @@ import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type {
+  Core_DryRunTransactionParameters,
   Core_TransactionDetails,
+  Core_TransactionDryRun,
   Core_TransactionsCollection,
   Core_TransferDetails,
   Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
+  DryRunTransactionPathParams,
   GetTransactionDetailsPathParams,
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
@@ -108,6 +111,22 @@ export class TransactionsService {
   }: GetTransactionDetailsPathParams): Promise<Core_TransactionDetails> {
     return this.api.get<Core_TransactionDetails>(
       replacePathParams(URLs.transaction, { domainId, transactionId }),
+    )
+  }
+
+  /**
+   * Dry run transaction
+   * @param path - The path parameters for the request
+   * @param body - The body parameters for the request
+   * @returns The transaction details
+   */
+  async dryRunTransaction(
+    { domainId }: DryRunTransactionPathParams,
+    body: Core_DryRunTransactionParameters,
+  ): Promise<Core_TransactionDryRun> {
+    return this.api.post<Core_TransactionDryRun>(
+      replacePathParams(URLs.transactionsDryRun, { domainId }),
+      body,
     )
   }
 }
