@@ -24,3 +24,25 @@ export type {
   GetDomainPathParams,
   GetDomainsQueryParams,
 } from "./services/domains/index.js"
+
+// transactions types
+export type {
+  Core_DryRunTransactionParameters,
+  Core_TransactionDetails,
+  Core_TransactionDryRun,
+  Core_TransactionsCollection,
+  Core_TransferDetails,
+  Core_TransfersCollection,
+  Core_TrustedTransactionOrderDetails,
+  Core_TrustedTransactionOrdersCollection,
+  DryRunTransactionPathParams,
+  GetTransactionDetailsPathParams,
+  GetTransactionOrderDetailsPathParams,
+  GetTransactionOrdersPathParams,
+  GetTransactionOrdersQueryParams,
+  GetTransactionsPathParams,
+  GetTransactionsQueryParams,
+  GetTransferDetailsPathParams,
+  TransferTransactionOrderPathParams,
+  TransferTransactionOrderQueryParams,
+} from "./services/transactions/index.js"

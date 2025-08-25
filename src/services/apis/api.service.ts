@@ -81,7 +81,7 @@ export class ApiService {
    */
   public async get<T>(url: string, params?: AxiosRequestConfig["params"]): Promise<T> {
     try {
-      const response = await this.apiClient.get<T>(url, { params })
+      const response = await this.apiClient.get<T>(url, params)
       return response.data
     } catch (error) {
       if (axios.isAxiosError(error)) {

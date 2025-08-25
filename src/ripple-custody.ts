@@ -21,12 +21,34 @@ import {
   type Core_RemainingUsersIntentPathParams,
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
+import type {
+  Core_DryRunTransactionParameters,
+  Core_TransactionDetails,
+  Core_TransactionDryRun,
+  Core_TransactionsCollection,
+  Core_TransferDetails,
+  Core_TransfersCollection,
+  Core_TrustedTransactionOrderDetails,
+  Core_TrustedTransactionOrdersCollection,
+  DryRunTransactionPathParams,
+  GetTransactionDetailsPathParams,
+  GetTransactionOrderDetailsPathParams,
+  GetTransactionOrdersPathParams,
+  GetTransactionOrdersQueryParams,
+  GetTransactionsPathParams,
+  GetTransactionsQueryParams,
+  GetTransferDetailsPathParams,
+  TransferTransactionOrderPathParams,
+  TransferTransactionOrderQueryParams,
+} from "./services/transactions/index.js"
+import { TransactionsService } from "./services/transactions/index.js"
 
 export class RippleCustody {
   private authService: AuthService
   private apiService: ApiService
   private domainService: DomainService
   private intentService: IntentsService
+  private transactionsService: TransactionsService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -42,6 +64,7 @@ export class RippleCustody {
     })
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
+    this.transactionsService = new TransactionsService(this.apiService)
   }
 
   // Auth namespace
@@ -131,5 +154,81 @@ export class RippleCustody {
       params: Core_RemainingUsersIntentPathParams,
       query?: Core_RemainingUsersIntentQueryParams,
     ): Promise<Core_RemainingDomainUsers> => this.intentService.remainingUsersIntent(params, query),
+  }
+
+  // Transactions namespace
+  public readonly transactions = {
+    /**
+     * Get transaction orders
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The transaction orders
+     */
+    orders: async (
+      params: GetTransactionOrdersPathParams,
+      query: GetTransactionOrdersQueryParams,
+    ): Promise<Core_TrustedTransactionOrdersCollection> =>
+      this.transactionsService.getTransactionOrders(params, query),
+
+    /**
+     * Get transaction order details
+     * @param params - The parameters for the request
+     * @returns The transaction order details
+     */
+    order: async (
+      params: GetTransactionOrderDetailsPathParams,
+    ): Promise<Core_TrustedTransactionOrderDetails> =>
+      this.transactionsService.getTransactionOrderDetails(params),
+
+    /**
+     * Get transfers
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The transfers
+     */
+    transfers: async (
+      params: TransferTransactionOrderPathParams,
+      query: TransferTransactionOrderQueryParams,
+    ): Promise<Core_TransfersCollection> => this.transactionsService.getTransfers(params, query),
+
+    /**
+     * Get transfer details
+     * @param params - The parameters for the request
+     * @returns The transfer details
+     */
+    transfer: async (params: GetTransferDetailsPathParams): Promise<Core_TransferDetails> =>
+      this.transactionsService.getTransferDetails(params),
+
+    /**
+     * Get transactions
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The transactions
+     */
+    transactions: async (
+      params: GetTransactionsPathParams,
+      query: GetTransactionsQueryParams,
+    ): Promise<Core_TransactionsCollection> =>
+      this.transactionsService.getTransactions(params, query),
+
+    /**
+     * Get transaction details
+     * @param params - The parameters for the request
+     * @returns The transaction details
+     */
+    transaction: async (
+      params: GetTransactionDetailsPathParams,
+    ): Promise<Core_TransactionDetails> => this.transactionsService.getTransactionDetails(params),
+
+    /**
+     * Dry run transaction
+     * @param params - The parameters for the request
+     * @param body - The body parameters for the request
+     * @returns The transaction details
+     */
+    dryRun: async (
+      params: DryRunTransactionPathParams,
+      body: Core_DryRunTransactionParameters,
+    ): Promise<Core_TransactionDryRun> => this.transactionsService.dryRunTransaction(params, body),
   }
 }
