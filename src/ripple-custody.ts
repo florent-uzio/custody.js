@@ -7,6 +7,8 @@ import {
   type Core_AddressReferenceCollection,
   type Core_ApiAccount,
   type Core_BalancesCollection,
+  type ForceUpdateAccountBalancesPathParams,
+  type ForceUpdateAccountBalancesQueryParams,
   type GenerateNewAccountExternalAddressDeprecatedPathParams,
   type GenerateNewAccountExternalAddressDeprecatedQueryParams,
   type GenerateNewExternalAddressPathParams,
@@ -342,5 +344,16 @@ export class RippleCustody {
       params: GetAccountBalancesPathParams,
       query: GetAccountBalancesQueryParams,
     ): Promise<Core_BalancesCollection> => this.accountsService.getAccountBalances(params, query),
+
+    /**
+     * Update account balance forcefully
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns void
+     */
+    forceUpdateAccountBalances: async (
+      params: ForceUpdateAccountBalancesPathParams,
+      query: ForceUpdateAccountBalancesQueryParams,
+    ): Promise<void> => this.accountsService.forceUpdateAccountBalances(params, query),
   }
 }

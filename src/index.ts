@@ -33,6 +33,8 @@ export type {
   Core_AddressesCollection,
   Core_ApiAccount,
   Core_BalancesCollection,
+  ForceUpdateAccountBalancesPathParams,
+  ForceUpdateAccountBalancesQueryParams,
   GenerateNewAccountExternalAddressDeprecatedPathParams,
   GenerateNewAccountExternalAddressDeprecatedQueryParams,
   GenerateNewExternalAddressPathParams,

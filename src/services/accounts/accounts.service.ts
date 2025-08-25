@@ -8,6 +8,8 @@ import type {
   Core_AddressReferenceCollection,
   Core_ApiAccount,
   Core_BalancesCollection,
+  ForceUpdateAccountBalancesPathParams,
+  ForceUpdateAccountBalancesQueryParams,
   GenerateNewAccountExternalAddressDeprecatedPathParams,
   GenerateNewAccountExternalAddressDeprecatedQueryParams,
   GenerateNewExternalAddressPathParams,
@@ -142,6 +144,19 @@ export class AccountsService {
     queryParams: GetAccountBalancesQueryParams,
   ): Promise<Core_BalancesCollection> {
     return this.api.get<Core_BalancesCollection>(
+      replacePathParams(URLs.accountBalances, { domainId, accountId }),
+      queryParams,
+    )
+  }
+
+  /**
+   * Update account balance forcefully
+   */
+  async forceUpdateAccountBalances(
+    { domainId, accountId }: ForceUpdateAccountBalancesPathParams,
+    queryParams: ForceUpdateAccountBalancesQueryParams,
+  ): Promise<void> {
+    return this.api.post<void>(
       replacePathParams(URLs.accountBalances, { domainId, accountId }),
       queryParams,
     )

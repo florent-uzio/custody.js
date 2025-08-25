@@ -27,6 +27,11 @@ export type GetAccountAddressPathParams = operations["getAccountAddress"]["param
 export type GetAccountBalancesPathParams = operations["getAccountBalances"]["parameters"]["path"]
 export type GetAccountBalancesQueryParams = operations["getAccountBalances"]["parameters"]["query"]
 
+export type ForceUpdateAccountBalancesPathParams =
+  operations["forceUpdateAccountBalances"]["parameters"]["path"]
+export type ForceUpdateAccountBalancesQueryParams =
+  operations["forceUpdateAccountBalances"]["parameters"]["query"]
+
 // Response types
 
 export type Core_AccountsCollection = components["schemas"]["Core_AccountsCollection"]
