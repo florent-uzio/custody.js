@@ -40,12 +40,19 @@ const secp256k1Keypair = secp256k1Service.generate()
 
 console.log("secp256k1 Private Key:", secp256k1Keypair.privateKey)
 console.log("secp256k1 Public Key:", secp256k1Keypair.publicKey)
+
+// Generate secp256r1 keypair
+const secp256r1Service = new KeypairService("secp256r1")
+const secp256r1Keypair = secp256r1Service.generate()
+
+console.log("secp256r1 Private Key:", secp256r1Keypair.privateKey)
+console.log("secp256r1 Public Key:", secp256r1Keypair.publicKey)
 ```
 
 Use those keypairs in Ripple Custody when setting up your API user.  
 Use a `.env` file to store your public and private key.
 
-**Note**: As of August 2025, secp256r1 is not supported yet by the SDK.
+**Note**: The SDK supports Ed25519, secp256k1, and secp256r1 algorithms.
 
 ### 2. Initialize the RippleCustody Client
 
