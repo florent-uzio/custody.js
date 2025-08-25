@@ -27,11 +27,13 @@ export type {
 
 // transactions types
 export type {
+  Core_TransactionDetails,
   Core_TransactionsCollection,
   Core_TransferDetails,
   Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
+  GetTransactionDetailsPathParams,
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
   GetTransactionOrdersQueryParams,
