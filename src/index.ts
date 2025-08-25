@@ -29,6 +29,9 @@ export type {
 export type {
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
+  Core_ApiAccount,
+  GetAccountPathParams,
+  GetAccountQueryParams,
   GetAccountsPathParams,
   GetAccountsQueryParams,
   GetAllDomainsAddressesQueryParams,

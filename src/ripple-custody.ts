@@ -3,6 +3,9 @@ import {
   AccountsService,
   type Core_AccountsCollection,
   type Core_AddressReferenceCollection,
+  type Core_ApiAccount,
+  type GetAccountPathParams,
+  type GetAccountQueryParams,
   type GetAccountsPathParams,
   type GetAccountsQueryParams,
   type GetAllDomainsAddressesQueryParams,
@@ -264,5 +267,16 @@ export class RippleCustody {
       query: GetAllDomainsAddressesQueryParams,
     ): Promise<Core_AddressReferenceCollection> =>
       this.accountsService.getAllDomainsAddresses(query),
+
+    /**
+     * Get account
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The account
+     */
+    get: async (
+      params: GetAccountPathParams,
+      query: GetAccountQueryParams,
+    ): Promise<Core_ApiAccount> => this.accountsService.getAccount(params, query),
   }
 }

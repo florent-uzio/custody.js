@@ -4,6 +4,9 @@ import { ApiService } from "../apis/api.service.js"
 import type {
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
+  Core_ApiAccount,
+  GetAccountPathParams,
+  GetAccountQueryParams,
   GetAccountsPathParams,
   GetAccountsQueryParams,
   GetAllDomainsAddressesQueryParams,
@@ -37,5 +40,20 @@ export class AccountsService {
     queryParams: GetAllDomainsAddressesQueryParams,
   ): Promise<Core_AddressReferenceCollection> {
     return this.api.get<Core_AddressReferenceCollection>(URLs.addresses, queryParams)
+  }
+
+  /**
+   * Get account
+   * @param pathParams - The path parameters for the request
+   * @returns The account
+   */
+  async getAccount(
+    { domainId, accountId }: GetAccountPathParams,
+    queryParams: GetAccountQueryParams,
+  ): Promise<Core_ApiAccount> {
+    return this.api.get<Core_ApiAccount>(
+      replacePathParams(URLs.account, { domainId, accountId }),
+      queryParams,
+    )
   }
 }
