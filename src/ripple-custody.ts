@@ -22,12 +22,14 @@ import {
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
 import type {
+  Core_TransferDetails,
   Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
   GetTransactionOrdersQueryParams,
+  GetTransferDetailsPathParams,
   TransferTransactionOrderPathParams,
   TransferTransactionOrderQueryParams,
 } from "./services/transactions/index.js"
@@ -180,5 +182,13 @@ export class RippleCustody {
       params: TransferTransactionOrderPathParams,
       query: TransferTransactionOrderQueryParams,
     ): Promise<Core_TransfersCollection> => this.transactionsService.getTransfers(params, query),
+
+    /**
+     * Get transfer details
+     * @param params - The parameters for the request
+     * @returns The transfer details
+     */
+    transfer: async (params: GetTransferDetailsPathParams): Promise<Core_TransferDetails> =>
+      this.transactionsService.getTransferDetails(params),
   }
 }

@@ -27,12 +27,14 @@ export type {
 
 // transactions types
 export type {
+  Core_TransferDetails,
   Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
   GetTransactionOrdersQueryParams,
+  GetTransferDetailsPathParams,
   TransferTransactionOrderPathParams,
   TransferTransactionOrderQueryParams,
 } from "./services/transactions/index.js"

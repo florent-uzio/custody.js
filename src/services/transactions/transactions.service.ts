@@ -2,12 +2,14 @@ import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type {
+  Core_TransferDetails,
   Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
   Core_TrustedTransactionOrdersCollection,
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
   GetTransactionOrdersQueryParams,
+  GetTransferDetailsPathParams,
   TransferTransactionOrderPathParams,
   TransferTransactionOrderQueryParams,
 } from "./transactions.types.js"
@@ -58,6 +60,20 @@ export class TransactionsService {
     return this.api.get<Core_TransfersCollection>(
       replacePathParams(URLs.transactionTransfers, { domainId }),
       query,
+    )
+  }
+
+  /**
+   * Get transfer details
+   * @param path - The path parameters for the request
+   * @returns The transfer details
+   */
+  async getTransferDetails({
+    domainId,
+    transferId,
+  }: GetTransferDetailsPathParams): Promise<Core_TransferDetails> {
+    return this.api.get<Core_TransferDetails>(
+      replacePathParams(URLs.transactionTransfer, { domainId, transferId }),
     )
   }
 }
