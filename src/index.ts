@@ -1,6 +1,9 @@
 export { RippleCustody } from "./ripple-custody.js"
 export type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 
+// keypairs types
+export type { KeypairAlgorithm, KeypairService } from "./services/keypairs/index.js"
+
 // intents types
 export type {
   Core_ApproveIntentBody,
