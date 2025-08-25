@@ -1,4 +1,10 @@
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
+import {
+  AccountsService,
+  type Core_AccountsCollection,
+  type GetAccountsPathParams,
+  type GetAccountsQueryParams,
+} from "./services/accounts/index.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
 import {
@@ -44,6 +50,7 @@ import type {
 import { TransactionsService } from "./services/transactions/index.js"
 
 export class RippleCustody {
+  private accountsService: AccountsService
   private authService: AuthService
   private apiService: ApiService
   private domainService: DomainService
@@ -62,6 +69,7 @@ export class RippleCustody {
       authService: this.authService,
       privateKey,
     })
+    this.accountsService = new AccountsService(this.apiService)
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
@@ -230,5 +238,19 @@ export class RippleCustody {
       params: DryRunTransactionPathParams,
       body: Core_DryRunTransactionParameters,
     ): Promise<Core_TransactionDryRun> => this.transactionsService.dryRunTransaction(params, body),
+  }
+
+  // Accounts namespace
+  public readonly accounts = {
+    /**
+     * Get accounts
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The accounts
+     */
+    list: async (
+      params: GetAccountsPathParams,
+      query: GetAccountsQueryParams,
+    ): Promise<Core_AccountsCollection> => this.accountsService.getAccounts(params, query),
   }
 }
