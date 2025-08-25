@@ -22,6 +22,8 @@ export type GenerateNewAccountExternalAddressDeprecatedQueryParams =
 export type GenerateNewExternalAddressPathParams =
   operations["generateNewExternalAddress"]["parameters"]["path"]
 
+export type GetAccountAddressPathParams = operations["getAccountAddress"]["parameters"]["path"]
+
 // Response types
 
 export type Core_AccountsCollection = components["schemas"]["Core_AccountsCollection"]

@@ -9,6 +9,7 @@ import {
   type GenerateNewAccountExternalAddressDeprecatedPathParams,
   type GenerateNewAccountExternalAddressDeprecatedQueryParams,
   type GenerateNewExternalAddressPathParams,
+  type GetAccountAddressPathParams,
   type GetAccountPathParams,
   type GetAccountQueryParams,
   type GetAccountsPathParams,
@@ -319,5 +320,13 @@ export class RippleCustody {
     generateNewExternalAddress: async (
       params: GenerateNewExternalAddressPathParams,
     ): Promise<Core_AccountAddress> => this.accountsService.generateNewExternalAddress(params),
+
+    /**
+     * Get account address
+     * @param params - The parameters for the request
+     * @returns The account address
+     */
+    getAccountAddress: async (params: GetAccountAddressPathParams): Promise<Core_AccountAddress> =>
+      this.accountsService.getAccountAddress(params),
   }
 }

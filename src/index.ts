@@ -35,6 +35,7 @@ export type {
   GenerateNewAccountExternalAddressDeprecatedPathParams,
   GenerateNewAccountExternalAddressDeprecatedQueryParams,
   GenerateNewExternalAddressPathParams,
+  GetAccountAddressPathParams,
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,

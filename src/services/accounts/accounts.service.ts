@@ -10,6 +10,7 @@ import type {
   GenerateNewAccountExternalAddressDeprecatedPathParams,
   GenerateNewAccountExternalAddressDeprecatedQueryParams,
   GenerateNewExternalAddressPathParams,
+  GetAccountAddressPathParams,
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,
@@ -110,6 +111,20 @@ export class AccountsService {
     return this.api.post<Core_AccountAddress>(
       replacePathParams(URLs.accountAddressesByLedger, { domainId, accountId, ledgerId }),
       null,
+    )
+  }
+  /**
+   * Retrieve account address
+   * @param pathParams - The path parameters for the request
+   * @returns The account address
+   */
+  async getAccountAddress({
+    domainId,
+    accountId,
+    accountAddressId,
+  }: GetAccountAddressPathParams): Promise<Core_AccountAddress> {
+    return this.api.get<Core_AccountAddress>(
+      replacePathParams(URLs.accountAddress, { domainId, accountId, accountAddressId }),
     )
   }
 }
