@@ -1,5 +1,5 @@
-import crypto, { generateKeyPairSync, sign } from "crypto"
-import { isString, isStringifiedObject } from "../../helpers/index.js"
+import { generateKeyPairSync, sign } from "crypto"
+import { isString } from "../../helpers/index.js"
 import type { KeyPair, KeypairDefinition } from "./keypairs.types.js"
 
 /**
@@ -57,15 +57,8 @@ export class Secp256r1Service implements KeypairDefinition {
         throw new Error("Invalid private key: Must be PEM-encoded secp256r1 private key")
       }
 
-      let messageHash: Buffer
-
-      if (isStringifiedObject(message)) {
-        // Step 1: Create SHA256 hash of the message (canonicalized JSON)
-        messageHash = crypto.createHash("sha256").update(message).digest()
-      } else {
-        // Step 1b: Use the message as is if it's a UUID (typically for JWT)
-        messageHash = Buffer.from(message)
-      }
+      // Step 1: Create a Buffer from the message (already a string)
+      const messageHash = Buffer.from(message)
 
       // Step 2: Sign the hash using secp256r1
       const signature = sign(null, messageHash, {
