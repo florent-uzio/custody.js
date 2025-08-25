@@ -1,6 +1,10 @@
 import { generateKeyPairSync, sign } from "crypto"
+import { isString } from "../../helpers/index.js"
 import type { KeyPair, KeypairDefinition } from "./keypairs.types.js"
 
+/**
+ * Service for generating and signing with secp256k1 keypairs.
+ */
 export class Secp256k1Service implements KeypairDefinition {
   /**
    * Generates a secp256k1 key pair
@@ -28,26 +32,44 @@ export class Secp256k1Service implements KeypairDefinition {
         publicKey: publicKeyDerBase64,
       }
     } catch (error) {
-      throw new Error("Failed to generate key pair")
+      throw new Error("Failed to generate secp256k1 key pair", { cause: error })
     }
   }
 
   /**
-   * Signs a message with a secp256k1 private key
-   * @param privateKeyPem Private key in PEM format
-   * @param message Message to sign
-   * @returns {string} The base64 encoded signature
+   * Signs a message using the provided PEM-encoded secp256k1 private key.
+   * This implementation follows the pattern:
+   * 1. Create SHA256 hash of canonicalized JSON (if applicable)
+   * 2. Sign the hash with secp256k1
+   * 3. Return DER-encoded, Base64-formatted signature
+   *
+   * @param {string} privateKeyPem - PEM-encoded private key.
+   * @param {string} message - Message to sign (should be canonicalized JSON).
+   * @returns {string} Base64-encoded DER signature.
    */
   sign(privateKeyPem: string, message: string): string {
     try {
-      const signature = sign(null, Buffer.from(message), {
+      // Validate inputs
+      if (!isString(message)) {
+        throw new Error("Message must be a string")
+      }
+      if (!isString(privateKeyPem) || !privateKeyPem.includes("-----BEGIN EC PRIVATE KEY-----")) {
+        throw new Error("Invalid private key: Must be PEM-encoded secp256k1 private key")
+      }
+
+      // Step 1: Create a Buffer from the message (already a string)
+      const messageHash = Buffer.from(message)
+
+      // Step 2: Sign the hash using secp256k1 (already a string)
+      const signature = sign(null, messageHash, {
         key: privateKeyPem,
         dsaEncoding: "der",
       })
 
+      // Step 3: Return Base64-encoded DER signature
       return signature.toString("base64")
     } catch (error) {
-      throw new Error("Failed to sign message", { cause: error })
+      throw new Error("Failed to sign message with secp256k1", { cause: error })
     }
   }
 }

@@ -1,31 +1,44 @@
 import { describe, expect, it } from "vitest"
-import { Secp256k1Service } from "./secp256k1.service"
+import { Secp256k1Service } from "./secp256k1.service.js"
 
 describe("Secp256k1Service", () => {
   const service = new Secp256k1Service()
 
   it("should generate a valid key pair", () => {
-    const keyPair = service.generate()
-    expect(keyPair).toHaveProperty("privateKey")
-    expect(keyPair).toHaveProperty("publicKey")
-    expect(typeof keyPair.privateKey).toBe("string")
-    expect(typeof keyPair.publicKey).toBe("string")
-    expect(keyPair.privateKey).toMatch(/-----BEGIN EC PRIVATE KEY-----/)
-    expect(keyPair.publicKey.length).toBeGreaterThan(0)
+    const keypair = service.generate()
+
+    expect(keypair.privateKey).toBeDefined()
+    expect(keypair.publicKey).toBeDefined()
+    expect(keypair.privateKey).toContain("-----BEGIN EC PRIVATE KEY-----")
+    expect(keypair.privateKey).toContain("-----END EC PRIVATE KEY-----")
+    expect(keypair.publicKey).toMatch(/^[A-Za-z0-9+/]+={0,2}$/) // Base64 format
   })
 
   it("should sign a message and return a base64 signature", () => {
-    const { privateKey } = service.generate()
-    const message = "hello world"
-    const signature = service.sign(privateKey, message)
-    expect(typeof signature).toBe("string")
-    // base64 regex
-    expect(signature).toMatch(/^[A-Za-z0-9+/=]+$/)
+    const keypair = service.generate()
+    const message = '{"test": "data"}'
+    const signature = service.sign(keypair.privateKey, message)
+
+    expect(signature).toBeDefined()
+    expect(signature).toMatch(/^[A-Za-z0-9+/]+={0,2}$/) // Base64 format
     expect(signature.length).toBeGreaterThan(0)
   })
 
   it("should throw an error when signing with an invalid private key", () => {
-    const invalidKey = "invalid-key"
-    expect(() => service.sign(invalidKey, "test")).toThrowError()
+    const invalidPrivateKey = "invalid-key"
+    const message = '{"test": "data"}'
+
+    expect(() => {
+      service.sign(invalidPrivateKey, message)
+    }).toThrow("Failed to sign message with secp256k1")
+  })
+
+  it("should handle non-stringified object messages", () => {
+    const keypair = service.generate()
+    const message = "simple-uuid-message"
+    const signature = service.sign(keypair.privateKey, message)
+
+    expect(signature).toBeDefined()
+    expect(signature).toMatch(/^[A-Za-z0-9+/]+={0,2}$/)
   })
 })
