@@ -3,8 +3,10 @@ import { replacePathParams } from "../../helpers/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type {
   Core_AccountsCollection,
+  Core_AddressReferenceCollection,
   GetAccountsPathParams,
   GetAccountsQueryParams,
+  GetAllDomainsAddressesQueryParams,
 } from "./accounts.types.js"
 
 export class AccountsService {
@@ -24,5 +26,16 @@ export class AccountsService {
       replacePathParams(URLs.accounts, { domainId }),
       queryParams,
     )
+  }
+
+  /**
+   * Get all domains addresses
+   * @param queryParams - The query parameters for the request
+   * @returns The all domains addresses
+   */
+  async getAllDomainsAddresses(
+    queryParams: GetAllDomainsAddressesQueryParams,
+  ): Promise<Core_AddressReferenceCollection> {
+    return this.api.get<Core_AddressReferenceCollection>(URLs.addresses, queryParams)
   }
 }

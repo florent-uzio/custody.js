@@ -25,6 +25,15 @@ export type {
   GetDomainsQueryParams,
 } from "./services/domains/index.js"
 
+// accounts types
+export type {
+  Core_AccountsCollection,
+  Core_AddressReferenceCollection,
+  GetAccountsPathParams,
+  GetAccountsQueryParams,
+  GetAllDomainsAddressesQueryParams,
+} from "./services/accounts/index.js"
+
 // transactions types
 export type {
   Core_DryRunTransactionParameters,

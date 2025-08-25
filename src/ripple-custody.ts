@@ -2,8 +2,10 @@ import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import {
   AccountsService,
   type Core_AccountsCollection,
+  type Core_AddressReferenceCollection,
   type GetAccountsPathParams,
   type GetAccountsQueryParams,
+  type GetAllDomainsAddressesQueryParams,
 } from "./services/accounts/index.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
@@ -252,5 +254,15 @@ export class RippleCustody {
       params: GetAccountsPathParams,
       query: GetAccountsQueryParams,
     ): Promise<Core_AccountsCollection> => this.accountsService.getAccounts(params, query),
+
+    /**
+     * Get all domains addresses
+     * @param query - The query parameters for the request
+     * @returns The all domains addresses
+     */
+    allDomainsAddresses: async (
+      query: GetAllDomainsAddressesQueryParams,
+    ): Promise<Core_AddressReferenceCollection> =>
+      this.accountsService.getAllDomainsAddresses(query),
   }
 }
