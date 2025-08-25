@@ -11,6 +11,9 @@ export type TransferTransactionOrderQueryParams = operations["getTransfers"]["pa
 
 export type GetTransferDetailsPathParams = operations["getTransfer"]["parameters"]["path"]
 
+export type GetTransactionsPathParams = operations["getTransactions"]["parameters"]["path"]
+export type GetTransactionsQueryParams = operations["getTransactions"]["parameters"]["query"]
+
 // Response types
 export type Core_TrustedTransactionOrdersCollection =
   components["schemas"]["Core_TrustedTransactionOrdersCollection"]
@@ -21,3 +24,5 @@ export type Core_TrustedTransactionOrderDetails =
 export type Core_TransfersCollection = components["schemas"]["Core_TransfersCollection"]
 
 export type Core_TransferDetails = components["schemas"]["Core_ApiTransfer"]
+
+export type Core_TransactionsCollection = components["schemas"]["Core_TransactionsCollection"]

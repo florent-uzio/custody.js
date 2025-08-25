@@ -27,6 +27,7 @@ export type {
 
 // transactions types
 export type {
+  Core_TransactionsCollection,
   Core_TransferDetails,
   Core_TransfersCollection,
   Core_TrustedTransactionOrderDetails,
@@ -34,6 +35,8 @@ export type {
   GetTransactionOrderDetailsPathParams,
   GetTransactionOrdersPathParams,
   GetTransactionOrdersQueryParams,
+  GetTransactionsPathParams,
+  GetTransactionsQueryParams,
   GetTransferDetailsPathParams,
   TransferTransactionOrderPathParams,
   TransferTransactionOrderQueryParams,
