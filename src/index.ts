@@ -91,3 +91,10 @@ export type {
   GetUsersPathParams,
   GetUsersQueryParams,
 } from "./services/users/index.js"
+
+// tickers types
+export type {
+  Core_ApiTicker,
+  Core_TickersCollection,
+  GetTickerPathParams,
+} from "./services/tickers/index.js"

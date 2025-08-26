@@ -51,6 +51,13 @@ import {
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
 import type {
+  Core_ApiTicker,
+  Core_TickersCollection,
+  GetTickerPathParams,
+  GetTickersQueryParams,
+} from "./services/tickers/index.js"
+import { TickersService } from "./services/tickers/index.js"
+import type {
   Core_DryRunTransactionParameters,
   Core_TransactionDetails,
   Core_TransactionDryRun,
@@ -91,6 +98,7 @@ export class RippleCustody {
   private intentService: IntentsService
   private transactionsService: TransactionsService
   private usersService: UsersService
+  private tickersService: TickersService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -109,6 +117,7 @@ export class RippleCustody {
     this.intentService = new IntentsService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
     this.usersService = new UsersService(this.apiService)
+    this.tickersService = new TickersService(this.apiService)
   }
 
   // Auth namespace
@@ -404,7 +413,7 @@ export class RippleCustody {
      */
     list: async (
       params: GetUsersPathParams,
-      query: GetUsersQueryParams,
+      query?: GetUsersQueryParams,
     ): Promise<Core_TrustedUsersCollection> => this.usersService.getUsers(params, query),
 
     /**
@@ -428,5 +437,23 @@ export class RippleCustody {
      * @returns The user reference
      */
     me: async (): Promise<Core_MeReference> => this.usersService.getMe(),
+  }
+
+  // Tickers namespace
+  public readonly tickers = {
+    /**
+     * Get all tickers
+     * @returns The tickers
+     */
+    list: async (queryParams?: GetTickersQueryParams): Promise<Core_TickersCollection> =>
+      this.tickersService.getTickers(queryParams ?? {}),
+
+    /**
+     * Get a ticker details
+     * @param params - The parameters for the request
+     * @returns The ticker details
+     */
+    get: async (params: GetTickerPathParams): Promise<Core_ApiTicker> =>
+      this.tickersService.getTicker(params),
   }
 }
