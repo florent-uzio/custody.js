@@ -50,6 +50,8 @@ import {
   type Core_RemainingUsersIntentPathParams,
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
+import type { Core_TickersCollection } from "./services/tickers/index.js"
+import { TickersService } from "./services/tickers/index.js"
 import type {
   Core_DryRunTransactionParameters,
   Core_TransactionDetails,
@@ -91,6 +93,7 @@ export class RippleCustody {
   private intentService: IntentsService
   private transactionsService: TransactionsService
   private usersService: UsersService
+  private tickersService: TickersService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -109,6 +112,7 @@ export class RippleCustody {
     this.intentService = new IntentsService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
     this.usersService = new UsersService(this.apiService)
+    this.tickersService = new TickersService(this.apiService)
   }
 
   // Auth namespace
@@ -428,5 +432,14 @@ export class RippleCustody {
      * @returns The user reference
      */
     me: async (): Promise<Core_MeReference> => this.usersService.getMe(),
+  }
+
+  // Tickers namespace
+  public readonly tickers = {
+    /**
+     * Get all tickers
+     * @returns The tickers
+     */
+    list: async (): Promise<Core_TickersCollection> => this.tickersService.getTickers(),
   }
 }
