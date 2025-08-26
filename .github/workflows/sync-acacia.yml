@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  pull-requests: read
+
 jobs:
   sync-acacia:
     runs-on: ubuntu-latest
@@ -15,6 +19,7 @@ jobs:
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -31,6 +36,9 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # Configure the token for authentication
+          git config --global credential.helper store
+          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
 
       - name: Checkout acacia branch
         run: |
@@ -131,3 +139,5 @@ jobs:
 
       - name: Push to acacia branch
         run: git push origin acacia
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

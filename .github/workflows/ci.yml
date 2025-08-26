@@ -2,9 +2,9 @@ name: Build, Formatting, Exports and Tests
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
