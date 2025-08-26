@@ -79,3 +79,15 @@ export type {
   TransferTransactionOrderPathParams,
   TransferTransactionOrderQueryParams,
 } from "./services/transactions/index.js"
+
+// users types
+export type {
+  Core_ApiRoles,
+  Core_MeReference,
+  Core_TrustedUser,
+  Core_TrustedUsersCollection,
+  GetKnownUserRolesPathParams,
+  GetUserPathParams,
+  GetUsersPathParams,
+  GetUsersQueryParams,
+} from "./services/users/index.js"
