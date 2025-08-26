@@ -74,8 +74,10 @@ import { TransactionsService } from "./services/transactions/index.js"
 import { UsersService } from "./services/users/index.js"
 import type {
   Core_ApiRoles,
+  Core_TrustedUser,
   Core_TrustedUsersCollection,
   GetKnownUserRolesPathParams,
+  GetUserPathParams,
   GetUsersPathParams,
   GetUsersQueryParams,
 } from "./services/users/users.types.js"
@@ -411,5 +413,13 @@ export class RippleCustody {
      */
     knownRoles: async (params: GetKnownUserRolesPathParams): Promise<Core_ApiRoles> =>
       this.usersService.getKnownUserRoles(params),
+
+    /**
+     * Get user
+     * @param params - The parameters for the request
+     * @returns The user
+     */
+    get: async (params: GetUserPathParams): Promise<Core_TrustedUser> =>
+      this.usersService.getUser(params),
   }
 }

@@ -83,8 +83,10 @@ export type {
 // users types
 export type {
   Core_ApiRoles,
+  Core_TrustedUser,
   Core_TrustedUsersCollection,
   GetKnownUserRolesPathParams,
+  GetUserPathParams,
   GetUsersPathParams,
   GetUsersQueryParams,
 } from "./services/users/index.js"
