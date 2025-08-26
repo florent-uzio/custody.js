@@ -41,7 +41,7 @@ export class AccountsService {
    */
   async getAccounts(
     { domainId }: GetAccountsPathParams,
-    queryParams: GetAccountsQueryParams,
+    queryParams?: GetAccountsQueryParams,
   ): Promise<Core_AccountsCollection> {
     return this.api.get<Core_AccountsCollection>(
       replacePathParams(URLs.accounts, { domainId }),
@@ -55,7 +55,7 @@ export class AccountsService {
    * @returns The all domains addresses
    */
   async getAllDomainsAddresses(
-    queryParams: GetAllDomainsAddressesQueryParams,
+    queryParams?: GetAllDomainsAddressesQueryParams,
   ): Promise<Core_AddressReferenceCollection> {
     return this.api.get<Core_AddressReferenceCollection>(URLs.addresses, queryParams)
   }
@@ -67,7 +67,7 @@ export class AccountsService {
    */
   async getAccount(
     { domainId, accountId }: GetAccountPathParams,
-    queryParams: GetAccountQueryParams,
+    queryParams?: GetAccountQueryParams,
   ): Promise<Core_ApiAccount> {
     return this.api.get<Core_ApiAccount>(
       replacePathParams(URLs.account, { domainId, accountId }),
@@ -83,7 +83,7 @@ export class AccountsService {
    */
   async getAddresses(
     { domainId, accountId }: GetAddressesPathParams,
-    queryParams: GetAddressesQueryParams,
+    queryParams?: GetAddressesQueryParams,
   ): Promise<Core_AddressesCollection> {
     return this.api.get<Core_AddressesCollection>(
       replacePathParams(URLs.accountAddresses, { domainId, accountId }),
@@ -100,7 +100,7 @@ export class AccountsService {
    */
   async generateNewExternalAddressDeprecated(
     { domainId, accountId }: GenerateNewAccountExternalAddressDeprecatedPathParams,
-    queryParams: GenerateNewAccountExternalAddressDeprecatedQueryParams,
+    queryParams?: GenerateNewAccountExternalAddressDeprecatedQueryParams,
   ): Promise<Core_AccountAddress> {
     return this.api.post<Core_AccountAddress>(
       replacePathParams(URLs.accountAddresses, { domainId, accountId }),
@@ -146,7 +146,7 @@ export class AccountsService {
    */
   async getAccountBalances(
     { domainId, accountId }: GetAccountBalancesPathParams,
-    queryParams: GetAccountBalancesQueryParams,
+    queryParams?: GetAccountBalancesQueryParams,
   ): Promise<Core_BalancesCollection> {
     return this.api.get<Core_BalancesCollection>(
       replacePathParams(URLs.accountBalances, { domainId, accountId }),
@@ -159,7 +159,7 @@ export class AccountsService {
    */
   async forceUpdateAccountBalances(
     { domainId, accountId }: ForceUpdateAccountBalancesPathParams,
-    queryParams: ForceUpdateAccountBalancesQueryParams,
+    queryParams?: ForceUpdateAccountBalancesQueryParams,
   ): Promise<void> {
     return this.api.post<void>(
       replacePathParams(URLs.accountBalances, { domainId, accountId }),
@@ -175,7 +175,7 @@ export class AccountsService {
    */
   async getManifests(
     { domainId, accountId }: GetManifestsPathParams,
-    queryParams: GetManifestsQueryParams,
+    queryParams?: GetManifestsQueryParams,
   ): Promise<Core_ManifestsCollection> {
     return this.api.get<Core_ManifestsCollection>(
       replacePathParams(URLs.accountManifests, { domainId, accountId }),

@@ -219,7 +219,7 @@ export class RippleCustody {
      */
     orders: async (
       params: GetTransactionOrdersPathParams,
-      query: GetTransactionOrdersQueryParams,
+      query?: GetTransactionOrdersQueryParams,
     ): Promise<Core_TrustedTransactionOrdersCollection> =>
       this.transactionsService.getTransactionOrders(params, query),
 
@@ -241,7 +241,7 @@ export class RippleCustody {
      */
     transfers: async (
       params: TransferTransactionOrderPathParams,
-      query: TransferTransactionOrderQueryParams,
+      query?: TransferTransactionOrderQueryParams,
     ): Promise<Core_TransfersCollection> => this.transactionsService.getTransfers(params, query),
 
     /**
@@ -260,7 +260,7 @@ export class RippleCustody {
      */
     transactions: async (
       params: GetTransactionsPathParams,
-      query: GetTransactionsQueryParams,
+      query?: GetTransactionsQueryParams,
     ): Promise<Core_TransactionsCollection> =>
       this.transactionsService.getTransactions(params, query),
 
@@ -295,7 +295,7 @@ export class RippleCustody {
      */
     list: async (
       params: GetAccountsPathParams,
-      query: GetAccountsQueryParams,
+      query?: GetAccountsQueryParams,
     ): Promise<Core_AccountsCollection> => this.accountsService.getAccounts(params, query),
 
     /**
@@ -316,7 +316,7 @@ export class RippleCustody {
      */
     get: async (
       params: GetAccountPathParams,
-      query: GetAccountQueryParams,
+      query?: GetAccountQueryParams,
     ): Promise<Core_ApiAccount> => this.accountsService.getAccount(params, query),
 
     /**
@@ -327,7 +327,7 @@ export class RippleCustody {
      */
     addresses: async (
       params: GetAddressesPathParams,
-      query: GetAddressesQueryParams,
+      query?: GetAddressesQueryParams,
     ): Promise<Core_AddressesCollection> => this.accountsService.getAddresses(params, query),
 
     /**
@@ -369,7 +369,7 @@ export class RippleCustody {
      */
     getAccountBalances: async (
       params: GetAccountBalancesPathParams,
-      query: GetAccountBalancesQueryParams,
+      query?: GetAccountBalancesQueryParams,
     ): Promise<Core_BalancesCollection> => this.accountsService.getAccountBalances(params, query),
 
     /**
@@ -380,7 +380,7 @@ export class RippleCustody {
      */
     forceUpdateAccountBalances: async (
       params: ForceUpdateAccountBalancesPathParams,
-      query: ForceUpdateAccountBalancesQueryParams,
+      query?: ForceUpdateAccountBalancesQueryParams,
     ): Promise<void> => this.accountsService.forceUpdateAccountBalances(params, query),
 
     /**
@@ -391,7 +391,7 @@ export class RippleCustody {
      */
     getManifests: async (
       params: GetManifestsPathParams,
-      query: GetManifestsQueryParams,
+      query?: GetManifestsQueryParams,
     ): Promise<Core_ManifestsCollection> => this.accountsService.getManifests(params, query),
 
     /**

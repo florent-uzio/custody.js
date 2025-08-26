@@ -17,6 +17,8 @@ export class TickersService {
 
   /**
    * Get all tickers
+   * @param queryParams - The query parameters for the request
+   * @returns The tickers
    */
   public async getTickers(queryParams?: GetTickersQueryParams): Promise<Core_TickersCollection> {
     return this.apiService.get(URLs.tickers, queryParams)
@@ -24,6 +26,8 @@ export class TickersService {
 
   /**
    * Get a ticker details
+   * @param pathParams - The path parameters for the request
+   * @returns The ticker details
    */
   public async getTicker({ tickerId }: GetTickerPathParams): Promise<Core_ApiTicker> {
     return this.apiService.get(replacePathParams(URLs.ticker, { tickerId }))

@@ -17,23 +17,23 @@ export class UsersService {
 
   /**
    * Get users
-   * @param path - The path parameters for the request
-   * @param query - The query parameters for the request
+   * @param pathParams - The path parameters for the request
+   * @param queryParams - The query parameters for the request
    * @returns The users
    */
   async getUsers(
     { domainId }: GetUsersPathParams,
-    query: GetUsersQueryParams,
+    queryParams?: GetUsersQueryParams,
   ): Promise<Core_TrustedUsersCollection> {
     return this.api.get<Core_TrustedUsersCollection>(
       replacePathParams(URLs.users, { domainId }),
-      query,
+      queryParams,
     )
   }
 
   /**
    * Get known user roles
-   * @param path - The path parameters for the request
+   * @param pathParams - The path parameters for the request
    * @returns The known user roles
    */
   async getKnownUserRoles({ domainId }: GetKnownUserRolesPathParams): Promise<Core_ApiRoles> {
@@ -42,7 +42,7 @@ export class UsersService {
 
   /**
    * Get user
-   * @param path - The path parameters for the request
+   * @param pathParams - The path parameters for the request
    * @returns The user
    */
   async getUser({ domainId, userId }: GetUserPathParams): Promise<Core_TrustedUser> {

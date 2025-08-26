@@ -16,9 +16,9 @@ export class DomainService {
    * Fetches the list of domains from the backend.
    * @returns {Promise<Core_TrustedDomainsCollection>} The domains data from the API.
    */
-  async getDomains(params?: GetDomainsQueryParams): Promise<Core_TrustedDomainsCollection> {
+  async getDomains(queryParams?: GetDomainsQueryParams): Promise<Core_TrustedDomainsCollection> {
     // Call the API to get domains
-    return this.api.get<Core_TrustedDomainsCollection>(URLs.domains, { params })
+    return this.api.get<Core_TrustedDomainsCollection>(URLs.domains, queryParams)
   }
 
   /**
