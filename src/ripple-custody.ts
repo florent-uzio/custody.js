@@ -71,6 +71,12 @@ import type {
   TransferTransactionOrderQueryParams,
 } from "./services/transactions/index.js"
 import { TransactionsService } from "./services/transactions/index.js"
+import { UsersService } from "./services/users/index.js"
+import type {
+  Core_TrustedUsersCollection,
+  GetUsersPathParams,
+  GetUsersQueryParams,
+} from "./services/users/users.types.js"
 
 export class RippleCustody {
   private accountsService: AccountsService
@@ -79,6 +85,7 @@ export class RippleCustody {
   private domainService: DomainService
   private intentService: IntentsService
   private transactionsService: TransactionsService
+  private usersService: UsersService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -96,6 +103,7 @@ export class RippleCustody {
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
+    this.usersService = new UsersService(this.apiService)
   }
 
   // Auth namespace
@@ -379,5 +387,19 @@ export class RippleCustody {
      */
     getManifest: async (params: GetManifestPathParams): Promise<Core_ApiManifest> =>
       this.accountsService.getManifest(params),
+  }
+
+  // Users namespace
+  public readonly users = {
+    /**
+     * Get users
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The users
+     */
+    list: async (
+      params: GetUsersPathParams,
+      query: GetUsersQueryParams,
+    ): Promise<Core_TrustedUsersCollection> => this.usersService.getUsers(params, query),
   }
 }
