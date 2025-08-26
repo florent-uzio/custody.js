@@ -22,10 +22,17 @@ npm install custody.js
 
 ### From GitHub (acacia branch)
 
-If you need to install directly from the GitHub repository (e.g., for testing or using the latest development version), you can install from the `acacia` branch:
+If you need to install directly from the GitHub repository (e.g., for testing or using the latest development version), you can install from the `acacia` branch.
+
+**Authentication Required**: To install from GitHub, you need to generate a GitHub token with read access:
+
+- **Fine-grained token**: Select the Custody.js project and then the `Metadata` permission with `read-only` access.
+- **Classic token**: Use the `repo` scope (Full control of private repositories) - this includes the read access needed for npm install
+
+You can then use the token in your npm command:
 
 ```bash
-npm install git+https://github.com/florent-uzio/custody.js.git#acacia
+npm install git+https://YOUR_TOKEN@github.com/florent-uzio/custody.js.git#acacia
 ```
 
 **Note**: The `acacia` branch is automatically synchronized with the `main` branch and includes the built `dist` directory, making it suitable for direct GitHub installation.
