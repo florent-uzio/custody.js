@@ -83,6 +83,7 @@ export type {
 // users types
 export type {
   Core_ApiRoles,
+  Core_MeReference,
   Core_TrustedUser,
   Core_TrustedUsersCollection,
   GetKnownUserRolesPathParams,

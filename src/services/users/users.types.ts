@@ -19,3 +19,6 @@ export type Core_ApiRoles =
 
 export type Core_TrustedUser =
   operations["getUser"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_MeReference =
+  operations["getMe"]["responses"]["200"]["content"]["application/json"]

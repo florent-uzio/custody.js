@@ -74,6 +74,7 @@ import { TransactionsService } from "./services/transactions/index.js"
 import { UsersService } from "./services/users/index.js"
 import type {
   Core_ApiRoles,
+  Core_MeReference,
   Core_TrustedUser,
   Core_TrustedUsersCollection,
   GetKnownUserRolesPathParams,
@@ -421,5 +422,11 @@ export class RippleCustody {
      */
     get: async (params: GetUserPathParams): Promise<Core_TrustedUser> =>
       this.usersService.getUser(params),
+
+    /**
+     * List users belonging to the same public key
+     * @returns The user reference
+     */
+    me: async (): Promise<Core_MeReference> => this.usersService.getMe(),
   }
 }

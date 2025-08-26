@@ -3,6 +3,7 @@ import { replacePathParams } from "../../helpers/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type {
   Core_ApiRoles,
+  Core_MeReference,
   Core_TrustedUser,
   Core_TrustedUsersCollection,
   GetKnownUserRolesPathParams,
@@ -46,5 +47,13 @@ export class UsersService {
    */
   async getUser({ domainId, userId }: GetUserPathParams): Promise<Core_TrustedUser> {
     return this.api.get<Core_TrustedUser>(replacePathParams(URLs.user, { domainId, userId }))
+  }
+
+  /**
+   * List users belonging to the same public key
+   * @returns The user reference
+   */
+  async getMe(): Promise<Core_MeReference> {
+    return this.api.get<Core_MeReference>(URLs.me)
   }
 }
