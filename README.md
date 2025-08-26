@@ -14,9 +14,21 @@ A comprehensive JavaScript SDK for interacting with the Ripple Custody API. This
 
 ## Installation
 
+### From npm (recommended)
+
 ```bash
 npm install custody.js
 ```
+
+### From GitHub (acacia branch)
+
+If you need to install directly from the GitHub repository (e.g., for testing or using the latest development version), you can install from the `acacia` branch:
+
+```bash
+npm install git+https://github.com/florent-uzio/custody.js.git#acacia
+```
+
+**Note**: The `acacia` branch is automatically synchronized with the `main` branch and includes the built `dist` directory, making it suitable for direct GitHub installation.
 
 ## Quick Start
 
@@ -132,6 +144,26 @@ const dryRunResult = await custody.transactions.dryRun(
   },
 )
 ```
+
+## Development
+
+### Branch Strategy
+
+This repository uses two main branches:
+
+- **`main`**: The primary development branch containing source code and tests
+- **`acacia`**: A deployment branch that includes the built `dist` directory for GitHub installation
+
+### Automated Sync
+
+The `acacia` branch is automatically synchronized with `main` via GitHub Actions. Every time changes are merged into `main`, the workflow:
+
+1. Builds the project using `npm run build`
+2. Updates the `acacia` branch with the latest changes
+3. Resolves merge conflicts in `.gitignore` to ensure the `dist` directory is included
+4. Pushes the updated `acacia` branch
+
+This ensures that users installing from GitHub always get the latest built version.
 
 ## License
 
