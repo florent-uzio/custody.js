@@ -33,7 +33,7 @@ export class TransactionsService {
    */
   async getTransactionOrders(
     { domainId }: GetTransactionOrdersPathParams,
-    query: GetTransactionOrdersQueryParams,
+    query?: GetTransactionOrdersQueryParams,
   ): Promise<Core_TrustedTransactionOrdersCollection> {
     return this.api.get<Core_TrustedTransactionOrdersCollection>(
       replacePathParams(URLs.transactionOrders, { domainId }),
@@ -63,7 +63,7 @@ export class TransactionsService {
    */
   async getTransfers(
     { domainId }: TransferTransactionOrderPathParams,
-    query: TransferTransactionOrderQueryParams,
+    query?: TransferTransactionOrderQueryParams,
   ): Promise<Core_TransfersCollection> {
     return this.api.get<Core_TransfersCollection>(
       replacePathParams(URLs.transactionTransfers, { domainId }),
@@ -92,7 +92,7 @@ export class TransactionsService {
    */
   async getTransactions(
     { domainId }: GetTransactionsPathParams,
-    query: GetTransactionsQueryParams,
+    query?: GetTransactionsQueryParams,
   ): Promise<Core_TransactionsCollection> {
     return this.api.get<Core_TransactionsCollection>(
       replacePathParams(URLs.transactions, { domainId }),

@@ -39,11 +39,11 @@ export class IntentsService {
 
   /**
    * Reject an intent
-   * @param params - The parameters for the intent
+   * @param body - The parameters for the intent
    * @returns The intent response
    */
-  async rejectIntent(params: Core_RejectIntentBody): Promise<Core_IntentResponse> {
-    return this.api.post<Core_IntentResponse>(URLs.intentsReject, params)
+  async rejectIntent(body: Core_RejectIntentBody): Promise<Core_IntentResponse> {
+    return this.api.post<Core_IntentResponse>(URLs.intentsReject, body)
   }
 
   /**
@@ -84,8 +84,8 @@ export class IntentsService {
    * @param params - The parameters for the intent
    * @returns The intent response
    */
-  async dryRunIntent(params: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> {
-    return this.api.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, params)
+  async dryRunIntent(body: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> {
+    return this.api.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, body)
   }
 
   /**
