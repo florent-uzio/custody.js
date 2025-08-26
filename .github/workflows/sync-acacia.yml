@@ -119,25 +119,42 @@ jobs:
 
       - name: Merge main into acacia
         run: |
-          # Add the current changes (including the new .gitignore and built dist)
+          # Check if there are any changes to commit
           git add -A
 
-          # Commit the current state
-          git commit -m "Update acacia branch with latest build and .gitignore configuration"
+          # Check if there are staged changes
+          if git diff --cached --quiet; then
+            echo "No changes to commit in acacia branch"
+          else
+            # Commit the current state
+            git commit -m "Update acacia branch with latest build and .gitignore configuration"
+          fi
 
-          # Merge main branch
-          git merge main --no-edit || {
-            echo "Merge conflict detected, resolving..."
-            # If there's a conflict, we'll resolve it by keeping our version
-            git status --porcelain | grep "^UU" | cut -c4- | while read file; do
-              echo "Resolving conflict in $file"
-              git checkout --ours "$file"
-              git add "$file"
-            done
-            git commit -m "Resolve merge conflicts, keeping acacia branch configuration"
-          }
+          # Check if main branch has new commits that aren't in acacia
+          if git merge-base --is-ancestor main acacia; then
+            echo "acacia branch is already up to date with main"
+          else
+            # Merge main branch
+            git merge main --no-edit || {
+              echo "Merge conflict detected, resolving..."
+              # If there's a conflict, we'll resolve it by keeping our version
+              git status --porcelain | grep "^UU" | cut -c4- | while read file; do
+                echo "Resolving conflict in $file"
+                git checkout --ours "$file"
+                git add "$file"
+              done
+              git commit -m "Resolve merge conflicts, keeping acacia branch configuration"
+            }
+          fi
 
       - name: Push to acacia branch
-        run: git push origin acacia
+        run: |
+          # Check if there are any commits ahead of origin/acacia
+          if git log --oneline origin/acacia..acacia | wc -l | grep -q "0"; then
+            echo "No new commits to push to acacia branch"
+          else
+            echo "Pushing new commits to acacia branch"
+            git push origin acacia
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
