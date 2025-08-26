@@ -1,6 +1,11 @@
 import { URLs } from "../../constants/urls.js"
+import { replacePathParams } from "../../helpers/index.js"
 import type { ApiService } from "../apis/index.js"
-import type { Core_TickersCollection } from "./tickers.types.js"
+import type {
+  Core_ApiTicker,
+  Core_TickersCollection,
+  GetTickerPathParams,
+} from "./tickers.types.js"
 
 /**
  * A ticker defines a detected currency and its respective symbol, number and parameters.
@@ -14,5 +19,12 @@ export class TickersService {
    */
   public async getTickers(): Promise<Core_TickersCollection> {
     return this.apiService.get(URLs.tickers)
+  }
+
+  /**
+   * Get a ticker details
+   */
+  public async getTicker({ tickerId }: GetTickerPathParams): Promise<Core_ApiTicker> {
+    return this.apiService.get(replacePathParams(URLs.ticker, { tickerId }))
   }
 }

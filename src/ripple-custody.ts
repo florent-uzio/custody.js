@@ -50,7 +50,11 @@ import {
   type Core_RemainingUsersIntentPathParams,
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
-import type { Core_TickersCollection } from "./services/tickers/index.js"
+import type {
+  Core_ApiTicker,
+  Core_TickersCollection,
+  GetTickerPathParams,
+} from "./services/tickers/index.js"
 import { TickersService } from "./services/tickers/index.js"
 import type {
   Core_DryRunTransactionParameters,
@@ -441,5 +445,13 @@ export class RippleCustody {
      * @returns The tickers
      */
     list: async (): Promise<Core_TickersCollection> => this.tickersService.getTickers(),
+
+    /**
+     * Get a ticker details
+     * @param params - The parameters for the request
+     * @returns The ticker details
+     */
+    get: async (params: GetTickerPathParams): Promise<Core_ApiTicker> =>
+      this.tickersService.getTicker(params),
   }
 }

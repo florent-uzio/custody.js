@@ -93,4 +93,8 @@ export type {
 } from "./services/users/index.js"
 
 // tickers types
-export type { Core_TickersCollection } from "./services/tickers/index.js"
+export type {
+  Core_ApiTicker,
+  Core_TickersCollection,
+  GetTickerPathParams,
+} from "./services/tickers/index.js"
