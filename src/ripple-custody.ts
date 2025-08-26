@@ -54,6 +54,7 @@ import type {
   Core_ApiTicker,
   Core_TickersCollection,
   GetTickerPathParams,
+  GetTickersQueryParams,
 } from "./services/tickers/index.js"
 import { TickersService } from "./services/tickers/index.js"
 import type {
@@ -412,7 +413,7 @@ export class RippleCustody {
      */
     list: async (
       params: GetUsersPathParams,
-      query: GetUsersQueryParams,
+      query?: GetUsersQueryParams,
     ): Promise<Core_TrustedUsersCollection> => this.usersService.getUsers(params, query),
 
     /**
@@ -444,7 +445,8 @@ export class RippleCustody {
      * Get all tickers
      * @returns The tickers
      */
-    list: async (): Promise<Core_TickersCollection> => this.tickersService.getTickers(),
+    list: async (queryParams?: GetTickersQueryParams): Promise<Core_TickersCollection> =>
+      this.tickersService.getTickers(queryParams ?? {}),
 
     /**
      * Get a ticker details

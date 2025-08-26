@@ -2,6 +2,8 @@ import type { operations } from "../../models/custody-types.js"
 
 // Request types
 
+export type GetTickersQueryParams = operations["getTickers"]["parameters"]["query"]
+
 export type GetTickerPathParams = operations["getTicker"]["parameters"]["path"]
 
 // Response types

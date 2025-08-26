@@ -5,6 +5,7 @@ import type {
   Core_ApiTicker,
   Core_TickersCollection,
   GetTickerPathParams,
+  GetTickersQueryParams,
 } from "./tickers.types.js"
 
 /**
@@ -17,8 +18,8 @@ export class TickersService {
   /**
    * Get all tickers
    */
-  public async getTickers(): Promise<Core_TickersCollection> {
-    return this.apiService.get(URLs.tickers)
+  public async getTickers(queryParams?: GetTickersQueryParams): Promise<Core_TickersCollection> {
+    return this.apiService.get(URLs.tickers, queryParams)
   }
 
   /**
