@@ -59,6 +59,7 @@ import type {
   GetLedgerPathParams,
   GetLedgersQueryParams,
   GetTrustedLedgerPathParams,
+  GetTrustedLedgersQueryParams,
   ProcessEthereumContractCallBody,
   ProcessEthereumContractCallPathParams,
 } from "./services/ledgers/index.js"
@@ -517,5 +518,15 @@ export class RippleCustody {
      */
     trusted: async (params: GetTrustedLedgerPathParams): Promise<Core_TrustedLedger> =>
       this.ledgersService.getTrustedLedger(params),
+
+    /**
+     * Get trusted ledgers
+     * @param queryParams - The query parameters for the request
+     * @returns The trusted ledgers
+     */
+    trustedList: async (
+      queryParams?: GetTrustedLedgersQueryParams,
+    ): Promise<Core_TrustedLedgersCollection> =>
+      this.ledgersService.getTrustedLedgers(queryParams ?? {}),
   }
 }

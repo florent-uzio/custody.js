@@ -10,6 +10,7 @@ import type {
   GetLedgerPathParams,
   GetLedgersQueryParams,
   GetTrustedLedgerPathParams,
+  GetTrustedLedgersQueryParams,
   ProcessEthereumContractCallBody,
   ProcessEthereumContractCallPathParams,
 } from "./ledgers.types.js"
@@ -75,5 +76,16 @@ export class LedgersService {
     ledgerId,
   }: GetTrustedLedgerPathParams): Promise<Core_TrustedLedger> {
     return this.apiService.get(replacePathParams(URLs.trustedLedger, { ledgerId }))
+  }
+
+  /**
+   * Get trusted ledgers
+   * @param queryParams - The query parameters for the request
+   * @returns The trusted ledgers
+   */
+  public async getTrustedLedgers(
+    queryParams?: GetTrustedLedgersQueryParams,
+  ): Promise<Core_TrustedLedgersCollection> {
+    return this.apiService.get(URLs.trustedLedgers, queryParams)
   }
 }
