@@ -103,6 +103,16 @@ import type {
   GetUsersPathParams,
   GetUsersQueryParams,
 } from "./services/users/users.types.js"
+import { VaultsService } from "./services/vaults/index.js"
+import type {
+  Core_ApiVault,
+  Core_ExportPreparedOperationsResponse,
+  Core_VaultsCollection,
+  ExportPreparedOperationsPathParams,
+  GetVaultPathParams,
+  GetVaultsQueryParams,
+  ImportPreparedOperationsRequestBody,
+} from "./services/vaults/vaults.types.js"
 
 export class RippleCustody {
   private accountsService: AccountsService
@@ -114,6 +124,7 @@ export class RippleCustody {
   private usersService: UsersService
   private tickersService: TickersService
   private ledgersService: LedgersService
+  private vaultsService: VaultsService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -130,10 +141,11 @@ export class RippleCustody {
     this.accountsService = new AccountsService(this.apiService)
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
+    this.ledgersService = new LedgersService(this.apiService)
+    this.tickersService = new TickersService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
     this.usersService = new UsersService(this.apiService)
-    this.tickersService = new TickersService(this.apiService)
-    this.ledgersService = new LedgersService(this.apiService)
+    this.vaultsService = new VaultsService(this.apiService)
   }
 
   // Auth namespace
@@ -528,5 +540,42 @@ export class RippleCustody {
       queryParams?: GetTrustedLedgersQueryParams,
     ): Promise<Core_TrustedLedgersCollection> =>
       this.ledgersService.getTrustedLedgers(queryParams ?? {}),
+  }
+
+  // Vaults namespace
+  public readonly vaults = {
+    /**
+     * Get vaults
+     * @param queryParams - The query parameters for the request
+     * @returns The vaults
+     */
+    list: async (queryParams?: GetVaultsQueryParams): Promise<Core_VaultsCollection> =>
+      this.vaultsService.getVaults(queryParams ?? {}),
+
+    /**
+     * Get vault
+     * @param params - The parameters for the request
+     * @returns The vault
+     */
+    get: async (params: GetVaultPathParams): Promise<Core_ApiVault> =>
+      this.vaultsService.getVault(params),
+
+    /**
+     * Export prepared operations
+     * @param params - The parameters for the request
+     * @returns The prepared operations (binary)
+     */
+    exportPreparedOperations: async (
+      params: ExportPreparedOperationsPathParams,
+    ): Promise<Core_ExportPreparedOperationsResponse> =>
+      this.vaultsService.exportPreparedOperations(params),
+
+    /**
+     * Import prepared operations (signed)
+     * @param body - The body for the request
+     * @returns void
+     */
+    importPreparedOperations: async (body: ImportPreparedOperationsRequestBody): Promise<void> =>
+      this.vaultsService.importPreparedOperations(body),
   }
 }
