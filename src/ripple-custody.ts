@@ -103,6 +103,8 @@ import type {
   GetUsersPathParams,
   GetUsersQueryParams,
 } from "./services/users/users.types.js"
+import { VaultsService } from "./services/vaults/index.js"
+import type { Core_VaultsCollection, GetVaultsQueryParams } from "./services/vaults/vaults.types.js"
 
 export class RippleCustody {
   private accountsService: AccountsService
@@ -114,6 +116,7 @@ export class RippleCustody {
   private usersService: UsersService
   private tickersService: TickersService
   private ledgersService: LedgersService
+  private vaultsService: VaultsService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -130,10 +133,11 @@ export class RippleCustody {
     this.accountsService = new AccountsService(this.apiService)
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
+    this.ledgersService = new LedgersService(this.apiService)
+    this.tickersService = new TickersService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
     this.usersService = new UsersService(this.apiService)
-    this.tickersService = new TickersService(this.apiService)
-    this.ledgersService = new LedgersService(this.apiService)
+    this.vaultsService = new VaultsService(this.apiService)
   }
 
   // Auth namespace
@@ -528,5 +532,16 @@ export class RippleCustody {
       queryParams?: GetTrustedLedgersQueryParams,
     ): Promise<Core_TrustedLedgersCollection> =>
       this.ledgersService.getTrustedLedgers(queryParams ?? {}),
+  }
+
+  // Vaults namespace
+  public readonly vaults = {
+    /**
+     * Get vaults
+     * @param queryParams - The query parameters for the request
+     * @returns The vaults
+     */
+    list: async (queryParams?: GetVaultsQueryParams): Promise<Core_VaultsCollection> =>
+      this.vaultsService.getVaults(queryParams ?? {}),
   }
 }
