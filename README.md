@@ -152,6 +152,27 @@ const dryRunResult = await custody.transactions.dryRun(
 )
 ```
 
+## Error Handling
+
+The SDK provides typed error handling through the `CustodyError` class. All API errors are thrown as `CustodyError` instances with the following structure:
+
+```typescript
+import { CustodyError } from "custody.js"
+
+try {
+  const domains = await custody.domains.list()
+} catch (error) {
+  if (error instanceof CustodyError) {
+    console.log("Error reason:", error.reason) // The main error reason
+    console.log("Error message:", error.errorMessage) // Additional error details
+    console.log("Status code:", error.statusCode) // HTTP status code
+    console.log("Full error:", error.toJSON()) // Complete error object
+  }
+}
+```
+
+The `CustodyError` class extends the standard `Error` class and provides typed access to the API's error response structure.
+
 ## Development
 
 ### Branch Strategy

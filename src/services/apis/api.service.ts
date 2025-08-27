@@ -1,7 +1,8 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
 import canonicalize from "canonicalize"
 import { v4 as uuidv4 } from "uuid"
-import { getHostname } from "../../helpers/index.js"
+import { getHostname, isObject } from "../../helpers/index.js"
+import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
 import { AuthService } from "../auth/auth.service.js"
 import { KeypairService } from "../keypairs/index.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
@@ -77,18 +78,32 @@ export class ApiService {
    * Makes a GET request to the API.
    * @param url - The endpoint URL.
    * @returns {Promise<T>} The response data.
-   * @throws {Error} If the request fails.
+   * @throws {CustodyError} If the request fails with a typed error response.
    */
   public async get<T>(url: string, params?: AxiosRequestConfig["params"]): Promise<T> {
     try {
       const response = await this.apiClient.get<T>(url, params)
       return response.data
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        // Handle Axios error
-        throw new Error(`GET API request failed: ${error.message}`)
+      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
+        // Check if the error response contains the expected error structure
+        const errorData = error.response?.data
+        if (isObject(errorData)) {
+          throw new CustodyError(errorData, error.response?.status, error)
+        }
+        // Fallback for unexpected error formats
+        throw new CustodyError(
+          { reason: `GET API request failed: ${error.message}` },
+          error.response?.status,
+          error,
+        )
       } else {
-        throw error
+        // Re-throw non-Axios errors as CustodyError
+        throw new CustodyError(
+          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
       }
     }
   }
@@ -98,6 +113,7 @@ export class ApiService {
    * @param url - The endpoint URL.
    * @param body - The request payload.
    * @returns {Promise<T>} The response data.
+   * @throws {CustodyError} If the request fails with a typed error response.
    */
   public async post<T>(url: string, body: any): Promise<T> {
     try {
@@ -108,7 +124,7 @@ export class ApiService {
         const canonicalizedRequest = canonicalize(body.request)
 
         if (!canonicalizedRequest) {
-          throw new Error("Failed to canonicalize request body")
+          throw new CustodyError({ reason: "Failed to canonicalize request body" })
         }
 
         // Sign the canonicalized request
@@ -120,13 +136,25 @@ export class ApiService {
       const response = await this.apiClient.post<T>(url, body)
       return response.data
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        // Handle Axios error
-        throw new Error(
-          `POST API request failed.\nReason: ${error.response?.data.reason}\nMessage: ${error.response?.data.message}`,
+      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
+        // Check if the error response contains the expected error structure
+        const errorData = error.response?.data
+        if (isObject(errorData)) {
+          throw new CustodyError(errorData, error.response?.status, error)
+        }
+        // Fallback for unexpected error formats
+        throw new CustodyError(
+          { reason: `POST API request failed: ${error.message}` },
+          error.response?.status,
+          error,
         )
       } else {
-        throw error
+        // Re-throw non-Axios errors as CustodyError
+        throw new CustodyError(
+          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
       }
     }
   }

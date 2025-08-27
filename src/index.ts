@@ -113,3 +113,6 @@ export type {
   ProcessEthereumContractCallBody,
   ProcessEthereumContractCallPathParams,
 } from "./services/ledgers/index.js"
+
+// errors types
+export type { Core_ErrorMessage, CustodyError } from "./models/index.js"
