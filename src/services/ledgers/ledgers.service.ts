@@ -9,6 +9,7 @@ import type {
   GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
+  GetTrustedLedgerPathParams,
   ProcessEthereumContractCallBody,
   ProcessEthereumContractCallPathParams,
 } from "./ledgers.types.js"
@@ -63,5 +64,16 @@ export class LedgersService {
     body: ProcessEthereumContractCallBody,
   ): Promise<Core_EthereumCallResponse> {
     return this.apiService.post(replacePathParams(URLs.ledgerEthereumCall, { ledgerId }), body)
+  }
+
+  /**
+   * Get trusted ledger details
+   * @param pathParams - The path parameters for the request
+   * @returns The trusted ledger detail
+   */
+  public async getTrustedLedger({
+    ledgerId,
+  }: GetTrustedLedgerPathParams): Promise<Core_TrustedLedger> {
+    return this.apiService.get(replacePathParams(URLs.trustedLedger, { ledgerId }))
   }
 }

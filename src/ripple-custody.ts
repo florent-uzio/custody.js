@@ -58,6 +58,7 @@ import type {
   GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
+  GetTrustedLedgerPathParams,
   ProcessEthereumContractCallBody,
   ProcessEthereumContractCallPathParams,
 } from "./services/ledgers/index.js"
@@ -508,5 +509,13 @@ export class RippleCustody {
       body: ProcessEthereumContractCallBody,
     ): Promise<Core_EthereumCallResponse> =>
       this.ledgersService.processEthereumContractCall(params, body),
+
+    /**
+     * Get trusted ledger details
+     * @param params - The parameters for the request
+     * @returns The trusted ledger detail
+     */
+    trusted: async (params: GetTrustedLedgerPathParams): Promise<Core_TrustedLedger> =>
+      this.ledgersService.getTrustedLedger(params),
   }
 }

@@ -13,6 +13,8 @@ export type ProcessEthereumContractCallPathParams =
 export type ProcessEthereumContractCallBody =
   operations["processEthereumContractCall"]["requestBody"]["content"]["application/json"]
 
+export type GetTrustedLedgerPathParams = operations["getTrustedLedger"]["parameters"]["path"]
+
 // Response types
 
 export type Core_TrustedLedgersCollection =

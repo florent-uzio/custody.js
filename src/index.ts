@@ -108,6 +108,7 @@ export type {
   GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
+  GetTrustedLedgerPathParams,
   ProcessEthereumContractCallBody,
   ProcessEthereumContractCallPathParams,
 } from "./services/ledgers/index.js"
