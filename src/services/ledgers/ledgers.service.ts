@@ -3,11 +3,14 @@ import { replacePathParams } from "../../helpers/index.js"
 import type { ApiService } from "../apis/index.js"
 import type {
   Core_CurrentFees,
+  Core_EthereumCallResponse,
   Core_TrustedLedger,
   Core_TrustedLedgersCollection,
   GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
+  ProcessEthereumContractCallBody,
+  ProcessEthereumContractCallPathParams,
 } from "./ledgers.types.js"
 
 /**
@@ -47,5 +50,18 @@ export class LedgersService {
    */
   public async getLedgerFees({ ledgerId }: GetLedgerFeePathParams): Promise<Core_CurrentFees> {
     return this.apiService.get(replacePathParams(URLs.ledgerFees, { ledgerId }))
+  }
+
+  /**
+   * Process an ethereum contract call
+   * @param pathParams - The path parameters for the request
+   * @param body - The body for the request
+   * @returns The ethereum contract call response
+   */
+  public async processEthereumContractCall(
+    { ledgerId }: ProcessEthereumContractCallPathParams,
+    body: ProcessEthereumContractCallBody,
+  ): Promise<Core_EthereumCallResponse> {
+    return this.apiService.post(replacePathParams(URLs.ledgerEthereumCall, { ledgerId }), body)
   }
 }

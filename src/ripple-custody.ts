@@ -52,11 +52,14 @@ import {
 } from "./services/intents/index.js"
 import type {
   Core_CurrentFees,
+  Core_EthereumCallResponse,
   Core_TrustedLedger,
   Core_TrustedLedgersCollection,
   GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
+  ProcessEthereumContractCallBody,
+  ProcessEthereumContractCallPathParams,
 } from "./services/ledgers/index.js"
 import { LedgersService } from "./services/ledgers/index.js"
 import type {
@@ -493,5 +496,17 @@ export class RippleCustody {
      */
     fees: async (params: GetLedgerFeePathParams): Promise<Core_CurrentFees> =>
       this.ledgersService.getLedgerFees(params),
+
+    /**
+     * Process an ethereum contract call
+     * @param params - The parameters for the request
+     * @param body - The body for the request
+     * @returns The ethereum contract call response
+     */
+    processEthereumContractCall: async (
+      params: ProcessEthereumContractCallPathParams,
+      body: ProcessEthereumContractCallBody,
+    ): Promise<Core_EthereumCallResponse> =>
+      this.ledgersService.processEthereumContractCall(params, body),
   }
 }

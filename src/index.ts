@@ -102,9 +102,12 @@ export type {
 // ledgers types
 export type {
   Core_CurrentFees,
+  Core_EthereumCallResponse,
   Core_TrustedLedger,
   Core_TrustedLedgersCollection,
   GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
+  ProcessEthereumContractCallBody,
+  ProcessEthereumContractCallPathParams,
 } from "./services/ledgers/index.js"
