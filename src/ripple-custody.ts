@@ -111,6 +111,7 @@ import type {
   ExportPreparedOperationsPathParams,
   GetVaultPathParams,
   GetVaultsQueryParams,
+  ImportPreparedOperationsRequestBody,
 } from "./services/vaults/vaults.types.js"
 
 export class RippleCustody {
@@ -562,11 +563,19 @@ export class RippleCustody {
     /**
      * Export prepared operations
      * @param params - The parameters for the request
-     * @returns The prepared operations
+     * @returns The prepared operations (binary)
      */
     exportPreparedOperations: async (
       params: ExportPreparedOperationsPathParams,
     ): Promise<Core_ExportPreparedOperationsResponse> =>
       this.vaultsService.exportPreparedOperations(params),
+
+    /**
+     * Import prepared operations (signed)
+     * @param body - The body for the request
+     * @returns void
+     */
+    importPreparedOperations: async (body: ImportPreparedOperationsRequestBody): Promise<void> =>
+      this.vaultsService.importPreparedOperations(body),
   }
 }

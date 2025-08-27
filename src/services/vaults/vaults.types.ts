@@ -9,6 +9,13 @@ export type GetVaultPathParams = operations["getVault"]["parameters"]["path"]
 export type ExportPreparedOperationsPathParams =
   paths["/v1/vaults/{vaultId}/operations/prepared"]["get"]["parameters"]["path"]
 
+export type ImportPreparedOperationsRequestBody = {
+  /**
+   * Array of strings (binary)
+   */
+  files: string[]
+}
+
 // Response types
 
 export type Core_VaultsCollection =

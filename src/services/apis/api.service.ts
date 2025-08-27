@@ -115,7 +115,7 @@ export class ApiService {
    * @returns {Promise<T>} The response data.
    * @throws {CustodyError} If the request fails with a typed error response.
    */
-  public async post<T>(url: string, body: any): Promise<T> {
+  public async post<T>(url: string, body: any, config?: AxiosRequestConfig): Promise<T> {
     try {
       // Sign the request if signature is missing
       if (!body.signature || body.signature === "") {
@@ -133,7 +133,7 @@ export class ApiService {
         body.signature = signature
       }
 
-      const response = await this.apiClient.post<T>(url, body)
+      const response = await this.apiClient.post<T>(url, body, config)
       return response.data
     } catch (error) {
       if (axios.isAxiosError<Core_ErrorMessage>(error)) {

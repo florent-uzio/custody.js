@@ -8,6 +8,7 @@ import type {
   ExportPreparedOperationsPathParams,
   GetVaultPathParams,
   GetVaultsQueryParams,
+  ImportPreparedOperationsRequestBody,
 } from "./vaults.types.js"
 
 export class VaultsService {
@@ -42,5 +43,18 @@ export class VaultsService {
     vaultId,
   }: ExportPreparedOperationsPathParams): Promise<Core_ExportPreparedOperationsResponse> {
     return this.apiService.get(replacePathParams(URLs.vaultOperationsPrepared, { vaultId }))
+  }
+
+  /**
+   * Import prepared operations (signed)
+   */
+  public async importPreparedOperations({
+    files,
+  }: ImportPreparedOperationsRequestBody): Promise<void> {
+    return this.apiService.post(URLs.vaultOperationsSigned, files, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
   }
 }

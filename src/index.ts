@@ -122,6 +122,7 @@ export type {
   ExportPreparedOperationsPathParams,
   GetVaultPathParams,
   GetVaultsQueryParams,
+  ImportPreparedOperationsRequestBody,
 } from "./services/vaults/index.js"
 
 // errors types
