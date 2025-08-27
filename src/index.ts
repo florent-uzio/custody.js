@@ -98,3 +98,18 @@ export type {
   Core_TickersCollection,
   GetTickerPathParams,
 } from "./services/tickers/index.js"
+
+// ledgers types
+export type {
+  Core_CurrentFees,
+  Core_EthereumCallResponse,
+  Core_TrustedLedger,
+  Core_TrustedLedgersCollection,
+  GetLedgerFeePathParams,
+  GetLedgerPathParams,
+  GetLedgersQueryParams,
+  GetTrustedLedgerPathParams,
+  GetTrustedLedgersQueryParams,
+  ProcessEthereumContractCallBody,
+  ProcessEthereumContractCallPathParams,
+} from "./services/ledgers/index.js"

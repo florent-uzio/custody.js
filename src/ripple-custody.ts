@@ -51,6 +51,20 @@ import {
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
 import type {
+  Core_CurrentFees,
+  Core_EthereumCallResponse,
+  Core_TrustedLedger,
+  Core_TrustedLedgersCollection,
+  GetLedgerFeePathParams,
+  GetLedgerPathParams,
+  GetLedgersQueryParams,
+  GetTrustedLedgerPathParams,
+  GetTrustedLedgersQueryParams,
+  ProcessEthereumContractCallBody,
+  ProcessEthereumContractCallPathParams,
+} from "./services/ledgers/index.js"
+import { LedgersService } from "./services/ledgers/index.js"
+import type {
   Core_ApiTicker,
   Core_TickersCollection,
   GetTickerPathParams,
@@ -99,6 +113,7 @@ export class RippleCustody {
   private transactionsService: TransactionsService
   private usersService: UsersService
   private tickersService: TickersService
+  private ledgersService: LedgersService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -118,6 +133,7 @@ export class RippleCustody {
     this.transactionsService = new TransactionsService(this.apiService)
     this.usersService = new UsersService(this.apiService)
     this.tickersService = new TickersService(this.apiService)
+    this.ledgersService = new LedgersService(this.apiService)
   }
 
   // Auth namespace
@@ -455,5 +471,62 @@ export class RippleCustody {
      */
     get: async (params: GetTickerPathParams): Promise<Core_ApiTicker> =>
       this.tickersService.getTicker(params),
+  }
+
+  // Ledgers namespace
+  public readonly ledgers = {
+    /**
+     * Get all ledgers
+     * @param queryParams - The query parameters for the request
+     * @returns The ledgers
+     */
+    list: async (queryParams?: GetLedgersQueryParams): Promise<Core_TrustedLedgersCollection> =>
+      this.ledgersService.getLedgers(queryParams ?? {}),
+
+    /**
+     * Get a ledger details
+     * @param params - The parameters for the request
+     * @returns The ledger details
+     */
+    get: async (params: GetLedgerPathParams): Promise<Core_TrustedLedger> =>
+      this.ledgersService.getLedger(params),
+
+    /**
+     * Get ledger's fee details
+     * @param params - The parameters for the request
+     * @returns The ledger's fee details
+     */
+    fees: async (params: GetLedgerFeePathParams): Promise<Core_CurrentFees> =>
+      this.ledgersService.getLedgerFees(params),
+
+    /**
+     * Process an ethereum contract call
+     * @param params - The parameters for the request
+     * @param body - The body for the request
+     * @returns The ethereum contract call response
+     */
+    processEthereumContractCall: async (
+      params: ProcessEthereumContractCallPathParams,
+      body: ProcessEthereumContractCallBody,
+    ): Promise<Core_EthereumCallResponse> =>
+      this.ledgersService.processEthereumContractCall(params, body),
+
+    /**
+     * Get trusted ledger details
+     * @param params - The parameters for the request
+     * @returns The trusted ledger detail
+     */
+    trusted: async (params: GetTrustedLedgerPathParams): Promise<Core_TrustedLedger> =>
+      this.ledgersService.getTrustedLedger(params),
+
+    /**
+     * Get trusted ledgers
+     * @param queryParams - The query parameters for the request
+     * @returns The trusted ledgers
+     */
+    trustedList: async (
+      queryParams?: GetTrustedLedgersQueryParams,
+    ): Promise<Core_TrustedLedgersCollection> =>
+      this.ledgersService.getTrustedLedgers(queryParams ?? {}),
   }
 }
