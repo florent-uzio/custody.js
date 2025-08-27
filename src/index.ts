@@ -98,3 +98,9 @@ export type {
   Core_TickersCollection,
   GetTickerPathParams,
 } from "./services/tickers/index.js"
+
+// ledgers types
+export type {
+  Core_TrustedLedgersCollection,
+  GetLedgersQueryParams,
+} from "./services/ledgers/index.js"

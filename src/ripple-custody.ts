@@ -51,6 +51,11 @@ import {
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
 import type {
+  Core_TrustedLedgersCollection,
+  GetLedgersQueryParams,
+} from "./services/ledgers/index.js"
+import { LedgersService } from "./services/ledgers/index.js"
+import type {
   Core_ApiTicker,
   Core_TickersCollection,
   GetTickerPathParams,
@@ -99,6 +104,7 @@ export class RippleCustody {
   private transactionsService: TransactionsService
   private usersService: UsersService
   private tickersService: TickersService
+  private ledgersService: LedgersService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -118,6 +124,7 @@ export class RippleCustody {
     this.transactionsService = new TransactionsService(this.apiService)
     this.usersService = new UsersService(this.apiService)
     this.tickersService = new TickersService(this.apiService)
+    this.ledgersService = new LedgersService(this.apiService)
   }
 
   // Auth namespace
@@ -455,5 +462,16 @@ export class RippleCustody {
      */
     get: async (params: GetTickerPathParams): Promise<Core_ApiTicker> =>
       this.tickersService.getTicker(params),
+  }
+
+  // Ledgers namespace
+  public readonly ledgers = {
+    /**
+     * Get all ledgers
+     * @param queryParams - The query parameters for the request
+     * @returns The ledgers
+     */
+    list: async (queryParams?: GetLedgersQueryParams): Promise<Core_TrustedLedgersCollection> =>
+      this.ledgersService.getLedgers(queryParams ?? {}),
   }
 }
