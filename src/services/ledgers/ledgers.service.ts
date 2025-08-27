@@ -1,6 +1,12 @@
 import { URLs } from "../../constants/urls.js"
+import { replacePathParams } from "../../helpers/index.js"
 import type { ApiService } from "../apis/index.js"
-import type { Core_TrustedLedgersCollection, GetLedgersQueryParams } from "./ledgers.types.js"
+import type {
+  Core_TrustedLedger,
+  Core_TrustedLedgersCollection,
+  GetLedgerPathParams,
+  GetLedgersQueryParams,
+} from "./ledgers.types.js"
 
 /**
  * A ledger is an accounting system, such as a blockchain, that is supported * and tracked.
@@ -21,5 +27,14 @@ export class LedgersService {
     queryParams?: GetLedgersQueryParams,
   ): Promise<Core_TrustedLedgersCollection> {
     return this.apiService.get(URLs.ledgers, queryParams)
+  }
+
+  /**
+   * Get a ledger details
+   * @param pathParams - The path parameters for the request
+   * @returns The ledger details
+   */
+  public async getLedger({ ledgerId }: GetLedgerPathParams): Promise<Core_TrustedLedger> {
+    return this.apiService.get(replacePathParams(URLs.ledger, { ledgerId }))
   }
 }

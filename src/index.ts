@@ -101,6 +101,8 @@ export type {
 
 // ledgers types
 export type {
+  Core_TrustedLedger,
   Core_TrustedLedgersCollection,
+  GetLedgerPathParams,
   GetLedgersQueryParams,
 } from "./services/ledgers/index.js"

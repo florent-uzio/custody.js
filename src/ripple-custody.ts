@@ -51,7 +51,9 @@ import {
   type Core_RemainingUsersIntentQueryParams,
 } from "./services/intents/index.js"
 import type {
+  Core_TrustedLedger,
   Core_TrustedLedgersCollection,
+  GetLedgerPathParams,
   GetLedgersQueryParams,
 } from "./services/ledgers/index.js"
 import { LedgersService } from "./services/ledgers/index.js"
@@ -473,5 +475,13 @@ export class RippleCustody {
      */
     list: async (queryParams?: GetLedgersQueryParams): Promise<Core_TrustedLedgersCollection> =>
       this.ledgersService.getLedgers(queryParams ?? {}),
+
+    /**
+     * Get a ledger details
+     * @param params - The parameters for the request
+     * @returns The ledger details
+     */
+    get: async (params: GetLedgerPathParams): Promise<Core_TrustedLedger> =>
+      this.ledgersService.getLedger(params),
   }
 }
