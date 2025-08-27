@@ -115,7 +115,14 @@ export type {
 } from "./services/ledgers/index.js"
 
 // vaults types
-export type { Core_VaultsCollection, GetVaultsQueryParams } from "./services/vaults/index.js"
+export type {
+  Core_ApiVault,
+  Core_ExportPreparedOperationsResponse,
+  Core_VaultsCollection,
+  ExportPreparedOperationsPathParams,
+  GetVaultPathParams,
+  GetVaultsQueryParams,
+} from "./services/vaults/index.js"
 
 // errors types
 export type { Core_ErrorMessage, CustodyError } from "./models/index.js"

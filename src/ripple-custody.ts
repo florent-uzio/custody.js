@@ -104,7 +104,14 @@ import type {
   GetUsersQueryParams,
 } from "./services/users/users.types.js"
 import { VaultsService } from "./services/vaults/index.js"
-import type { Core_VaultsCollection, GetVaultsQueryParams } from "./services/vaults/vaults.types.js"
+import type {
+  Core_ApiVault,
+  Core_ExportPreparedOperationsResponse,
+  Core_VaultsCollection,
+  ExportPreparedOperationsPathParams,
+  GetVaultPathParams,
+  GetVaultsQueryParams,
+} from "./services/vaults/vaults.types.js"
 
 export class RippleCustody {
   private accountsService: AccountsService
@@ -543,5 +550,23 @@ export class RippleCustody {
      */
     list: async (queryParams?: GetVaultsQueryParams): Promise<Core_VaultsCollection> =>
       this.vaultsService.getVaults(queryParams ?? {}),
+
+    /**
+     * Get vault
+     * @param params - The parameters for the request
+     * @returns The vault
+     */
+    get: async (params: GetVaultPathParams): Promise<Core_ApiVault> =>
+      this.vaultsService.getVault(params),
+
+    /**
+     * Export prepared operations
+     * @param params - The parameters for the request
+     * @returns The prepared operations
+     */
+    exportPreparedOperations: async (
+      params: ExportPreparedOperationsPathParams,
+    ): Promise<Core_ExportPreparedOperationsResponse> =>
+      this.vaultsService.exportPreparedOperations(params),
   }
 }
