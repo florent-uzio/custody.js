@@ -6,6 +6,8 @@ export type GetLedgersQueryParams = operations["getLedgers"]["parameters"]["quer
 
 export type GetLedgerPathParams = operations["getLedger"]["parameters"]["path"]
 
+export type GetLedgerFeePathParams = operations["getLedgerFees"]["parameters"]["path"]
+
 // Response types
 
 export type Core_TrustedLedgersCollection =
@@ -13,3 +15,6 @@ export type Core_TrustedLedgersCollection =
 
 export type Core_TrustedLedger =
   operations["getLedger"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_CurrentFees =
+  operations["getLedgerFees"]["responses"]["200"]["content"]["application/json"]

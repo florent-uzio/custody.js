@@ -2,8 +2,10 @@ import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
 import type { ApiService } from "../apis/index.js"
 import type {
+  Core_CurrentFees,
   Core_TrustedLedger,
   Core_TrustedLedgersCollection,
+  GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
 } from "./ledgers.types.js"
@@ -36,5 +38,14 @@ export class LedgersService {
    */
   public async getLedger({ ledgerId }: GetLedgerPathParams): Promise<Core_TrustedLedger> {
     return this.apiService.get(replacePathParams(URLs.ledger, { ledgerId }))
+  }
+
+  /**
+   * Get ledger's fee details
+   * @param pathParams - The path parameters for the request
+   * @returns The ledger's fee details
+   */
+  public async getLedgerFees({ ledgerId }: GetLedgerFeePathParams): Promise<Core_CurrentFees> {
+    return this.apiService.get(replacePathParams(URLs.ledgerFees, { ledgerId }))
   }
 }

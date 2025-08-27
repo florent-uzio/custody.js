@@ -101,8 +101,10 @@ export type {
 
 // ledgers types
 export type {
+  Core_CurrentFees,
   Core_TrustedLedger,
   Core_TrustedLedgersCollection,
+  GetLedgerFeePathParams,
   GetLedgerPathParams,
   GetLedgersQueryParams,
 } from "./services/ledgers/index.js"
