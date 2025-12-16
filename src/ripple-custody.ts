@@ -144,11 +144,11 @@ export class RippleCustody {
   private userInvitationsService: UserInvitationService
 
   constructor(options: RippleCustodyClientOptions) {
-    const { baseUrl, privateKey, publicKey } = options
+    const { authUrl, apiUrl, privateKey, publicKey } = options
 
-    this.authService = new AuthService(baseUrl)
+    this.authService = new AuthService(authUrl)
     this.apiService = new ApiService({
-      baseUrl,
+      apiUrl: apiUrl,
       authFormData: {
         publicKey,
       },
