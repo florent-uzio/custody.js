@@ -1,10 +1,16 @@
 export type RippleCustodyClientOptions = {
   /**
-   * Base URL for the API endpoints
+   * API URL for the API endpoints
    *
-   * Example: "https://metaco.8rey62.m3t4c0.services"
+   * Example: "https://api.metaco.8rey62.m3t4c0.services"
    */
-  baseUrl: string
+  apiUrl: string
+  /**
+   * Authentication URL for the API endpoints
+   *
+   * Example: "https://auth.metaco.8rey62.m3t4c0.services"
+   */
+  authUrl: string
   /**
    * Private key for signing requests
    */
