@@ -35,6 +35,7 @@ import {
   type GetDomainPathParams,
   type GetDomainsQueryParams,
 } from "./services/domains/index.js"
+import { UserInvitationService } from "./services/index.js"
 import {
   IntentsService,
   type Core_ApproveIntentBody,
@@ -92,6 +93,21 @@ import type {
   TransferTransactionOrderQueryParams,
 } from "./services/transactions/index.js"
 import { TransactionsService } from "./services/transactions/index.js"
+import type {
+  CancelUserInvitationPathParams,
+  CompleteUserInvitationPathParams,
+  CoreExtensions_InvitationAnswerIn,
+  CoreExtensions_InvitationIn,
+  CoreExtensions_InvitationOut,
+  CoreExtensions_PublicInvitationOut,
+  CreateUserInvitationPathParams,
+  FillUserInvitationPathParams,
+  GetPublicUserInvitationPathParams,
+  GetUserInvitationPathParams,
+  GetUserInvitationsPathParams,
+  GetUserInvitationsQueryParams,
+  RenewUserInvitationPathParams,
+} from "./services/user-invitations/user-invitations.types.js"
 import { UsersService } from "./services/users/index.js"
 import type {
   Core_ApiRoles,
@@ -125,6 +141,7 @@ export class RippleCustody {
   private tickersService: TickersService
   private ledgersService: LedgersService
   private vaultsService: VaultsService
+  private userInvitationsService: UserInvitationService
 
   constructor(options: RippleCustodyClientOptions) {
     const { baseUrl, privateKey, publicKey } = options
@@ -145,6 +162,7 @@ export class RippleCustody {
     this.tickersService = new TickersService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
     this.usersService = new UsersService(this.apiService)
+    this.userInvitationsService = new UserInvitationService(this.apiService)
     this.vaultsService = new VaultsService(this.apiService)
   }
 
@@ -465,6 +483,91 @@ export class RippleCustody {
      * @returns The user reference
      */
     me: async (): Promise<Core_MeReference> => this.usersService.getMe(),
+  }
+
+  public readonly userInvitations = {
+    /**
+     * Get user invitations
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The user invitations
+     */
+    list: async (
+      pathParams: GetUserInvitationsPathParams,
+      query?: GetUserInvitationsQueryParams,
+    ): Promise<CoreExtensions_InvitationOut> =>
+      this.userInvitationsService.getUserInvitations(pathParams, query),
+
+    /**
+     * Get a user invitation
+     * @param params - The parameters for the request
+     * @returns The user invitation
+     */
+    get: async (params: GetUserInvitationPathParams): Promise<CoreExtensions_InvitationOut> =>
+      this.userInvitationsService.getUserInvitation(params),
+
+    /**
+     * Create a user invitation
+     * @param pathParams - The path parameters for the request
+     * @param body - The body for the request
+     * @returns The user invitation
+     */
+    create: async (
+      pathParams: CreateUserInvitationPathParams,
+      body: CoreExtensions_InvitationIn,
+    ): Promise<CoreExtensions_InvitationOut> =>
+      this.userInvitationsService.createUserInvitation(pathParams, body),
+
+    /**
+     * Cancel a user invitation
+     * @param pathParams - The path parameters for the request
+     * @returns The user invitation
+     */
+    cancel: async (
+      pathParams: CancelUserInvitationPathParams,
+    ): Promise<CoreExtensions_InvitationOut> =>
+      this.userInvitationsService.cancelUserInvitation(pathParams),
+
+    /**
+     * Renew a user invitation
+     * @param pathParams - The path parameters for the request
+     * @returns The user invitation
+     */
+    renew: async (
+      pathParams: RenewUserInvitationPathParams,
+    ): Promise<CoreExtensions_InvitationOut> =>
+      this.userInvitationsService.renewUserInvitation(pathParams),
+
+    /**
+     * Complete a user invitation
+     * @param pathParams - The path parameters for the request
+     * @returns The user invitation
+     */
+    complete: async (
+      pathParams: CompleteUserInvitationPathParams,
+    ): Promise<CoreExtensions_InvitationOut> =>
+      this.userInvitationsService.completeUserInvitation(pathParams),
+
+    /**
+     * Fill a user invitation
+     * @param pathParams - The path parameters for the request
+     * @param body - The body for the request
+     * @returns void
+     */
+    fill: async (
+      pathParams: FillUserInvitationPathParams,
+      body: CoreExtensions_InvitationAnswerIn,
+    ): Promise<void> => this.userInvitationsService.fillUserInvitation(pathParams, body),
+
+    /**
+     * Get a public user invitation
+     * @param pathParams - The path parameters for the request
+     * @returns The public user invitation
+     */
+    getPublic: async (
+      pathParams: GetPublicUserInvitationPathParams,
+    ): Promise<CoreExtensions_PublicInvitationOut> =>
+      this.userInvitationsService.getPublicUserInvitation(pathParams),
   }
 
   // Tickers namespace
