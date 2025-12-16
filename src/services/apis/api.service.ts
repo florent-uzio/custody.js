@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
 import canonicalize from "canonicalize"
 import { v4 as uuidv4 } from "uuid"
-import { getHostname, isObject } from "../../helpers/index.js"
+import { isObject } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
 import { AuthService } from "../auth/auth.service.js"
 import { KeypairService } from "../keypairs/index.js"
@@ -21,7 +21,7 @@ export class ApiService {
 
   constructor(options: ApiServiceOptions) {
     this.authService = options.authService
-    this.apiUrl = `https://api.${getHostname(options.baseUrl)}`
+    this.apiUrl = options.apiUrl
     this.authFormData = options.authFormData
     this.privateKey = options.privateKey
 

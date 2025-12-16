@@ -7,7 +7,7 @@ export type PartialAuthFormData = Pick<AuthFormData, "publicKey"> &
 export type ApiServiceOptions = {
   authFormData: PartialAuthFormData
   authService: AuthService
-  baseUrl: string
+  apiUrl: string
   keypairAlgorithm?: KeypairAlgorithm
   privateKey: string
 }
