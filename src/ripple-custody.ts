@@ -35,7 +35,16 @@ import {
   type GetDomainPathParams,
   type GetDomainsQueryParams,
 } from "./services/domains/index.js"
-import { UserInvitationService } from "./services/index.js"
+import {
+  RequestsService,
+  UserInvitationService,
+  type Core_RequestState,
+  type GetAllUserRequestsStateInDomainPathParams,
+  type GetAllUserRequestsStateInDomainQueryParams,
+  type GetAllUserRequestsStateQueryParams,
+  type GetRequestStatePathParams,
+  type GetRequestStateQueryParams,
+} from "./services/index.js"
 import {
   IntentsService,
   type Core_ApproveIntentBody,
@@ -132,16 +141,17 @@ import type {
 
 export class RippleCustody {
   private accountsService: AccountsService
-  private authService: AuthService
   private apiService: ApiService
+  private authService: AuthService
   private domainService: DomainService
   private intentService: IntentsService
-  private transactionsService: TransactionsService
-  private usersService: UsersService
-  private tickersService: TickersService
   private ledgersService: LedgersService
-  private vaultsService: VaultsService
+  private requestsService: RequestsService
+  private tickersService: TickersService
+  private transactionsService: TransactionsService
   private userInvitationsService: UserInvitationService
+  private usersService: UsersService
+  private vaultsService: VaultsService
 
   constructor(options: RippleCustodyClientOptions) {
     const { authUrl, apiUrl, privateKey, publicKey } = options
@@ -159,10 +169,11 @@ export class RippleCustody {
     this.domainService = new DomainService(this.apiService)
     this.intentService = new IntentsService(this.apiService)
     this.ledgersService = new LedgersService(this.apiService)
+    this.requestsService = new RequestsService(this.apiService)
     this.tickersService = new TickersService(this.apiService)
     this.transactionsService = new TransactionsService(this.apiService)
-    this.usersService = new UsersService(this.apiService)
     this.userInvitationsService = new UserInvitationService(this.apiService)
+    this.usersService = new UsersService(this.apiService)
     this.vaultsService = new VaultsService(this.apiService)
   }
 
@@ -680,5 +691,39 @@ export class RippleCustody {
      */
     importPreparedOperations: async (body: ImportPreparedOperationsRequestBody): Promise<void> =>
       this.vaultsService.importPreparedOperations(body),
+  }
+
+  // Requests namespace
+  public readonly requests = {
+    /**
+     * Get the state of a request
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The request state
+     */
+    state: async (
+      params: GetRequestStatePathParams,
+      query?: GetRequestStateQueryParams,
+    ): Promise<Core_RequestState> => this.requestsService.getRequestState(params, query),
+
+    /**
+     * Get the state of all requests for the current user
+     * @param query - The query parameters for the request
+     * @returns The request state
+     */
+    userStates: async (query?: GetAllUserRequestsStateQueryParams): Promise<Core_RequestState> =>
+      this.requestsService.getAllUserRequestsState(query),
+
+    /**
+     * Get the state of all requests for a user in a domain
+     * @param params - The parameters for the request
+     * @param query - The query parameters for the request
+     * @returns The request state
+     */
+    userStatesInDomain: async (
+      params: GetAllUserRequestsStateInDomainPathParams,
+      query?: GetAllUserRequestsStateInDomainQueryParams,
+    ): Promise<Core_RequestState> =>
+      this.requestsService.getAllUserRequestsStateInDomain(params, query),
   }
 }
