@@ -7,9 +7,320 @@
       "url": "images/ripple-custody.png",
       "altText": "Ripple Custody logo"
     },
-    "x-app-version": "1.23.0"
+    "x-app-version": "1.27.0"
   },
   "paths": {
+    "/v1/backups/{backupId}": {
+      "get": {
+        "tags": ["Backups"],
+        "summary": "Get Backup information",
+        "operationId": "getBackup",
+        "parameters": [
+          {
+            "name": "backupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ApiBackup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid value for: path parameter backupId",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/backups": {
+      "get": {
+        "tags": ["Backups"],
+        "summary": "List Backups",
+        "operationId": "getBackups",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of entities to return.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "startingAfter",
+            "in": "query",
+            "description": "Entity id used to the determine beginning of query results.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Property name used to sort the query results.",
+            "schema": {
+              "enum": ["id", "alias", "metadata.createdAt", "metadata.lastModifiedAt"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "description": "Sort order applied to the query results.",
+            "schema": {
+              "$ref": "#/components/schemas/Core_SortOrder"
+            }
+          },
+          {
+            "name": "vaultId",
+            "in": "query",
+            "description": "Return entities matching given vault id.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "8e92eb53-40e7-4809-bb52-7e7b3b41a4be"
+          },
+          {
+            "name": "lastOnly",
+            "in": "query",
+            "description": "Return entities with acknowledged status and limits results to latest one.",
+            "schema": {
+              "type": "boolean"
+            },
+            "example": "true"
+          },
+          {
+            "name": "acknowledged",
+            "in": "query",
+            "description": "Return entities with acknowledged status equals true.",
+            "schema": {
+              "type": "boolean"
+            },
+            "example": "true"
+          },
+          {
+            "name": "data.type",
+            "in": "query",
+            "description": "Return entities that matches given type.",
+            "schema": {
+              "$ref": "#/components/schemas/Core_BackupType"
+            },
+            "example": "VaultMpc"
+          },
+          {
+            "name": "metadata.createdBy",
+            "in": "query",
+            "description": "Return entities that were created by matching user.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "fdeeeb4b-f987-4ec4-9880-1eb280581d49"
+          },
+          {
+            "name": "metadata.lastModifiedBy",
+            "in": "query",
+            "description": "Return entities that were last modified by matching user.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": "90c4cf2f-ebe0-4bf7-91cd-4c45cd02277b"
+          },
+          {
+            "name": "metadata.description",
+            "in": "query",
+            "description": "Return entities with descriptions that contains or equals to provided description.",
+            "schema": {
+              "minLength": 0,
+              "type": "string"
+            },
+            "example": "description1"
+          },
+          {
+            "name": "metadata.customProperties",
+            "in": "query",
+            "description": "Return entities that contains provided custom properties.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "example": ["key1:value1", "key2:value2"]
+          },
+          {
+            "name": "additionalDetails.processingStatus",
+            "in": "query",
+            "description": "Return entities matching given processing status.",
+            "schema": {
+              "$ref": "#/components/schemas/Core_BackupProcessingStatus"
+            },
+            "example": "Pending"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_BackupsCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid value for: query parameter limit, Invalid value for: query parameter startingAfter, Invalid value for: query parameter sortBy, Invalid value for: query parameter sortOrder, Invalid value for: query parameter vaultId, Invalid value for: query parameter lastOnly, Invalid value for: query parameter acknowledged, Invalid value for: query parameter data.type, Invalid value for: query parameter metadata.createdBy, Invalid value for: query parameter metadata.lastModifiedBy, Invalid value for: query parameter metadata.description, Invalid value for: query parameter metadata.customProperties, Invalid value for: query parameter additionalDetails.processingStatus",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/backups/{backupId}/trusted-entity": {
+      "get": {
+        "tags": ["Backups"],
+        "summary": "Get Backup trusted entity details",
+        "operationId": "getBackupTrustedEntity",
+        "parameters": [
+          {
+            "name": "backupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ApiTrustedBackup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid value for: path parameter backupId",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
     "/v1/domains/{domainId}": {
       "get": {
         "tags": ["Domains"],
@@ -8648,6 +8959,842 @@
         ]
       }
     },
+    "/v1/domains/{domainId}/compliance/providers/{provider}/toggle-preview-screening": {
+      "put": {
+        "tags": ["Compliance"],
+        "summary": "Enables or disables the preview screening for an existing provider connection",
+        "operationId": "TogglePreviewScreening",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["ELLIPTIC", "CHAINALYSIS"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers/{provider}/pause-connection": {
+      "put": {
+        "tags": ["Compliance"],
+        "summary": "Pause/unpause an existing external provider connection",
+        "operationId": "PauseProviderConnection",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["ELLIPTIC", "CHAINALYSIS"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "paused",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ProviderConnectionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers": {
+      "get": {
+        "tags": ["Compliance"],
+        "summary": "Retrieves configuration steps and provider connection status for the give domain",
+        "operationId": "GetAllProvidersForDomain",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ConfigurationDetailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Connects different external providers with Custody",
+        "operationId": "ConnectProvider",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ProviderConnectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ProviderConnectionResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers/{provider}/screening-rules": {
+      "get": {
+        "tags": ["Compliance"],
+        "summary": "Retrieves screening rules for connected provider of the given domain",
+        "operationId": "GetScreeningRulesForDomainAndProvider",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["ELLIPTIC", "CHAINALYSIS"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_GetScreeningRulesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Creates screening rules for connected provider of the given domain",
+        "operationId": "ConfigureScreeningRulesForDomainAndProvider",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["ELLIPTIC", "CHAINALYSIS"],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ConfigureScreeningRulesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/policy": {
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Create Compliance Policy Payload",
+        "operationId": "CreatePolicyPayload",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_PolicyPayloadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/domain": {
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Creates Domain payload",
+        "operationId": "CreateDomainPayload",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_DomainPayloadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Compliance"],
+        "summary": "Delete compliance domain",
+        "operationId": "DeleteComplianceDomain",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ValidateComplianceDomainCreationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/domains/{domainId}/compliance/domain/validation": {
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Check if compliance domain creation/injection is allowed",
+        "operationId": "ValidateComplianceDomainCreation",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ValidateComplianceDomainCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ValidateComplianceDomainCreationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/domains/{domainId}/compliance/analysis": {
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Retrieves compliance analysis against all established external providers.",
+        "operationId": "analysis",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ComplianceAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ComplianceAnalysisResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/analysis/preview": {
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Performs a preview analysis of the wallet",
+        "operationId": "PreviewAnalysis",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_WalletAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_WalletAnalysisResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/transactionType/{transactionType}/exception-role": {
+      "get": {
+        "tags": ["Compliance"],
+        "summary": "Gets Exception role for the domain",
+        "operationId": "GetExceptionRole",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "transactionType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["INCOMING", "OUTGOING"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ExceptionRoleResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/provider-connection": {
+      "get": {
+        "tags": ["Compliance"],
+        "summary": "Retrieves connected provider connection details for the given domain",
+        "operationId": "GetAllProviderConnectionForDomain",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ProviderConnectionsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType}": {
+      "get": {
+        "tags": ["Compliance"],
+        "summary": "Gets Compliance policy for the domain",
+        "operationId": "GetPolicy",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "policyType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["AUTOMATIC", "EXCEPTION"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "transactionType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["INCOMING", "OUTGOING"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_PolicyResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers/{provider}": {
+      "delete": {
+        "tags": ["Compliance"],
+        "summary": "Deletes provider connection and screening rules for the given domain & provider",
+        "operationId": "DeleteProviderConnectionAndScreeningRules",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["ELLIPTIC", "CHAINALYSIS"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
     "/v1/domains/{domainId}/channels": {
       "get": {
         "tags": ["Event Distribution Service"],
@@ -9601,6 +10748,23 @@
           }
         }
       },
+      "Core_AddressCreated": {
+        "required": ["id", "accountReference", "type"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountReference": {
+            "$ref": "#/components/schemas/Core_AccountReference"
+          },
+          "type": {
+            "enum": ["AddressCreated"],
+            "type": "string"
+          }
+        }
+      },
       "Core_AddressDetails": {
         "required": ["address", "resolvedEndpoints"],
         "type": "object",
@@ -9617,6 +10781,11 @@
             }
           }
         }
+      },
+      "Core_AddressForChange": {
+        "enum": ["GenerateNewAddress", "PrimaryAddress"],
+        "type": "string",
+        "description": "Override default change address strategy to set explicitly PrimaryAddress or GenerateNewAddress."
       },
       "Core_AddressReferenceCollection": {
         "required": ["items", "count"],
@@ -9886,6 +11055,76 @@
           },
           "status": {
             "enum": ["Unavailable"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_ApiBackup": {
+        "required": ["id", "data", "metadata"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Core_ApiBackupData"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Core_EntityMetadata"
+          },
+          "additionalDetails": {
+            "$ref": "#/components/schemas/Core_BackupAdditionalDetails"
+          }
+        }
+      },
+      "Core_ApiBackupData": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_ApiBackupData_VaultHSM"
+          },
+          {
+            "$ref": "#/components/schemas/Core_ApiBackupData_VaultMPC"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "VaultHSM": "#/components/schemas/Core_ApiBackupData_VaultHSM",
+            "VaultMPC": "#/components/schemas/Core_ApiBackupData_VaultMPC"
+          }
+        }
+      },
+      "Core_ApiBackupData_VaultHSM": {
+        "required": ["vaultId", "acknowledged", "type"],
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "acknowledged": {
+            "type": "boolean"
+          },
+          "type": {
+            "enum": ["VaultHSM"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_ApiBackupData_VaultMPC": {
+        "required": ["vaultId", "acknowledged", "type"],
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "acknowledged": {
+            "type": "boolean"
+          },
+          "type": {
+            "enum": ["VaultMPC"],
             "type": "string"
           }
         }
@@ -10335,6 +11574,26 @@
           }
         }
       },
+      "Core_ApiTrustedBackup": {
+        "required": ["data", "signature", "signingKey"],
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Core_Backup"
+          },
+          "signature": {
+            "type": "string",
+            "format": "base64"
+          },
+          "signingKey": {
+            "type": "string",
+            "format": "base64"
+          },
+          "additionalDetails": {
+            "$ref": "#/components/schemas/Core_BackupAdditionalDetails"
+          }
+        }
+      },
       "Core_ApiVault": {
         "required": ["data", "signature", "signingKey"],
         "type": "object",
@@ -10404,6 +11663,205 @@
           "signature": {
             "type": "string",
             "format": "base64"
+          }
+        }
+      },
+      "Core_Backup": {
+        "required": ["id", "data", "metadata"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Core_BackupData"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Core_EntityMetadata"
+          }
+        }
+      },
+      "Core_BackupAdditionalDetails": {
+        "required": ["processing"],
+        "type": "object",
+        "properties": {
+          "processing": {
+            "$ref": "#/components/schemas/Core_BackupProcessingDetails"
+          }
+        }
+      },
+      "Core_BackupCreated": {
+        "required": ["id", "type"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["BackupCreated"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupData": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_BackupData_VaultHsm"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BackupData_VaultMpc"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "VaultHsm": "#/components/schemas/Core_BackupData_VaultHsm",
+            "VaultMpc": "#/components/schemas/Core_BackupData_VaultMpc"
+          }
+        }
+      },
+      "Core_BackupData_VaultHsm": {
+        "required": ["vaultId", "data", "type"],
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Core_VaultHsmBackupData"
+          },
+          "type": {
+            "enum": ["VaultHsm"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupData_VaultMpc": {
+        "required": ["vaultId", "type"],
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Core_VaultMpcBackupData"
+          },
+          "type": {
+            "enum": ["VaultMpc"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupProcessingDetails": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_BackupProcessingDetails_Completed"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BackupProcessingDetails_Failed"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BackupProcessingDetails_Pending"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BackupProcessingDetails_Preparing"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "status",
+          "mapping": {
+            "Completed": "#/components/schemas/Core_BackupProcessingDetails_Completed",
+            "Failed": "#/components/schemas/Core_BackupProcessingDetails_Failed",
+            "Pending": "#/components/schemas/Core_BackupProcessingDetails_Pending",
+            "Preparing": "#/components/schemas/Core_BackupProcessingDetails_Preparing"
+          }
+        }
+      },
+      "Core_BackupProcessingDetails_Completed": {
+        "required": ["status"],
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": ["Completed"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupProcessingDetails_Failed": {
+        "required": ["status"],
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": ["Failed"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupProcessingDetails_Pending": {
+        "required": ["status"],
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": ["Pending"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupProcessingDetails_Preparing": {
+        "required": ["status"],
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": ["Preparing"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupProcessingStatus": {
+        "enum": ["Pending", "Preparing", "Completed", "Failed"],
+        "type": "string"
+      },
+      "Core_BackupType": {
+        "enum": ["VaultHsm", "VaultMpc"],
+        "type": "string"
+      },
+      "Core_BackupUpdated": {
+        "required": ["id", "type"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["BackupUpdated"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BackupsCollection": {
+        "required": ["items", "count"],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_ApiBackup"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentStartingAfter": {
+            "type": "string"
+          },
+          "nextStartingAfter": {
+            "type": "string"
           }
         }
       },
@@ -10502,6 +11960,26 @@
             "type": "string"
           },
           "nextStartingAfter": {
+            "type": "string"
+          }
+        }
+      },
+      "Core_BalancesUpdated": {
+        "required": ["accountReference", "tickerIds", "type"],
+        "type": "object",
+        "properties": {
+          "accountReference": {
+            "$ref": "#/components/schemas/Core_AccountReference"
+          },
+          "tickerIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "type": {
+            "enum": ["BalancesUpdated"],
             "type": "string"
           }
         }
@@ -12114,6 +13592,18 @@
             "$ref": "#/components/schemas/Core_AccountUpdated"
           },
           {
+            "$ref": "#/components/schemas/Core_AddressCreated"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BackupCreated"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BackupUpdated"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BalancesUpdated"
+          },
+          {
             "$ref": "#/components/schemas/Core_DomainCreated"
           },
           {
@@ -12133,6 +13623,9 @@
           },
           {
             "$ref": "#/components/schemas/Core_IntentCreated"
+          },
+          {
+            "$ref": "#/components/schemas/Core_IntentExecuted"
           },
           {
             "$ref": "#/components/schemas/Core_IntentUpdated"
@@ -12200,6 +13693,10 @@
           "mapping": {
             "AccountCreated": "#/components/schemas/Core_AccountCreated",
             "AccountUpdated": "#/components/schemas/Core_AccountUpdated",
+            "AddressCreated": "#/components/schemas/Core_AddressCreated",
+            "BackupCreated": "#/components/schemas/Core_BackupCreated",
+            "BackupUpdated": "#/components/schemas/Core_BackupUpdated",
+            "BalancesUpdated": "#/components/schemas/Core_BalancesUpdated",
             "DomainCreated": "#/components/schemas/Core_DomainCreated",
             "DomainUpdated": "#/components/schemas/Core_DomainUpdated",
             "EndpointCreated": "#/components/schemas/Core_EndpointCreated",
@@ -12207,6 +13704,7 @@
             "GenesisSucceeded": "#/components/schemas/Core_GenesisSucceeded",
             "IntentClosed": "#/components/schemas/Core_IntentClosed",
             "IntentCreated": "#/components/schemas/Core_IntentCreated",
+            "IntentExecuted": "#/components/schemas/Core_IntentExecuted",
             "IntentUpdated": "#/components/schemas/Core_IntentUpdated",
             "LedgerCreated": "#/components/schemas/Core_LedgerCreated",
             "LedgerUpdated": "#/components/schemas/Core_LedgerUpdated",
@@ -12531,6 +14029,9 @@
       "Core_IntentDryRunResponse": {
         "oneOf": [
           {
+            "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_AcknowledgeBackup"
+          },
+          {
             "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_AddAccountLedgers"
           },
           {
@@ -12541,6 +14042,9 @@
           },
           {
             "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateAccount"
+          },
+          {
+            "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateBackup"
           },
           {
             "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateDomain"
@@ -12663,10 +14167,12 @@
         "discriminator": {
           "propertyName": "type",
           "mapping": {
+            "v0_AcknowledgeBackup": "#/components/schemas/Core_IntentDryRunResponse_v0_AcknowledgeBackup",
             "v0_AddAccountLedgers": "#/components/schemas/Core_IntentDryRunResponse_v0_AddAccountLedgers",
             "v0_AddTrustedPublicKeysForMigration": "#/components/schemas/Core_IntentDryRunResponse_v0_AddTrustedPublicKeysForMigration",
             "v0_AttemptTransactionOrderCancellation": "#/components/schemas/Core_IntentDryRunResponse_v0_AttemptTransactionOrderCancellation",
             "v0_CreateAccount": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateAccount",
+            "v0_CreateBackup": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateBackup",
             "v0_CreateDomain": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateDomain",
             "v0_CreateEndpoint": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateEndpoint",
             "v0_CreateLedger": "#/components/schemas/Core_IntentDryRunResponse_v0_CreateLedger",
@@ -12706,6 +14212,26 @@
             "v0_UpdateUser": "#/components/schemas/Core_IntentDryRunResponse_v0_UpdateUser",
             "v0_UpdateVault": "#/components/schemas/Core_IntentDryRunResponse_v0_UpdateVault",
             "v0_ValidateTickers": "#/components/schemas/Core_IntentDryRunResponse_v0_ValidateTickers"
+          }
+        }
+      },
+      "Core_IntentDryRunResponse_v0_AcknowledgeBackup": {
+        "required": ["success", "type"],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "errors": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "enum": ["v0_AcknowledgeBackup"],
+            "type": "string"
           }
         }
       },
@@ -12791,6 +14317,26 @@
           },
           "type": {
             "enum": ["v0_CreateAccount"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_IntentDryRunResponse_v0_CreateBackup": {
+        "required": ["success", "type"],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "errors": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "enum": ["v0_CreateBackup"],
             "type": "string"
           }
         }
@@ -13617,6 +15163,20 @@
           }
         }
       },
+      "Core_IntentExecuted": {
+        "required": ["id", "type"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["IntentExecuted"],
+            "type": "string"
+          }
+        }
+      },
       "Core_IntentLockStatus": {
         "enum": ["Unlocked", "Locked"],
         "type": "string"
@@ -13734,7 +15294,9 @@
           "v0_SetSystemProperty",
           "v0_CreateLedger",
           "v0_UpdateLedger",
-          "v0_AddTrustedPublicKeysForMigration"
+          "v0_AddTrustedPublicKeysForMigration",
+          "v0_CreateBackup",
+          "v0_AcknowledgeBackup"
         ],
         "type": "string"
       },
@@ -15038,6 +16600,11 @@
           }
         }
       },
+      "Core_PreferredAddressForChange": {
+        "enum": ["PrimaryAddress"],
+        "type": "string",
+        "description": "Hint for specifically bitcoin ledgers to have the transaction happen with addressForChange PrimaryAddress - so change utxo goes to address \\0\\0 - aligned with dry-runs - rather than the default generate a new chain-internal address."
+      },
       "Core_Propose": {
         "required": [
           "author",
@@ -15154,6 +16721,9 @@
             "$ref": "#/components/schemas/Core_Propose_v0_CreateTransactionOrder"
           },
           {
+            "$ref": "#/components/schemas/Core_v0_AcknowledgeBackup"
+          },
+          {
             "$ref": "#/components/schemas/Core_v0_AddAccountLedgers"
           },
           {
@@ -15164,6 +16734,9 @@
           },
           {
             "$ref": "#/components/schemas/Core_v0_CreateAccount"
+          },
+          {
+            "$ref": "#/components/schemas/Core_v0_CreateBackup"
           },
           {
             "$ref": "#/components/schemas/Core_v0_CreateDomain"
@@ -15283,10 +16856,12 @@
         "discriminator": {
           "propertyName": "type",
           "mapping": {
+            "v0_AcknowledgeBackup": "#/components/schemas/Core_v0_AcknowledgeBackup",
             "v0_AddAccountLedgers": "#/components/schemas/Core_v0_AddAccountLedgers",
             "v0_AddTrustedPublicKeysForMigration": "#/components/schemas/Core_v0_AddTrustedPublicKeysForMigration",
             "v0_AttemptTransactionOrderCancellation": "#/components/schemas/Core_v0_AttemptTransactionOrderCancellation",
             "v0_CreateAccount": "#/components/schemas/Core_v0_CreateAccount",
+            "v0_CreateBackup": "#/components/schemas/Core_v0_CreateBackup",
             "v0_CreateDomain": "#/components/schemas/Core_v0_CreateDomain",
             "v0_CreateEndpoint": "#/components/schemas/Core_v0_CreateEndpoint",
             "v0_CreateLedger": "#/components/schemas/Core_v0_CreateLedger",
@@ -16529,6 +18104,10 @@
           }
         }
       },
+      "Core_SubstrateChainType": {
+        "enum": ["RelayChain", "AssetHub"],
+        "type": "string"
+      },
       "Core_SubstrateFeeParameters": {
         "oneOf": [
           {
@@ -16744,6 +18323,9 @@
             "items": {
               "$ref": "#/components/schemas/Core_SubstratePalletInfo"
             }
+          },
+          "chainType": {
+            "$ref": "#/components/schemas/Core_SubstrateChainType"
           }
         }
       },
@@ -17256,7 +18838,7 @@
         }
       },
       "Core_TickerKind": {
-        "enum": ["Native", "Contract"],
+        "enum": ["Native", "Contract", "Token"],
         "type": "string"
       },
       "Core_TickerLedgerDetails": {
@@ -18277,6 +19859,9 @@
           },
           "resourceStrategy": {
             "$ref": "#/components/schemas/Core_BitcoinResourceStrategy"
+          },
+          "addressForChange": {
+            "$ref": "#/components/schemas/Core_AddressForChange"
           },
           "type": {
             "enum": ["Bitcoin"],
@@ -19529,6 +21114,9 @@
       "Core_UserIntentPayload": {
         "oneOf": [
           {
+            "$ref": "#/components/schemas/Core_v0_AcknowledgeBackup"
+          },
+          {
             "$ref": "#/components/schemas/Core_v0_AddAccountLedgers"
           },
           {
@@ -19539,6 +21127,9 @@
           },
           {
             "$ref": "#/components/schemas/Core_v0_CreateAccount"
+          },
+          {
+            "$ref": "#/components/schemas/Core_v0_CreateBackup"
           },
           {
             "$ref": "#/components/schemas/Core_v0_CreateDomain"
@@ -19661,10 +21252,12 @@
         "discriminator": {
           "propertyName": "type",
           "mapping": {
+            "v0_AcknowledgeBackup": "#/components/schemas/Core_v0_AcknowledgeBackup",
             "v0_AddAccountLedgers": "#/components/schemas/Core_v0_AddAccountLedgers",
             "v0_AddTrustedPublicKeysForMigration": "#/components/schemas/Core_v0_AddTrustedPublicKeysForMigration",
             "v0_AttemptTransactionOrderCancellation": "#/components/schemas/Core_v0_AttemptTransactionOrderCancellation",
             "v0_CreateAccount": "#/components/schemas/Core_v0_CreateAccount",
+            "v0_CreateBackup": "#/components/schemas/Core_v0_CreateBackup",
             "v0_CreateDomain": "#/components/schemas/Core_v0_CreateDomain",
             "v0_CreateEndpoint": "#/components/schemas/Core_v0_CreateEndpoint",
             "v0_CreateLedger": "#/components/schemas/Core_v0_CreateLedger",
@@ -19776,8 +21369,12 @@
           "InvalidAddAccountLedgersParameters",
           "CurrentPublicKeyNotMatching",
           "InvalidTrustedCollectionPublicKeySignature",
+          "InvalidMigrationKeyMaterial",
           "InvalidEntityType",
           "DuplicatePublicKey",
+          "InvalidVaultParameters",
+          "BackupNotReady",
+          "BackupAcknowledgeDenied",
           "ValidateTickersPostProcessingFailure"
         ],
         "type": "string"
@@ -20034,6 +21631,51 @@
           }
         }
       },
+      "Core_VaultBackupParameters": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_VaultBackupParameters_VaultHsm"
+          },
+          {
+            "$ref": "#/components/schemas/Core_VaultBackupParameters_VaultMpc"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "VaultHsm": "#/components/schemas/Core_VaultBackupParameters_VaultHsm",
+            "VaultMpc": "#/components/schemas/Core_VaultBackupParameters_VaultMpc"
+          }
+        }
+      },
+      "Core_VaultBackupParameters_VaultHsm": {
+        "required": ["vaultId", "type"],
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["VaultHsm"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_VaultBackupParameters_VaultMpc": {
+        "required": ["vaultId", "type"],
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["VaultMpc"],
+            "type": "string"
+          }
+        }
+      },
       "Core_VaultCreated": {
         "required": ["id", "type"],
         "type": "object",
@@ -20052,9 +21694,40 @@
         "enum": ["Slip10", "SoftBip32", "None", "Bip32"],
         "type": "string"
       },
+      "Core_VaultHsmBackupData": {
+        "required": ["acknowledged", "encryptedSeed", "hash"],
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean"
+          },
+          "encryptedSeed": {
+            "type": "string",
+            "format": "base64"
+          },
+          "hash": {
+            "type": "string"
+          }
+        }
+      },
       "Core_VaultKeyStrategy": {
         "enum": ["VaultHard", "VaultSoft", "Random"],
         "type": "string"
+      },
+      "Core_VaultMpcBackupData": {
+        "required": ["acknowledged", "json", "hash"],
+        "type": "object",
+        "properties": {
+          "acknowledged": {
+            "type": "boolean"
+          },
+          "json": {
+            "type": "string"
+          },
+          "hash": {
+            "type": "string"
+          }
+        }
       },
       "Core_VaultParameters": {
         "oneOf": [
@@ -20087,6 +21760,11 @@
         "required": ["type"],
         "type": "object",
         "properties": {
+          "backupEncryptionKey": {
+            "pattern": "^0[xX](([a-fA-F0-9][a-fA-F0-9])*)$",
+            "type": "string",
+            "description": "0x prefixed Hex encoded backup encryption key, supported key size between 2048 and 4096 bits."
+          },
           "type": {
             "enum": ["MPC"],
             "type": "string"
@@ -20326,6 +22004,9 @@
             "$ref": "#/components/schemas/Core_XrplCurrency_Currency"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplCurrency_MultiPurposeToken"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplCurrency_TickerId"
           }
         ],
@@ -20333,6 +22014,7 @@
           "propertyName": "type",
           "mapping": {
             "Currency": "#/components/schemas/Core_XrplCurrency_Currency",
+            "MultiPurposeToken": "#/components/schemas/Core_XrplCurrency_MultiPurposeToken",
             "TickerId": "#/components/schemas/Core_XrplCurrency_TickerId"
           }
         }
@@ -20353,6 +22035,21 @@
           },
           "type": {
             "enum": ["Currency"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplCurrency_MultiPurposeToken": {
+        "required": ["issuanceId", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "type": {
+            "enum": ["MultiPurposeToken"],
             "type": "string"
           }
         }
@@ -20457,6 +22154,9 @@
             "$ref": "#/components/schemas/Core_XrplOperation_DepositPreauth"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplOperation_MPTokenAuthorize"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplOperation_OfferCreate"
           },
           {
@@ -20472,6 +22172,7 @@
             "AccountSet": "#/components/schemas/Core_XrplOperation_AccountSet",
             "Clawback": "#/components/schemas/Core_XrplOperation_Clawback",
             "DepositPreauth": "#/components/schemas/Core_XrplOperation_DepositPreauth",
+            "MPTokenAuthorize": "#/components/schemas/Core_XrplOperation_MPTokenAuthorize",
             "OfferCreate": "#/components/schemas/Core_XrplOperation_OfferCreate",
             "Payment": "#/components/schemas/Core_XrplOperation_Payment",
             "TrustSet": "#/components/schemas/Core_XrplOperation_TrustSet"
@@ -20531,6 +22232,27 @@
           },
           "type": {
             "enum": ["DepositPreauth"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_MPTokenAuthorize": {
+        "required": ["issuanceId", "flags", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenAuthorizeFlag"
+            }
+          },
+          "type": {
+            "enum": ["MPTokenAuthorize"],
             "type": "string"
           }
         }
@@ -20612,6 +22334,9 @@
             "$ref": "#/components/schemas/Core_XrplTickerProperties_FungibleToken"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplTickerProperties_MultiPurposeToken"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplTickerProperties_Native"
           }
         ],
@@ -20619,6 +22344,7 @@
           "propertyName": "type",
           "mapping": {
             "FungibleToken": "#/components/schemas/Core_XrplTickerProperties_FungibleToken",
+            "MultiPurposeToken": "#/components/schemas/Core_XrplTickerProperties_MultiPurposeToken",
             "Native": "#/components/schemas/Core_XrplTickerProperties_Native"
           }
         }
@@ -20639,6 +22365,21 @@
           },
           "type": {
             "enum": ["FungibleToken"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplTickerProperties_MultiPurposeToken": {
+        "required": ["issuanceId", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "type": {
+            "enum": ["MultiPurposeToken"],
             "type": "string"
           }
         }
@@ -20716,6 +22457,10 @@
           }
         }
       },
+      "Core_Xrpl_MPTokenAuthorizeFlag": {
+        "enum": ["tfMPTUnauthorize"],
+        "type": "string"
+      },
       "Core_Xrpl_OfferCreateFlag": {
         "enum": ["tfImmediateOrCancel", "tfFillOrKill", "tfSell"],
         "type": "string"
@@ -20723,6 +22468,20 @@
       "Core_Xrpl_TrustSetFlag": {
         "enum": ["tfSetFreeze", "tfClearFreeze", "tfSetfAuth"],
         "type": "string"
+      },
+      "Core_v0_AcknowledgeBackup": {
+        "required": ["backupId", "type"],
+        "type": "object",
+        "properties": {
+          "backupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["v0_AcknowledgeBackup"],
+            "type": "string"
+          }
+        }
       },
       "Core_v0_AddAccountLedgers": {
         "required": ["reference", "type"],
@@ -20889,6 +22648,31 @@
           },
           "type": {
             "enum": ["Vault"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_v0_CreateBackup": {
+        "required": ["id", "parameters", "customProperties", "type"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/Core_VaultBackupParameters"
+          },
+          "description": {
+            "maxLength": 250,
+            "minLength": 0,
+            "type": "string"
+          },
+          "customProperties": {
+            "$ref": "#/components/schemas/Core_StringsMap"
+          },
+          "type": {
+            "enum": ["v0_CreateBackup"],
             "type": "string"
           }
         }
@@ -21218,6 +23002,9 @@
             "minimum": 0,
             "type": "string",
             "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "preferredAddressForChange": {
+            "$ref": "#/components/schemas/Core_PreferredAddressForChange"
           },
           "description": {
             "maxLength": 250,
@@ -21923,6 +23710,9 @@
             "maxLength": 75,
             "minLength": 1,
             "type": "string"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/Core_VaultParameters"
           },
           "description": {
             "maxLength": 250,
@@ -24112,6 +25902,586 @@
         },
         "additionalProperties": false
       },
+      "Compliance_ErrorResponse": {
+        "required": ["reason"],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ProviderConnectionResponse": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "enum": ["ELLIPTIC", "CHAINALYSIS"],
+            "type": "string"
+          },
+          "status": {
+            "enum": ["CONNECTED", "PAUSED"],
+            "type": "string"
+          },
+          "readyForScreening": {
+            "type": "boolean"
+          },
+          "previewScreeningEnabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Compliance_Credential": {
+        "required": ["apiKey"],
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "apiSecret": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ProviderConnectRequest": {
+        "required": ["provider"],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "enum": ["ELLIPTIC", "CHAINALYSIS"],
+            "type": "string"
+          },
+          "credential": {
+            "$ref": "#/components/schemas/Compliance_Credential"
+          }
+        }
+      },
+      "Compliance_ConfigureScreeningRulesRequest": {
+        "required": ["rules"],
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_TransactionScreeningRule"
+            }
+          }
+        }
+      },
+      "Compliance_RiskLevelAction": {
+        "required": ["action"],
+        "type": "object",
+        "properties": {
+          "condition": {
+            "enum": [
+              "EQUALS",
+              "GREATER_THAN",
+              "LESS_THAN",
+              "GREATER_THAN_OR_EQUALS",
+              "LESS_THAN_OR_EQUALS"
+            ],
+            "type": "string"
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "action": {
+            "enum": ["APPROVE", "REJECT", "REQUIRE_EXPLICIT_DECISION"],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_TransactionScreeningRule": {
+        "required": ["highRisk", "lowRisk", "transactionType"],
+        "type": "object",
+        "properties": {
+          "transactionType": {
+            "enum": ["INCOMING", "OUTGOING"],
+            "type": "string"
+          },
+          "lowRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction"
+          },
+          "highRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction"
+          },
+          "mediumRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction"
+          },
+          "severeRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction"
+          },
+          "unknownRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction"
+          },
+          "unknownCategory": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction"
+          }
+        }
+      },
+      "Compliance_PolicyPayloadRequest": {
+        "required": ["lockStatus", "policyType", "transactionType"],
+        "type": "object",
+        "properties": {
+          "policyType": {
+            "enum": ["AUTOMATIC", "EXCEPTION"],
+            "type": "string"
+          },
+          "transactionType": {
+            "enum": ["INCOMING", "OUTGOING"],
+            "type": "string"
+          },
+          "approvalWorkflow": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "exceptionRole": {
+            "type": "string"
+          },
+          "lockStatus": {
+            "enum": ["Locked", "Unlocked", "Archived"],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_DomainPayloadRequest": {
+        "required": ["domainName", "domainType", "permissions"],
+        "type": "object",
+        "properties": {
+          "domainName": {
+            "type": "string"
+          },
+          "domainType": {
+            "enum": ["COMPLIANCE", "BUSINESS"],
+            "type": "string"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_User"
+            }
+          },
+          "permissions": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "childrenDomainIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "additionalPolicies": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "ADD_POLICY_FOR_OUTGOING_ORDERS",
+                "ADD_POLICY_FOR_AUTOMATIC_RELEASE_QUARANTINED_TRANSFERS"
+              ],
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Compliance_LoginId": {
+        "required": ["id", "providerId"],
+        "type": "object",
+        "properties": {
+          "providerId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_User": {
+        "required": ["alias", "id", "lockStatus", "roles"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alias": {
+            "type": "string"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lockStatus": {
+            "enum": ["Locked", "Unlocked", "Archived"],
+            "type": "string"
+          },
+          "loginIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_LoginId"
+            }
+          }
+        }
+      },
+      "Compliance_ValidateComplianceDomainCreationRequest": {
+        "type": "object",
+        "properties": {
+          "childrenDomainIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Compliance_ValidateComplianceDomainCreationResponse": {
+        "type": "object",
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ComplianceAnalysisRequest": {
+        "required": ["data"],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ComplianceAnalysisRequestData"
+            }
+          }
+        }
+      },
+      "Compliance_ComplianceAnalysisRequestData": {
+        "type": "object",
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Compliance_ComplianceAnalysis": {
+        "required": ["analysisType", "ledgerId", "provider", "screeningStatus"],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "enum": ["ELLIPTIC", "CHAINALYSIS"],
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "intentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transferId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionHash": {
+            "type": "string"
+          },
+          "addressHash": {
+            "type": "string"
+          },
+          "errorDetails": {
+            "type": "string"
+          },
+          "warningDetails": {
+            "type": "string"
+          },
+          "screenedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ledgerId": {
+            "type": "string"
+          },
+          "analysisType": {
+            "enum": ["WALLET", "TRANSACTION"],
+            "type": "string"
+          },
+          "screeningStatus": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "enum": ["UNKNOWN", "SEVERE", "HIGH", "MEDIUM", "LOW", "NO_RISK_DETECTED"],
+            "type": "string"
+          },
+          "screeningDetail": {
+            "$ref": "#/components/schemas/Compliance_JsonNode"
+          }
+        }
+      },
+      "Compliance_ComplianceAnalysisResponse": {
+        "required": ["result"],
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ComplianceAnalysis"
+            }
+          }
+        }
+      },
+      "Compliance_JsonNode": {
+        "type": "object"
+      },
+      "Compliance_WalletAnalysisRequest": {
+        "required": ["ledger", "provider", "tickerId", "walletAddress"],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "enum": ["ELLIPTIC", "CHAINALYSIS"],
+            "type": "string"
+          },
+          "walletAddress": {
+            "type": "string"
+          },
+          "transactionAmount": {
+            "type": "number"
+          },
+          "ledger": {
+            "type": "string"
+          },
+          "tickerId": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_WalletAnalysisResponse": {
+        "required": ["ledger", "provider", "transactionType", "walletAddress"],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "enum": ["ELLIPTIC", "CHAINALYSIS"],
+            "type": "string"
+          },
+          "walletAddress": {
+            "type": "string"
+          },
+          "transactionAmount": {
+            "type": "number"
+          },
+          "ledger": {
+            "type": "string"
+          },
+          "transactionType": {
+            "enum": ["INCOMING", "OUTGOING"],
+            "type": "string"
+          },
+          "screenedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorDetails": {
+            "type": "string"
+          },
+          "warningDetails": {
+            "type": "string"
+          },
+          "riskLevel": {
+            "enum": ["UNKNOWN", "SEVERE", "HIGH", "MEDIUM", "LOW", "NO_RISK_DETECTED"],
+            "type": "string"
+          },
+          "screeningDetail": {
+            "$ref": "#/components/schemas/Compliance_JsonNode"
+          }
+        }
+      },
+      "Compliance_ExceptionRoleResponse": {
+        "required": ["complianceDomainId", "domainId", "policyId", "transactionType"],
+        "type": "object",
+        "properties": {
+          "complianceDomainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionType": {
+            "enum": ["INCOMING", "OUTGOING"],
+            "type": "string"
+          },
+          "exceptionRole": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ConfigurationDetailResponse": {
+        "type": "object",
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "connectionDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ProviderConnectionResponse"
+            }
+          },
+          "configurationSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ConfigurationStepResponse"
+            }
+          }
+        }
+      },
+      "Compliance_ConfigurationStepResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "enum": [
+              "ADD_RISK_SETTING_RULES",
+              "ADD_POLICY_FOR_OUTGOING_ORDERS",
+              "ADD_POLICY_FOR_AUTOMATIC_RELEASE_QUARANTINED_TRANSFERS",
+              "ADD_EXCEPTION_FOR_OUTGOING_ORDERS",
+              "ADD_EXCEPTION_FOR_RELEASE_QUARANTINED_TRANSFERS"
+            ],
+            "type": "string"
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "shared": {
+            "type": "boolean"
+          },
+          "configurationStepType": {
+            "enum": ["RISK_SETTING", "POLICY", "AGENT"],
+            "type": "string"
+          },
+          "provider": {
+            "enum": ["ELLIPTIC", "CHAINALYSIS"],
+            "type": "string"
+          },
+          "status": {
+            "enum": ["START", "PENDING", "VIEW"],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_GetScreeningRulesResponse": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_TransactionScreeningRule"
+            }
+          }
+        }
+      },
+      "Compliance_ProviderConnectionsResponse": {
+        "type": "object",
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "complianceDomainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainType": {
+            "enum": ["COMPLIANCE", "BUSINESS"],
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ProviderConnectionResponse"
+            }
+          }
+        }
+      },
+      "Compliance_PolicyResponse": {
+        "required": ["lockStatus", "policyName", "policyType", "transactionType"],
+        "type": "object",
+        "properties": {
+          "policyName": {
+            "type": "string"
+          },
+          "policyType": {
+            "enum": ["AUTOMATIC", "EXCEPTION"],
+            "type": "string"
+          },
+          "transactionType": {
+            "enum": ["INCOMING", "OUTGOING"],
+            "type": "string"
+          },
+          "approvalWorkflow": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "exceptionRole": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "error": {
+            "type": "string"
+          },
+          "lockStatus": {
+            "enum": ["Locked", "Unlocked", "Archived"],
+            "type": "string"
+          },
+          "policyId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "EDS_ChannelCreate": {
         "required": ["createdBy", "id", "name", "supportedEventTypes", "type"],
         "type": "object",
@@ -24636,6 +27006,10 @@
     },
     {
       "name": "VirtualAccounting"
+    },
+    {
+      "name": "Compliance",
+      "description": "Compliance APIs enable the creation of compliance-related domains, integration with compliance providers, management of risk score configurations, and execution of compliance analyses. They facilitate the creation of compliance policies, as well as the management of compliance users and agents to automate compliance checks effectively."
     },
     {
       "name": "Event Distribution Service",
