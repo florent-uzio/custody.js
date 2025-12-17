@@ -26,6 +26,7 @@ export type Core_IntentResponse = components["schemas"]["Core_IntentResponse"]
 
 // Get intent
 export type Core_GetIntentPathParams = operations["getIntent"]["parameters"]["path"]
+export type Core_TrustedIntent = components["schemas"]["Core_TrustedIntent"]
 
 // Get intents
 export type Core_GetIntentsPathParams = operations["getIntents"]["parameters"]["path"]

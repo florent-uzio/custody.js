@@ -59,6 +59,7 @@ import {
   type Core_RemainingDomainUsers,
   type Core_RemainingUsersIntentPathParams,
   type Core_RemainingUsersIntentQueryParams,
+  type Core_TrustedIntent,
 } from "./services/intents/index.js"
 import type {
   Core_CurrentFees,
@@ -234,7 +235,7 @@ export class RippleCustody {
      *
      * @param params - The parameters for the intent.
      */
-    get: async (params: Core_GetIntentPathParams): Promise<Core_IntentResponse> =>
+    get: async (params: Core_GetIntentPathParams): Promise<Core_TrustedIntent> =>
       this.intentService.getIntent(params),
 
     /**
@@ -588,7 +589,7 @@ export class RippleCustody {
      * @returns The tickers
      */
     list: async (queryParams?: GetTickersQueryParams): Promise<Core_TickersCollection> =>
-      this.tickersService.getTickers(queryParams ?? {}),
+      this.tickersService.getTickers(queryParams),
 
     /**
      * Get a ticker details

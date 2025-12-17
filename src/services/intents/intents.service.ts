@@ -14,6 +14,7 @@ import type {
   Core_RemainingDomainUsers,
   Core_RemainingUsersIntentPathParams,
   Core_RemainingUsersIntentQueryParams,
+  Core_TrustedIntent,
 } from "./intents.types.js"
 
 export class IntentsService {
@@ -55,12 +56,12 @@ export class IntentsService {
   async getIntent(
     params: Core_GetIntentPathParams,
     query?: Core_GetIntentsQueryParams,
-  ): Promise<Core_IntentResponse> {
+  ): Promise<Core_TrustedIntent> {
     const url = replacePathParams(URLs.getIntent, {
       domainId: params.domainId,
       intentId: params.intentId,
     })
-    return this.api.get<Core_IntentResponse>(url, query)
+    return this.api.get<Core_TrustedIntent>(url, query)
   }
 
   /**
