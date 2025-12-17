@@ -27,6 +27,7 @@
     "format": "prettier --write .",
     "generate:custody-types": "npx openapi-typescript ./openapi/Ripple-Custody-v1-OpenAPI.json -o ./src/models/custody-types.ts && prettier --write ./src/models/custody-types.ts",
     "local-release": "changeset version && changeset publish",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run ci",
     "sort-package": "npx sort-package-json",
     "start": "npm run build && node dist/index.js",
