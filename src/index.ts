@@ -2,7 +2,8 @@ export { RippleCustody } from "./ripple-custody.js"
 export type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 
 // keypairs types
-export type { KeypairAlgorithm, KeypairService } from "./services/keypairs/index.js"
+export { KeypairService } from "./services/keypairs/index.js"
+export type { KeypairAlgorithm } from "./services/keypairs/keypairs.types.js"
 
 // intents types
 export type {
