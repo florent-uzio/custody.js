@@ -2,6 +2,8 @@
 
 A comprehensive JavaScript SDK for interacting with the Ripple Custody API. This SDK provides a clean, type-safe interface for managing domains, intents, accounts, transactions, and cryptographic operations.
 
+⚠️ **Do not use this SDK in production.** This is personal code that may contain bugs and is not regularly maintained.
+
 ## Features
 
 - 🔐 **Cryptographic Support**: Ed25519, secp256k1, secp256r1 keypair generation and signing
@@ -79,8 +81,7 @@ The SDK provides a namespaced API for easy discovery and usage:
 
 ```javascript
 // 🏢 Domain Operations
-const domains = await custody.domains.list()
-const domain = await custody.domains.get({ domainId: "your-domain-id" })
+const domains = await custody.domains.list({ domainId: "your-domain-id" })
 
 // 📋 Intent Operations
 const intent = await custody.intents.propose({
