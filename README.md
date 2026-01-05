@@ -4,7 +4,7 @@ A comprehensive JavaScript SDK for interacting with the Ripple Custody API. This
 
 ## Features
 
-- 🔐 **Cryptographic Support**: Ed25519 and secp256k1 keypair generation and signing
+- 🔐 **Cryptographic Support**: Ed25519, secp256k1, secp256r1 keypair generation and signing
 - 🏢 **Domain Management**: List and retrieve domain information
 - 📋 **Intent Operations**: Propose, approve, reject, and manage intents
 - 💰 **Account Management**: Manage accounts, addresses, and balances
@@ -14,28 +14,15 @@ A comprehensive JavaScript SDK for interacting with the Ripple Custody API. This
 
 ## Installation
 
-### From npm (recommended)
+### From GitHub
+
+This repo is not published on NPM.
+
+Install directly from the GitHub repository:
 
 ```bash
-npm install custody.js
+npm install github:florent-uzio/custody.js
 ```
-
-### From GitHub (acacia branch)
-
-If you need to install directly from the GitHub repository (e.g., for testing or using the latest development version), you can install from the `acacia` branch.
-
-**Authentication Required**: To install from GitHub, you need to generate a GitHub token with read access:
-
-- **Fine-grained token**: Select the Custody.js project and then the `Metadata` permission with `read-only` access.
-- **Classic token**: Use the `repo` scope (Full control of private repositories) - this includes the read access needed for npm install
-
-You can then use the token in your npm command:
-
-```bash
-npm install git+https://YOUR_TOKEN@github.com/florent-uzio/custody.js.git#acacia
-```
-
-**Note**: The `acacia` branch is automatically synchronized with the `main` branch and includes the built `dist` directory, making it suitable for direct GitHub installation.
 
 ## Quick Start
 
@@ -44,7 +31,7 @@ npm install git+https://YOUR_TOKEN@github.com/florent-uzio/custody.js.git#acacia
 First, you'll need to generate cryptographic keypairs for authentication and signing:
 
 ```typescript
-import { KeypairService } from "custody.js"
+import { KeypairService } from "custody"
 
 // Generate Ed25519 keypair
 const ed25519Service = new KeypairService("ed25519")
@@ -76,10 +63,11 @@ Use a `.env` file to store your public and private key.
 ### 2. Initialize the RippleCustody Client
 
 ```typescript
-import { RippleCustody } from "custody.js"
+import { RippleCustody } from "custody"
 
 const custody = new RippleCustody({
-  baseUrl: "https://api.ripple.com",
+  apiUrl: "https://api.ripple.com",
+  authUrl: "https://auth.api.ripple.com",
   privateKey: ed25519Keypair.privateKey, // Your private key in PEM format
   publicKey: ed25519Keypair.publicKey, // Your public key in base64 format
 })
@@ -157,7 +145,7 @@ const dryRunResult = await custody.transactions.dryRun(
 The SDK provides typed error handling through the `CustodyError` class. All API errors are thrown as `CustodyError` instances with the following structure:
 
 ```typescript
-import { CustodyError } from "custody.js"
+import { CustodyError } from "custody"
 
 try {
   const domains = await custody.domains.list()
@@ -172,26 +160,6 @@ try {
 ```
 
 The `CustodyError` class extends the standard `Error` class and provides typed access to the API's error response structure.
-
-## Development
-
-### Branch Strategy
-
-This repository uses two main branches:
-
-- **`main`**: The primary development branch containing source code and tests
-- **`acacia`**: A deployment branch that includes the built `dist` directory for GitHub installation
-
-### Automated Sync
-
-The `acacia` branch is automatically synchronized with `main` via GitHub Actions. Every time changes are merged into `main`, the workflow:
-
-1. Builds the project using `npm run build`
-2. Updates the `acacia` branch with the latest changes
-3. Resolves merge conflicts in `.gitignore` to ensure the `dist` directory is included
-4. Pushes the updated `acacia` branch
-
-This ensures that users installing from GitHub always get the latest built version.
 
 ## License
 
