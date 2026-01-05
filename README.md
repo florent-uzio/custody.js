@@ -31,7 +31,7 @@ npm install github:florent-uzio/custody.js
 First, you'll need to generate cryptographic keypairs for authentication and signing:
 
 ```typescript
-import { KeypairService } from "custody.js"
+import { KeypairService } from "custody"
 
 // Generate Ed25519 keypair
 const ed25519Service = new KeypairService("ed25519")
@@ -63,10 +63,11 @@ Use a `.env` file to store your public and private key.
 ### 2. Initialize the RippleCustody Client
 
 ```typescript
-import { RippleCustody } from "custody.js"
+import { RippleCustody } from "custody"
 
 const custody = new RippleCustody({
-  baseUrl: "https://api.ripple.com",
+  apiUrl: "https://api.ripple.com",
+  authUrl: "https://auth.api.ripple.com",
   privateKey: ed25519Keypair.privateKey, // Your private key in PEM format
   publicKey: ed25519Keypair.publicKey, // Your public key in base64 format
 })
@@ -144,7 +145,7 @@ const dryRunResult = await custody.transactions.dryRun(
 The SDK provides typed error handling through the `CustodyError` class. All API errors are thrown as `CustodyError` instances with the following structure:
 
 ```typescript
-import { CustodyError } from "custody.js"
+import { CustodyError } from "custody"
 
 try {
   const domains = await custody.domains.list()
