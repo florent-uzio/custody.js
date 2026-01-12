@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
 import canonicalize from "canonicalize"
+import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
 import { isObject } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
@@ -32,6 +33,10 @@ export class ApiService {
         "Content-Type": "application/json",
       },
     })
+
+    // Set params serializer to handle arrays the way Ripple Custody expects
+    this.apiClient.defaults.paramsSerializer = (params) =>
+      qs.stringify(params, { arrayFormat: "repeat" })
 
     // Add request interceptor to inject JWT token into headers
     this.apiClient.interceptors.request.use(

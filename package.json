@@ -38,7 +38,7 @@
     "axios": "^1.8.4",
     "canonicalize": "^2.1.0",
     "dotenv": "^16.4.7",
-    "qs": "^6.14.0",
+    "qs": "^6.14.1",
     "uuid": "^11.1.0",
     "xrpl": "^4.2.0",
     "zod": "^4.0.17"
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.1",
     "@changesets/cli": "^2.29.6",
+    "@types/qs": "^6.14.0",
     "openapi-typescript": "^7.9.1",
     "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0",
