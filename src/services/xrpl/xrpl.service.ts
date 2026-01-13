@@ -3,8 +3,12 @@ import { v7 as uuidv7 } from "uuid"
 import { CustodyError } from "../../models/index.js"
 import { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
-import { IntentsService, type Core_ProposeIntentBody } from "../intents/index.js"
-import { UsersService } from "../users/index.js"
+import {
+  IntentsService,
+  type Core_IntentResponse,
+  type Core_ProposeIntentBody,
+} from "../intents/index.js"
+import { UsersService, type Core_MeReference } from "../users/index.js"
 import type { CustodyPayment, PaymentOptions } from "./xrpl.types.js"
 
 export class XrplService {
@@ -27,7 +31,7 @@ export class XrplService {
   public async sendPayment(
     payment: CustodyPayment,
     options: PaymentOptions = {},
-  ): Promise<Awaited<ReturnType<IntentsService["proposeIntent"]>>> {
+  ): Promise<Core_IntentResponse> {
     const me = await this.userService.getMe()
     this.validateUser(me)
 
@@ -53,7 +57,7 @@ export class XrplService {
    * Validates that the user has the required login ID and domains.
    * @private
    */
-  private validateUser(me: Awaited<ReturnType<UsersService["getMe"]>>): void {
+  private validateUser(me: Core_MeReference): void {
     if (!me.loginId?.id) {
       throw new CustodyError({ reason: "User has no login ID" })
     }
@@ -68,7 +72,7 @@ export class XrplService {
    * @private
    */
   private resolveDomainAndUser(
-    me: Awaited<ReturnType<UsersService["getMe"]>>,
+    me: Core_MeReference,
     providedDomainId?: string,
   ): { domainId: string; userId: string } {
     if (providedDomainId) {
