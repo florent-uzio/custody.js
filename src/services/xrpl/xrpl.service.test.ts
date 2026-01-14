@@ -5,7 +5,7 @@ import type { ApiService } from "../apis/index.js"
 import { IntentsService } from "../intents/index.js"
 import { UsersService } from "../users/index.js"
 import { XrplService } from "./xrpl.service.js"
-import type { CustodyPayment, XrplIntentOptions } from "./xrpl.types.js"
+import type { CustodyPayment, CustodyTrustline, XrplIntentOptions } from "./xrpl.types.js"
 
 describe("XrplService", () => {
   let xrplService: XrplService
@@ -468,6 +468,305 @@ describe("XrplService", () => {
           expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe(priority)
           expect(intentCall.request.payload.parameters.feeStrategy.type).toBe("Priority")
         }
+      }
+    })
+  })
+
+  describe("createTrustline", () => {
+    const mockTrustline: CustodyTrustline = {
+      Account: mockAddress,
+      flags: ["tfSetfAuth"],
+      limitAmount: {
+        currency: {
+          type: "Currency",
+          code: "USD",
+          issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+        },
+        value: "1000000",
+      },
+    }
+
+    it("should successfully create a trustline with default options", async () => {
+      const mockMe = {
+        loginId: { id: "login-123" },
+        domains: [
+          {
+            id: mockDomainId,
+            userReference: { id: mockUserId },
+          },
+        ],
+      }
+
+      const mockSenderAccount = {
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        address: mockAddress,
+      }
+
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [mockSenderAccount],
+      } as any)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.createTrustline(mockTrustline)
+
+      expect(mockUsersService.getMe).toHaveBeenCalledOnce()
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "TrustSet"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("TrustSet")
+          expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfSetfAuth"])
+          expect(intentCall.request.payload.parameters.operation.limitAmount).toEqual(
+            mockTrustline.limitAmount,
+          )
+        }
+      }
+    })
+
+    it("should create trustline with custom options", async () => {
+      const mockMe = {
+        loginId: { id: "login-123" },
+        domains: [
+          {
+            id: mockDomainId,
+            userReference: { id: mockUserId },
+          },
+        ],
+      }
+
+      const mockSenderAccount = {
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        address: mockAddress,
+      }
+
+      const options: XrplIntentOptions = {
+        feePriority: "Medium",
+        expiryDays: 3,
+        customProperties: { reference: "trustline-setup" },
+      }
+
+      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [mockSenderAccount],
+      } as any)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.createTrustline(mockTrustline, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("Medium")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "trustline-setup" })
+    })
+
+    it("should create trustline with enableRippling option", async () => {
+      const trustlineWithRippling: CustodyTrustline = {
+        ...mockTrustline,
+        enableRippling: true,
+      }
+
+      const mockMe = {
+        loginId: { id: "login-123" },
+        domains: [
+          {
+            id: mockDomainId,
+            userReference: { id: mockUserId },
+          },
+        ],
+      }
+
+      const mockSenderAccount = {
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        address: mockAddress,
+      }
+
+      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [mockSenderAccount],
+      } as any)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.createTrustline(trustlineWithRippling)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "TrustSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.enableRippling).toBe(true)
+      }
+    })
+
+    it("should use provided domainId when user has multiple domains", async () => {
+      const providedDomainId = "domain-456"
+      const mockMe = {
+        loginId: { id: "login-123" },
+        domains: [
+          {
+            id: mockDomainId,
+            userReference: { id: mockUserId },
+          },
+          {
+            id: providedDomainId,
+            userReference: { id: "user-456" },
+          },
+        ],
+      }
+
+      const mockSenderAccount = {
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        address: mockAddress,
+      }
+
+      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [mockSenderAccount],
+      } as any)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.createTrustline(mockTrustline, { domainId: providedDomainId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      const mockMe = {
+        loginId: null,
+        domains: [
+          {
+            id: mockDomainId,
+            userReference: { id: mockUserId },
+          },
+        ],
+      }
+
+      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+
+      await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(CustodyError)
+      await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(
+        "User has no login ID",
+      )
+    })
+
+    it("should throw error when sender account is not found", async () => {
+      const mockMe = {
+        loginId: { id: "login-123" },
+        domains: [
+          {
+            id: mockDomainId,
+            userReference: { id: mockUserId },
+          },
+        ],
+      }
+
+      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
+
+      await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(CustodyError)
+      await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(
+        `Sender account not found for address ${mockAddress}`,
+      )
+    })
+
+    it("should create trustline with multiple flags", async () => {
+      const trustlineWithMultipleFlags: CustodyTrustline = {
+        Account: mockAddress,
+        flags: ["tfSetFreeze", "tfClearFreeze"],
+        limitAmount: {
+          currency: {
+            type: "Currency",
+            code: "EUR",
+            issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+          },
+          value: "500000",
+        },
+      }
+
+      const mockMe = {
+        loginId: { id: "login-123" },
+        domains: [
+          {
+            id: mockDomainId,
+            userReference: { id: mockUserId },
+          },
+        ],
+      }
+
+      const mockSenderAccount = {
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        address: mockAddress,
+      }
+
+      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [mockSenderAccount],
+      } as any)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.createTrustline(trustlineWithMultipleFlags)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "TrustSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual([
+          "tfSetFreeze",
+          "tfClearFreeze",
+        ])
+        expect(intentCall.request.payload.parameters.operation.limitAmount.value).toBe("500000")
+        expect(intentCall.request.payload.parameters.operation.limitAmount.currency).toEqual({
+          type: "Currency",
+          code: "EUR",
+          issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+        })
       }
     })
   })
