@@ -139,6 +139,7 @@ import type {
   GetVaultsQueryParams,
   ImportPreparedOperationsRequestBody,
 } from "./services/vaults/vaults.types.js"
+import { XrplService, type CustodyPayment, type PaymentOptions } from "./services/xrpl/index.js"
 
 export class RippleCustody {
   private accountsService: AccountsService
@@ -153,6 +154,7 @@ export class RippleCustody {
   private userInvitationsService: UserInvitationService
   private usersService: UsersService
   private vaultsService: VaultsService
+  private xrplService: XrplService
 
   constructor(options: RippleCustodyClientOptions) {
     const { authUrl, apiUrl, privateKey, publicKey } = options
@@ -176,6 +178,7 @@ export class RippleCustody {
     this.userInvitationsService = new UserInvitationService(this.apiService)
     this.usersService = new UsersService(this.apiService)
     this.vaultsService = new VaultsService(this.apiService)
+    this.xrplService = new XrplService(this.apiService)
   }
 
   // Auth namespace
@@ -726,5 +729,19 @@ export class RippleCustody {
       query?: GetAllUserRequestsStateInDomainQueryParams,
     ): Promise<Core_RequestState> =>
       this.requestsService.getAllUserRequestsStateInDomain(params, query),
+  }
+
+  // Xrpl namespace
+  public readonly xrpl = {
+    /**
+     * Send an XRPL Payment. If you want to send XRP, do not specify the currency field.
+     * @param params - The payment transaction details
+     * @param options - Optional configuration for the payment intent
+     * @returns The payment
+     */
+    sendPayment: async (
+      params: CustodyPayment,
+      options?: PaymentOptions,
+    ): Promise<Core_IntentResponse> => this.xrplService.sendPayment(params, options),
   }
 }
