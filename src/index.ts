@@ -126,5 +126,15 @@ export type {
   ImportPreparedOperationsRequestBody,
 } from "./services/vaults/index.js"
 
+// xrpl types
+export type {
+  Core_XrplCurrency,
+  Core_XrplOperation_Payment,
+  Core_XrplOperation_TrustSet,
+  CustodyPayment,
+  CustodyTrustline,
+  XrplIntentOptions,
+} from "./services/xrpl/index.js"
+
 // errors types
 export type { Core_ErrorMessage, CustodyError } from "./models/index.js"

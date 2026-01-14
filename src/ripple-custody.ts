@@ -139,7 +139,12 @@ import type {
   GetVaultsQueryParams,
   ImportPreparedOperationsRequestBody,
 } from "./services/vaults/vaults.types.js"
-import { XrplService, type CustodyPayment, type PaymentOptions } from "./services/xrpl/index.js"
+import {
+  XrplService,
+  type CustodyPayment,
+  type CustodyTrustline,
+  type XrplIntentOptions,
+} from "./services/xrpl/index.js"
 
 export class RippleCustody {
   private accountsService: AccountsService
@@ -741,7 +746,18 @@ export class RippleCustody {
      */
     sendPayment: async (
       params: CustodyPayment,
-      options?: PaymentOptions,
+      options?: XrplIntentOptions,
     ): Promise<Core_IntentResponse> => this.xrplService.sendPayment(params, options),
+
+    /**
+     * Create an XRPL TrustSet.
+     * @param params - The trustline transaction details
+     * @param options - Optional configuration for the trustline intent
+     * @returns The trustline
+     */
+    createTrustline: async (
+      params: CustodyTrustline,
+      options?: XrplIntentOptions,
+    ): Promise<Core_IntentResponse> => this.xrplService.createTrustline(params, options),
   }
 }
