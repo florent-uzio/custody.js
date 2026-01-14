@@ -9,7 +9,13 @@ import {
   type Core_ProposeIntentBody,
 } from "../intents/index.js"
 import { UsersService, type Core_MeReference } from "../users/index.js"
-import type { CustodyPayment, PaymentOptions } from "./xrpl.types.js"
+import type {
+  BuildIntentProps,
+  CustodyPayment,
+  CustodyTrustline,
+  XrplIntentOptions,
+  XrplOperation,
+} from "./xrpl.types.js"
 
 export class XrplService {
   private readonly intentService: IntentsService
@@ -30,27 +36,57 @@ export class XrplService {
    */
   public async sendPayment(
     payment: CustodyPayment,
-    options: PaymentOptions = {},
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    return this.proposeXrplIntent(payment, "Payment", options)
+  }
+
+  /**
+   * Creates and proposes a trustline intent for an XRPL TrustSet transaction.
+   * @param trustline - The trustline transaction details
+   * @param options - Optional configuration for the trustline intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the sender account is not found
+   */
+  public async createTrustline(
+    trustline: CustodyTrustline,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    return this.proposeXrplIntent(trustline, "TrustSet", options)
+  }
+
+  /**
+   * Generic method to propose an XRPL intent with the common flow.
+   * Handles user validation, domain resolution, account lookup, and intent submission.
+   * @private
+   */
+  private async proposeXrplIntent(
+    data: CustodyPayment | CustodyTrustline,
+    operationType: "Payment" | "TrustSet",
+    options: XrplIntentOptions,
   ): Promise<Core_IntentResponse> {
     const me = await this.userService.getMe()
     this.validateUser(me)
 
     const { domainId, userId } = this.resolveDomainAndUser(me, options.domainId)
+    const senderAccount = await this.findSenderAccount(data.Account)
 
-    const senderAccount = await this.findSenderAccount(payment.Account)
+    // Remove Account from operation data (it's only used to find the sender)
+    const { Account: _, ...operationData } = data
 
-    const paymentIntent = this.buildPaymentIntent(
-      payment,
-      {
+    const intent = this.buildIntent({
+      // Type assertion needed because TypeScript can't narrow the union based on operationType
+      operation: { ...operationData, type: operationType } as XrplOperation,
+      context: {
         domainId,
         userId,
         accountId: senderAccount.accountId,
         ledgerId: senderAccount.ledgerId,
       },
       options,
-    )
+    })
 
-    return this.intentService.proposeIntent(paymentIntent)
+    return this.intentService.proposeIntent(intent)
   }
 
   /**
@@ -128,20 +164,10 @@ export class XrplService {
   }
 
   /**
-   * Builds the payment intent request body.
+   * Builds an XRPL intent body.
    * @private
    */
-  private buildPaymentIntent(
-    payment: CustodyPayment,
-    context: {
-      domainId: string
-      userId: string
-      accountId: string
-      ledgerId: string
-    },
-    options: PaymentOptions,
-  ): Core_ProposeIntentBody {
-    const { Account, ...paymentData } = payment
+  private buildIntent({ operation, context, options }: BuildIntentProps): Core_ProposeIntentBody {
     const feePriority = options.feePriority ?? "Low"
     const expiryDays = options.expiryDays ?? 1
 
@@ -165,10 +191,7 @@ export class XrplService {
               type: "Priority",
             },
             memos: [],
-            operation: {
-              ...paymentData,
-              type: "Payment",
-            },
+            operation,
             type: "XRPL",
           },
           type: "v0_CreateTransactionOrder",

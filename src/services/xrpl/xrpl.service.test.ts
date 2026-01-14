@@ -5,7 +5,7 @@ import type { ApiService } from "../apis/index.js"
 import { IntentsService } from "../intents/index.js"
 import { UsersService } from "../users/index.js"
 import { XrplService } from "./xrpl.service.js"
-import type { CustodyPayment, PaymentOptions } from "./xrpl.types.js"
+import type { CustodyPayment, XrplIntentOptions } from "./xrpl.types.js"
 
 describe("XrplService", () => {
   let xrplService: XrplService
@@ -135,7 +135,7 @@ describe("XrplService", () => {
         address: mockAddress,
       }
 
-      const options: PaymentOptions = {
+      const options: XrplIntentOptions = {
         feePriority: "High",
         expiryDays: 7,
         customProperties: { orderId: "order-123" },
