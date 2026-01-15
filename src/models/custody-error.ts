@@ -13,18 +13,16 @@ export class CustodyError extends Error {
    */
   public readonly errorMessage?: string
   public readonly statusCode?: number
-  public readonly originalError?: Error
 
-  constructor(errorData: Core_ErrorMessage, statusCode?: number, originalError?: Error) {
+  constructor(errorData: Core_ErrorMessage, statusCode?: number, cause?: Error) {
     // Use the reason as the main error message, fallback to message if reason is not available
     const errorMessage = errorData.reason || errorData.message || "Unknown Custody API error"
-    super(errorMessage)
+    super(errorMessage, { cause })
 
     this.name = "CustodyError"
     this.reason = errorData.reason
     this.errorMessage = errorData.message
     this.statusCode = statusCode
-    this.originalError = originalError
 
     // Maintain proper stack trace
     if (Error.captureStackTrace) {
