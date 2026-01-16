@@ -4,7 +4,16 @@ import type { ApiService } from "../apis/index.js"
 import { IntentContextService, type IntentContext } from "../intent-context/index.js"
 import { IntentsService } from "../intents/index.js"
 import { XrplService } from "./xrpl.service.js"
-import type { CustodyPayment, CustodyTrustline, XrplIntentOptions } from "./xrpl.types.js"
+import type {
+  CustodyAccountSet,
+  CustodyClawback,
+  CustodyDepositPreauth,
+  CustodyMpTokenAuthorize,
+  CustodyOfferCreate,
+  CustodyPayment,
+  CustodyTrustline,
+  XrplIntentOptions,
+} from "./xrpl.types.js"
 
 describe("XrplService", () => {
   let xrplService: XrplService
@@ -501,6 +510,971 @@ describe("XrplService", () => {
           issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
         })
       }
+    })
+  })
+
+  describe("depositPreauth", () => {
+    const mockDepositPreauthAuthorize: CustodyDepositPreauth = {
+      Account: mockAddress,
+      authorize: {
+        type: "Address",
+        address: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+      },
+    }
+
+    const mockDepositPreauthUnauthorize: CustodyDepositPreauth = {
+      Account: mockAddress,
+      unauthorize: {
+        type: "Address",
+        address: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+      },
+    }
+
+    it("should successfully create a deposit preauth with authorize", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.depositPreauth(mockDepositPreauthAuthorize)
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "DepositPreauth"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("DepositPreauth")
+          expect(intentCall.request.payload.parameters.operation.authorize).toEqual(
+            mockDepositPreauthAuthorize.authorize,
+          )
+        }
+      }
+    })
+
+    it("should successfully create a deposit preauth with unauthorize", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.depositPreauth(mockDepositPreauthUnauthorize)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "DepositPreauth"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.type).toBe("DepositPreauth")
+        expect(intentCall.request.payload.parameters.operation.unauthorize).toEqual(
+          mockDepositPreauthUnauthorize.unauthorize,
+        )
+        expect(intentCall.request.payload.parameters.operation.authorize).toBeUndefined()
+      }
+    })
+
+    it("should create deposit preauth with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "High",
+        expiryDays: 5,
+        customProperties: { reference: "deposit-preauth-setup" },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.depositPreauth(mockDepositPreauthAuthorize, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("High")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "deposit-preauth-setup" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.depositPreauth(mockDepositPreauthAuthorize, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.depositPreauth(mockDepositPreauthAuthorize)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.depositPreauth(mockDepositPreauthAuthorize)).rejects.toThrow(
+        "User has no login ID",
+      )
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.depositPreauth(mockDepositPreauthAuthorize)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.depositPreauth(mockDepositPreauthAuthorize)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+  })
+
+  describe("clawback", () => {
+    const mockClawback: CustodyClawback = {
+      Account: mockAddress,
+      currency: {
+        type: "Currency",
+        code: "USD",
+        issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+      },
+      holder: {
+        type: "Address",
+        address: "rHolderAddress123456789",
+      },
+      value: "1000",
+    }
+
+    it("should successfully create a clawback with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.clawback(mockClawback)
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "Clawback"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("Clawback")
+          expect(intentCall.request.payload.parameters.operation.currency).toEqual(
+            mockClawback.currency,
+          )
+          expect(intentCall.request.payload.parameters.operation.holder).toEqual(
+            mockClawback.holder,
+          )
+          expect(intentCall.request.payload.parameters.operation.value).toBe("1000")
+        }
+      }
+    })
+
+    it("should create clawback with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "High",
+        expiryDays: 2,
+        customProperties: { reference: "clawback-enforcement" },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.clawback(mockClawback, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("High")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "clawback-enforcement" })
+    })
+
+    it("should create clawback with MPT currency", async () => {
+      const clawbackWithMpt: CustodyClawback = {
+        Account: mockAddress,
+        currency: {
+          type: "MultiPurposeToken",
+          issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+        },
+        holder: {
+          type: "Address",
+          address: "rHolderAddress123456789",
+        },
+        value: "500",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.clawback(clawbackWithMpt)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "Clawback"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.currency).toEqual(
+          clawbackWithMpt.currency,
+        )
+        expect(intentCall.request.payload.parameters.operation.value).toBe("500")
+      }
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.clawback(mockClawback, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.clawback(mockClawback)).rejects.toThrow(CustodyError)
+      await expect(xrplService.clawback(mockClawback)).rejects.toThrow("User has no login ID")
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.clawback(mockClawback)).rejects.toThrow(CustodyError)
+      await expect(xrplService.clawback(mockClawback)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+  })
+
+  describe("mpTokenAuthorize", () => {
+    const mockMpTokenAuthorize: CustodyMpTokenAuthorize = {
+      Account: mockAddress,
+      issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+      flags: [],
+    }
+
+    it("should successfully create an MPTokenAuthorize with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.mpTokenAuthorize(mockMpTokenAuthorize)
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "MPTokenAuthorize"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("MPTokenAuthorize")
+          expect(intentCall.request.payload.parameters.operation.issuanceId).toBe(
+            mockMpTokenAuthorize.issuanceId,
+          )
+          expect(intentCall.request.payload.parameters.operation.flags).toEqual([])
+        }
+      }
+    })
+
+    it("should create MPTokenAuthorize with tfMPTUnauthorize flag", async () => {
+      const mpTokenUnauthorize: CustodyMpTokenAuthorize = {
+        Account: mockAddress,
+        issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+        flags: ["tfMPTUnauthorize"],
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mpTokenUnauthorize)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenAuthorize"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfMPTUnauthorize"])
+      }
+    })
+
+    it("should create MPTokenAuthorize with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "Medium",
+        expiryDays: 3,
+        customProperties: { reference: "mpt-authorize" },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mockMpTokenAuthorize, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("Medium")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "mpt-authorize" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mockMpTokenAuthorize, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(CustodyError)
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(
+        "User has no login ID",
+      )
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(CustodyError)
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+  })
+
+  describe("offerCreate", () => {
+    const mockOfferCreate: CustodyOfferCreate = {
+      Account: mockAddress,
+      flags: [],
+      takerGets: {
+        amount: "1000000",
+      },
+      takerPays: {
+        currency: {
+          type: "Currency",
+          code: "USD",
+          issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+        },
+        amount: "100",
+      },
+    }
+
+    it("should successfully create an offer with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.offerCreate(mockOfferCreate)
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "OfferCreate"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("OfferCreate")
+          expect(intentCall.request.payload.parameters.operation.takerGets).toEqual(
+            mockOfferCreate.takerGets,
+          )
+          expect(intentCall.request.payload.parameters.operation.takerPays).toEqual(
+            mockOfferCreate.takerPays,
+          )
+          expect(intentCall.request.payload.parameters.operation.flags).toEqual([])
+        }
+      }
+    })
+
+    it("should create offer with tfSell flag", async () => {
+      const offerWithSellFlag: CustodyOfferCreate = {
+        ...mockOfferCreate,
+        flags: ["tfSell"],
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(offerWithSellFlag)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "OfferCreate"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfSell"])
+      }
+    })
+
+    it("should create offer with tfImmediateOrCancel flag", async () => {
+      const offerWithIocFlag: CustodyOfferCreate = {
+        ...mockOfferCreate,
+        flags: ["tfImmediateOrCancel"],
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(offerWithIocFlag)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "OfferCreate"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual([
+          "tfImmediateOrCancel",
+        ])
+      }
+    })
+
+    it("should create offer with tfFillOrKill flag", async () => {
+      const offerWithFokFlag: CustodyOfferCreate = {
+        ...mockOfferCreate,
+        flags: ["tfFillOrKill"],
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(offerWithFokFlag)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "OfferCreate"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfFillOrKill"])
+      }
+    })
+
+    it("should create offer with token-to-token exchange", async () => {
+      const tokenToTokenOffer: CustodyOfferCreate = {
+        Account: mockAddress,
+        flags: [],
+        takerGets: {
+          currency: {
+            type: "Currency",
+            code: "EUR",
+            issuer: "rEurIssuerAddress123456789",
+          },
+          amount: "500",
+        },
+        takerPays: {
+          currency: {
+            type: "Currency",
+            code: "USD",
+            issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+          },
+          amount: "600",
+        },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(tokenToTokenOffer)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "OfferCreate"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.takerGets).toEqual(
+          tokenToTokenOffer.takerGets,
+        )
+        expect(intentCall.request.payload.parameters.operation.takerPays).toEqual(
+          tokenToTokenOffer.takerPays,
+        )
+      }
+    })
+
+    it("should create offer with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "High",
+        expiryDays: 7,
+        customProperties: { reference: "dex-trade" },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(mockOfferCreate, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("High")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "dex-trade" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(mockOfferCreate, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow(CustodyError)
+      await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow("User has no login ID")
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow(CustodyError)
+      await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+  })
+
+  describe("accountSet", () => {
+    const mockAccountSet: CustodyAccountSet = {
+      Account: mockAddress,
+    }
+
+    it("should successfully create an accountSet with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.accountSet(mockAccountSet)
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "AccountSet"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("AccountSet")
+        }
+      }
+    })
+
+    it("should create accountSet with setFlag asfRequireAuth", async () => {
+      const accountSetWithFlag: CustodyAccountSet = {
+        Account: mockAddress,
+        setFlag: "asfRequireAuth",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(accountSetWithFlag)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "AccountSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.setFlag).toBe("asfRequireAuth")
+      }
+    })
+
+    it("should create accountSet with setFlag asfGlobalFreeze", async () => {
+      const accountSetWithGlobalFreeze: CustodyAccountSet = {
+        Account: mockAddress,
+        setFlag: "asfGlobalFreeze",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(accountSetWithGlobalFreeze)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "AccountSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.setFlag).toBe("asfGlobalFreeze")
+      }
+    })
+
+    it("should create accountSet with setFlag asfAllowTrustLineClawback", async () => {
+      const accountSetWithClawback: CustodyAccountSet = {
+        Account: mockAddress,
+        setFlag: "asfAllowTrustLineClawback",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(accountSetWithClawback)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "AccountSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.setFlag).toBe(
+          "asfAllowTrustLineClawback",
+        )
+      }
+    })
+
+    it("should create accountSet with clearFlag", async () => {
+      const accountSetWithClearFlag: CustodyAccountSet = {
+        Account: mockAddress,
+        clearFlag: "asfNoFreeze",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(accountSetWithClearFlag)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "AccountSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.clearFlag).toBe("asfNoFreeze")
+      }
+    })
+
+    it("should create accountSet with transferRate", async () => {
+      const accountSetWithTransferRate: CustodyAccountSet = {
+        Account: mockAddress,
+        transferRate: 1005000000,
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(accountSetWithTransferRate)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "AccountSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.transferRate).toBe(1005000000)
+      }
+    })
+
+    it("should create accountSet with multiple fields", async () => {
+      const accountSetWithMultipleFields: CustodyAccountSet = {
+        Account: mockAddress,
+        setFlag: "asfRequireAuth",
+        transferRate: 1002000000,
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(accountSetWithMultipleFields)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "AccountSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.setFlag).toBe("asfRequireAuth")
+        expect(intentCall.request.payload.parameters.operation.transferRate).toBe(1002000000)
+      }
+    })
+
+    it("should create accountSet with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "Medium",
+        expiryDays: 2,
+        customProperties: { reference: "account-config" },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(mockAccountSet, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("Medium")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "account-config" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(mockAccountSet, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow(CustodyError)
+      await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow("User has no login ID")
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow(CustodyError)
+      await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
     })
   })
 })
