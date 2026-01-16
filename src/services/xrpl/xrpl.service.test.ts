@@ -54,7 +54,7 @@ describe("XrplService", () => {
 
     // Replace internal services with mocks
     // @ts-expect-error - accessing private property for testing
-    xrplService.intentContext = mockIntentContext
+    xrplService.intentContextService = mockIntentContext
     // @ts-expect-error - accessing private property for testing
     xrplService.intentService = mockIntentsService
   })
