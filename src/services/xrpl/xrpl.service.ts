@@ -17,11 +17,11 @@ import type {
 
 export class XrplService {
   private readonly intentService: IntentsService
-  private readonly intentContext: IntentContextService
+  private readonly intentContextService: IntentContextService
 
   constructor(apiService: ApiService) {
     this.intentService = new IntentsService(apiService)
-    this.intentContext = new IntentContextService(apiService)
+    this.intentContextService = new IntentContextService(apiService)
   }
 
   /**
@@ -62,7 +62,7 @@ export class XrplService {
     operationType: "Payment" | "TrustSet",
     options: XrplIntentOptions,
   ): Promise<Core_IntentResponse> {
-    const context = await this.intentContext.resolveContext(data.Account, {
+    const context = await this.intentContextService.resolveContext(data.Account, {
       domainId: options.domainId,
     })
 
