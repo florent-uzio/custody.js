@@ -7,24 +7,21 @@ export type Core_ErrorMessage = components["schemas"]["Core_ErrorMessage"]
  * Provides typed access to the error response structure
  */
 export class CustodyError extends Error {
-  public readonly reason: string
   /**
-   * Use the Core_ErrorMessage 'reason' field as the main error message, fallback to the 'message' field if 'reason' is not available
+   * Optional additional message from the API (Core_ErrorMessage.message field)
+   * The main error reason is stored in the inherited `message` property
    */
   public readonly errorMessage?: string
   public readonly statusCode?: number
-  public readonly originalError?: Error
 
-  constructor(errorData: Core_ErrorMessage, statusCode?: number, originalError?: Error) {
+  constructor(errorData: Core_ErrorMessage, statusCode?: number, cause?: Error) {
     // Use the reason as the main error message, fallback to message if reason is not available
-    const errorMessage = errorData.reason || errorData.message || "Unknown Custody API error"
-    super(errorMessage)
+    const message = errorData.reason || errorData.message || "Unknown Custody API error"
+    super(message, { cause })
 
     this.name = "CustodyError"
-    this.reason = errorData.reason
     this.errorMessage = errorData.message
     this.statusCode = statusCode
-    this.originalError = originalError
 
     // Maintain proper stack trace
     if (Error.captureStackTrace) {
@@ -37,9 +34,22 @@ export class CustodyError extends Error {
    */
   public toJSON(): Core_ErrorMessage & { statusCode?: number } {
     return {
-      reason: this.reason,
+      reason: this.message,
       message: this.errorMessage,
       statusCode: this.statusCode,
+    }
+  }
+
+  /**
+   * Custom inspect for cleaner console.log output in Node.js
+   * Returns the same fields as toJSON() plus name and cause for debugging
+   * Full cause details are still accessible via error.cause
+   */
+  [Symbol.for("nodejs.util.inspect.custom")](): object {
+    return {
+      name: this.name,
+      ...this.toJSON(),
+      cause: this.cause instanceof Error ? this.cause.message : undefined,
     }
   }
 }
