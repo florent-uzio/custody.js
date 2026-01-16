@@ -10,7 +10,11 @@ import {
 import type {
   BuildIntentProps,
   Core_XrplOperation,
+  CustodyAccountSet,
+  CustodyClawback,
   CustodyDepositPreauth,
+  CustodyMpTokenAuthorize,
+  CustodyOfferCreate,
   CustodyPayment,
   CustodyTrustline,
   XrplIntentOptions,
@@ -65,6 +69,62 @@ export class XrplService {
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
     return this.proposeXrplIntent({ ...depositPreauth, type: "DepositPreauth" }, options)
+  }
+
+  /**
+   * Creates and proposes a clawback intent for an XRPL Clawback transaction.
+   * @param clawback - The clawback transaction details
+   * @param options - Optional configuration for the clawback intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the sender account is not found
+   */
+  public async clawback(
+    clawback: CustodyClawback,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    return this.proposeXrplIntent({ ...clawback, type: "Clawback" }, options)
+  }
+
+  /**
+   * Creates and proposes a MPTokenAuthorize intent for an XRPL MPTokenAuthorize transaction.
+   * @param mpTokenAuthorize - The MPTokenAuthorize transaction details
+   * @param options - Optional configuration for the MPTokenAuthorize intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the sender account is not found
+   */
+  public async mpTokenAuthorize(
+    mpTokenAuthorize: CustodyMpTokenAuthorize,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    return this.proposeXrplIntent({ ...mpTokenAuthorize, type: "MPTokenAuthorize" }, options)
+  }
+
+  /**
+   * Creates and proposes a OfferCreate intent for an XRPL OfferCreate transaction.
+   * @param offerCreate - The OfferCreate transaction details
+   * @param options - Optional configuration for the OfferCreate intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the sender account is not found
+   */
+  public async offerCreate(
+    offerCreate: CustodyOfferCreate,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    return this.proposeXrplIntent({ ...offerCreate, type: "OfferCreate" }, options)
+  }
+
+  /**
+   * Creates and proposes a AccountSet intent for an XRPL AccountSet transaction.
+   * @param accountSet - The AccountSet transaction details
+   * @param options - Optional configuration for the AccountSet intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the sender account is not found
+   */
+  public async accountSet(
+    accountSet: CustodyAccountSet,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    return this.proposeXrplIntent({ ...accountSet, type: "AccountSet" }, options)
   }
 
   /**

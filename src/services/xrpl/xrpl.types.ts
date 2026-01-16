@@ -1,4 +1,12 @@
-import type { DepositPreauth, Payment, TrustSet } from "xrpl"
+import type {
+  AccountSet,
+  Clawback,
+  DepositPreauth,
+  MPTokenAuthorize,
+  OfferCreate,
+  Payment,
+  TrustSet,
+} from "xrpl"
 import type { components } from "../../models/custody-types.js"
 import type { Prettify } from "../../type-utils/index.js"
 import type { IntentContext } from "../intent-context/index.js"
@@ -27,6 +35,35 @@ export type Core_XrplOperation_DepositPreauth =
 
 export type CustodyDepositPreauth = Prettify<
   Pick<DepositPreauth, "Account"> & Omit<Core_XrplOperation_DepositPreauth, "type">
+>
+
+// Clawback
+
+export type Core_XrplOperation_Clawback = components["schemas"]["Core_XrplOperation_Clawback"]
+export type CustodyClawback = Prettify<
+  Pick<Clawback, "Account"> & Omit<Core_XrplOperation_Clawback, "type">
+>
+
+// MPTokenAuthorize
+
+export type Core_XrplOperation_MPTokenAuthorize =
+  components["schemas"]["Core_XrplOperation_MPTokenAuthorize"]
+export type CustodyMpTokenAuthorize = Prettify<
+  Pick<MPTokenAuthorize, "Account"> & Omit<Core_XrplOperation_MPTokenAuthorize, "type">
+>
+
+// OfferCreate
+
+export type Core_XrplOperation_OfferCreate = components["schemas"]["Core_XrplOperation_OfferCreate"]
+export type CustodyOfferCreate = Prettify<
+  Pick<OfferCreate, "Account"> & Omit<Core_XrplOperation_OfferCreate, "type">
+>
+
+// AccountSet
+
+export type Core_XrplOperation_AccountSet = components["schemas"]["Core_XrplOperation_AccountSet"]
+export type CustodyAccountSet = Prettify<
+  Pick<AccountSet, "Account"> & Omit<Core_XrplOperation_AccountSet, "type">
 >
 
 // General
