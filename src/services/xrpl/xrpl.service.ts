@@ -1,14 +1,12 @@
 import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
-import { CustodyError } from "../../models/index.js"
-import { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
+import { IntentContextService } from "../intent-context/index.js"
 import {
   IntentsService,
   type Core_IntentResponse,
   type Core_ProposeIntentBody,
 } from "../intents/index.js"
-import { UsersService, type Core_MeReference } from "../users/index.js"
 import type {
   BuildIntentProps,
   CustodyPayment,
@@ -19,12 +17,11 @@ import type {
 
 export class XrplService {
   private readonly intentService: IntentsService
-  private readonly userService: UsersService
-  private readonly accountsService: AccountsService
+  private readonly intentContext: IntentContextService
+
   constructor(apiService: ApiService) {
     this.intentService = new IntentsService(apiService)
-    this.userService = new UsersService(apiService)
-    this.accountsService = new AccountsService(apiService)
+    this.intentContext = new IntentContextService(apiService)
   }
 
   /**
@@ -57,7 +54,7 @@ export class XrplService {
 
   /**
    * Generic method to propose an XRPL intent with the common flow.
-   * Handles user validation, domain resolution, account lookup, and intent submission.
+   * Handles context resolution and intent submission.
    * @private
    */
   private async proposeXrplIntent(
@@ -65,11 +62,9 @@ export class XrplService {
     operationType: "Payment" | "TrustSet",
     options: XrplIntentOptions,
   ): Promise<Core_IntentResponse> {
-    const me = await this.userService.getMe()
-    this.validateUser(me)
-
-    const { domainId, userId } = this.resolveDomainAndUser(me, options.domainId)
-    const senderAccount = await this.findSenderAccount(data.Account)
+    const context = await this.intentContext.resolveContext(data.Account, {
+      domainId: options.domainId,
+    })
 
     // Remove Account from operation data (it's only used to find the sender)
     const { Account: _, ...operationData } = data
@@ -77,90 +72,11 @@ export class XrplService {
     const intent = this.buildIntent({
       // Type assertion needed because TypeScript can't narrow the union based on operationType
       operation: { ...operationData, type: operationType } as XrplOperation,
-      context: {
-        domainId,
-        userId,
-        accountId: senderAccount.accountId,
-        ledgerId: senderAccount.ledgerId,
-      },
+      context,
       options,
     })
 
     return this.intentService.proposeIntent(intent)
-  }
-
-  /**
-   * Validates that the user has the required login ID and domains.
-   * @private
-   */
-  private validateUser(me: Core_MeReference): void {
-    if (!me.loginId?.id) {
-      throw new CustodyError({ reason: "User has no login ID" })
-    }
-
-    if (me.domains.length === 0) {
-      throw new CustodyError({ reason: "User has no domains" })
-    }
-  }
-
-  /**
-   * Resolves the domain ID and user ID to use for the payment.
-   * @private
-   */
-  private resolveDomainAndUser(
-    me: Core_MeReference,
-    providedDomainId?: string,
-  ): { domainId: string; userId: string } {
-    if (providedDomainId) {
-      const domain = me.domains.find((d) => d.id === providedDomainId)
-      if (!domain) {
-        throw new CustodyError({
-          reason: `Domain with ID ${providedDomainId} not found for user`,
-        })
-      }
-      if (!domain.id) {
-        throw new CustodyError({ reason: `Domain ${providedDomainId} has no ID` })
-      }
-      if (!domain.userReference?.id) {
-        throw new CustodyError({ reason: `Domain ${providedDomainId} has no user reference` })
-      }
-      return { domainId: domain.id, userId: domain.userReference.id }
-    }
-
-    if (me.domains.length > 1) {
-      throw new CustodyError({
-        reason: "User has multiple domains. Please specify domainId in the options parameter.",
-      })
-    }
-
-    const domain = me.domains[0]
-    if (!domain?.id) {
-      throw new CustodyError({ reason: "User has no primary domain" })
-    }
-    if (!domain.userReference?.id) {
-      throw new CustodyError({ reason: "Primary domain has no user reference" })
-    }
-
-    return { domainId: domain.id, userId: domain.userReference.id }
-  }
-
-  /**
-   * Finds the sender account by address across all domains.
-   * @private
-   */
-  private async findSenderAccount(address: string): Promise<{
-    accountId: string
-    ledgerId: string
-    address: string
-  }> {
-    const addressAcrossDomains = await this.accountsService.getAllDomainsAddresses({ address })
-    const senderAccount = addressAcrossDomains.items.find((account) => account.address === address)
-
-    if (!senderAccount) {
-      throw new CustodyError({ reason: `Sender account not found for address ${address}` })
-    }
-
-    return senderAccount
   }
 
   /**

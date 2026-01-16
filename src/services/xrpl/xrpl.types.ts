@@ -1,6 +1,7 @@
 import type { Payment, TrustSet } from "xrpl"
 import type { components } from "../../models/custody-types.js"
 import type { Prettify } from "../../type-utils/index.js"
+import type { IntentContext } from "../intent-context/index.js"
 
 // Payments
 
@@ -44,11 +45,6 @@ export type XrplOperation = Core_XrplOperation_Payment | Core_XrplOperation_Trus
 
 export type BuildIntentProps = {
   operation: XrplOperation
-  context: {
-    domainId: string
-    userId: string
-    accountId: string
-    ledgerId: string
-  }
+  context: IntentContext
   options: XrplIntentOptions
 }

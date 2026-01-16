@@ -1,17 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../../models/index.js"
-import { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
+import { IntentContextService, type IntentContext } from "../intent-context/index.js"
 import { IntentsService } from "../intents/index.js"
-import { UsersService } from "../users/index.js"
 import { XrplService } from "./xrpl.service.js"
 import type { CustodyPayment, CustodyTrustline, XrplIntentOptions } from "./xrpl.types.js"
 
 describe("XrplService", () => {
   let xrplService: XrplService
   let mockApiService: ApiService
-  let mockUsersService: UsersService
-  let mockAccountsService: AccountsService
+  let mockIntentContext: IntentContextService
   let mockIntentsService: IntentsService
 
   const mockDomainId = "domain-123"
@@ -19,6 +17,14 @@ describe("XrplService", () => {
   const mockAccountId = "account-123"
   const mockLedgerId = "ledger-123"
   const mockAddress = "rLpUHpWU455zTvVq65EEeHss52Dk4WvQHn"
+
+  const mockContext: IntentContext = {
+    domainId: mockDomainId,
+    userId: mockUserId,
+    accountId: mockAccountId,
+    ledgerId: mockLedgerId,
+    address: mockAddress,
+  }
 
   const mockPayment: CustodyPayment = {
     Account: mockAddress,
@@ -35,13 +41,9 @@ describe("XrplService", () => {
     mockApiService = {} as ApiService
 
     // Create mock service instances with spies
-    mockUsersService = {
-      getMe: vi.fn(),
-    } as unknown as UsersService
-
-    mockAccountsService = {
-      getAllDomainsAddresses: vi.fn(),
-    } as unknown as AccountsService
+    mockIntentContext = {
+      resolveContext: vi.fn(),
+    } as unknown as IntentContextService
 
     mockIntentsService = {
       proposeIntent: vi.fn(),
@@ -52,46 +54,24 @@ describe("XrplService", () => {
 
     // Replace internal services with mocks
     // @ts-expect-error - accessing private property for testing
-    xrplService.userService = mockUsersService
-    // @ts-expect-error - accessing private property for testing
-    xrplService.accountsService = mockAccountsService
+    xrplService.intentContext = mockIntentContext
     // @ts-expect-error - accessing private property for testing
     xrplService.intentService = mockIntentsService
   })
 
   describe("sendPayment", () => {
     it("should successfully send a payment with default options", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
       const mockIntentResponse = {
         requestId: "request-123",
       }
 
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.sendPayment(mockPayment)
 
-      expect(mockUsersService.getMe).toHaveBeenCalledOnce()
-      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
-        address: mockAddress,
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -119,32 +99,13 @@ describe("XrplService", () => {
     })
 
     it("should send payment with custom options", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
       const options: XrplIntentOptions = {
         feePriority: "High",
         expiryDays: 7,
         customProperties: { orderId: "order-123" },
       }
 
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -163,37 +124,24 @@ describe("XrplService", () => {
       expect(intentCall.request.expiryAt).toBeDefined()
     })
 
-    it("should use provided domainId when user has multiple domains", async () => {
+    it("should pass domainId to resolveContext when user has multiple domains", async () => {
       const providedDomainId = "domain-456"
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-          {
-            id: providedDomainId,
-            userReference: { id: "user-456" },
-          },
-        ],
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
       }
 
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.sendPayment(mockPayment, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
       expect(intentCall.request.author.domainId).toBe(providedDomainId)
@@ -201,50 +149,29 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      const mockMe = {
-        loginId: null,
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
 
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(CustodyError)
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow("User has no login ID")
     })
 
     it("should throw error when user has no domains", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no domains" }),
+      )
 
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(CustodyError)
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow("User has no domains")
     })
 
     it("should throw error when user has multiple domains without domainId option", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: "domain-1",
-            userReference: { id: "user-1" },
-          },
-          {
-            id: "domain-2",
-            userReference: { id: "user-2" },
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({
+          reason: "User has multiple domains. Please specify domainId in the options parameter.",
+        }),
+      )
 
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(CustodyError)
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(
@@ -253,17 +180,11 @@ describe("XrplService", () => {
     })
 
     it("should throw error when provided domainId is not found", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({
+          reason: "Domain with ID non-existent-domain not found for user",
+        }),
+      )
 
       await expect(
         xrplService.sendPayment(mockPayment, { domainId: "non-existent-domain" }),
@@ -274,17 +195,9 @@ describe("XrplService", () => {
     })
 
     it("should throw error when domain has no ID", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: undefined,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no primary domain" }),
+      )
 
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(CustodyError)
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(
@@ -293,17 +206,9 @@ describe("XrplService", () => {
     })
 
     it("should throw error when domain has no user reference", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: null,
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "Primary domain has no user reference" }),
+      )
 
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(CustodyError)
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(
@@ -312,24 +217,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when sender account is not found", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
 
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(CustodyError)
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(
-        `Sender account not found for address ${mockAddress}`,
+        `Account not found for address ${mockAddress}`,
       )
     })
 
@@ -348,26 +242,7 @@ describe("XrplService", () => {
         },
       }
 
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -392,26 +267,7 @@ describe("XrplService", () => {
     })
 
     it("should set expiry date correctly based on expiryDays option", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -429,26 +285,7 @@ describe("XrplService", () => {
     })
 
     it("should use different fee priorities correctly", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -457,6 +294,11 @@ describe("XrplService", () => {
 
       for (const priority of priorities) {
         vi.clearAllMocks()
+        vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+        vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+          requestId: "request-123",
+        } as any)
+
         await xrplService.sendPayment(mockPayment, { feePriority: priority })
 
         const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -487,37 +329,17 @@ describe("XrplService", () => {
     }
 
     it("should successfully create a trustline with default options", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
       const mockIntentResponse = {
         requestId: "request-123",
       }
 
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.createTrustline(mockTrustline)
 
-      expect(mockUsersService.getMe).toHaveBeenCalledOnce()
-      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
-        address: mockAddress,
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -546,32 +368,13 @@ describe("XrplService", () => {
     })
 
     it("should create trustline with custom options", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
       const options: XrplIntentOptions = {
         feePriority: "Medium",
         expiryDays: 3,
         customProperties: { reference: "trustline-setup" },
       }
 
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -595,26 +398,7 @@ describe("XrplService", () => {
         enableRippling: true,
       }
 
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -632,37 +416,24 @@ describe("XrplService", () => {
       }
     })
 
-    it("should use provided domainId when user has multiple domains", async () => {
+    it("should pass domainId to resolveContext when user has multiple domains", async () => {
       const providedDomainId = "domain-456"
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-          {
-            id: providedDomainId,
-            userReference: { id: "user-456" },
-          },
-        ],
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
       }
 
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.createTrustline(mockTrustline, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
       expect(intentCall.request.author.domainId).toBe(providedDomainId)
@@ -670,17 +441,9 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      const mockMe = {
-        loginId: null,
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
 
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(CustodyError)
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(
@@ -689,24 +452,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when sender account is not found", async () => {
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
 
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(CustodyError)
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(
-        `Sender account not found for address ${mockAddress}`,
+        `Account not found for address ${mockAddress}`,
       )
     })
 
@@ -724,26 +476,7 @@ describe("XrplService", () => {
         },
       }
 
-      const mockMe = {
-        loginId: { id: "login-123" },
-        domains: [
-          {
-            id: mockDomainId,
-            userReference: { id: mockUserId },
-          },
-        ],
-      }
-
-      const mockSenderAccount = {
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-        address: mockAddress,
-      }
-
-      vi.mocked(mockUsersService.getMe).mockResolvedValue(mockMe as any)
-      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
-        items: [mockSenderAccount],
-      } as any)
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
