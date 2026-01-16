@@ -152,11 +152,11 @@ try {
   const domains = await custody.domains.list()
 } catch (error) {
   if (error instanceof CustodyError) {
-    console.log(error.message)      // Main error reason
-    console.log(error.statusCode)   // HTTP status code (e.g., 400, 404)
+    console.log(error.message) // Main error reason
+    console.log(error.statusCode) // HTTP status code (e.g., 400, 404)
     console.log(error.errorMessage) // Optional additional details from API
-    console.log(error.cause)        // Original error for debugging
-    console.log(error.toJSON())     // Structured object for logging/serialization
+    console.log(error.cause) // Original error for debugging
+    console.log(error.toJSON()) // Structured object for logging/serialization
   }
 }
 ```
