@@ -9,10 +9,10 @@ import {
 } from "../intents/index.js"
 import type {
   BuildIntentProps,
+  Core_XrplOperation,
   CustodyPayment,
   CustodyTrustline,
   XrplIntentOptions,
-  XrplOperation,
 } from "./xrpl.types.js"
 
 export class XrplService {
@@ -35,7 +35,7 @@ export class XrplService {
     payment: CustodyPayment,
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
-    return this.proposeXrplIntent(payment, "Payment", options)
+    return this.proposeXrplIntent({ ...payment, type: "Payment" }, options)
   }
 
   /**
@@ -49,7 +49,7 @@ export class XrplService {
     trustline: CustodyTrustline,
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
-    return this.proposeXrplIntent(trustline, "TrustSet", options)
+    return this.proposeXrplIntent({ ...trustline, type: "TrustSet" }, options)
   }
 
   /**
@@ -58,8 +58,7 @@ export class XrplService {
    * @private
    */
   private async proposeXrplIntent(
-    data: CustodyPayment | CustodyTrustline,
-    operationType: "Payment" | "TrustSet",
+    data: Core_XrplOperation & { Account: string },
     options: XrplIntentOptions,
   ): Promise<Core_IntentResponse> {
     const context = await this.intentContextService.resolveContext(data.Account, {
@@ -67,11 +66,10 @@ export class XrplService {
     })
 
     // Remove Account from operation data (it's only used to find the sender)
-    const { Account: _, ...operationData } = data
+    const { Account, ...operation } = data
 
     const intent = this.buildIntent({
-      // Type assertion needed because TypeScript can't narrow the union based on operationType
-      operation: { ...operationData, type: operationType } as XrplOperation,
+      operation,
       context,
       options,
     })

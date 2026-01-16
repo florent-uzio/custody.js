@@ -41,10 +41,10 @@ export type XrplIntentOptions = {
   customProperties?: Record<string, string>
 }
 
-export type XrplOperation = Core_XrplOperation_Payment | Core_XrplOperation_TrustSet
+export type Core_XrplOperation = components["schemas"]["Core_XrplOperation"]
 
 export type BuildIntentProps = {
-  operation: XrplOperation
+  operation: Core_XrplOperation
   context: IntentContext
   options: XrplIntentOptions
 }

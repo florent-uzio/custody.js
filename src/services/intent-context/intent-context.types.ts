@@ -1,5 +1,3 @@
-import type { Core_MeReference } from "../users/index.js"
-
 /**
  * Resolved context required to build an intent.
  * Contains all the identifiers needed to construct an intent payload.
@@ -44,8 +42,3 @@ export type ResolveContextOptions = {
    */
   domainId?: string
 }
-
-/**
- * Re-export for convenience.
- */
-export type { Core_MeReference }
