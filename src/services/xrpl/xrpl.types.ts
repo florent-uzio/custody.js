@@ -1,4 +1,4 @@
-import type { Payment, TrustSet } from "xrpl"
+import type { DepositPreauth, Payment, TrustSet } from "xrpl"
 import type { components } from "../../models/custody-types.js"
 import type { Prettify } from "../../type-utils/index.js"
 import type { IntentContext } from "../intent-context/index.js"
@@ -18,6 +18,15 @@ export type Core_XrplOperation_TrustSet = components["schemas"]["Core_XrplOperat
 
 export type CustodyTrustline = Prettify<
   Pick<TrustSet, "Account"> & Omit<Core_XrplOperation_TrustSet, "type">
+>
+
+// Deposit Preauth
+
+export type Core_XrplOperation_DepositPreauth =
+  components["schemas"]["Core_XrplOperation_DepositPreauth"]
+
+export type CustodyDepositPreauth = Prettify<
+  Pick<DepositPreauth, "Account"> & Omit<Core_XrplOperation_DepositPreauth, "type">
 >
 
 // General

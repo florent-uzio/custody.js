@@ -10,6 +10,7 @@ import {
 import type {
   BuildIntentProps,
   Core_XrplOperation,
+  CustodyDepositPreauth,
   CustodyPayment,
   CustodyTrustline,
   XrplIntentOptions,
@@ -50,6 +51,20 @@ export class XrplService {
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
     return this.proposeXrplIntent({ ...trustline, type: "TrustSet" }, options)
+  }
+
+  /**
+   * Creates and proposes a deposit preauth intent for an XRPL DepositPreauth transaction.
+   * @param depositPreauth - The deposit preauth transaction details
+   * @param options - Optional configuration for the deposit preauth intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the sender account is not found
+   */
+  public async depositPreauth(
+    depositPreauth: CustodyDepositPreauth,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    return this.proposeXrplIntent({ ...depositPreauth, type: "DepositPreauth" }, options)
   }
 
   /**
