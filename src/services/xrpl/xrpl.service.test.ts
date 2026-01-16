@@ -7,6 +7,7 @@ import { XrplService } from "./xrpl.service.js"
 import type {
   CustodyClawback,
   CustodyDepositPreauth,
+  CustodyMpTokenAuthorize,
   CustodyPayment,
   CustodyTrustline,
   XrplIntentOptions,
@@ -821,6 +822,149 @@ describe("XrplService", () => {
 
       await expect(xrplService.clawback(mockClawback)).rejects.toThrow(CustodyError)
       await expect(xrplService.clawback(mockClawback)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+  })
+
+  describe("mpTokenAuthorize", () => {
+    const mockMpTokenAuthorize: CustodyMpTokenAuthorize = {
+      Account: mockAddress,
+      issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+      flags: [],
+    }
+
+    it("should successfully create an MPTokenAuthorize with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.mpTokenAuthorize(mockMpTokenAuthorize)
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "MPTokenAuthorize"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("MPTokenAuthorize")
+          expect(intentCall.request.payload.parameters.operation.issuanceId).toBe(
+            mockMpTokenAuthorize.issuanceId,
+          )
+          expect(intentCall.request.payload.parameters.operation.flags).toEqual([])
+        }
+      }
+    })
+
+    it("should create MPTokenAuthorize with tfMPTUnauthorize flag", async () => {
+      const mpTokenUnauthorize: CustodyMpTokenAuthorize = {
+        Account: mockAddress,
+        issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+        flags: ["tfMPTUnauthorize"],
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mpTokenUnauthorize)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenAuthorize"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfMPTUnauthorize"])
+      }
+    })
+
+    it("should create MPTokenAuthorize with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "Medium",
+        expiryDays: 3,
+        customProperties: { reference: "mpt-authorize" },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mockMpTokenAuthorize, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("Medium")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "mpt-authorize" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mockMpTokenAuthorize, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(CustodyError)
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(
+        "User has no login ID",
+      )
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(CustodyError)
+      await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
     })
