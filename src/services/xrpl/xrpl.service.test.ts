@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import type { SubmittableTransaction } from "xrpl"
 import { CustodyError } from "../../models/index.js"
 import type { ApiService } from "../apis/index.js"
 import { IntentContextService, type IntentContext } from "../intent-context/index.js"
@@ -14,6 +15,11 @@ import type {
   CustodyTrustline,
   XrplIntentOptions,
 } from "./xrpl.types.js"
+
+// Mock the xrpl encodeForSigning function
+vi.mock("xrpl", () => ({
+  encodeForSigning: vi.fn().mockReturnValue("mockedEncodedTransaction"),
+}))
 
 describe("XrplService", () => {
   let xrplService: XrplService
@@ -321,6 +327,20 @@ describe("XrplService", () => {
         }
       }
     })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-payment-intent-id-123"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.sendPayment(mockPayment, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
   })
 
   describe("createTrustline", () => {
@@ -469,6 +489,20 @@ describe("XrplService", () => {
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-trustline-intent-id-456"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.createTrustline(mockTrustline, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
     })
 
     it("should create trustline with multiple flags", async () => {
@@ -827,6 +861,20 @@ describe("XrplService", () => {
         `Account not found for address ${mockAddress}`,
       )
     })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-clawback-intent-id-789"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.clawback(mockClawback, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
   })
 
   describe("mpTokenAuthorize", () => {
@@ -969,6 +1017,20 @@ describe("XrplService", () => {
       await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-mptauthorize-intent-id-7890"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mockMpTokenAuthorize, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
     })
   })
 
@@ -1217,6 +1279,20 @@ describe("XrplService", () => {
       await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-offercreate-intent-id-789"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(mockOfferCreate, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
     })
   })
 
@@ -1475,6 +1551,222 @@ describe("XrplService", () => {
       await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-accountset-intent-id-7890"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(mockAccountSet, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
+  })
+
+  describe("rawSign", () => {
+    const mockXrplTransaction: SubmittableTransaction = {
+      TransactionType: "Payment",
+      Account: mockAddress,
+      Destination: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+      Amount: "1000000",
+      Fee: "12",
+      Sequence: 1,
+    }
+
+    it("should successfully create a raw sign intent with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.rawSign(mockXrplTransaction)
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: undefined,
+      })
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_SignManifest") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        expect(intentCall.request.payload.content.type).toBe("Unsafe")
+        // Verify the content is base64 encoded
+        if (intentCall.request.payload.content.type === "Unsafe") {
+          expect(typeof intentCall.request.payload.content.value).toBe("string")
+          expect(intentCall.request.payload.content.value.length).toBeGreaterThan(0)
+        }
+      }
+    })
+
+    it("should create raw sign intent with custom options", async () => {
+      const options: XrplIntentOptions = {
+        expiryDays: 7,
+        customProperties: { reference: "raw-sign-test" },
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.rawSign(mockXrplTransaction, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.customProperties).toEqual({ reference: "raw-sign-test" })
+      expect(intentCall.request.expiryAt).toBeDefined()
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-intent-id-123"
+      const options: XrplIntentOptions = {
+        intentId: customIntentId,
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.rawSign(mockXrplTransaction, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      const contextWithProvidedDomain: IntentContext = {
+        ...mockContext,
+        domainId: providedDomainId,
+        userId: "user-456",
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.rawSign(mockXrplTransaction, { domainId: providedDomainId })
+
+      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: providedDomainId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should handle different XRPL transaction types", async () => {
+      const trustSetTransaction: SubmittableTransaction = {
+        TransactionType: "TrustSet",
+        Account: mockAddress,
+        LimitAmount: {
+          currency: "USD",
+          issuer: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+          value: "1000000",
+        },
+        Fee: "12",
+        Sequence: 1,
+      }
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.rawSign(trustSetTransaction)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (intentCall.request.payload.type === "v0_SignManifest") {
+        expect(intentCall.request.payload.content.type).toBe("Unsafe")
+        if (intentCall.request.payload.content.type === "Unsafe") {
+          expect(typeof intentCall.request.payload.content.value).toBe("string")
+        }
+      }
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow(CustodyError)
+      await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow("User has no login ID")
+    })
+
+    it("should throw error when user has no domains", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: "User has no domains" }),
+      )
+
+      await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow(CustodyError)
+      await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow("User has no domains")
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow(CustodyError)
+      await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+
+    it("should set expiry date correctly based on expiryDays option", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      const expiryDays = 5
+      await xrplService.rawSign(mockXrplTransaction, { expiryDays })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      const expiryDate = new Date(intentCall.request.expiryAt)
+      const expectedDate = new Date()
+      expectedDate.setDate(expectedDate.getDate() + expiryDays)
+
+      // Allow 1 second difference for execution time
+      expect(Math.abs(expiryDate.getTime() - expectedDate.getTime())).toBeLessThan(1000)
+    })
+
+    it("should encode transaction content as base64", async () => {
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.rawSign(mockXrplTransaction)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_SignManifest" &&
+        intentCall.request.payload.content.type === "Unsafe"
+      ) {
+        const content = intentCall.request.payload.content.value
+        // Verify it's valid base64
+        expect(() => Buffer.from(content, "base64")).not.toThrow()
+        // Verify it decodes to the mocked encoded transaction
+        const decoded = Buffer.from(content, "base64").toString()
+        expect(decoded).toBe("mockedEncodedTransaction")
+      }
     })
   })
 })

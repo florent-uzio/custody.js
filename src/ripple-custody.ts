@@ -1,3 +1,4 @@
+import type { SubmittableTransaction } from "xrpl"
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import {
   AccountsService,
@@ -60,6 +61,8 @@ import {
   type Core_RemainingUsersIntentPathParams,
   type Core_RemainingUsersIntentQueryParams,
   type Core_TrustedIntent,
+  type WaitForExecutionOptions,
+  type WaitForExecutionResult,
 } from "./services/intents/index.js"
 import type {
   Core_CurrentFees,
@@ -278,6 +281,16 @@ export class RippleCustody {
       params: Core_RemainingUsersIntentPathParams,
       query?: Core_RemainingUsersIntentQueryParams,
     ): Promise<Core_RemainingDomainUsers> => this.intentService.remainingUsersIntent(params, query),
+
+    /**
+     * Query an intent and waits for it to reach a terminal status (Executed, Failed, Expired, or Rejected).
+     * @param params - The parameters for the intent.
+     * @param options - The options for the wait.
+     */
+    getAndWait: async (
+      params: Core_GetIntentPathParams,
+      options?: WaitForExecutionOptions,
+    ): Promise<WaitForExecutionResult> => this.intentService.waitForExecution(params, options),
   }
 
   // Transactions namespace
@@ -819,5 +832,16 @@ export class RippleCustody {
       params: CustodyAccountSet,
       options?: XrplIntentOptions,
     ): Promise<Core_IntentResponse> => this.xrplService.accountSet(params, options),
+
+    /**
+     * Create an XRPL raw sign.
+     * @param xrplTransaction - The XRPL transaction details
+     * @param options - Optional configuration for the raw sign intent
+     * @returns The proposed intent response
+     */
+    rawSign: async (
+      xrplTransaction: SubmittableTransaction,
+      options?: XrplIntentOptions,
+    ): Promise<Core_IntentResponse> => this.xrplService.rawSign(xrplTransaction, options),
   }
 }
