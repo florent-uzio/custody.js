@@ -147,8 +147,6 @@ export class XrplService {
 
     const base64Encoded = Buffer.from(encoded).toString("base64")
 
-    console.log(base64Encoded)
-
     const intentId = options.intentId ?? uuidv7()
 
     const intent: Core_ProposeIntentBody = {
