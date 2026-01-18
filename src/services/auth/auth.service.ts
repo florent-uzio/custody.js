@@ -7,6 +7,13 @@ export class AuthService {
   private tokenExpiration: number | null = null // timestamp in milliseconds
   private readonly TOKEN_VALIDITY = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 
+  /**
+   * Stores the in-flight token refresh promise to prevent concurrent refresh requests.
+   * When multiple requests need a token refresh simultaneously, they will all await
+   * the same promise instead of triggering multiple auth requests.
+   */
+  private tokenRefreshPromise: Promise<string> | null = null
+
   constructor(private readonly authUrl: string) {
     // Initialize Axios client for auth requests
     this.authClient = axios.create({
@@ -44,12 +51,29 @@ export class AuthService {
 
   /**
    * Get a valid JWT token, refreshing if expired or missing.
+   *
+   * This method handles concurrent token refresh requests by ensuring only one
+   * refresh request is made at a time. If multiple callers need a token refresh
+   * simultaneously, they will all await the same promise.
    */
   async getToken(authData: AuthFormData): Promise<string> {
-    if (!this.accessToken || this.isTokenExpired()) {
-      return this.fetchToken(authData)
+    // Return existing valid token
+    if (this.accessToken && !this.isTokenExpired()) {
+      return this.accessToken
     }
-    return this.accessToken
+
+    // If a refresh is already in progress, wait for it
+    if (this.tokenRefreshPromise) {
+      return this.tokenRefreshPromise
+    }
+
+    // Start a new token refresh and store the promise
+    this.tokenRefreshPromise = this.fetchToken(authData).finally(() => {
+      // Clear the promise once completed (success or failure)
+      this.tokenRefreshPromise = null
+    })
+
+    return this.tokenRefreshPromise
   }
 
   /**
