@@ -1,5 +1,6 @@
 import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
+import { encodeForSigning, type SubmittableTransaction } from "xrpl"
 import type { ApiService } from "../apis/index.js"
 import { IntentContextService } from "../intent-context/index.js"
 import {
@@ -125,6 +126,59 @@ export class XrplService {
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
     return this.proposeXrplIntent({ ...accountSet, type: "AccountSet" }, options)
+  }
+
+  /**
+   * Creates and proposes a raw sign intent for an XRPL transaction.
+   * @param xrplTransaction - The XRPL transaction details
+   * @param options - Optional configuration for the raw sign intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the sender account is not found
+   */
+  public async rawSign(
+    xrplTransaction: SubmittableTransaction,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    const context = await this.intentContextService.resolveContext(xrplTransaction.Account, {
+      domainId: options.domainId,
+    })
+
+    const encoded = encodeForSigning(xrplTransaction)
+
+    const base64Encoded = Buffer.from(encoded).toString("base64")
+
+    console.log(base64Encoded)
+
+    const intentId = options.intentId ?? uuidv7()
+
+    const intent: Core_ProposeIntentBody = {
+      request: {
+        author: {
+          id: context.userId,
+          domainId: context.domainId,
+        },
+        expiryAt: dayjs()
+          .add(options.expiryDays ?? 1, "day")
+          .toISOString(),
+        targetDomainId: context.domainId,
+        id: intentId,
+        customProperties: options.customProperties ?? {},
+        payload: {
+          id: uuidv7(),
+          accountId: context.accountId,
+          ledgerId: context.ledgerId,
+          customProperties: {},
+          content: {
+            value: base64Encoded,
+            type: "Unsafe",
+          },
+          type: "v0_SignManifest",
+        },
+        type: "Propose",
+      },
+    }
+
+    return this.intentService.proposeIntent(intent)
   }
 
   /**
