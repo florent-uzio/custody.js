@@ -48,8 +48,7 @@
     "dayjs": "^1.11.19",
     "qs": "^6.14.1",
     "uuid": "^11.1.0",
-    "xrpl": "^4.2.0",
-    "zod": "^4.0.17"
+    "xrpl": "^4.2.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.1",
