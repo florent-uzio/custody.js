@@ -211,6 +211,7 @@ export class XrplService {
   private buildIntent({ operation, context, options }: BuildIntentProps): Core_ProposeIntentBody {
     const feePriority = options.feePriority ?? "Low"
     const expiryDays = options.expiryDays ?? 1
+    const intentId = options.intentId ?? uuidv7()
 
     return {
       request: {
@@ -220,7 +221,7 @@ export class XrplService {
         },
         customProperties: options.customProperties ?? {},
         expiryAt: dayjs().add(expiryDays, "day").toISOString(),
-        id: uuidv7(),
+        id: intentId,
         payload: {
           accountId: context.accountId,
           customProperties: {},

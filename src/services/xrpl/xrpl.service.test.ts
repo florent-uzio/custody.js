@@ -327,6 +327,20 @@ describe("XrplService", () => {
         }
       }
     })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-payment-intent-id-123"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.sendPayment(mockPayment, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
   })
 
   describe("createTrustline", () => {
@@ -475,6 +489,20 @@ describe("XrplService", () => {
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-trustline-intent-id-456"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.createTrustline(mockTrustline, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
     })
 
     it("should create trustline with multiple flags", async () => {
@@ -833,6 +861,20 @@ describe("XrplService", () => {
         `Account not found for address ${mockAddress}`,
       )
     })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-clawback-intent-id-789"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.clawback(mockClawback, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
   })
 
   describe("mpTokenAuthorize", () => {
@@ -975,6 +1017,20 @@ describe("XrplService", () => {
       await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-mptauthorize-intent-id-7890"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenAuthorize(mockMpTokenAuthorize, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
     })
   })
 
@@ -1223,6 +1279,20 @@ describe("XrplService", () => {
       await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-offercreate-intent-id-789"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.offerCreate(mockOfferCreate, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
     })
   })
 
@@ -1481,6 +1551,20 @@ describe("XrplService", () => {
       await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow(
         `Account not found for address ${mockAddress}`,
       )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-accountset-intent-id-7890"
+
+      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.accountSet(mockAccountSet, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
     })
   })
 
