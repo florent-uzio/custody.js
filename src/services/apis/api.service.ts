@@ -2,6 +2,7 @@ import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
 import canonicalize from "canonicalize"
 import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
+import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
 import { isObject } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
 import { AuthService } from "../auth/auth.service.js"
@@ -26,9 +27,12 @@ export class ApiService {
     this.authFormData = options.authFormData
     this.privateKey = options.privateKey
 
+    const timeout = options.timeout ?? DEFAULT_TIMEOUT_MS
+
     // Create Axios instance for API requests
     this.apiClient = axios.create({
       baseURL: this.apiUrl,
+      timeout,
       headers: {
         "Content-Type": "application/json",
       },

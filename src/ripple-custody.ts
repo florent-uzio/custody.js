@@ -170,16 +170,17 @@ export class RippleCustody {
   private xrplService: XrplService
 
   constructor(options: RippleCustodyClientOptions) {
-    const { authUrl, apiUrl, privateKey, publicKey } = options
+    const { authUrl, apiUrl, privateKey, publicKey, timeout } = options
 
-    this.authService = new AuthService(authUrl)
+    this.authService = new AuthService({ authUrl, timeout })
     this.apiService = new ApiService({
-      apiUrl: apiUrl,
+      apiUrl,
       authFormData: {
         publicKey,
       },
       authService: this.authService,
       privateKey,
+      timeout,
     })
     this.accountsService = new AccountsService(this.apiService)
     this.domainService = new DomainService(this.apiService)

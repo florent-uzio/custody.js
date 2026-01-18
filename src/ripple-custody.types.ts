@@ -19,4 +19,10 @@ export type RippleCustodyClientOptions = {
    * Public key for authentication
    */
   publicKey: string
+  /**
+   * Request timeout in milliseconds.
+   *
+   * @default 30000 (30 seconds)
+   */
+  timeout?: number
 }

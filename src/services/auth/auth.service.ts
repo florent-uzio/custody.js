@@ -1,5 +1,16 @@
 import axios, { type AxiosInstance } from "axios"
+import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
 import { type AuthFormData, type AuthResponse } from "./auth.service.types.js"
+
+export type AuthServiceOptions = {
+  /** The authentication server URL */
+  authUrl: string
+  /**
+   * Request timeout in milliseconds.
+   * @default 30000 (30 seconds)
+   */
+  timeout?: number
+}
 
 export class AuthService {
   private authClient: AxiosInstance
@@ -14,10 +25,13 @@ export class AuthService {
    */
   private tokenRefreshPromise: Promise<string> | null = null
 
-  constructor(private readonly authUrl: string) {
+  constructor(options: AuthServiceOptions) {
+    const { authUrl, timeout = DEFAULT_TIMEOUT_MS } = options
+
     // Initialize Axios client for auth requests
     this.authClient = axios.create({
-      baseURL: this.authUrl,
+      baseURL: authUrl,
+      timeout,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },

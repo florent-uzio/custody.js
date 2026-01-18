@@ -1,4 +1,5 @@
 export { RippleCustody } from "./ripple-custody.js"
+export { DEFAULT_TIMEOUT_MS } from "./constants/index.js"
 export type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 
 // keypairs types
