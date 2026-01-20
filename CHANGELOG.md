@@ -1,5 +1,11 @@
 # custody
 
+## 0.2.1
+
+### Patch Changes
+
+- f75c256: refactored domain and user resolver
+
 ## 0.2.0
 
 ### Minor Changes

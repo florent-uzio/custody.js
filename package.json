@@ -1,6 +1,6 @@
 {
   "name": "custody",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "An SDK to interact with the Ripple Custody API",
   "keywords": [
     "Ripple Custody",
