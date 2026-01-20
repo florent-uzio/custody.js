@@ -1,7 +1,9 @@
 import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
+import { CustodyError } from "../../models/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type {
+  AccountReference,
   Core_AccountAddress,
   Core_AccountsCollection,
   Core_AddressesCollection,
@@ -196,5 +198,26 @@ export class AccountsService {
     return this.api.get<Core_ApiManifest>(
       replacePathParams(URLs.accountManifest, { domainId, accountId, manifestId }),
     )
+  }
+
+  /**
+   * Finds an account by its blockchain address across all domains.
+   * @param address - The blockchain address to search for
+   * @returns The account reference containing accountId, ledgerId, and address
+   * @throws {CustodyError} If no account is found for the address
+   */
+  async findByAddress(address: string): Promise<AccountReference> {
+    const addressAcrossDomains = await this.getAllDomainsAddresses({ address })
+    const account = addressAcrossDomains.items.find((item) => item.address === address)
+
+    if (!account) {
+      throw new CustodyError({ reason: `Account not found for address ${address}` })
+    }
+
+    return {
+      accountId: account.accountId,
+      ledgerId: account.ledgerId,
+      address: account.address,
+    }
   }
 }

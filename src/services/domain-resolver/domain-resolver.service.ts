@@ -1,52 +1,32 @@
 import { CustodyError } from "../../models/index.js"
-import { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
 import { UsersService, type Core_MeReference } from "../users/index.js"
-import type {
-  AccountReference,
-  DomainUserReference,
-  IntentContext,
-  ResolveContextOptions,
-} from "./intent-context.types.js"
+import type { DomainResolveOptions, DomainUserReference } from "./domain-resolver.types.js"
 
 /**
- * Service for resolving the context required to build intents.
- * Provides reusable methods for user validation, domain resolution, and account lookup
+ * Service for resolving domain and user context.
+ * Provides reusable methods for user validation and domain resolution
  * that can be shared across different chain services (XRPL, EVM, etc.).
  */
-export class IntentContextService {
+export class DomainResolverService {
   private readonly usersService: UsersService
-  private readonly accountsService: AccountsService
 
   constructor(apiService: ApiService) {
     this.usersService = new UsersService(apiService)
-    this.accountsService = new AccountsService(apiService)
   }
 
   /**
-   * Resolves the full intent context in one call.
-   * Fetches the current user, validates them, resolves domain/user IDs, and finds the account.
+   * Resolves the domain and user IDs in one call.
+   * Fetches the current user, validates them, and resolves the domain/user reference.
    *
-   * @param address - The blockchain address to find the account for
-   * @param options - Optional configuration for context resolution
-   * @returns The complete intent context
-   * @throws {CustodyError} If validation fails or the account is not found
+   * @param options - Optional configuration for domain resolution
+   * @returns The domain and user reference
+   * @throws {CustodyError} If validation fails or domain resolution fails
    */
-  async resolveContext(
-    address: string,
-    options: ResolveContextOptions = {},
-  ): Promise<IntentContext> {
+  async resolve(options: DomainResolveOptions = {}): Promise<DomainUserReference> {
     const me = await this.usersService.getMe()
     this.validateUser(me)
-
-    const { domainId, userId } = this.resolveDomainAndUser(me, options.domainId)
-    const account = await this.findAccountByAddress(address)
-
-    return {
-      domainId,
-      userId,
-      ...account,
-    }
+    return this.resolveDomainAndUser(me, options.domainId)
   }
 
   /**
@@ -106,27 +86,5 @@ export class IntentContextService {
     }
 
     return { domainId: domain.id, userId: domain.userReference.id }
-  }
-
-  /**
-   * Finds an account by its blockchain address across all domains.
-   *
-   * @param address - The blockchain address to search for
-   * @returns The account reference containing accountId, ledgerId, and address
-   * @throws {CustodyError} If no account is found for the address
-   */
-  async findAccountByAddress(address: string): Promise<AccountReference> {
-    const addressAcrossDomains = await this.accountsService.getAllDomainsAddresses({ address })
-    const account = addressAcrossDomains.items.find((item) => item.address === address)
-
-    if (!account) {
-      throw new CustodyError({ reason: `Account not found for address ${address}` })
-    }
-
-    return {
-      accountId: account.accountId,
-      ledgerId: account.ledgerId,
-      address: account.address,
-    }
   }
 }
