@@ -2,6 +2,7 @@ import type { SubmittableTransaction } from "xrpl"
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import {
   AccountsService,
+  type AccountReference,
   type Core_AccountAddress,
   type Core_AccountsCollection,
   type Core_AddressesCollection,
@@ -514,6 +515,14 @@ export class RippleCustody {
      */
     getManifest: async (params: GetManifestPathParams): Promise<Core_ApiManifest> =>
       this.accountsService.getManifest(params),
+
+    /**
+     * Find an account by its address
+     * @param address - The account address to search
+     * @returns An AccountReference object
+     */
+    findByAddress: async (address: string): Promise<AccountReference> =>
+      this.accountsService.findByAddress(address),
   }
 
   // Users namespace

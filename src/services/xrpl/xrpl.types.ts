@@ -9,7 +9,14 @@ import type {
 } from "xrpl"
 import type { components } from "../../models/custody-types.js"
 import type { Prettify } from "../../type-utils/index.js"
-import type { IntentContext } from "../intent-context/index.js"
+import type { AccountReference } from "../accounts/index.js"
+import type { DomainUserReference } from "../domain-resolver/index.js"
+
+/**
+ * Combined context required to build an intent.
+ * Contains domain/user reference and account reference.
+ */
+export type IntentContext = DomainUserReference & AccountReference
 
 // Payments
 

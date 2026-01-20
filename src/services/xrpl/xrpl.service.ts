@@ -1,8 +1,9 @@
 import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
 import { encodeForSigning, type SubmittableTransaction } from "xrpl"
+import { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
-import { IntentContextService } from "../intent-context/index.js"
+import { DomainResolverService } from "../domain-resolver/index.js"
 import {
   IntentsService,
   type Core_IntentResponse,
@@ -18,16 +19,19 @@ import type {
   CustodyOfferCreate,
   CustodyPayment,
   CustodyTrustline,
+  IntentContext,
   XrplIntentOptions,
 } from "./xrpl.types.js"
 
 export class XrplService {
   private readonly intentService: IntentsService
-  private readonly intentContextService: IntentContextService
+  private readonly domainResolver: DomainResolverService
+  private readonly accountsService: AccountsService
 
   constructor(apiService: ApiService) {
     this.intentService = new IntentsService(apiService)
-    this.intentContextService = new IntentContextService(apiService)
+    this.domainResolver = new DomainResolverService(apiService)
+    this.accountsService = new AccountsService(apiService)
   }
 
   /**
@@ -139,7 +143,7 @@ export class XrplService {
     xrplTransaction: SubmittableTransaction,
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
-    const context = await this.intentContextService.resolveContext(xrplTransaction.Account, {
+    const context = await this.resolveIntentContext(xrplTransaction.Account, {
       domainId: options.domainId,
     })
 
@@ -180,6 +184,19 @@ export class XrplService {
   }
 
   /**
+   * Resolves the full intent context by combining domain resolution and account lookup.
+   * @private
+   */
+  private async resolveIntentContext(
+    address: string,
+    options: { domainId?: string } = {},
+  ): Promise<IntentContext> {
+    const { domainId, userId } = await this.domainResolver.resolve(options)
+    const account = await this.accountsService.findByAddress(address)
+    return { domainId, userId, ...account }
+  }
+
+  /**
    * Generic method to propose an XRPL intent with the common flow.
    * Handles context resolution and intent submission.
    * @private
@@ -188,7 +205,7 @@ export class XrplService {
     data: Core_XrplOperation & { Account: string },
     options: XrplIntentOptions,
   ): Promise<Core_IntentResponse> {
-    const context = await this.intentContextService.resolveContext(data.Account, {
+    const context = await this.resolveIntentContext(data.Account, {
       domainId: options.domainId,
     })
 

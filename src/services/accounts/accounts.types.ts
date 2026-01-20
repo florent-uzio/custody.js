@@ -62,3 +62,12 @@ export type Core_ManifestsCollection =
 
 export type Core_ApiManifest =
   operations["getManifest"]["responses"]["200"]["content"]["application/json"]
+
+/**
+ * Account reference found by address lookup.
+ */
+export type AccountReference = {
+  accountId: string
+  ledgerId: string
+  address: string
+}

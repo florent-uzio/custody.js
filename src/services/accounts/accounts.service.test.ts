@@ -381,4 +381,66 @@ describe("AccountsService", () => {
       expect(result).toEqual(mockManifest)
     })
   })
+
+  describe("findByAddress", () => {
+    const mockAddress = "rTestAddress123456789"
+    const mockLedgerId = "xrpl-testnet"
+
+    it("should return account when found", async () => {
+      const mockAddressResponse = {
+        items: [
+          {
+            address: mockAddress,
+            accountId: mockAccountId,
+            ledgerId: mockLedgerId,
+          },
+        ],
+      }
+      mockApiService.get.mockResolvedValue(mockAddressResponse)
+
+      const result = await accountsService.findByAddress(mockAddress)
+
+      expect(mockApiService.get).toHaveBeenCalledWith(URLs.addresses, { address: mockAddress })
+      expect(result).toEqual({
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        address: mockAddress,
+      })
+    })
+
+    it("should throw CustodyError when account not found", async () => {
+      mockApiService.get.mockResolvedValue({ items: [] })
+
+      await expect(accountsService.findByAddress(mockAddress)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+
+    it("should find correct account among multiple results", async () => {
+      const otherAddress = "rOtherAddress987654321"
+      const mockAddressResponse = {
+        items: [
+          {
+            address: otherAddress,
+            accountId: "other-account-id",
+            ledgerId: "other-ledger",
+          },
+          {
+            address: mockAddress,
+            accountId: mockAccountId,
+            ledgerId: mockLedgerId,
+          },
+        ],
+      }
+      mockApiService.get.mockResolvedValue(mockAddressResponse)
+
+      const result = await accountsService.findByAddress(mockAddress)
+
+      expect(result).toEqual({
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        address: mockAddress,
+      })
+    })
+  })
 })
