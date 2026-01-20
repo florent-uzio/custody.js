@@ -7,6 +7,9 @@ import { RippleCustody } from "../../../src/index"
  * 1. Initialize the custody client with authentication credentials
  * 2. Submit a payment transaction intent
  * 3. Wait for the intent to be processed and retrieve the result
+ *
+ * Note: With the simplified API, you no longer need to specify domainId for most operations!
+ * The SDK automatically resolves and caches your domain for better developer experience.
  */
 const sendXrpPayment = async () => {
   // Initialize the Ripple Custody client with API endpoints and authentication keys
@@ -42,10 +45,8 @@ const sendXrpPayment = async () => {
 
   // Wait for the intent to be processed and retrieve the final result
   // This will poll the API until the transaction is confirmed or fails
-  const intent = await custody.intents.getAndWait({
-    domainId: "55e33fa1-e46f-4374-85bc-4eb18ab3b600", // Your Ripple Custody domain identifier
-    intentId,
-  })
+  // No need to specify domainId - it's automatically resolved from cache!
+  const intent = await custody.intents.getAndWait({ intentId })
 
   // Display the complete intent object including transaction status and details
   console.dir(intent, { depth: null })

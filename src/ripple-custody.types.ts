@@ -25,4 +25,11 @@ export type RippleCustodyClientOptions = {
    * @default 30000 (30 seconds)
    */
   timeout?: number
+  /**
+   * Domain cache TTL in milliseconds.
+   * Set to 0 to disable caching.
+   *
+   * @default 300000 (5 minutes)
+   */
+  domainCacheTtlMs?: number
 }

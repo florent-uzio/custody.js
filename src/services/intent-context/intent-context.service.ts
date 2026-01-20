@@ -1,6 +1,7 @@
 import { CustodyError } from "../../models/index.js"
 import { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
+import type { DomainCacheService } from "../domain-cache/index.js"
 import { UsersService, type Core_MeReference } from "../users/index.js"
 import type {
   AccountReference,
@@ -8,6 +9,8 @@ import type {
   IntentContext,
   ResolveContextOptions,
 } from "./intent-context.types.js"
+
+const DOMAIN_CACHE_KEY = "user:domains"
 
 /**
  * Service for resolving the context required to build intents.
@@ -17,10 +20,12 @@ import type {
 export class IntentContextService {
   private readonly usersService: UsersService
   private readonly accountsService: AccountsService
+  private readonly domainCache?: DomainCacheService
 
-  constructor(apiService: ApiService) {
+  constructor(apiService: ApiService, domainCache?: DomainCacheService) {
     this.usersService = new UsersService(apiService)
     this.accountsService = new AccountsService(apiService)
+    this.domainCache = domainCache
   }
 
   /**
@@ -36,10 +41,7 @@ export class IntentContextService {
     address: string,
     options: ResolveContextOptions = {},
   ): Promise<IntentContext> {
-    const me = await this.usersService.getMe()
-    this.validateUser(me)
-
-    const { domainId, userId } = this.resolveDomainAndUser(me, options.domainId)
+    const { domainId, userId } = await this.resolveDomainOnly(options)
     const account = await this.findAccountByAddress(address)
 
     return {
@@ -47,6 +49,37 @@ export class IntentContextService {
       userId,
       ...account,
     }
+  }
+
+  /**
+   * Resolves only the domain and user IDs without account lookup.
+   * Useful for operations that don't require account information.
+   * Uses caching to avoid repeated API calls.
+   *
+   * @param options - Optional configuration for context resolution
+   * @returns The resolved domain and user IDs
+   * @throws {CustodyError} If validation fails or domain resolution fails
+   */
+  async resolveDomainOnly(options: ResolveContextOptions = {}): Promise<DomainUserReference> {
+    // Check cache first if domainId is not explicitly provided
+    if (!options.domainId && this.domainCache) {
+      const cached = this.domainCache.get<DomainUserReference>(DOMAIN_CACHE_KEY)
+      if (cached) {
+        return cached
+      }
+    }
+
+    const me = await this.usersService.getMe()
+    this.validateUser(me)
+
+    const result = this.resolveDomainAndUser(me, options.domainId)
+
+    // Cache the result if no explicit domainId was provided (meaning it's the user's default)
+    if (!options.domainId && this.domainCache) {
+      this.domainCache.set(DOMAIN_CACHE_KEY, result)
+    }
+
+    return result
   }
 
   /**

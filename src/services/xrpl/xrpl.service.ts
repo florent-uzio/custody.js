@@ -2,6 +2,7 @@ import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
 import { encodeForSigning, type SubmittableTransaction } from "xrpl"
 import type { ApiService } from "../apis/index.js"
+import type { DomainCacheService } from "../domain-cache/index.js"
 import { IntentContextService } from "../intent-context/index.js"
 import {
   IntentsService,
@@ -25,9 +26,9 @@ export class XrplService {
   private readonly intentService: IntentsService
   private readonly intentContextService: IntentContextService
 
-  constructor(apiService: ApiService) {
-    this.intentService = new IntentsService(apiService)
-    this.intentContextService = new IntentContextService(apiService)
+  constructor(apiService: ApiService, domainCache?: DomainCacheService) {
+    this.intentService = new IntentsService(apiService, domainCache)
+    this.intentContextService = new IntentContextService(apiService, domainCache)
   }
 
   /**

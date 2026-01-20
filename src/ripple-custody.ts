@@ -31,6 +31,7 @@ import {
 } from "./services/accounts/index.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
+import { DomainCacheService } from "./services/domain-cache/index.js"
 import {
   DomainService,
   type GetDomainPathParams,
@@ -158,6 +159,7 @@ export class RippleCustody {
   // Core services (eager initialization - required for all operations)
   private readonly apiService: ApiService
   private readonly authService: AuthService
+  private readonly domainCache: DomainCacheService
 
   // Lazy-initialized service instances
   private _accountsService?: AccountsService
@@ -180,7 +182,7 @@ export class RippleCustody {
     return (this._domainService ??= new DomainService(this.apiService))
   }
   private get intentService(): IntentsService {
-    return (this._intentService ??= new IntentsService(this.apiService))
+    return (this._intentService ??= new IntentsService(this.apiService, this.domainCache))
   }
   private get ledgersService(): LedgersService {
     return (this._ledgersService ??= new LedgersService(this.apiService))
@@ -204,13 +206,13 @@ export class RippleCustody {
     return (this._vaultsService ??= new VaultsService(this.apiService))
   }
   private get xrplService(): XrplService {
-    return (this._xrplService ??= new XrplService(this.apiService))
+    return (this._xrplService ??= new XrplService(this.apiService, this.domainCache))
   }
 
   constructor(options: RippleCustodyClientOptions) {
-    const { authUrl, apiUrl, privateKey, publicKey, timeout } = options
+    const { authUrl, apiUrl, privateKey, publicKey, timeout, domainCacheTtlMs } = options
 
-    // Only initialize core services eagerly
+    // Initialize core services eagerly
     this.authService = new AuthService({ authUrl, timeout })
     this.apiService = new ApiService({
       apiUrl,
@@ -221,6 +223,7 @@ export class RippleCustody {
       privateKey,
       timeout,
     })
+    this.domainCache = new DomainCacheService({ ttlMs: domainCacheTtlMs })
   }
 
   // Auth namespace

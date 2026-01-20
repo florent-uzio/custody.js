@@ -2,6 +2,8 @@ import { URLs } from "../../constants/index.js"
 import { replacePathParams, sleep } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import { ApiService } from "../apis/api.service.js"
+import type { DomainCacheService } from "../domain-cache/index.js"
+import { IntentContextService } from "../intent-context/index.js"
 import {
   TERMINAL_STATUSES,
   type Core_ApproveIntentBody,
@@ -22,7 +24,14 @@ import {
 } from "./intents.types.js"
 
 export class IntentsService {
-  constructor(private api: ApiService) {}
+  private readonly intentContextService: IntentContextService
+
+  constructor(
+    private api: ApiService,
+    domainCache?: DomainCacheService,
+  ) {
+    this.intentContextService = new IntentContextService(api, domainCache)
+  }
 
   /**
    * Propose an intent
@@ -61,8 +70,9 @@ export class IntentsService {
     params: Core_GetIntentPathParams,
     query?: Core_GetIntentsQueryParams,
   ): Promise<Core_TrustedIntent> {
+    const domainId = params.domainId ?? (await this.resolveDomainId())
     const url = replacePathParams(URLs.getIntent, {
-      domainId: params.domainId,
+      domainId,
       intentId: params.intentId,
     })
     return this.api.get<Core_TrustedIntent>(url, query)
@@ -78,8 +88,9 @@ export class IntentsService {
     params: Core_GetIntentsPathParams,
     query?: Core_GetIntentsQueryParams,
   ): Promise<Core_IntentResponse> {
+    const domainId = params.domainId ?? (await this.resolveDomainId())
     const url = replacePathParams(URLs.domainIntents, {
-      domainId: params.domainId,
+      domainId,
     })
     return this.api.get<Core_IntentResponse>(url, query)
   }
@@ -103,8 +114,9 @@ export class IntentsService {
     params: Core_RemainingUsersIntentPathParams,
     query?: Core_RemainingUsersIntentQueryParams,
   ): Promise<Core_RemainingDomainUsers> {
+    const domainId = params.domainId ?? (await this.resolveDomainId())
     const url = replacePathParams(URLs.intentRemainingUsers, {
-      domainId: params.domainId,
+      domainId,
       intentId: params.intentId,
     })
     return this.api.get<Core_RemainingDomainUsers>(url, query)
@@ -207,5 +219,16 @@ export class IntentsService {
 
     // If we've exhausted retries, throw the last 404 error
     throw lastError
+  }
+
+  /**
+   * Resolves the domain ID using the IntentContextService.
+   * Uses caching to avoid repeated API calls.
+   * @returns The resolved domain ID
+   * @throws {CustodyError} If domain resolution fails
+   */
+  private async resolveDomainId(): Promise<string> {
+    const { domainId } = await this.intentContextService.resolveDomainOnly()
+    return domainId
   }
 }

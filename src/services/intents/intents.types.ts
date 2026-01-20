@@ -71,21 +71,26 @@ export type Core_RejectIntentBody = Prettify<
 
 export type Core_IntentResponse = components["schemas"]["Core_IntentResponse"]
 
-// Get intent
-export type Core_GetIntentPathParams = operations["getIntent"]["parameters"]["path"]
+// Get intent - make domainId optional for better DX
+export type Core_GetIntentPathParams = Prettify<
+  RequiredExceptFor<operations["getIntent"]["parameters"]["path"], "domainId">
+>
 export type Core_TrustedIntent = components["schemas"]["Core_TrustedIntent"]
 
-// Get intents
-export type Core_GetIntentsPathParams = operations["getIntents"]["parameters"]["path"]
+// Get intents - make domainId optional for better DX
+export type Core_GetIntentsPathParams = Prettify<
+  RequiredExceptFor<operations["getIntents"]["parameters"]["path"], "domainId">
+>
 export type Core_GetIntentsQueryParams = operations["getIntents"]["parameters"]["query"]
 
 // Dry run intent
 export type Core_IntentDryRunRequest = components["schemas"]["Core_IntentDryRunRequest"]
 export type Core_IntentDryRunResponse = components["schemas"]["Core_IntentDryRunResponse"]
 
-// Remaining users for an intent
-export type Core_RemainingUsersIntentPathParams =
-  operations["getRemainingUsers"]["parameters"]["path"]
+// Remaining users for an intent - make domainId optional for better DX
+export type Core_RemainingUsersIntentPathParams = Prettify<
+  RequiredExceptFor<operations["getRemainingUsers"]["parameters"]["path"], "domainId">
+>
 export type Core_RemainingUsersIntentQueryParams =
   operations["getRemainingUsers"]["parameters"]["query"]
 export type Core_RemainingDomainUsers = components["schemas"]["Core_RemainingDomainUsers"]
