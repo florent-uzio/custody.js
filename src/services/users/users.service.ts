@@ -1,6 +1,9 @@
 import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
+import { CustodyError } from "../../models/custody-error.js"
 import { ApiService } from "../apis/api.service.js"
+import type { DomainCacheService } from "../domain-cache/index.js"
+import { DomainResolverService } from "../domain-resolver/index.js"
 import type {
   Core_ApiRoles,
   Core_MeReference,
@@ -13,7 +16,18 @@ import type {
 } from "./users.types.js"
 
 export class UsersService {
-  constructor(private api: ApiService) {}
+  private readonly domainResolver?: DomainResolverService
+
+  constructor(
+    private api: ApiService,
+    domainCache?: DomainCacheService,
+  ) {
+    // Only create domain resolver if cache is provided
+    // The resolver uses getMe() from this service via function injection to avoid circular deps
+    if (domainCache) {
+      this.domainResolver = new DomainResolverService(() => this.getMe(), domainCache)
+    }
+  }
 
   /**
    * Get users
@@ -22,9 +36,10 @@ export class UsersService {
    * @returns The users
    */
   async getUsers(
-    { domainId }: GetUsersPathParams,
+    params?: GetUsersPathParams,
     queryParams?: GetUsersQueryParams,
   ): Promise<Core_TrustedUsersCollection> {
+    const domainId = params?.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_TrustedUsersCollection>(
       replacePathParams(URLs.users, { domainId }),
       queryParams,
@@ -36,7 +51,8 @@ export class UsersService {
    * @param pathParams - The path parameters for the request
    * @returns The known user roles
    */
-  async getKnownUserRoles({ domainId }: GetKnownUserRolesPathParams): Promise<Core_ApiRoles> {
+  async getKnownUserRoles(params?: GetKnownUserRolesPathParams): Promise<Core_ApiRoles> {
+    const domainId = params?.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_ApiRoles>(replacePathParams(URLs.userRoles, { domainId }))
   }
 
@@ -45,8 +61,11 @@ export class UsersService {
    * @param pathParams - The path parameters for the request
    * @returns The user
    */
-  async getUser({ domainId, userId }: GetUserPathParams): Promise<Core_TrustedUser> {
-    return this.api.get<Core_TrustedUser>(replacePathParams(URLs.user, { domainId, userId }))
+  async getUser(params: GetUserPathParams): Promise<Core_TrustedUser> {
+    const domainId = params.domainId ?? (await this.resolveDomainId())
+    return this.api.get<Core_TrustedUser>(
+      replacePathParams(URLs.user, { domainId, userId: params.userId }),
+    )
   }
 
   /**
@@ -55,5 +74,21 @@ export class UsersService {
    */
   async getMe(): Promise<Core_MeReference> {
     return this.api.get<Core_MeReference>(URLs.me)
+  }
+
+  /**
+   * Resolves the domain ID using DomainResolverService.
+   * @returns The resolved domain ID
+   * @throws {CustodyError} If user has multiple domains and none is specified
+   */
+  private async resolveDomainId(): Promise<string> {
+    if (!this.domainResolver) {
+      throw new CustodyError({
+        reason:
+          "Domain resolution requires domain caching to be enabled. Please specify domainId explicitly.",
+      })
+    }
+    const { domainId } = await this.domainResolver.resolveDomainOnly()
+    return domainId
   }
 }

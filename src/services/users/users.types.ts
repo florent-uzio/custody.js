@@ -1,13 +1,23 @@
 import type { operations } from "../../models/custody-types.js"
+import type { Prettify, RequiredExceptFor } from "../../type-utils/index.js"
 
 // Request types
 
-export type GetUsersPathParams = operations["getUsers"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetUsersPathParams = Prettify<
+  RequiredExceptFor<operations["getUsers"]["parameters"]["path"], "domainId">
+>
 export type GetUsersQueryParams = operations["getUsers"]["parameters"]["query"]
 
-export type GetKnownUserRolesPathParams = operations["getKnownUserRoles"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetKnownUserRolesPathParams = Prettify<
+  RequiredExceptFor<operations["getKnownUserRoles"]["parameters"]["path"], "domainId">
+>
 
-export type GetUserPathParams = operations["getUser"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetUserPathParams = Prettify<
+  RequiredExceptFor<operations["getUser"]["parameters"]["path"], "domainId">
+>
 
 // Response types
 

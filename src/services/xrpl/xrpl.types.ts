@@ -9,7 +9,23 @@ import type {
 } from "xrpl"
 import type { components } from "../../models/custody-types.js"
 import type { Prettify } from "../../type-utils/index.js"
-import type { IntentContext } from "../intent-context/index.js"
+
+/**
+ * Resolved context required to build an XRPL intent.
+ * Contains all the identifiers needed to construct an intent payload.
+ */
+export type IntentContext = {
+  /** The domain ID for the intent */
+  domainId: string
+  /** The user ID (author) for the intent */
+  userId: string
+  /** The custody account ID */
+  accountId: string
+  /** The ledger ID for the transaction */
+  ledgerId: string
+  /** The blockchain address */
+  address: string
+}
 
 // Payments
 

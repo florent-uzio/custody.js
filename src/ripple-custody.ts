@@ -206,7 +206,7 @@ export class RippleCustody {
     ))
   }
   private get usersService(): UsersService {
-    return (this._usersService ??= new UsersService(this.apiService))
+    return (this._usersService ??= new UsersService(this.apiService, this.domainCache))
   }
   private get vaultsService(): VaultsService {
     return (this._vaultsService ??= new VaultsService(this.apiService))
@@ -534,7 +534,7 @@ export class RippleCustody {
      * @returns The users
      */
     list: async (
-      params: GetUsersPathParams,
+      params?: GetUsersPathParams,
       query?: GetUsersQueryParams,
     ): Promise<Core_TrustedUsersCollection> => this.usersService.getUsers(params, query),
 
@@ -543,7 +543,7 @@ export class RippleCustody {
      * @param params - The parameters for the request
      * @returns The known user roles
      */
-    knownRoles: async (params: GetKnownUserRolesPathParams): Promise<Core_ApiRoles> =>
+    knownRoles: async (params?: GetKnownUserRolesPathParams): Promise<Core_ApiRoles> =>
       this.usersService.getKnownUserRoles(params),
 
     /**

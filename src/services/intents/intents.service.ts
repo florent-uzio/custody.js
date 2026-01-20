@@ -3,7 +3,8 @@ import { replacePathParams, sleep } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import { ApiService } from "../apis/api.service.js"
 import type { DomainCacheService } from "../domain-cache/index.js"
-import { IntentContextService } from "../intent-context/index.js"
+import { DomainResolverService } from "../domain-resolver/index.js"
+import { UsersService } from "../users/index.js"
 import {
   TERMINAL_STATUSES,
   type Core_ApproveIntentBody,
@@ -24,13 +25,14 @@ import {
 } from "./intents.types.js"
 
 export class IntentsService {
-  private readonly intentContextService: IntentContextService
+  private readonly domainResolver: DomainResolverService
 
   constructor(
     private api: ApiService,
     domainCache?: DomainCacheService,
   ) {
-    this.intentContextService = new IntentContextService(api, domainCache)
+    const usersService = new UsersService(api)
+    this.domainResolver = new DomainResolverService(() => usersService.getMe(), domainCache)
   }
 
   /**
@@ -222,13 +224,13 @@ export class IntentsService {
   }
 
   /**
-   * Resolves the domain ID using the IntentContextService.
+   * Resolves the domain ID using the DomainResolverService.
    * Uses caching to avoid repeated API calls.
    * @returns The resolved domain ID
    * @throws {CustodyError} If domain resolution fails
    */
   private async resolveDomainId(): Promise<string> {
-    const { domainId } = await this.intentContextService.resolveDomainOnly()
+    const { domainId } = await this.domainResolver.resolveDomainOnly()
     return domainId
   }
 }

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { SubmittableTransaction } from "xrpl"
 import { CustodyError } from "../../models/index.js"
+import type { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
-import { IntentContextService, type IntentContext } from "../intent-context/index.js"
+import type { DomainResolverService } from "../domain-resolver/index.js"
 import { IntentsService } from "../intents/index.js"
 import { XrplService } from "./xrpl.service.js"
 import type {
@@ -13,6 +14,7 @@ import type {
   CustodyOfferCreate,
   CustodyPayment,
   CustodyTrustline,
+  IntentContext,
   XrplIntentOptions,
 } from "./xrpl.types.js"
 
@@ -24,7 +26,8 @@ vi.mock("xrpl", () => ({
 describe("XrplService", () => {
   let xrplService: XrplService
   let mockApiService: ApiService
-  let mockIntentContext: IntentContextService
+  let mockDomainResolver: DomainResolverService
+  let mockAccountsService: AccountsService
   let mockIntentsService: IntentsService
 
   const mockDomainId = "domain-123"
@@ -51,14 +54,37 @@ describe("XrplService", () => {
     destinationTag: 0,
   }
 
+  /**
+   * Helper to set up mocks for a successful context resolution
+   */
+  const setupSuccessfulMocks = (context: IntentContext = mockContext) => {
+    vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+      domainId: context.domainId,
+      userId: context.userId,
+    })
+    vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+      items: [
+        {
+          accountId: context.accountId,
+          ledgerId: context.ledgerId,
+          address: context.address,
+        },
+      ],
+    } as any)
+  }
+
   beforeEach(() => {
     // Create mock API service
     mockApiService = {} as ApiService
 
     // Create mock service instances with spies
-    mockIntentContext = {
-      resolveContext: vi.fn(),
-    } as unknown as IntentContextService
+    mockDomainResolver = {
+      resolveDomainOnly: vi.fn(),
+    } as unknown as DomainResolverService
+
+    mockAccountsService = {
+      getAllDomainsAddresses: vi.fn(),
+    } as unknown as AccountsService
 
     mockIntentsService = {
       proposeIntent: vi.fn(),
@@ -69,7 +95,9 @@ describe("XrplService", () => {
 
     // Replace internal services with mocks
     // @ts-expect-error - accessing private property for testing
-    xrplService.intentContextService = mockIntentContext
+    xrplService.domainResolver = mockDomainResolver
+    // @ts-expect-error - accessing private property for testing
+    xrplService.accountsService = mockAccountsService
     // @ts-expect-error - accessing private property for testing
     xrplService.intentService = mockIntentsService
   })
@@ -80,13 +108,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.sendPayment(mockPayment)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -120,7 +149,7 @@ describe("XrplService", () => {
         customProperties: { orderId: "order-123" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -147,15 +176,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.sendPayment(mockPayment, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -164,7 +194,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -173,7 +203,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no domains", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no domains" }),
       )
 
@@ -182,7 +212,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has multiple domains without domainId option", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({
           reason: "User has multiple domains. Please specify domainId in the options parameter.",
         }),
@@ -195,7 +225,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when provided domainId is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({
           reason: "Domain with ID non-existent-domain not found for user",
         }),
@@ -210,7 +240,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when domain has no ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no primary domain" }),
       )
 
@@ -221,7 +251,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when domain has no user reference", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "Primary domain has no user reference" }),
       )
 
@@ -232,9 +262,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when sender account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(CustodyError)
       await expect(xrplService.sendPayment(mockPayment)).rejects.toThrow(
@@ -257,7 +291,7 @@ describe("XrplService", () => {
         },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -282,7 +316,7 @@ describe("XrplService", () => {
     })
 
     it("should set expiry date correctly based on expiryDays option", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -300,7 +334,7 @@ describe("XrplService", () => {
     })
 
     it("should use different fee priorities correctly", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -309,7 +343,7 @@ describe("XrplService", () => {
 
       for (const priority of priorities) {
         vi.clearAllMocks()
-        vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+        setupSuccessfulMocks(mockContext)
         vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
           requestId: "request-123",
         } as any)
@@ -331,7 +365,7 @@ describe("XrplService", () => {
     it("should use provided intentId when specified", async () => {
       const customIntentId = "custom-payment-intent-id-123"
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -362,13 +396,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.createTrustline(mockTrustline)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -403,7 +438,7 @@ describe("XrplService", () => {
         customProperties: { reference: "trustline-setup" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -427,7 +462,7 @@ describe("XrplService", () => {
         enableRippling: true,
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -453,15 +488,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.createTrustline(mockTrustline, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -470,7 +506,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -481,9 +517,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when sender account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(CustodyError)
       await expect(xrplService.createTrustline(mockTrustline)).rejects.toThrow(
@@ -494,7 +534,7 @@ describe("XrplService", () => {
     it("should use provided intentId when specified", async () => {
       const customIntentId = "custom-trustline-intent-id-456"
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -519,7 +559,7 @@ describe("XrplService", () => {
         },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -569,13 +609,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.depositPreauth(mockDepositPreauthAuthorize)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -603,7 +644,7 @@ describe("XrplService", () => {
     })
 
     it("should successfully create a deposit preauth with unauthorize", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -632,7 +673,7 @@ describe("XrplService", () => {
         customProperties: { reference: "deposit-preauth-setup" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -658,15 +699,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.depositPreauth(mockDepositPreauthAuthorize, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -675,7 +717,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -688,9 +730,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.depositPreauth(mockDepositPreauthAuthorize)).rejects.toThrow(
         CustodyError,
@@ -721,13 +767,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.clawback(mockClawback)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -765,7 +812,7 @@ describe("XrplService", () => {
         customProperties: { reference: "clawback-enforcement" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -797,7 +844,7 @@ describe("XrplService", () => {
         value: "500",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -826,15 +873,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.clawback(mockClawback, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -843,7 +891,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -852,9 +900,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.clawback(mockClawback)).rejects.toThrow(CustodyError)
       await expect(xrplService.clawback(mockClawback)).rejects.toThrow(
@@ -865,7 +917,7 @@ describe("XrplService", () => {
     it("should use provided intentId when specified", async () => {
       const customIntentId = "custom-clawback-intent-id-789"
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -889,13 +941,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.mpTokenAuthorize(mockMpTokenAuthorize)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -930,7 +983,7 @@ describe("XrplService", () => {
         flags: ["tfMPTUnauthorize"],
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -955,7 +1008,7 @@ describe("XrplService", () => {
         customProperties: { reference: "mpt-authorize" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -981,15 +1034,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.mpTokenAuthorize(mockMpTokenAuthorize, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -998,7 +1052,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -1009,9 +1063,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(CustodyError)
       await expect(xrplService.mpTokenAuthorize(mockMpTokenAuthorize)).rejects.toThrow(
@@ -1022,7 +1080,7 @@ describe("XrplService", () => {
     it("should use provided intentId when specified", async () => {
       const customIntentId = "custom-mptauthorize-intent-id-7890"
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1056,13 +1114,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.offerCreate(mockOfferCreate)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -1099,7 +1158,7 @@ describe("XrplService", () => {
         flags: ["tfSell"],
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1123,7 +1182,7 @@ describe("XrplService", () => {
         flags: ["tfImmediateOrCancel"],
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1149,7 +1208,7 @@ describe("XrplService", () => {
         flags: ["tfFillOrKill"],
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1189,7 +1248,7 @@ describe("XrplService", () => {
         },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1219,7 +1278,7 @@ describe("XrplService", () => {
         customProperties: { reference: "dex-trade" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1245,15 +1304,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.offerCreate(mockOfferCreate, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -1262,7 +1322,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -1271,9 +1331,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow(CustodyError)
       await expect(xrplService.offerCreate(mockOfferCreate)).rejects.toThrow(
@@ -1284,7 +1348,7 @@ describe("XrplService", () => {
     it("should use provided intentId when specified", async () => {
       const customIntentId = "custom-offercreate-intent-id-789"
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1306,13 +1370,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.accountSet(mockAccountSet)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -1342,7 +1407,7 @@ describe("XrplService", () => {
         setFlag: "asfRequireAuth",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1366,7 +1431,7 @@ describe("XrplService", () => {
         setFlag: "asfGlobalFreeze",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1390,7 +1455,7 @@ describe("XrplService", () => {
         setFlag: "asfAllowTrustLineClawback",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1416,7 +1481,7 @@ describe("XrplService", () => {
         clearFlag: "asfNoFreeze",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1440,7 +1505,7 @@ describe("XrplService", () => {
         transferRate: 1005000000,
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1465,7 +1530,7 @@ describe("XrplService", () => {
         transferRate: 1002000000,
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1491,7 +1556,7 @@ describe("XrplService", () => {
         customProperties: { reference: "account-config" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1517,15 +1582,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.accountSet(mockAccountSet, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -1534,7 +1600,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -1543,9 +1609,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow(CustodyError)
       await expect(xrplService.accountSet(mockAccountSet)).rejects.toThrow(
@@ -1556,7 +1626,7 @@ describe("XrplService", () => {
     it("should use provided intentId when specified", async () => {
       const customIntentId = "custom-accountset-intent-id-7890"
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1583,13 +1653,14 @@ describe("XrplService", () => {
         requestId: "request-123",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
 
       const result = await xrplService.rawSign(mockXrplTransaction)
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: undefined,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(undefined)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
       expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
       expect(result).toEqual(mockIntentResponse)
@@ -1618,7 +1689,7 @@ describe("XrplService", () => {
         customProperties: { reference: "raw-sign-test" },
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1636,7 +1707,7 @@ describe("XrplService", () => {
         intentId: customIntentId,
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1655,15 +1726,16 @@ describe("XrplService", () => {
         userId: "user-456",
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(contextWithProvidedDomain)
+      setupSuccessfulMocks(contextWithProvidedDomain)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
 
       await xrplService.rawSign(mockXrplTransaction, { domainId: providedDomainId })
 
-      expect(mockIntentContext.resolveContext).toHaveBeenCalledWith(mockAddress, {
-        domainId: providedDomainId,
+      expect(mockDomainResolver.resolveDomainOnly).toHaveBeenCalledWith(providedDomainId)
+      expect(mockAccountsService.getAllDomainsAddresses).toHaveBeenCalledWith({
+        address: mockAddress,
       })
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
@@ -1684,7 +1756,7 @@ describe("XrplService", () => {
         Sequence: 1,
       }
 
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1701,7 +1773,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no login ID", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no login ID" }),
       )
 
@@ -1710,7 +1782,7 @@ describe("XrplService", () => {
     })
 
     it("should throw error when user has no domains", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockRejectedValue(
         new CustodyError({ reason: "User has no domains" }),
       )
 
@@ -1719,9 +1791,13 @@ describe("XrplService", () => {
     })
 
     it("should throw error when account is not found", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockRejectedValue(
-        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
-      )
+      vi.mocked(mockDomainResolver.resolveDomainOnly).mockResolvedValue({
+        domainId: mockDomainId,
+        userId: mockUserId,
+      })
+      vi.mocked(mockAccountsService.getAllDomainsAddresses).mockResolvedValue({
+        items: [],
+      } as any)
 
       await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow(CustodyError)
       await expect(xrplService.rawSign(mockXrplTransaction)).rejects.toThrow(
@@ -1730,7 +1806,7 @@ describe("XrplService", () => {
     })
 
     it("should set expiry date correctly based on expiryDays option", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)
@@ -1748,7 +1824,7 @@ describe("XrplService", () => {
     })
 
     it("should encode transaction content as base64", async () => {
-      vi.mocked(mockIntentContext.resolveContext).mockResolvedValue(mockContext)
+      setupSuccessfulMocks(mockContext)
       vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
         requestId: "request-123",
       } as any)

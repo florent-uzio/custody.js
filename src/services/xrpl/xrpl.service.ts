@@ -1,14 +1,17 @@
 import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
 import { encodeForSigning, type SubmittableTransaction } from "xrpl"
+import { CustodyError } from "../../models/index.js"
+import { AccountsService } from "../accounts/index.js"
 import type { ApiService } from "../apis/index.js"
 import type { DomainCacheService } from "../domain-cache/index.js"
-import { IntentContextService } from "../intent-context/index.js"
+import { DomainResolverService } from "../domain-resolver/index.js"
 import {
   IntentsService,
   type Core_IntentResponse,
   type Core_ProposeIntentBody,
 } from "../intents/index.js"
+import { UsersService } from "../users/index.js"
 import type {
   BuildIntentProps,
   Core_XrplOperation,
@@ -19,16 +22,24 @@ import type {
   CustodyOfferCreate,
   CustodyPayment,
   CustodyTrustline,
+  IntentContext,
   XrplIntentOptions,
 } from "./xrpl.types.js"
 
 export class XrplService {
   private readonly intentService: IntentsService
-  private readonly intentContextService: IntentContextService
+  private readonly usersService: UsersService
+  private readonly accountsService: AccountsService
+  private readonly domainResolver: DomainResolverService
 
   constructor(apiService: ApiService, domainCache?: DomainCacheService) {
     this.intentService = new IntentsService(apiService, domainCache)
-    this.intentContextService = new IntentContextService(apiService, domainCache)
+    this.usersService = new UsersService(apiService)
+    this.accountsService = new AccountsService(apiService)
+    this.domainResolver = new DomainResolverService(
+      () => this.usersService.getMe(),
+      domainCache,
+    )
   }
 
   /**
@@ -140,9 +151,7 @@ export class XrplService {
     xrplTransaction: SubmittableTransaction,
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
-    const context = await this.intentContextService.resolveContext(xrplTransaction.Account, {
-      domainId: options.domainId,
-    })
+    const context = await this.resolveContext(xrplTransaction.Account, options.domainId)
 
     const encoded = encodeForSigning(xrplTransaction)
 
@@ -189,9 +198,7 @@ export class XrplService {
     data: Core_XrplOperation & { Account: string },
     options: XrplIntentOptions,
   ): Promise<Core_IntentResponse> {
-    const context = await this.intentContextService.resolveContext(data.Account, {
-      domainId: options.domainId,
-    })
+    const context = await this.resolveContext(data.Account, options.domainId)
 
     // Remove Account from operation data (it's only used to find the sender)
     const { Account, ...operation } = data
@@ -203,6 +210,51 @@ export class XrplService {
     })
 
     return this.intentService.proposeIntent(intent)
+  }
+
+  /**
+   * Resolves the full intent context for an XRPL operation.
+   * Fetches the current user, validates them, resolves domain/user IDs, and finds the account.
+   *
+   * @param address - The blockchain address to find the account for
+   * @param domainId - Optional specific domain ID to use
+   * @returns The complete intent context
+   * @throws {CustodyError} If validation fails or the account is not found
+   */
+  private async resolveContext(address: string, domainId?: string): Promise<IntentContext> {
+    const { domainId: resolvedDomainId, userId } =
+      await this.domainResolver.resolveDomainOnly(domainId)
+    const account = await this.findAccountByAddress(address)
+
+    return {
+      domainId: resolvedDomainId,
+      userId,
+      ...account,
+    }
+  }
+
+  /**
+   * Finds an account by its blockchain address across all domains.
+   *
+   * @param address - The blockchain address to search for
+   * @returns The account reference containing accountId, ledgerId, and address
+   * @throws {CustodyError} If no account is found for the address
+   */
+  private async findAccountByAddress(
+    address: string,
+  ): Promise<{ accountId: string; ledgerId: string; address: string }> {
+    const addressAcrossDomains = await this.accountsService.getAllDomainsAddresses({ address })
+    const account = addressAcrossDomains.items.find((item) => item.address === address)
+
+    if (!account) {
+      throw new CustodyError({ reason: `Account not found for address ${address}` })
+    }
+
+    return {
+      accountId: account.accountId,
+      ledgerId: account.ledgerId,
+      address: account.address,
+    }
   }
 
   /**

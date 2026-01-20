@@ -1,81 +1,63 @@
 import { CustodyError } from "../../models/index.js"
-import { AccountsService } from "../accounts/index.js"
-import type { ApiService } from "../apis/index.js"
 import type { DomainCacheService } from "../domain-cache/index.js"
-import { UsersService, type Core_MeReference } from "../users/index.js"
-import type {
-  AccountReference,
-  DomainUserReference,
-  IntentContext,
-  ResolveContextOptions,
-} from "./intent-context.types.js"
+import type { Core_MeReference } from "../users/users.types.js"
 
+/**
+ * Cache key for storing user's domain and user ID information.
+ * Cached value format: { domainId: string, userId: string }
+ */
 const DOMAIN_CACHE_KEY = "user:domains"
 
 /**
- * Service for resolving the context required to build intents.
- * Provides reusable methods for user validation, domain resolution, and account lookup
- * that can be shared across different chain services (XRPL, EVM, etc.).
+ * Domain and user reference resolved from the user's context.
  */
-export class IntentContextService {
-  private readonly usersService: UsersService
-  private readonly accountsService: AccountsService
-  private readonly domainCache?: DomainCacheService
+export type DomainUserReference = {
+  domainId: string
+  userId: string
+}
 
-  constructor(apiService: ApiService, domainCache?: DomainCacheService) {
-    this.usersService = new UsersService(apiService)
-    this.accountsService = new AccountsService(apiService)
-    this.domainCache = domainCache
-  }
+/**
+ * Function type for fetching user's me reference.
+ * This allows dependency injection to avoid circular dependencies.
+ */
+export type GetMeFunction = () => Promise<Core_MeReference>
 
-  /**
-   * Resolves the full intent context in one call.
-   * Fetches the current user, validates them, resolves domain/user IDs, and finds the account.
-   *
-   * @param address - The blockchain address to find the account for
-   * @param options - Optional configuration for context resolution
-   * @returns The complete intent context
-   * @throws {CustodyError} If validation fails or the account is not found
-   */
-  async resolveContext(
-    address: string,
-    options: ResolveContextOptions = {},
-  ): Promise<IntentContext> {
-    const { domainId, userId } = await this.resolveDomainOnly(options)
-    const account = await this.findAccountByAddress(address)
-
-    return {
-      domainId,
-      userId,
-      ...account,
-    }
-  }
+/**
+ * Service for resolving domain information from user context.
+ * This is a standalone service that can be used by any service that needs
+ * to resolve domain IDs without creating circular dependencies.
+ */
+export class DomainResolverService {
+  constructor(
+    private readonly getMe: GetMeFunction,
+    private readonly domainCache?: DomainCacheService,
+  ) {}
 
   /**
    * Resolves only the domain and user IDs without account lookup.
    * Useful for operations that don't require account information.
    * Uses caching to avoid repeated API calls.
    *
-   * @param options - Optional configuration for context resolution
+   * @param providedDomainId - Optional specific domain ID to use
    * @returns The resolved domain and user IDs
    * @throws {CustodyError} If validation fails or domain resolution fails
    */
-  async resolveDomainOnly(options: ResolveContextOptions = {}): Promise<DomainUserReference> {
+  async resolveDomainOnly(providedDomainId?: string): Promise<DomainUserReference> {
     // Check cache first if domainId is not explicitly provided
-    if (!options.domainId && this.domainCache) {
+    if (!providedDomainId && this.domainCache) {
       const cached = this.domainCache.get<DomainUserReference>(DOMAIN_CACHE_KEY)
       if (cached) {
         return cached
       }
     }
 
-    const me = await this.usersService.getMe()
+    const me = await this.getMe()
     this.validateUser(me)
 
-    const result = this.resolveDomainAndUser(me, options.domainId)
+    const result = this.resolveDomainAndUser(me, providedDomainId)
 
     // Cache the result if no explicit domainId was provided (meaning it's the user's default)
-    if (!options.domainId && this.domainCache) {
+    if (!providedDomainId && this.domainCache) {
       this.domainCache.set(DOMAIN_CACHE_KEY, result)
     }
 
@@ -139,27 +121,5 @@ export class IntentContextService {
     }
 
     return { domainId: domain.id, userId: domain.userReference.id }
-  }
-
-  /**
-   * Finds an account by its blockchain address across all domains.
-   *
-   * @param address - The blockchain address to search for
-   * @returns The account reference containing accountId, ledgerId, and address
-   * @throws {CustodyError} If no account is found for the address
-   */
-  async findAccountByAddress(address: string): Promise<AccountReference> {
-    const addressAcrossDomains = await this.accountsService.getAllDomainsAddresses({ address })
-    const account = addressAcrossDomains.items.find((item) => item.address === address)
-
-    if (!account) {
-      throw new CustodyError({ reason: `Account not found for address ${address}` })
-    }
-
-    return {
-      accountId: account.accountId,
-      ledgerId: account.ledgerId,
-      address: account.address,
-    }
   }
 }
