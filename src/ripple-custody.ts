@@ -200,7 +200,10 @@ export class RippleCustody {
     ))
   }
   private get userInvitationsService(): UserInvitationService {
-    return (this._userInvitationsService ??= new UserInvitationService(this.apiService))
+    return (this._userInvitationsService ??= new UserInvitationService(
+      this.apiService,
+      this.domainCache,
+    ))
   }
   private get usersService(): UsersService {
     return (this._usersService ??= new UsersService(this.apiService))
@@ -566,7 +569,7 @@ export class RippleCustody {
      * @returns The user invitations
      */
     list: async (
-      pathParams: GetUserInvitationsPathParams,
+      pathParams?: GetUserInvitationsPathParams,
       query?: GetUserInvitationsQueryParams,
     ): Promise<CoreExtensions_InvitationOut> =>
       this.userInvitationsService.getUserInvitations(pathParams, query),

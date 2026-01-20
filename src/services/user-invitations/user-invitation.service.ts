@@ -1,6 +1,8 @@
 import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/url/index.js"
 import type { ApiService } from "../index.js"
+import type { DomainCacheService } from "../domain-cache/index.js"
+import { IntentContextService } from "../intent-context/index.js"
 import type {
   CancelUserInvitationPathParams,
   CompleteUserInvitationPathParams,
@@ -18,7 +20,14 @@ import type {
 } from "./user-invitations.types.js"
 
 export class UserInvitationService {
-  constructor(private api: ApiService) {}
+  private readonly intentContextService: IntentContextService
+
+  constructor(
+    private api: ApiService,
+    domainCache?: DomainCacheService,
+  ) {
+    this.intentContextService = new IntentContextService(api, domainCache)
+  }
 
   /**
    * Get user invitations
@@ -27,11 +36,12 @@ export class UserInvitationService {
    * @returns The user invitations
    */
   async getUserInvitations(
-    pathParams: GetUserInvitationsPathParams,
+    pathParams?: GetUserInvitationsPathParams,
     queryParams?: GetUserInvitationsQueryParams,
   ): Promise<CoreExtensions_InvitationOut> {
+    const domainId = pathParams?.domainId ?? (await this.resolveDomainId())
     return this.api.get<CoreExtensions_InvitationOut>(
-      replacePathParams(URLs.userInvitations, pathParams),
+      replacePathParams(URLs.userInvitations, { ...pathParams, domainId }),
       queryParams,
     )
   }
@@ -46,8 +56,9 @@ export class UserInvitationService {
     pathParams: CreateUserInvitationPathParams,
     body: CoreExtensions_InvitationIn,
   ): Promise<CoreExtensions_InvitationOut> {
+    const domainId = pathParams.domainId ?? (await this.resolveDomainId())
     return this.api.post<CoreExtensions_InvitationOut>(
-      replacePathParams(URLs.userInvitations, pathParams),
+      replacePathParams(URLs.userInvitations, { ...pathParams, domainId }),
       body,
     )
   }
@@ -60,8 +71,9 @@ export class UserInvitationService {
   async getUserInvitation(
     pathParams: GetUserInvitationPathParams,
   ): Promise<CoreExtensions_InvitationOut> {
+    const domainId = pathParams.domainId ?? (await this.resolveDomainId())
     return this.api.get<CoreExtensions_InvitationOut>(
-      replacePathParams(URLs.userInvitation, pathParams),
+      replacePathParams(URLs.userInvitation, { ...pathParams, domainId }),
     )
   }
 
@@ -73,8 +85,9 @@ export class UserInvitationService {
   async cancelUserInvitation(
     pathParams: CancelUserInvitationPathParams,
   ): Promise<CoreExtensions_InvitationOut> {
+    const domainId = pathParams.domainId ?? (await this.resolveDomainId())
     return this.api.post<CoreExtensions_InvitationOut>(
-      replacePathParams(URLs.userInvitationCancel, pathParams),
+      replacePathParams(URLs.userInvitationCancel, { ...pathParams, domainId }),
       undefined,
     )
   }
@@ -87,8 +100,9 @@ export class UserInvitationService {
   async renewUserInvitation(
     pathParams: RenewUserInvitationPathParams,
   ): Promise<CoreExtensions_InvitationOut> {
+    const domainId = pathParams.domainId ?? (await this.resolveDomainId())
     return this.api.post<CoreExtensions_InvitationOut>(
-      replacePathParams(URLs.userInvitationRenew, pathParams),
+      replacePathParams(URLs.userInvitationRenew, { ...pathParams, domainId }),
       undefined,
     )
   }
@@ -101,8 +115,9 @@ export class UserInvitationService {
   async completeUserInvitation(
     pathParams: CompleteUserInvitationPathParams,
   ): Promise<CoreExtensions_InvitationOut> {
+    const domainId = pathParams.domainId ?? (await this.resolveDomainId())
     return this.api.post<CoreExtensions_InvitationOut>(
-      replacePathParams(URLs.userInvitationComplete, pathParams),
+      replacePathParams(URLs.userInvitationComplete, { ...pathParams, domainId }),
       undefined,
     )
   }
@@ -131,5 +146,16 @@ export class UserInvitationService {
     return this.api.get<CoreExtensions_PublicInvitationOut>(
       replacePathParams(URLs.publicUserInvitation, pathParams),
     )
+  }
+
+  /**
+   * Resolves the domain ID using the IntentContextService.
+   * Uses caching to avoid repeated API calls.
+   * @returns The resolved domain ID
+   * @throws {CustodyError} If domain resolution fails
+   */
+  private async resolveDomainId(): Promise<string> {
+    const { domainId } = await this.intentContextService.resolveDomainOnly()
+    return domainId
   }
 }

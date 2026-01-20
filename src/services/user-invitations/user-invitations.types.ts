@@ -1,28 +1,59 @@
 import type { components, paths } from "../../models/custody-types.js"
+import type { Prettify, RequiredExceptFor } from "../../type-utils/index.js"
 
 // Request types
 
-export type GetUserInvitationsPathParams =
-  paths["/v1/domains/{domainId}/users/invitations"]["post"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetUserInvitationsPathParams = Prettify<
+  RequiredExceptFor<
+    paths["/v1/domains/{domainId}/users/invitations"]["post"]["parameters"]["path"],
+    "domainId"
+  >
+>
 export type GetUserInvitationsQueryParams =
   paths["/v1/domains/{domainId}/users/invitations"]["get"]["parameters"]["query"]
 
-export type CreateUserInvitationPathParams =
-  paths["/v1/domains/{domainId}/users/invitations"]["post"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type CreateUserInvitationPathParams = Prettify<
+  RequiredExceptFor<
+    paths["/v1/domains/{domainId}/users/invitations"]["post"]["parameters"]["path"],
+    "domainId"
+  >
+>
 
 export type CoreExtensions_InvitationIn = components["schemas"]["CoreExtensions_InvitationIn"]
 
-export type GetUserInvitationPathParams =
-  paths["/v1/domains/{domainId}/users/invitations/{id}"]["get"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetUserInvitationPathParams = Prettify<
+  RequiredExceptFor<
+    paths["/v1/domains/{domainId}/users/invitations/{id}"]["get"]["parameters"]["path"],
+    "domainId"
+  >
+>
 
-export type CancelUserInvitationPathParams =
-  paths["/v1/domains/{domainId}/users/invitations/{id}/cancel"]["post"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type CancelUserInvitationPathParams = Prettify<
+  RequiredExceptFor<
+    paths["/v1/domains/{domainId}/users/invitations/{id}/cancel"]["post"]["parameters"]["path"],
+    "domainId"
+  >
+>
 
-export type RenewUserInvitationPathParams =
-  paths["/v1/domains/{domainId}/users/invitations/{id}/renew"]["post"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type RenewUserInvitationPathParams = Prettify<
+  RequiredExceptFor<
+    paths["/v1/domains/{domainId}/users/invitations/{id}/renew"]["post"]["parameters"]["path"],
+    "domainId"
+  >
+>
 
-export type CompleteUserInvitationPathParams =
-  paths["/v1/domains/{domainId}/users/invitations/{id}/complete"]["post"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type CompleteUserInvitationPathParams = Prettify<
+  RequiredExceptFor<
+    paths["/v1/domains/{domainId}/users/invitations/{id}/complete"]["post"]["parameters"]["path"],
+    "domainId"
+  >
+>
 
 export type FillUserInvitationPathParams =
   paths["/v1/users/invitations/{idOrCode}"]["post"]["parameters"]["path"]
