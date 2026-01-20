@@ -18,6 +18,7 @@ const sendXrpPayment = async () => {
     publicKey: process.env.PUBLIC_KEY ?? "",
   })
 
+  // Retrieve the domain ID associated with your user
   const me = await custody.users.me()
   const domainId = me.domains[0].id
 
