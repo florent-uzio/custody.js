@@ -32,6 +32,7 @@ export type {
 
 // accounts types
 export type {
+  AccountReference,
   Core_AccountAddress,
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
