@@ -1,6 +1,8 @@
 import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
 import { ApiService } from "../apis/api.service.js"
+import type { DomainCacheService } from "../domain-cache/index.js"
+import { IntentContextService } from "../intent-context/index.js"
 import type {
   Core_DryRunTransactionParameters,
   Core_TransactionDetails,
@@ -23,7 +25,14 @@ import type {
 } from "./transactions.types.js"
 
 export class TransactionsService {
-  constructor(private api: ApiService) {}
+  private readonly intentContextService: IntentContextService
+
+  constructor(
+    private api: ApiService,
+    domainCache?: DomainCacheService,
+  ) {
+    this.intentContextService = new IntentContextService(api, domainCache)
+  }
 
   /**
    * Get transaction orders
@@ -32,9 +41,10 @@ export class TransactionsService {
    * @returns The transaction orders
    */
   async getTransactionOrders(
-    { domainId }: GetTransactionOrdersPathParams,
+    params?: GetTransactionOrdersPathParams,
     query?: GetTransactionOrdersQueryParams,
   ): Promise<Core_TrustedTransactionOrdersCollection> {
+    const domainId = params?.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_TrustedTransactionOrdersCollection>(
       replacePathParams(URLs.transactionOrders, { domainId }),
       query,
@@ -46,12 +56,15 @@ export class TransactionsService {
    * @param path - The path parameters for the request
    * @returns The transaction order details
    */
-  async getTransactionOrderDetails({
-    domainId,
-    transactionOrderId,
-  }: GetTransactionOrderDetailsPathParams): Promise<Core_TrustedTransactionOrderDetails> {
+  async getTransactionOrderDetails(
+    params: GetTransactionOrderDetailsPathParams,
+  ): Promise<Core_TrustedTransactionOrderDetails> {
+    const domainId = params.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_TrustedTransactionOrderDetails>(
-      replacePathParams(URLs.transactionOrder, { domainId, transactionOrderId }),
+      replacePathParams(URLs.transactionOrder, {
+        domainId,
+        transactionOrderId: params.transactionOrderId,
+      }),
     )
   }
 
@@ -62,9 +75,10 @@ export class TransactionsService {
    * @returns The transfers
    */
   async getTransfers(
-    { domainId }: TransferTransactionOrderPathParams,
+    params?: TransferTransactionOrderPathParams,
     query?: TransferTransactionOrderQueryParams,
   ): Promise<Core_TransfersCollection> {
+    const domainId = params?.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_TransfersCollection>(
       replacePathParams(URLs.transactionTransfers, { domainId }),
       query,
@@ -76,12 +90,10 @@ export class TransactionsService {
    * @param path - The path parameters for the request
    * @returns The transfer details
    */
-  async getTransferDetails({
-    domainId,
-    transferId,
-  }: GetTransferDetailsPathParams): Promise<Core_TransferDetails> {
+  async getTransferDetails(params: GetTransferDetailsPathParams): Promise<Core_TransferDetails> {
+    const domainId = params.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_TransferDetails>(
-      replacePathParams(URLs.transactionTransfer, { domainId, transferId }),
+      replacePathParams(URLs.transactionTransfer, { domainId, transferId: params.transferId }),
     )
   }
 
@@ -91,9 +103,10 @@ export class TransactionsService {
    * @returns The transactions
    */
   async getTransactions(
-    { domainId }: GetTransactionsPathParams,
+    params?: GetTransactionsPathParams,
     query?: GetTransactionsQueryParams,
   ): Promise<Core_TransactionsCollection> {
+    const domainId = params?.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_TransactionsCollection>(
       replacePathParams(URLs.transactions, { domainId }),
       query,
@@ -105,12 +118,12 @@ export class TransactionsService {
    * @param path - The path parameters for the request
    * @returns The transaction details
    */
-  async getTransactionDetails({
-    domainId,
-    transactionId,
-  }: GetTransactionDetailsPathParams): Promise<Core_TransactionDetails> {
+  async getTransactionDetails(
+    params: GetTransactionDetailsPathParams,
+  ): Promise<Core_TransactionDetails> {
+    const domainId = params.domainId ?? (await this.resolveDomainId())
     return this.api.get<Core_TransactionDetails>(
-      replacePathParams(URLs.transaction, { domainId, transactionId }),
+      replacePathParams(URLs.transaction, { domainId, transactionId: params.transactionId }),
     )
   }
 
@@ -121,12 +134,38 @@ export class TransactionsService {
    * @returns The transaction details
    */
   async dryRunTransaction(
-    { domainId }: DryRunTransactionPathParams,
-    body: Core_DryRunTransactionParameters,
+    params: DryRunTransactionPathParams | Core_DryRunTransactionParameters,
+    body?: Core_DryRunTransactionParameters,
   ): Promise<Core_TransactionDryRun> {
+    // Support both old (params, body) and new (body) signatures
+    let domainId: string
+    let transactionBody: Core_DryRunTransactionParameters
+
+    if (body === undefined) {
+      // New signature: dryRunTransaction(body)
+      domainId = await this.resolveDomainId()
+      transactionBody = params as Core_DryRunTransactionParameters
+    } else {
+      // Old signature: dryRunTransaction(params, body)
+      const pathParams = params as DryRunTransactionPathParams
+      domainId = pathParams.domainId ?? (await this.resolveDomainId())
+      transactionBody = body
+    }
+
     return this.api.post<Core_TransactionDryRun>(
       replacePathParams(URLs.transactionsDryRun, { domainId }),
-      body,
+      transactionBody,
     )
+  }
+
+  /**
+   * Resolves the domain ID using the IntentContextService.
+   * Uses caching to avoid repeated API calls.
+   * @returns The resolved domain ID
+   * @throws {CustodyError} If domain resolution fails
+   */
+  private async resolveDomainId(): Promise<string> {
+    const { domainId } = await this.intentContextService.resolveDomainOnly()
+    return domainId
   }
 }

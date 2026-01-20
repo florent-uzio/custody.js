@@ -85,10 +85,10 @@ export class IntentsService {
    * @returns The list of intents
    */
   async getIntents(
-    params: Core_GetIntentsPathParams,
+    params?: Core_GetIntentsPathParams,
     query?: Core_GetIntentsQueryParams,
   ): Promise<Core_IntentResponse> {
-    const domainId = params.domainId ?? (await this.resolveDomainId())
+    const domainId = params?.domainId ?? (await this.resolveDomainId())
     const url = replacePathParams(URLs.domainIntents, {
       domainId,
     })

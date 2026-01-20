@@ -194,7 +194,10 @@ export class RippleCustody {
     return (this._tickersService ??= new TickersService(this.apiService))
   }
   private get transactionsService(): TransactionsService {
-    return (this._transactionsService ??= new TransactionsService(this.apiService))
+    return (this._transactionsService ??= new TransactionsService(
+      this.apiService,
+      this.domainCache,
+    ))
   }
   private get userInvitationsService(): UserInvitationService {
     return (this._userInvitationsService ??= new UserInvitationService(this.apiService))
@@ -292,7 +295,7 @@ export class RippleCustody {
      * @param query - The query parameters for the intents.
      */
     list: async (
-      params: Core_GetIntentsPathParams,
+      params?: Core_GetIntentsPathParams,
       query?: Core_GetIntentsQueryParams,
     ): Promise<Core_IntentResponse> => this.intentService.getIntents(params, query),
 
@@ -334,7 +337,7 @@ export class RippleCustody {
      * @returns The transaction orders
      */
     orders: async (
-      params: GetTransactionOrdersPathParams,
+      params?: GetTransactionOrdersPathParams,
       query?: GetTransactionOrdersQueryParams,
     ): Promise<Core_TrustedTransactionOrdersCollection> =>
       this.transactionsService.getTransactionOrders(params, query),
@@ -356,7 +359,7 @@ export class RippleCustody {
      * @returns The transfers
      */
     transfers: async (
-      params: TransferTransactionOrderPathParams,
+      params?: TransferTransactionOrderPathParams,
       query?: TransferTransactionOrderQueryParams,
     ): Promise<Core_TransfersCollection> => this.transactionsService.getTransfers(params, query),
 
@@ -375,7 +378,7 @@ export class RippleCustody {
      * @returns The transactions
      */
     transactions: async (
-      params: GetTransactionsPathParams,
+      params?: GetTransactionsPathParams,
       query?: GetTransactionsQueryParams,
     ): Promise<Core_TransactionsCollection> =>
       this.transactionsService.getTransactions(params, query),
@@ -396,8 +399,8 @@ export class RippleCustody {
      * @returns The transaction details
      */
     dryRun: async (
-      params: DryRunTransactionPathParams,
-      body: Core_DryRunTransactionParameters,
+      params: DryRunTransactionPathParams | Core_DryRunTransactionParameters,
+      body?: Core_DryRunTransactionParameters,
     ): Promise<Core_TransactionDryRun> => this.transactionsService.dryRunTransaction(params, body),
   }
 

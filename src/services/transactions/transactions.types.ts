@@ -1,23 +1,46 @@
 import type { components, operations } from "../../models/custody-types.js"
+import type { Prettify, RequiredExceptFor } from "../../type-utils/index.js"
 
 // Request types
-export type GetTransactionOrdersPathParams = operations["getOrders"]["parameters"]["path"]
+
+// Make domainId optional for better DX
+export type GetTransactionOrdersPathParams = Prettify<
+  RequiredExceptFor<operations["getOrders"]["parameters"]["path"], "domainId">
+>
 export type GetTransactionOrdersQueryParams = operations["getOrders"]["parameters"]["query"]
 
-export type GetTransactionOrderDetailsPathParams = operations["getOrder"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetTransactionOrderDetailsPathParams = Prettify<
+  RequiredExceptFor<operations["getOrder"]["parameters"]["path"], "domainId">
+>
 
-export type TransferTransactionOrderPathParams = operations["getTransfers"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type TransferTransactionOrderPathParams = Prettify<
+  RequiredExceptFor<operations["getTransfers"]["parameters"]["path"], "domainId">
+>
 export type TransferTransactionOrderQueryParams = operations["getTransfers"]["parameters"]["query"]
 
-export type GetTransferDetailsPathParams = operations["getTransfer"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetTransferDetailsPathParams = Prettify<
+  RequiredExceptFor<operations["getTransfer"]["parameters"]["path"], "domainId">
+>
 
-export type GetTransactionsPathParams = operations["getTransactions"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetTransactionsPathParams = Prettify<
+  RequiredExceptFor<operations["getTransactions"]["parameters"]["path"], "domainId">
+>
 export type GetTransactionsQueryParams = operations["getTransactions"]["parameters"]["query"]
 
-export type GetTransactionDetailsPathParams = operations["getTransaction"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetTransactionDetailsPathParams = Prettify<
+  RequiredExceptFor<operations["getTransaction"]["parameters"]["path"], "domainId">
+>
 export type GetTransactionDetailsQueryParams = operations["getTransaction"]["parameters"]["query"]
 
-export type DryRunTransactionPathParams = operations["dryRunTransaction"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type DryRunTransactionPathParams = Prettify<
+  RequiredExceptFor<operations["dryRunTransaction"]["parameters"]["path"], "domainId">
+>
 export type Core_DryRunTransactionParameters =
   operations["dryRunTransaction"]["requestBody"]["content"]["application/json"]
 
