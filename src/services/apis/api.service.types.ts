@@ -10,4 +10,9 @@ export type ApiServiceOptions = {
   apiUrl: string
   keypairAlgorithm?: KeypairAlgorithm
   privateKey: string
+  /**
+   * Request timeout in milliseconds.
+   * If not provided, defaults to 30 seconds.
+   */
+  timeout?: number
 }

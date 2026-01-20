@@ -1,4 +1,5 @@
 import { isString } from "../../helpers/index.js"
+import { CustodyError } from "../../models/custody-error.js"
 import { Ed25519Service } from "./ed25519.service.js"
 import { type KeyPair, type KeypairAlgorithm, type KeypairDefinition } from "./keypairs.types.js"
 import { Secp256k1Service } from "./secp256k1.service.js"
@@ -30,7 +31,7 @@ export class KeypairService {
    */
   generate(): KeyPair {
     const provider = this.providers[this.algorithm]
-    if (!provider) throw new Error(`Unsupported algorithm: ${this.algorithm}`)
+    if (!provider) throw new CustodyError({ reason: `Unsupported algorithm: ${this.algorithm}` })
     return provider.generate()
   }
 
@@ -42,7 +43,7 @@ export class KeypairService {
    */
   sign(privateKeyPem: string, message: string): string {
     const provider = this.providers[this.algorithm]
-    if (!provider) throw new Error(`Unsupported algorithm: ${this.algorithm}`)
+    if (!provider) throw new CustodyError({ reason: `Unsupported algorithm: ${this.algorithm}` })
     return provider.sign(privateKeyPem, message)
   }
 

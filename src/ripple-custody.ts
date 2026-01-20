@@ -155,43 +155,72 @@ import {
 } from "./services/xrpl/index.js"
 
 export class RippleCustody {
-  private accountsService: AccountsService
-  private apiService: ApiService
-  private authService: AuthService
-  private domainService: DomainService
-  private intentService: IntentsService
-  private ledgersService: LedgersService
-  private requestsService: RequestsService
-  private tickersService: TickersService
-  private transactionsService: TransactionsService
-  private userInvitationsService: UserInvitationService
-  private usersService: UsersService
-  private vaultsService: VaultsService
-  private xrplService: XrplService
+  // Core services (eager initialization - required for all operations)
+  private readonly apiService: ApiService
+  private readonly authService: AuthService
+
+  // Lazy-initialized service instances
+  private _accountsService?: AccountsService
+  private _domainService?: DomainService
+  private _intentService?: IntentsService
+  private _ledgersService?: LedgersService
+  private _requestsService?: RequestsService
+  private _tickersService?: TickersService
+  private _transactionsService?: TransactionsService
+  private _userInvitationsService?: UserInvitationService
+  private _usersService?: UsersService
+  private _vaultsService?: VaultsService
+  private _xrplService?: XrplService
+
+  // Lazy getters for services - instantiated on first access
+  private get accountsService(): AccountsService {
+    return (this._accountsService ??= new AccountsService(this.apiService))
+  }
+  private get domainService(): DomainService {
+    return (this._domainService ??= new DomainService(this.apiService))
+  }
+  private get intentService(): IntentsService {
+    return (this._intentService ??= new IntentsService(this.apiService))
+  }
+  private get ledgersService(): LedgersService {
+    return (this._ledgersService ??= new LedgersService(this.apiService))
+  }
+  private get requestsService(): RequestsService {
+    return (this._requestsService ??= new RequestsService(this.apiService))
+  }
+  private get tickersService(): TickersService {
+    return (this._tickersService ??= new TickersService(this.apiService))
+  }
+  private get transactionsService(): TransactionsService {
+    return (this._transactionsService ??= new TransactionsService(this.apiService))
+  }
+  private get userInvitationsService(): UserInvitationService {
+    return (this._userInvitationsService ??= new UserInvitationService(this.apiService))
+  }
+  private get usersService(): UsersService {
+    return (this._usersService ??= new UsersService(this.apiService))
+  }
+  private get vaultsService(): VaultsService {
+    return (this._vaultsService ??= new VaultsService(this.apiService))
+  }
+  private get xrplService(): XrplService {
+    return (this._xrplService ??= new XrplService(this.apiService))
+  }
 
   constructor(options: RippleCustodyClientOptions) {
-    const { authUrl, apiUrl, privateKey, publicKey } = options
+    const { authUrl, apiUrl, privateKey, publicKey, timeout } = options
 
-    this.authService = new AuthService(authUrl)
+    // Only initialize core services eagerly
+    this.authService = new AuthService({ authUrl, timeout })
     this.apiService = new ApiService({
-      apiUrl: apiUrl,
+      apiUrl,
       authFormData: {
         publicKey,
       },
       authService: this.authService,
       privateKey,
+      timeout,
     })
-    this.accountsService = new AccountsService(this.apiService)
-    this.domainService = new DomainService(this.apiService)
-    this.intentService = new IntentsService(this.apiService)
-    this.ledgersService = new LedgersService(this.apiService)
-    this.requestsService = new RequestsService(this.apiService)
-    this.tickersService = new TickersService(this.apiService)
-    this.transactionsService = new TransactionsService(this.apiService)
-    this.userInvitationsService = new UserInvitationService(this.apiService)
-    this.usersService = new UsersService(this.apiService)
-    this.vaultsService = new VaultsService(this.apiService)
-    this.xrplService = new XrplService(this.apiService)
   }
 
   // Auth namespace
