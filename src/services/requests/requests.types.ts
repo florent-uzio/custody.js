@@ -1,15 +1,21 @@
 import type { components, operations } from "../../models/custody-types.js"
+import type { Prettify, RequiredExceptFor } from "../../type-utils/index.js"
 
 // Request types
 
-export type GetRequestStatePathParams = operations["getRequestState"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetRequestStatePathParams = Prettify<
+  RequiredExceptFor<operations["getRequestState"]["parameters"]["path"], "domainId">
+>
 export type GetRequestStateQueryParams = operations["getRequestState"]["parameters"]["query"]
 
 export type GetAllUserRequestsStateQueryParams =
   operations["getAllUserRequestsState"]["parameters"]["query"]
 
-export type GetAllUserRequestsStateInDomainPathParams =
-  operations["getAllUserRequestsStateInDomain"]["parameters"]["path"]
+// Make domainId optional for better DX
+export type GetAllUserRequestsStateInDomainPathParams = Prettify<
+  RequiredExceptFor<operations["getAllUserRequestsStateInDomain"]["parameters"]["path"], "domainId">
+>
 export type GetAllUserRequestsStateInDomainQueryParams =
   operations["getAllUserRequestsStateInDomain"]["parameters"]["query"]
 

@@ -188,7 +188,7 @@ export class RippleCustody {
     return (this._ledgersService ??= new LedgersService(this.apiService))
   }
   private get requestsService(): RequestsService {
-    return (this._requestsService ??= new RequestsService(this.apiService))
+    return (this._requestsService ??= new RequestsService(this.apiService, this.domainCache))
   }
   private get tickersService(): TickersService {
     return (this._tickersService ??= new TickersService(this.apiService))

@@ -1,6 +1,8 @@
 import { URLs } from "../../constants/urls.js"
 import { replacePathParams } from "../../helpers/index.js"
 import type { ApiService } from "../index.js"
+import type { DomainCacheService } from "../domain-cache/index.js"
+import { IntentContextService } from "../intent-context/index.js"
 import type {
   Core_RequestState,
   GetAllUserRequestsStateInDomainPathParams,
@@ -11,7 +13,14 @@ import type {
 } from "./requests.types.js"
 
 export class RequestsService {
-  constructor(private api: ApiService) {}
+  private readonly intentContextService: IntentContextService
+
+  constructor(
+    private api: ApiService,
+    domainCache?: DomainCacheService,
+  ) {
+    this.intentContextService = new IntentContextService(api, domainCache)
+  }
 
   /**
    * Get the state of a request
@@ -23,7 +32,11 @@ export class RequestsService {
     params: GetRequestStatePathParams,
     query?: GetRequestStateQueryParams,
   ): Promise<Core_RequestState> {
-    return this.api.get<Core_RequestState>(replacePathParams(URLs.request, params), query)
+    const domainId = params.domainId ?? (await this.resolveDomainId())
+    return this.api.get<Core_RequestState>(
+      replacePathParams(URLs.request, { ...params, domainId }),
+      query,
+    )
   }
 
   /**
@@ -47,6 +60,21 @@ export class RequestsService {
     params: GetAllUserRequestsStateInDomainPathParams,
     query?: GetAllUserRequestsStateInDomainQueryParams,
   ): Promise<Core_RequestState> {
-    return this.api.get<Core_RequestState>(replacePathParams(URLs.requests, params), query)
+    const domainId = params.domainId ?? (await this.resolveDomainId())
+    return this.api.get<Core_RequestState>(
+      replacePathParams(URLs.requests, { ...params, domainId }),
+      query,
+    )
+  }
+
+  /**
+   * Resolves the domain ID using the IntentContextService.
+   * Uses caching to avoid repeated API calls.
+   * @returns The resolved domain ID
+   * @throws {CustodyError} If domain resolution fails
+   */
+  private async resolveDomainId(): Promise<string> {
+    const { domainId } = await this.intentContextService.resolveDomainOnly()
+    return domainId
   }
 }
