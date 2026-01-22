@@ -78,7 +78,7 @@ describe("AuthService", () => {
 
       expect(token).toBe(mockAccessToken)
       expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1)
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith("/token", expect.any(URLSearchParams))
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith("", expect.any(URLSearchParams))
     })
 
     it("should send correct form data when fetching token", async () => {
