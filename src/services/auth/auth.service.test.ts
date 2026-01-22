@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
+import { CustodyError } from "../../models/custody-error.js"
 import { AuthService } from "./auth.service.js"
 import type { AuthFormData } from "./auth.service.types.js"
 
@@ -9,6 +10,7 @@ vi.mock("axios", () => ({
     create: vi.fn(() => ({
       post: vi.fn(),
     })),
+    isAxiosError: vi.fn(),
   },
 }))
 
@@ -175,7 +177,7 @@ describe("AuthService", () => {
       mockAxiosInstance.post.mockRejectedValueOnce(error)
 
       // First call fails
-      await expect(authService.getToken(mockAuthData)).rejects.toThrow("Auth failed")
+      await expect(authService.getToken(mockAuthData)).rejects.toThrow(CustodyError)
 
       // Reset mock to succeed
       mockAxiosInstance.post.mockResolvedValueOnce({
@@ -186,6 +188,37 @@ describe("AuthService", () => {
       const token = await authService.getToken(mockAuthData)
       expect(token).toBe(mockAccessToken)
       expect(mockAxiosInstance.post).toHaveBeenCalledTimes(2)
+    })
+
+    it("should throw CustodyError with API error data when axios error has response", async () => {
+      const axiosError = {
+        response: {
+          status: 401,
+          statusText: "Unauthorized",
+          data: { reason: "Invalid credentials", message: "Authentication failed" },
+        },
+      }
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError)
+      vi.mocked(axios.isAxiosError).mockReturnValue(true)
+
+      await expect(authService.getToken(mockAuthData)).rejects.toMatchObject({
+        name: "CustodyError",
+        message: "Invalid credentials",
+        statusCode: 401,
+        errorMessage: "Authentication failed",
+      })
+    })
+
+    it("should throw CustodyError with generic message for non-axios errors", async () => {
+      const error = new Error("Network error")
+      mockAxiosInstance.post.mockRejectedValueOnce(error)
+      vi.mocked(axios.isAxiosError).mockReturnValue(false)
+
+      await expect(authService.getToken(mockAuthData)).rejects.toMatchObject({
+        name: "CustodyError",
+        message: "Authentication request failed",
+        cause: error,
+      })
     })
   })
 
