@@ -1,9 +1,10 @@
 import axios, { type AxiosInstance } from "axios"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
+import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
 import { type AuthFormData, type AuthResponse } from "./auth.service.types.js"
 
 export type AuthServiceOptions = {
-  /** The authentication server URL */
+  /** The full authentication token endpoint URL (e.g., https://auth.example.com/token) */
   authUrl: string
   /**
    * Request timeout in milliseconds.
@@ -41,9 +42,8 @@ export class AuthService {
   /**
    * Fetch a JWT token using the provided authentication data from Ripple Custody backend.
    * @param authData - The authentication data (challenge, publicKey, signature)
-   * @param signature - The signature for the challenge
    * @returns {Promise<string>} The JWT token.
-   * @throws {Error} If authentication fails.
+   * @throws {CustodyError} If authentication fails.
    */
   private async fetchToken(authData: AuthFormData): Promise<string> {
     // Prepare form data for token request
@@ -54,13 +54,25 @@ export class AuthService {
     formData.append("challenge", authData.challenge)
     formData.append("public_key", authData.publicKey)
 
-    // Send POST request to obtain token
-    const response = await this.authClient.post<AuthResponse>("/token", formData)
-    this.accessToken = response.data.access_token
+    try {
+      // Send POST request to obtain token
+      const response = await this.authClient.post<AuthResponse>("", formData)
+      this.accessToken = response.data.access_token
 
-    // Set token expiration to 4 hours from now
-    this.tokenExpiration = Date.now() + this.TOKEN_VALIDITY
-    return this.accessToken
+      // Set token expiration to 4 hours from now
+      this.tokenExpiration = Date.now() + this.TOKEN_VALIDITY
+      return this.accessToken
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const errorData = error.response.data as Core_ErrorMessage
+        throw new CustodyError(errorData, error.response.status, error)
+      }
+      throw new CustodyError(
+        { reason: "Authentication request failed" },
+        undefined,
+        error instanceof Error ? error : undefined,
+      )
+    }
   }
 
   /**
