@@ -70,7 +70,7 @@ import { RippleCustody } from "custody"
 
 const custody = new RippleCustody({
   apiUrl: "https://api.ripple.com",
-  authUrl: "https://auth.api.ripple.com",
+  authUrl: "https://auth.api.ripple.com/token",
   privateKey: ed25519Keypair.privateKey, // Your private key in PEM format
   publicKey: ed25519Keypair.publicKey, // Your public key in base64 format
 })

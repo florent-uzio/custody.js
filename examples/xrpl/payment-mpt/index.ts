@@ -12,8 +12,8 @@ const sendMptPayment = async () => {
   // Initialize the Ripple Custody client with API endpoints and authentication keys
   // The private and public keys should be securely stored in environment variables
   const custody = new RippleCustody({
-    apiUrl: "custody-api-url",
-    authUrl: "custody-auth-url",
+    apiUrl: "https://custody-api-url",
+    authUrl: "https://custody-auth-url/token",
     privateKey: process.env.PRIVATE_KEY ?? "",
     publicKey: process.env.PUBLIC_KEY ?? "",
   })

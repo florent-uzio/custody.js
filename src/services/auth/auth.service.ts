@@ -4,7 +4,7 @@ import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error
 import { type AuthFormData, type AuthResponse } from "./auth.service.types.js"
 
 export type AuthServiceOptions = {
-  /** The authentication server URL */
+  /** The full authentication token endpoint URL (e.g., https://auth.example.com/token) */
   authUrl: string
   /**
    * Request timeout in milliseconds.
@@ -56,7 +56,7 @@ export class AuthService {
 
     try {
       // Send POST request to obtain token
-      const response = await this.authClient.post<AuthResponse>("/token", formData)
+      const response = await this.authClient.post<AuthResponse>("", formData)
       this.accessToken = response.data.access_token
 
       // Set token expiration to 4 hours from now
