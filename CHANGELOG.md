@@ -1,5 +1,11 @@
 # custody
 
+## 0.2.2
+
+### Patch Changes
+
+- 9f5d837: Auth throws CustodyError, authUrl without suffix /token
+
 ## 0.2.1
 
 ### Patch Changes
