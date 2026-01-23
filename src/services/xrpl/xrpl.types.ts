@@ -4,6 +4,8 @@ import type {
   DepositPreauth,
   MPTokenAuthorize,
   MPTokenIssuanceCreate,
+  MPTokenIssuanceDestroy,
+  MPTokenIssuanceSet,
   OfferCreate,
   Payment,
   TrustSet,
@@ -64,6 +66,20 @@ type Core_XrplOperation_MPTokenIssuanceCreate =
   components["schemas"]["Core_XrplOperation_MPTokenIssuanceCreate"]
 export type CustodyMpTokenIssuanceCreate = Prettify<
   Pick<MPTokenIssuanceCreate, "Account"> & Omit<Core_XrplOperation_MPTokenIssuanceCreate, "type">
+>
+
+// MPTokenIssuanceSet
+type Core_XrplOperation_MPTokenIssuanceSet =
+  components["schemas"]["Core_XrplOperation_MPTokenIssuanceSet"]
+export type CustodyMpTokenIssuanceSet = Prettify<
+  Pick<MPTokenIssuanceSet, "Account"> & Omit<Core_XrplOperation_MPTokenIssuanceSet, "type">
+>
+
+// MPTokenIssuanceDestroy
+type Core_XrplOperation_MPTokenIssuanceDestroy =
+  components["schemas"]["Core_XrplOperation_MPTokenIssuanceDestroy"]
+export type CustodyMpTokenIssuanceDestroy = Prettify<
+  Pick<MPTokenIssuanceDestroy, "Account"> & Omit<Core_XrplOperation_MPTokenIssuanceDestroy, "type">
 >
 
 // OfferCreate
