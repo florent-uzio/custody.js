@@ -11,6 +11,9 @@ import type {
   CustodyClawback,
   CustodyDepositPreauth,
   CustodyMpTokenAuthorize,
+  CustodyMpTokenIssuanceCreate,
+  CustodyMpTokenIssuanceDestroy,
+  CustodyMpTokenIssuanceSet,
   CustodyOfferCreate,
   CustodyPayment,
   CustodyTrustline,
@@ -1628,6 +1631,603 @@ describe("XrplService", () => {
 
       const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
       expect(intentCall.request.id).toBe(customIntentId)
+    })
+  })
+
+  describe("mpTokenIssuanceCreate", () => {
+    const mockMpTokenIssuanceCreate: CustodyMpTokenIssuanceCreate = {
+      Account: mockAddress,
+      flags: [],
+    }
+
+    it("should successfully create an MPTokenIssuanceCreate with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate)
+
+      expect(mockDomainResolver.resolve).toHaveBeenCalledWith({
+        domainId: undefined,
+      })
+      expect(mockAccountsService.findByAddress).toHaveBeenCalledWith(mockAddress)
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceCreate"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("MPTokenIssuanceCreate")
+          expect(intentCall.request.payload.parameters.operation.flags).toEqual([])
+        }
+      }
+    })
+
+    it("should create MPTokenIssuanceCreate with all optional fields", async () => {
+      const fullMpTokenIssuanceCreate: CustodyMpTokenIssuanceCreate = {
+        Account: mockAddress,
+        flags: ["tfMPTCanTransfer", "tfMPTCanClawback", "tfMPTRequireAuth"],
+        assetScale: 2,
+        transferFee: 1000,
+        maximumAmount: "1000000000",
+        metadata: "4D50546F6B656E",
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceCreate(fullMpTokenIssuanceCreate)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceCreate"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual([
+          "tfMPTCanTransfer",
+          "tfMPTCanClawback",
+          "tfMPTRequireAuth",
+        ])
+        expect(intentCall.request.payload.parameters.operation.assetScale).toBe(2)
+        expect(intentCall.request.payload.parameters.operation.transferFee).toBe(1000)
+        expect(intentCall.request.payload.parameters.operation.maximumAmount).toBe("1000000000")
+        expect(intentCall.request.payload.parameters.operation.metadata).toBe("4D50546F6B656E")
+      }
+    })
+
+    it("should create MPTokenIssuanceCreate with tfMPTCanEscrow and tfMPTCanLock flags", async () => {
+      const mpTokenWithEscrowAndLock: CustodyMpTokenIssuanceCreate = {
+        Account: mockAddress,
+        flags: ["tfMPTCanEscrow", "tfMPTCanLock"],
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceCreate(mpTokenWithEscrowAndLock)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceCreate"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual([
+          "tfMPTCanEscrow",
+          "tfMPTCanLock",
+        ])
+      }
+    })
+
+    it("should create MPTokenIssuanceCreate with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "High",
+        expiryDays: 5,
+        customProperties: { reference: "mpt-issuance-create" },
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("High")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "mpt-issuance-create" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue({
+        domainId: providedDomainId,
+        userId: "user-456",
+      })
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate, {
+        domainId: providedDomainId,
+      })
+
+      expect(mockDomainResolver.resolve).toHaveBeenCalledWith({
+        domainId: providedDomainId,
+      })
+      expect(mockAccountsService.findByAddress).toHaveBeenCalledWith(mockAddress)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockDomainResolver.resolve).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate)).rejects.toThrow(
+        "User has no login ID",
+      )
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-mptissuancecreate-intent-id-123"
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceCreate(mockMpTokenIssuanceCreate, {
+        intentId: customIntentId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
+  })
+
+  describe("mpTokenIssuanceSet", () => {
+    const mockMpTokenIssuanceSet: CustodyMpTokenIssuanceSet = {
+      Account: mockAddress,
+      issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+      flags: [],
+    }
+
+    it("should successfully create an MPTokenIssuanceSet with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet)
+
+      expect(mockDomainResolver.resolve).toHaveBeenCalledWith({
+        domainId: undefined,
+      })
+      expect(mockAccountsService.findByAddress).toHaveBeenCalledWith(mockAddress)
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceSet"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe("MPTokenIssuanceSet")
+          expect(intentCall.request.payload.parameters.operation.issuanceId).toBe(
+            mockMpTokenIssuanceSet.issuanceId,
+          )
+          expect(intentCall.request.payload.parameters.operation.flags).toEqual([])
+        }
+      }
+    })
+
+    it("should create MPTokenIssuanceSet with tfMPTLock flag", async () => {
+      const mpTokenIssuanceSetWithLock: CustodyMpTokenIssuanceSet = {
+        Account: mockAddress,
+        issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+        flags: ["tfMPTLock"],
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceSet(mpTokenIssuanceSetWithLock)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfMPTLock"])
+      }
+    })
+
+    it("should create MPTokenIssuanceSet with tfMPTUnlock flag", async () => {
+      const mpTokenIssuanceSetWithUnlock: CustodyMpTokenIssuanceSet = {
+        Account: mockAddress,
+        issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+        flags: ["tfMPTUnlock"],
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceSet(mpTokenIssuanceSetWithUnlock)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfMPTUnlock"])
+      }
+    })
+
+    it("should create MPTokenIssuanceSet with holder specified", async () => {
+      const mpTokenIssuanceSetWithHolder: CustodyMpTokenIssuanceSet = {
+        Account: mockAddress,
+        issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+        flags: ["tfMPTLock"],
+        holder: "rHolderAddress123456789",
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceSet(mpTokenIssuanceSetWithHolder)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceSet"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.holder).toBe(
+          "rHolderAddress123456789",
+        )
+        expect(intentCall.request.payload.parameters.operation.flags).toEqual(["tfMPTLock"])
+      }
+    })
+
+    it("should create MPTokenIssuanceSet with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "Medium",
+        expiryDays: 3,
+        customProperties: { reference: "mpt-issuance-set" },
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("Medium")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "mpt-issuance-set" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue({
+        domainId: providedDomainId,
+        userId: "user-456",
+      })
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet, { domainId: providedDomainId })
+
+      expect(mockDomainResolver.resolve).toHaveBeenCalledWith({
+        domainId: providedDomainId,
+      })
+      expect(mockAccountsService.findByAddress).toHaveBeenCalledWith(mockAddress)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockDomainResolver.resolve).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet)).rejects.toThrow(
+        "User has no login ID",
+      )
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-mptissuanceset-intent-id-456"
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceSet(mockMpTokenIssuanceSet, { intentId: customIntentId })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
+  })
+
+  describe("mpTokenIssuanceDestroy", () => {
+    const mockMpTokenIssuanceDestroy: CustodyMpTokenIssuanceDestroy = {
+      Account: mockAddress,
+      issuanceId: "00000004A407AF5856CCF3C42619DAA925813FC955C72983",
+    }
+
+    it("should successfully create an MPTokenIssuanceDestroy with default options", async () => {
+      const mockIntentResponse = {
+        requestId: "request-123",
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue(mockIntentResponse as any)
+
+      const result = await xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy)
+
+      expect(mockDomainResolver.resolve).toHaveBeenCalledWith({
+        domainId: undefined,
+      })
+      expect(mockAccountsService.findByAddress).toHaveBeenCalledWith(mockAddress)
+      expect(mockIntentsService.proposeIntent).toHaveBeenCalledOnce()
+      expect(result).toEqual(mockIntentResponse)
+
+      // Verify intent structure
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(mockDomainId)
+      expect(intentCall.request.author.id).toBe(mockUserId)
+      expect(intentCall.request.type).toBe("Propose")
+
+      if (intentCall.request.payload.type === "v0_CreateTransactionOrder") {
+        expect(intentCall.request.payload.accountId).toBe(mockAccountId)
+        expect(intentCall.request.payload.ledgerId).toBe(mockLedgerId)
+        if (
+          intentCall.request.payload.parameters.type === "XRPL" &&
+          intentCall.request.payload.parameters.operation &&
+          intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceDestroy"
+        ) {
+          expect(intentCall.request.payload.parameters.operation.type).toBe(
+            "MPTokenIssuanceDestroy",
+          )
+          expect(intentCall.request.payload.parameters.operation.issuanceId).toBe(
+            mockMpTokenIssuanceDestroy.issuanceId,
+          )
+        }
+      }
+    })
+
+    it("should create MPTokenIssuanceDestroy with custom options", async () => {
+      const options: XrplIntentOptions = {
+        feePriority: "High",
+        expiryDays: 1,
+        customProperties: { reference: "mpt-issuance-destroy" },
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy, options)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.feeStrategy.type === "Priority"
+      ) {
+        expect(intentCall.request.payload.parameters.feeStrategy.priority).toBe("High")
+      }
+      expect(intentCall.request.customProperties).toEqual({ reference: "mpt-issuance-destroy" })
+    })
+
+    it("should pass domainId to resolveContext when specified", async () => {
+      const providedDomainId = "domain-456"
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue({
+        domainId: providedDomainId,
+        userId: "user-456",
+      })
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy, {
+        domainId: providedDomainId,
+      })
+
+      expect(mockDomainResolver.resolve).toHaveBeenCalledWith({
+        domainId: providedDomainId,
+      })
+      expect(mockAccountsService.findByAddress).toHaveBeenCalledWith(mockAddress)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.author.domainId).toBe(providedDomainId)
+      expect(intentCall.request.author.id).toBe("user-456")
+    })
+
+    it("should throw error when user has no login ID", async () => {
+      vi.mocked(mockDomainResolver.resolve).mockRejectedValue(
+        new CustodyError({ reason: "User has no login ID" }),
+      )
+
+      await expect(xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy)).rejects.toThrow(
+        "User has no login ID",
+      )
+    })
+
+    it("should throw error when account is not found", async () => {
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockRejectedValue(
+        new CustodyError({ reason: `Account not found for address ${mockAddress}` }),
+      )
+
+      await expect(xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy)).rejects.toThrow(
+        CustodyError,
+      )
+      await expect(xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy)).rejects.toThrow(
+        `Account not found for address ${mockAddress}`,
+      )
+    })
+
+    it("should use provided intentId when specified", async () => {
+      const customIntentId = "custom-mptissuancedestroy-intent-id-789"
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceDestroy(mockMpTokenIssuanceDestroy, {
+        intentId: customIntentId,
+      })
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      expect(intentCall.request.id).toBe(customIntentId)
+    })
+
+    it("should destroy MPToken with different issuance IDs", async () => {
+      const differentIssuanceId = "00000005B508BG6967DDG4D53720EBB036924GD066D83094"
+      const mpTokenDestroyDifferentId: CustodyMpTokenIssuanceDestroy = {
+        Account: mockAddress,
+        issuanceId: differentIssuanceId,
+      }
+
+      vi.mocked(mockDomainResolver.resolve).mockResolvedValue(mockDomainUserRef)
+      vi.mocked(mockAccountsService.findByAddress).mockResolvedValue(mockAccountRef)
+      vi.mocked(mockIntentsService.proposeIntent).mockResolvedValue({
+        requestId: "request-123",
+      } as any)
+
+      await xrplService.mpTokenIssuanceDestroy(mpTokenDestroyDifferentId)
+
+      const intentCall = vi.mocked(mockIntentsService.proposeIntent).mock.calls[0][0]
+      if (
+        intentCall.request.payload.type === "v0_CreateTransactionOrder" &&
+        intentCall.request.payload.parameters.type === "XRPL" &&
+        intentCall.request.payload.parameters.operation &&
+        intentCall.request.payload.parameters.operation.type === "MPTokenIssuanceDestroy"
+      ) {
+        expect(intentCall.request.payload.parameters.operation.issuanceId).toBe(differentIssuanceId)
+      }
     })
   })
 
