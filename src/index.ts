@@ -130,8 +130,14 @@ export type {
 
 // xrpl types
 export type {
-  Core_XrplOperation_Payment,
-  Core_XrplOperation_TrustSet,
+  CustodyAccountSet,
+  CustodyClawback,
+  CustodyDepositPreauth,
+  CustodyMpTokenAuthorize,
+  CustodyMpTokenIssuanceCreate,
+  CustodyMpTokenIssuanceDestroy,
+  CustodyMpTokenIssuanceSet,
+  CustodyOfferCreate,
   CustodyPayment,
   CustodyTrustline,
   XrplIntentOptions,
