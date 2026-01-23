@@ -3,6 +3,7 @@ import type {
   Clawback,
   DepositPreauth,
   MPTokenAuthorize,
+  MPTokenIssuanceCreate,
   OfferCreate,
   Payment,
   TrustSet,
@@ -56,6 +57,13 @@ export type Core_XrplOperation_MPTokenAuthorize =
   components["schemas"]["Core_XrplOperation_MPTokenAuthorize"]
 export type CustodyMpTokenAuthorize = Prettify<
   Pick<MPTokenAuthorize, "Account"> & Omit<Core_XrplOperation_MPTokenAuthorize, "type">
+>
+
+// MPTokenIssuanceCreate
+type Core_XrplOperation_MPTokenIssuanceCreate =
+  components["schemas"]["Core_XrplOperation_MPTokenIssuanceCreate"]
+export type CustodyMpTokenIssuanceCreate = Prettify<
+  Pick<MPTokenIssuanceCreate, "Account"> & Omit<Core_XrplOperation_MPTokenIssuanceCreate, "type">
 >
 
 // OfferCreate
