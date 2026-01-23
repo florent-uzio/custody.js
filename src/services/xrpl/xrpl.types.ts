@@ -20,7 +20,6 @@ export type IntentContext = DomainUserReference & AccountReference
 
 // Payments
 
-export type Core_XrplCurrency = components["schemas"]["Core_XrplCurrency"]
 export type Core_XrplOperation_Payment = components["schemas"]["Core_XrplOperation_Payment"]
 
 export type CustodyPayment = Prettify<

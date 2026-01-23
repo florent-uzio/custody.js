@@ -130,7 +130,6 @@ export type {
 
 // xrpl types
 export type {
-  Core_XrplCurrency,
   Core_XrplOperation_Payment,
   Core_XrplOperation_TrustSet,
   CustodyPayment,
