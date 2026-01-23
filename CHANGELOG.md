@@ -1,5 +1,11 @@
 # custody
 
+## 0.3.0
+
+### Minor Changes
+
+- 77b5e52: New MPT Issuance, Set and Destroy wrappers
+
 ## 0.2.2
 
 ### Patch Changes
