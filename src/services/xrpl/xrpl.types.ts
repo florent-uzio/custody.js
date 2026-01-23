@@ -3,6 +3,9 @@ import type {
   Clawback,
   DepositPreauth,
   MPTokenAuthorize,
+  MPTokenIssuanceCreate,
+  MPTokenIssuanceDestroy,
+  MPTokenIssuanceSet,
   OfferCreate,
   Payment,
   TrustSet,
@@ -20,7 +23,6 @@ export type IntentContext = DomainUserReference & AccountReference
 
 // Payments
 
-export type Core_XrplCurrency = components["schemas"]["Core_XrplCurrency"]
 export type Core_XrplOperation_Payment = components["schemas"]["Core_XrplOperation_Payment"]
 
 export type CustodyPayment = Prettify<
@@ -57,6 +59,27 @@ export type Core_XrplOperation_MPTokenAuthorize =
   components["schemas"]["Core_XrplOperation_MPTokenAuthorize"]
 export type CustodyMpTokenAuthorize = Prettify<
   Pick<MPTokenAuthorize, "Account"> & Omit<Core_XrplOperation_MPTokenAuthorize, "type">
+>
+
+// MPTokenIssuanceCreate
+type Core_XrplOperation_MPTokenIssuanceCreate =
+  components["schemas"]["Core_XrplOperation_MPTokenIssuanceCreate"]
+export type CustodyMpTokenIssuanceCreate = Prettify<
+  Pick<MPTokenIssuanceCreate, "Account"> & Omit<Core_XrplOperation_MPTokenIssuanceCreate, "type">
+>
+
+// MPTokenIssuanceSet
+type Core_XrplOperation_MPTokenIssuanceSet =
+  components["schemas"]["Core_XrplOperation_MPTokenIssuanceSet"]
+export type CustodyMpTokenIssuanceSet = Prettify<
+  Pick<MPTokenIssuanceSet, "Account"> & Omit<Core_XrplOperation_MPTokenIssuanceSet, "type">
+>
+
+// MPTokenIssuanceDestroy
+type Core_XrplOperation_MPTokenIssuanceDestroy =
+  components["schemas"]["Core_XrplOperation_MPTokenIssuanceDestroy"]
+export type CustodyMpTokenIssuanceDestroy = Prettify<
+  Pick<MPTokenIssuanceDestroy, "Account"> & Omit<Core_XrplOperation_MPTokenIssuanceDestroy, "type">
 >
 
 // OfferCreate

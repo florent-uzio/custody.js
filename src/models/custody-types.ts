@@ -8048,11 +8048,11 @@ export interface components {
     }
     /** @enum {string} */
     Core_WorkflowStepStatus: "Open" | "Approved" | "Failed" | "Rejected"
-    Core_XrplCurrency:
-      | components["schemas"]["Core_XrplCurrency_Currency"]
-      | components["schemas"]["Core_XrplCurrency_MultiPurposeToken"]
-      | components["schemas"]["Core_XrplCurrency_TickerId"]
-    Core_XrplCurrency_Currency: {
+    Core_XrplClawbackCurrency:
+      | components["schemas"]["Core_XrplClawbackCurrency_Currency"]
+      | components["schemas"]["Core_XrplClawbackCurrency_MultiPurposeToken"]
+      | components["schemas"]["Core_XrplClawbackCurrency_TickerId"]
+    Core_XrplClawbackCurrency_Currency: {
       code: string
       issuer: string
       /**
@@ -8061,7 +8061,7 @@ export interface components {
        */
       type: "Currency"
     }
-    Core_XrplCurrency_MultiPurposeToken: {
+    Core_XrplClawbackCurrency_MultiPurposeToken: {
       /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
       issuanceId: string
       /**
@@ -8070,7 +8070,7 @@ export interface components {
        */
       type: "MultiPurposeToken"
     }
-    Core_XrplCurrency_TickerId: {
+    Core_XrplClawbackCurrency_TickerId: {
       /** Format: uuid */
       tickerId: string
       /**
@@ -8103,6 +8103,27 @@ export interface components {
        */
       type: "SpecifiedAdditionalFee"
     }
+    Core_XrplIouCurrency:
+      | components["schemas"]["Core_XrplIouCurrency_Currency"]
+      | components["schemas"]["Core_XrplIouCurrency_TickerId"]
+    Core_XrplIouCurrency_Currency: {
+      code: string
+      issuer: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Currency"
+    }
+    Core_XrplIouCurrency_TickerId: {
+      /** Format: uuid */
+      tickerId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TickerId"
+    }
     Core_XrplMemo: {
       /** @description Hex encoded string. */
       memoData?: string
@@ -8116,6 +8137,9 @@ export interface components {
       | components["schemas"]["Core_XrplOperation_Clawback"]
       | components["schemas"]["Core_XrplOperation_DepositPreauth"]
       | components["schemas"]["Core_XrplOperation_MPTokenAuthorize"]
+      | components["schemas"]["Core_XrplOperation_MPTokenIssuanceCreate"]
+      | components["schemas"]["Core_XrplOperation_MPTokenIssuanceDestroy"]
+      | components["schemas"]["Core_XrplOperation_MPTokenIssuanceSet"]
       | components["schemas"]["Core_XrplOperation_OfferCreate"]
       | components["schemas"]["Core_XrplOperation_Payment"]
       | components["schemas"]["Core_XrplOperation_TrustSet"]
@@ -8131,7 +8155,7 @@ export interface components {
       type: "AccountSet"
     }
     Core_XrplOperation_Clawback: {
-      currency: components["schemas"]["Core_XrplCurrency"]
+      currency: components["schemas"]["Core_XrplClawbackCurrency"]
       holder: components["schemas"]["Core_TransactionDestination"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       value: string
@@ -8154,11 +8178,51 @@ export interface components {
       /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
       issuanceId: string
       flags: components["schemas"]["Core_Xrpl_MPTokenAuthorizeFlag"][]
+      holder?: string
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
        */
       type: "MPTokenAuthorize"
+    }
+    Core_XrplOperation_MPTokenIssuanceCreate: {
+      flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceCreateFlag"][]
+      /** Format: int32 */
+      assetScale?: number
+      /**
+       * Format: int32
+       * @description Transfer fee for MultiPurposeToken, must be from 0 to 50000
+       */
+      transferFee?: number
+      /** @description This field is a unsigned 64bit integer that can store values in range from 0 to 18446744073709551615.It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      maximumAmount?: string
+      /** @description Hex encoded string. */
+      metadata?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceCreate"
+    }
+    Core_XrplOperation_MPTokenIssuanceDestroy: {
+      /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
+      issuanceId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceDestroy"
+    }
+    Core_XrplOperation_MPTokenIssuanceSet: {
+      /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
+      issuanceId: string
+      holder?: string
+      flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceSetFlag"][]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceSet"
     }
     Core_XrplOperation_OfferCreate: {
       flags: components["schemas"]["Core_Xrpl_OfferCreateFlag"][]
@@ -8176,7 +8240,7 @@ export interface components {
       amount: string
       /** Format: int64 */
       destinationTag?: number
-      currency?: components["schemas"]["Core_XrplCurrency"]
+      currency?: components["schemas"]["Core_XrplPaymentCurrency"]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -8192,6 +8256,37 @@ export interface components {
        * @enum {string}
        */
       type: "TrustSet"
+    }
+    Core_XrplPaymentCurrency:
+      | components["schemas"]["Core_XrplPaymentCurrency_Currency"]
+      | components["schemas"]["Core_XrplPaymentCurrency_MultiPurposeToken"]
+      | components["schemas"]["Core_XrplPaymentCurrency_TickerId"]
+    Core_XrplPaymentCurrency_Currency: {
+      code: string
+      issuer: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Currency"
+    }
+    Core_XrplPaymentCurrency_MultiPurposeToken: {
+      /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
+      issuanceId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MultiPurposeToken"
+    }
+    Core_XrplPaymentCurrency_TickerId: {
+      /** Format: uuid */
+      tickerId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TickerId"
     }
     Core_XrplTickerProperties:
       | components["schemas"]["Core_XrplTickerProperties_FungibleToken"]
@@ -8233,7 +8328,7 @@ export interface components {
       | "asfRequireDest"
       | "asfDefaultRipple"
     Core_Xrpl_AssetQuantity: {
-      currency?: components["schemas"]["Core_XrplCurrency"]
+      currency?: components["schemas"]["Core_XrplIouCurrency"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       amount: string
     }
@@ -8243,12 +8338,22 @@ export interface components {
       | components["schemas"]["Core_TransactionDestination_Address"]
       | components["schemas"]["Core_TransactionDestination_Endpoint"]
     Core_Xrpl_LimitAmount: {
-      currency: components["schemas"]["Core_XrplCurrency"]
+      currency: components["schemas"]["Core_XrplIouCurrency"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       value: string
     }
     /** @enum {string} */
     Core_Xrpl_MPTokenAuthorizeFlag: "tfMPTUnauthorize"
+    /** @enum {string} */
+    Core_Xrpl_MPTokenIssuanceCreateFlag:
+      | "tfMPTRequireAuth"
+      | "tfMPTCanClawback"
+      | "tfMPTCanTransfer"
+      | "tfMPTCanEscrow"
+      | "tfMPTCanLock"
+      | "tfMPTCanTrade"
+    /** @enum {string} */
+    Core_Xrpl_MPTokenIssuanceSetFlag: "tfMPTLock" | "tfMPTUnlock"
     /** @enum {string} */
     Core_Xrpl_OfferCreateFlag: "tfImmediateOrCancel" | "tfFillOrKill" | "tfSell"
     /** @enum {string} */

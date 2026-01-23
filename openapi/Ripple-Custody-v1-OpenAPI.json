@@ -21998,28 +21998,28 @@
         "enum": ["Open", "Approved", "Failed", "Rejected"],
         "type": "string"
       },
-      "Core_XrplCurrency": {
+      "Core_XrplClawbackCurrency": {
         "oneOf": [
           {
-            "$ref": "#/components/schemas/Core_XrplCurrency_Currency"
+            "$ref": "#/components/schemas/Core_XrplClawbackCurrency_Currency"
           },
           {
-            "$ref": "#/components/schemas/Core_XrplCurrency_MultiPurposeToken"
+            "$ref": "#/components/schemas/Core_XrplClawbackCurrency_MultiPurposeToken"
           },
           {
-            "$ref": "#/components/schemas/Core_XrplCurrency_TickerId"
+            "$ref": "#/components/schemas/Core_XrplClawbackCurrency_TickerId"
           }
         ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
-            "Currency": "#/components/schemas/Core_XrplCurrency_Currency",
-            "MultiPurposeToken": "#/components/schemas/Core_XrplCurrency_MultiPurposeToken",
-            "TickerId": "#/components/schemas/Core_XrplCurrency_TickerId"
+            "Currency": "#/components/schemas/Core_XrplClawbackCurrency_Currency",
+            "MultiPurposeToken": "#/components/schemas/Core_XrplClawbackCurrency_MultiPurposeToken",
+            "TickerId": "#/components/schemas/Core_XrplClawbackCurrency_TickerId"
           }
         }
       },
-      "Core_XrplCurrency_Currency": {
+      "Core_XrplClawbackCurrency_Currency": {
         "required": ["code", "issuer", "type"],
         "type": "object",
         "properties": {
@@ -22039,7 +22039,7 @@
           }
         }
       },
-      "Core_XrplCurrency_MultiPurposeToken": {
+      "Core_XrplClawbackCurrency_MultiPurposeToken": {
         "required": ["issuanceId", "type"],
         "type": "object",
         "properties": {
@@ -22054,7 +22054,7 @@
           }
         }
       },
-      "Core_XrplCurrency_TickerId": {
+      "Core_XrplClawbackCurrency_TickerId": {
         "required": ["tickerId", "type"],
         "type": "object",
         "properties": {
@@ -22122,6 +22122,57 @@
           }
         }
       },
+      "Core_XrplIouCurrency": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_XrplIouCurrency_Currency"
+          },
+          {
+            "$ref": "#/components/schemas/Core_XrplIouCurrency_TickerId"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Currency": "#/components/schemas/Core_XrplIouCurrency_Currency",
+            "TickerId": "#/components/schemas/Core_XrplIouCurrency_TickerId"
+          }
+        }
+      },
+      "Core_XrplIouCurrency_Currency": {
+        "required": ["code", "issuer", "type"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "issuer": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
+          "type": {
+            "enum": ["Currency"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplIouCurrency_TickerId": {
+        "required": ["tickerId", "type"],
+        "type": "object",
+        "properties": {
+          "tickerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["TickerId"],
+            "type": "string"
+          }
+        }
+      },
       "Core_XrplMemo": {
         "type": "object",
         "properties": {
@@ -22157,6 +22208,15 @@
             "$ref": "#/components/schemas/Core_XrplOperation_MPTokenAuthorize"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceCreate"
+          },
+          {
+            "$ref": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceDestroy"
+          },
+          {
+            "$ref": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceSet"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplOperation_OfferCreate"
           },
           {
@@ -22173,6 +22233,9 @@
             "Clawback": "#/components/schemas/Core_XrplOperation_Clawback",
             "DepositPreauth": "#/components/schemas/Core_XrplOperation_DepositPreauth",
             "MPTokenAuthorize": "#/components/schemas/Core_XrplOperation_MPTokenAuthorize",
+            "MPTokenIssuanceCreate": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceCreate",
+            "MPTokenIssuanceDestroy": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceDestroy",
+            "MPTokenIssuanceSet": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceSet",
             "OfferCreate": "#/components/schemas/Core_XrplOperation_OfferCreate",
             "Payment": "#/components/schemas/Core_XrplOperation_Payment",
             "TrustSet": "#/components/schemas/Core_XrplOperation_TrustSet"
@@ -22204,7 +22267,7 @@
         "type": "object",
         "properties": {
           "currency": {
-            "$ref": "#/components/schemas/Core_XrplCurrency"
+            "$ref": "#/components/schemas/Core_XrplClawbackCurrency"
           },
           "holder": {
             "$ref": "#/components/schemas/Core_TransactionDestination"
@@ -22251,8 +22314,94 @@
               "$ref": "#/components/schemas/Core_Xrpl_MPTokenAuthorizeFlag"
             }
           },
+          "holder": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
           "type": {
             "enum": ["MPTokenAuthorize"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_MPTokenIssuanceCreate": {
+        "required": ["flags", "type"],
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenIssuanceCreateFlag"
+            }
+          },
+          "assetScale": {
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "transferFee": {
+            "maximum": 50000,
+            "minimum": 0,
+            "type": "integer",
+            "description": "Transfer fee for MultiPurposeToken, must be from 0 to 50000",
+            "format": "int32"
+          },
+          "maximumAmount": {
+            "maximum": 18446744073709551615,
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a unsigned 64bit integer that can store values in range from 0 to 18446744073709551615.It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "metadata": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceCreate"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_MPTokenIssuanceDestroy": {
+        "required": ["issuanceId", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceDestroy"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_MPTokenIssuanceSet": {
+        "required": ["issuanceId", "flags", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "holder": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenIssuanceSetFlag"
+            }
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceSet"],
             "type": "string"
           }
         }
@@ -22298,7 +22447,7 @@
             "format": "int64"
           },
           "currency": {
-            "$ref": "#/components/schemas/Core_XrplCurrency"
+            "$ref": "#/components/schemas/Core_XrplPaymentCurrency"
           },
           "type": {
             "enum": ["Payment"],
@@ -22324,6 +22473,76 @@
           },
           "type": {
             "enum": ["TrustSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplPaymentCurrency": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_XrplPaymentCurrency_Currency"
+          },
+          {
+            "$ref": "#/components/schemas/Core_XrplPaymentCurrency_MultiPurposeToken"
+          },
+          {
+            "$ref": "#/components/schemas/Core_XrplPaymentCurrency_TickerId"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Currency": "#/components/schemas/Core_XrplPaymentCurrency_Currency",
+            "MultiPurposeToken": "#/components/schemas/Core_XrplPaymentCurrency_MultiPurposeToken",
+            "TickerId": "#/components/schemas/Core_XrplPaymentCurrency_TickerId"
+          }
+        }
+      },
+      "Core_XrplPaymentCurrency_Currency": {
+        "required": ["code", "issuer", "type"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "issuer": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
+          "type": {
+            "enum": ["Currency"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplPaymentCurrency_MultiPurposeToken": {
+        "required": ["issuanceId", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "type": {
+            "enum": ["MultiPurposeToken"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplPaymentCurrency_TickerId": {
+        "required": ["tickerId", "type"],
+        "type": "object",
+        "properties": {
+          "tickerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["TickerId"],
             "type": "string"
           }
         }
@@ -22412,7 +22631,7 @@
         "type": "object",
         "properties": {
           "currency": {
-            "$ref": "#/components/schemas/Core_XrplCurrency"
+            "$ref": "#/components/schemas/Core_XrplIouCurrency"
           },
           "amount": {
             "minimum": 0,
@@ -22448,7 +22667,7 @@
         "type": "object",
         "properties": {
           "currency": {
-            "$ref": "#/components/schemas/Core_XrplCurrency"
+            "$ref": "#/components/schemas/Core_XrplIouCurrency"
           },
           "value": {
             "minimum": 0,
@@ -22459,6 +22678,21 @@
       },
       "Core_Xrpl_MPTokenAuthorizeFlag": {
         "enum": ["tfMPTUnauthorize"],
+        "type": "string"
+      },
+      "Core_Xrpl_MPTokenIssuanceCreateFlag": {
+        "enum": [
+          "tfMPTRequireAuth",
+          "tfMPTCanClawback",
+          "tfMPTCanTransfer",
+          "tfMPTCanEscrow",
+          "tfMPTCanLock",
+          "tfMPTCanTrade"
+        ],
+        "type": "string"
+      },
+      "Core_Xrpl_MPTokenIssuanceSetFlag": {
+        "enum": ["tfMPTLock", "tfMPTUnlock"],
         "type": "string"
       },
       "Core_Xrpl_OfferCreateFlag": {

@@ -149,6 +149,9 @@ import {
   type CustodyClawback,
   type CustodyDepositPreauth,
   type CustodyMpTokenAuthorize,
+  type CustodyMpTokenIssuanceCreate,
+  type CustodyMpTokenIssuanceDestroy,
+  type CustodyMpTokenIssuanceSet,
   type CustodyOfferCreate,
   type CustodyPayment,
   type CustodyTrustline,
@@ -837,6 +840,39 @@ export class RippleCustody {
       params: CustodyClawback,
       options?: XrplIntentOptions,
     ): Promise<Core_IntentResponse> => this.xrplService.clawback(params, options),
+
+    /**
+     * Create an XRPL MPTokenIssuanceCreate.
+     * @param params - The MPTokenIssuanceCreate transaction details
+     * @param options - Optional configuration for the MPTokenIssuanceCreate intent
+     * @returns The proposed intent response
+     */
+    mpTokenIssuanceCreate: async (
+      params: CustodyMpTokenIssuanceCreate,
+      options?: XrplIntentOptions,
+    ): Promise<Core_IntentResponse> => this.xrplService.mpTokenIssuanceCreate(params, options),
+
+    /**
+     * Create an XRPL MPTokenIssuanceSet.
+     * @param params - The MPTokenIssuanceSet transaction details
+     * @param options - Optional configuration for the MPTokenIssuanceSet intent
+     * @returns The proposed intent response
+     */
+    mpTokenIssuanceSet: async (
+      params: CustodyMpTokenIssuanceSet,
+      options?: XrplIntentOptions,
+    ): Promise<Core_IntentResponse> => this.xrplService.mpTokenIssuanceSet(params, options),
+
+    /**
+     * Create an XRPL MPTokenIssuanceDestroy.
+     * @param params - The MPTokenIssuanceDestroy transaction details
+     * @param options - Optional configuration for the MPTokenIssuanceDestroy intent
+     * @returns The proposed intent response
+     */
+    mpTokenIssuanceDestroy: async (
+      params: CustodyMpTokenIssuanceDestroy,
+      options?: XrplIntentOptions,
+    ): Promise<Core_IntentResponse> => this.xrplService.mpTokenIssuanceDestroy(params, options),
 
     /**
      * Create an XRPL MPTokenAuthorize.
