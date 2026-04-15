@@ -21,6 +21,7 @@ import {
   type Core_XrplOperation,
   type RawSignAndWaitOptions,
   type RawSignAndWaitResult,
+  type RawSignInnerBatchAndWaitResult,
   type RawSignInnerBatchOptions,
   type XrplIntentOptions,
 } from "./services/xrpl/index.js"
@@ -160,7 +161,7 @@ export class RippleCustody {
       batch: Batch,
       signerAddress: string,
       options?: RawSignInnerBatchOptions,
-    ): Promise<RawSignAndWaitResult> =>
+    ): Promise<RawSignInnerBatchAndWaitResult> =>
       this.xrplService.rawSignInnerBatchAndWait(batch, signerAddress, options),
 
     /**
