@@ -18,6 +18,7 @@ import type {
   IntentContext,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
+  RawSignInnerBatchAndWaitResult,
   RawSignInnerBatchOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
@@ -208,7 +209,7 @@ export class XrplService {
     batch: Batch,
     signerAddress: string,
     options: RawSignInnerBatchOptions = {},
-  ): Promise<RawSignAndWaitResult> {
+  ): Promise<RawSignInnerBatchAndWaitResult> {
     this.validateBatchSigner(batch, signerAddress)
 
     const context = await this.resolveInnerBatchContext(signerAddress, options)
@@ -229,7 +230,22 @@ export class XrplService {
       options.polling,
     )
 
-    return { signature, signingPubKey }
+    return {
+      signature,
+      signingPubKey,
+      batchSigner: {
+        BatchSigner: {
+          Account: signerAddress,
+          SigningPubKey: signingPubKey,
+          TxnSignature: signature,
+        },
+      },
+      custodyBatchSigner: {
+        account: signerAddress,
+        signingPubKey,
+        txnSignature: signature,
+      },
+    }
   }
 
   /**

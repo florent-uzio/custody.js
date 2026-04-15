@@ -843,6 +843,22 @@ describe("XrplService", () => {
 
       expect(result.signature).toBe("AABBCCDD")
       expect(result.signingPubKey).toBe(expectedCompressedKey)
+
+      // xrpl.js BatchSigner format
+      expect(result.batchSigner).toEqual({
+        BatchSigner: {
+          Account: mockAddress,
+          SigningPubKey: expectedCompressedKey,
+          TxnSignature: "AABBCCDD",
+        },
+      })
+
+      // Ripple Custody format
+      expect(result.custodyBatchSigner).toEqual({
+        account: mockAddress,
+        signingPubKey: expectedCompressedKey,
+        txnSignature: "AABBCCDD",
+      })
     })
 
     it("should throw CustodyError on timeout", async () => {
