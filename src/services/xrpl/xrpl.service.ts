@@ -349,6 +349,8 @@ export class XrplService {
 
   /**
    * Polls the manifest until a signature is available, then returns it as uppercase hex.
+   * Handles both the manifest not existing yet (404) and the manifest existing
+   * but not yet having a signature.
    * @private
    */
   private async waitForManifestSignature(
@@ -357,26 +359,22 @@ export class XrplService {
     manifestId: string,
     options: WaitForSignatureOptions = {},
   ): Promise<string> {
-    const {
-      maxRetries = 10,
-      intervalMs = 3000,
-      notFoundRetries = 3,
-      notFoundIntervalMs = 1000,
-      onAttempt,
-    } = options
+    const { maxRetries = 3, intervalMs = 3000, onAttempt } = options
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       onAttempt?.(attempt)
 
-      const manifest = await this.getManifestWithRetry(
-        { domainId, accountId, manifestId },
-        notFoundRetries,
-        notFoundIntervalMs,
-      )
+      try {
+        const manifest = await this.ports.getManifest(domainId, accountId, manifestId)
 
-      const { value } = manifest.data
-      if (value && value.type === "Unsafe") {
-        return Buffer.from(value.signature, "base64").toString("hex").toUpperCase()
+        const { value } = manifest.data
+        if (value && value.type === "Unsafe") {
+          return Buffer.from(value.signature, "base64").toString("hex").toUpperCase()
+        }
+      } catch (error) {
+        if (!(error instanceof CustodyError && error.statusCode === 404)) {
+          throw error
+        }
       }
 
       if (attempt < maxRetries) {
@@ -387,35 +385,6 @@ export class XrplService {
     throw new CustodyError({
       reason: "Manifest signature not available after maximum retries",
     })
-  }
-
-  /**
-   * Fetches a manifest with retry logic for 404 errors.
-   * @private
-   */
-  private async getManifestWithRetry(
-    params: { domainId: string; accountId: string; manifestId: string },
-    maxRetries: number,
-    intervalMs: number,
-  ) {
-    let lastError: Error | undefined
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await this.ports.getManifest(params.domainId, params.accountId, params.manifestId)
-      } catch (error) {
-        if (error instanceof CustodyError && error.statusCode === 404) {
-          lastError = error
-          if (attempt < maxRetries) {
-            await sleep(intervalMs)
-          }
-          continue
-        }
-        throw error
-      }
-    }
-
-    throw lastError
   }
 
   /**
