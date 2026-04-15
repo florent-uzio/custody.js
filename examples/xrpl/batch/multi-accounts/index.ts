@@ -12,8 +12,8 @@ import { rawTransactionsToInnerTransactions, RippleCustody } from "../../../../s
  * 5. Convert inner transactions and batch signers to the Custody API format
  * 6. Propose the Batch intent to Ripple Custody for submission
  *
- * In this example, ACCOUNT_2 and ACCOUNT_3 are the inner signers (they each
- * have a transaction inside the batch), while ACCOUNT_4 is the batch submitter.
+ * In this example, ACCOUNT_1 and ACCOUNT_2 are the inner signers (they each
+ * have a transaction inside the batch), while ACCOUNT_3 is the batch submitter.
  */
 const submitMultiAccountBatch = async () => {
   try {
