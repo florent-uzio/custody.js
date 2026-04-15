@@ -741,7 +741,7 @@ describe("XrplService", () => {
 
       const tx = { ...mockXrplTransaction, SigningPubKey: "PK" }
       const result = await service.rawSignAndWait(tx, {
-        polling: { maxRetries: 1, intervalMs: 0, notFoundRetries: 2, notFoundIntervalMs: 0 },
+        polling: { maxRetries: 2, intervalMs: 0 },
       })
 
       expect(result.signature).toBe("AABBCCDD")

@@ -167,14 +167,10 @@ export type BuildTransactionIntentProps = {
  * Options for polling the manifest signature after a raw sign intent.
  */
 export type WaitForSignatureOptions = {
-  /** Maximum number of polling attempts (default: 10) */
+  /** Maximum number of polling attempts (default: 3) */
   maxRetries?: number
   /** Interval between polling attempts in milliseconds (default: 3000) */
   intervalMs?: number
-  /** Maximum retries when manifest returns 404 (default: 3) */
-  notFoundRetries?: number
-  /** Interval between 404 retries in milliseconds (default: 1000) */
-  notFoundIntervalMs?: number
   /** Callback on each polling attempt */
   onAttempt?: (attempt: number) => void
 }
