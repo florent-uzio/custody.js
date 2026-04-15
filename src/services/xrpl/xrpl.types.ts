@@ -1,6 +1,7 @@
 import type {
   AccountSet,
   Batch,
+  BatchSigner,
   Clawback,
   DepositPreauth,
   MPTokenAuthorize,
@@ -187,13 +188,24 @@ export type RawSignAndWaitOptions = XrplIntentOptions & {
 }
 
 /**
- * Result of rawSignAndWait / rawSignInnerBatchAndWait.
+ * Result of rawSignAndWait.
  */
 export type RawSignAndWaitResult = {
   /** The signature in uppercase hex */
   signature: string
   /** The compressed secp256k1 public key in uppercase hex */
   signingPubKey: string
+}
+
+/**
+ * Result of rawSignInnerBatchAndWait.
+ * Extends RawSignAndWaitResult with batch signer representations.
+ */
+export type RawSignInnerBatchAndWaitResult = RawSignAndWaitResult & {
+  /** The batch signer in xrpl.js format */
+  batchSigner: BatchSigner
+  /** The batch signer in Ripple Custody API format */
+  custodyBatchSigner: CustodyBatchSigner
 }
 
 type BatchSignerLookup = { accountId?: never; ledgerId?: never }

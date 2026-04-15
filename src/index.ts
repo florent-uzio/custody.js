@@ -189,6 +189,7 @@ export type {
   CustodyTrustline,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
+  RawSignInnerBatchAndWaitResult,
   RawSignInnerBatchOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
