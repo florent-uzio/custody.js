@@ -156,7 +156,7 @@ export class ApiService {
   public async post<T>(url: string, body: any, config?: AxiosRequestConfig): Promise<T> {
     try {
       // Sign the request if signature is missing
-      if (!body.signature || body.signature === "") {
+      if (body && (!body.signature || body.signature === "")) {
         // Canonicalize the request body
         // @ts-expect-error canonicalize works fine but has complex types
         const canonicalizedRequest = canonicalize(body.request)
