@@ -431,6 +431,16 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
         expect((error as CustodyError).message).toBe("Serialization failed")
       }
     })
+
+    it("should skip signing when body is undefined", async () => {
+      const mockResponse = { data: { success: true } }
+      mockAxiosInstance.post.mockResolvedValue(mockResponse)
+
+      const result = await apiService.post("/test-endpoint", undefined)
+
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith("/test-endpoint", undefined, undefined)
+      expect(result).toEqual(mockResponse.data)
+    })
   })
 
   describe("response interceptor (401 retry)", () => {
