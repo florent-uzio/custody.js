@@ -1,5 +1,13 @@
 # custody
 
+## 1.1.2
+
+### Patch Changes
+
+- 6b6a587: fix: guard against undefined body in `ApiService.post()` signature check
+
+  POST requests with no body (e.g. `userInvitations.complete`, `cancel`, `renew`) crashed with `Cannot read properties of undefined (reading 'signature')` because the signing logic accessed `body.signature` without a null check.
+
 ## 1.1.1
 
 ### Patch Changes
