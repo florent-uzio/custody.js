@@ -118,8 +118,7 @@ export function createAccounts(t: TypedTransport) {
 
     getComplianceConfiguration: (
       params: GetComplianceConfigurationPathParams,
-    ): Promise<Core_ComplianceConfiguration> =>
-      t.get(URLs.accountComplianceConfiguration, params),
+    ): Promise<Core_ComplianceConfiguration> => t.get(URLs.accountComplianceConfiguration, params),
 
     upsertComplianceConfiguration: (
       params: UpsertComplianceConfigurationPathParams,
