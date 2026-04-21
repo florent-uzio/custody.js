@@ -7,7 +7,7 @@
       "url": "images/ripple-custody.png",
       "altText": "Ripple Custody logo"
     },
-    "x-app-version": "1.32.4"
+    "x-app-version": "1.34.1"
   },
   "paths": {
     "/v1/backups/{backupId}": {
@@ -1726,6 +1726,250 @@
         ]
       }
     },
+    "/v1/domains/{domainId}/compliance-configurations": {
+      "get": {
+        "tags": ["Accounts"],
+        "summary": "List compliance configurations for all accounts in a domain",
+        "operationId": "listComplianceConfigurations",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "description": "Unique identifier for the domain.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of entities to return.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "startingAfter",
+            "in": "query",
+            "description": "Entity id used to the determine beginning of query results.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ComplianceConfigurationsCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "One of: Domain locked (DomainLockedError); Requester locked (RequesterLockedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/accounts/{accountId}/compliance-configuration": {
+      "get": {
+        "tags": ["Accounts"],
+        "summary": "Get compliance configuration for an account",
+        "operationId": "getComplianceConfiguration",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "description": "Unique identifier for the domain.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ComplianceConfiguration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "One of: Domain locked (DomainLockedError); Requester locked (RequesterLockedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": ["Accounts"],
+        "summary": "Create or update compliance configuration for an account",
+        "operationId": "upsertComplianceConfiguration",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "description": "Unique identifier for the domain.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Core_UpsertComplianceConfigurationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ComplianceConfiguration"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "One of: Domain locked (DomainLockedError); Invalid request (InvalidRequestError); Requester locked (RequesterLockedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
     "/v1/domains/{domainId}/accounts/{accountId}": {
       "get": {
         "tags": ["Accounts"],
@@ -2641,7 +2885,7 @@
           {
             "name": "ledgerId",
             "in": "query",
-            "description": "Updates only balances with the given ledger id. Reduces execution time.",
+            "description": "Updates only balances for native and validated tickers with the given ledger id. Non-validated token tickers are excluded. Reduces execution time.",
             "schema": {
               "minLength": 1,
               "type": "string"
@@ -3378,11 +3622,21 @@
           {
             "name": "quarantined",
             "in": "query",
-            "description": "Return entities matching given quarantined status.",
+            "description": "Deprecated: use quarantineStatus instead. Return entities matching given quarantined status.",
+            "deprecated": true,
             "schema": {
               "type": "boolean"
             },
             "example": "true"
+          },
+          {
+            "name": "quarantineStatus",
+            "in": "query",
+            "description": "Return entities matching given quarantine status. Values: Quarantined, Released, Skipped.",
+            "schema": {
+              "$ref": "#/components/schemas/Core_QuarantineStatus"
+            },
+            "example": "Quarantined"
           },
           {
             "name": "kind",
@@ -9639,6 +9893,227 @@
         ]
       }
     },
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/relationships": {
+      "post": {
+        "tags": ["Compliance"],
+        "summary": "Create a relationship with the travel rule provider",
+        "description": "Pass-through proxy API to create a relationship with the travel rule provider (e.g., Notabene)",
+        "operationId": "CreateRelationship",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["NOTABENE"],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_CreateRelationshipRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Relationship created successfully"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": ["Compliance"],
+        "summary": "List all relationships registered with the travel rule provider",
+        "description": "Pass-through proxy API to list all relationships from the travel rule provider (e.g., Notabene)",
+        "operationId": "ListRelationships",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": ["NOTABENE"],
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Filter by 'from' DID (Decentralized Identifier)",
+            "schema": {
+              "pattern": "^did:[a-z0-9]+:.+$",
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Filter by 'to' DID (Decentralized Identifier)",
+            "schema": {
+              "pattern": "^did:[a-z0-9]+:.+$",
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "custodian",
+            "in": "query",
+            "description": "Filter by custodian DID (Decentralized Identifier)",
+            "schema": {
+              "pattern": "^did:[a-z0-9]+:.+$",
+              "type": "string",
+              "format": "did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relationships retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_RelationshipList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": []
+          }
+        ]
+      }
+    },
     "/v1/domains/{domainId}/channels": {
       "get": {
         "tags": ["Event Distribution Service"],
@@ -10982,43 +11457,6 @@
           }
         }
       },
-      "Core_ApiBatchInnerTransactionMeta": {
-        "required": ["index", "account", "operationType", "role"],
-        "type": "object",
-        "properties": {
-          "index": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "account": {
-            "type": "string"
-          },
-          "operationType": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          }
-        }
-      },
-      "Core_ApiBatchSigningData": {
-        "required": ["signingPayloadHex", "signingPayloadHashHex", "innerTransactions"],
-        "type": "object",
-        "properties": {
-          "signingPayloadHex": {
-            "type": "string"
-          },
-          "signingPayloadHashHex": {
-            "type": "string"
-          },
-          "innerTransactions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Core_ApiBatchInnerTransactionMeta"
-            }
-          }
-        }
-      },
       "Core_ApiBroadcastingTransactionProcessingHint": {
         "enum": [
           "CurrentlyFeesTooSmall",
@@ -11436,7 +11874,11 @@
             "format": "uuid"
           },
           "quarantined": {
-            "type": "boolean"
+            "type": "boolean",
+            "deprecated": true
+          },
+          "quarantineStatus": {
+            "$ref": "#/components/schemas/Core_QuarantineStatus"
           },
           "senders": {
             "type": "array",
@@ -11880,45 +12322,6 @@
           }
         }
       },
-      "Core_BatchInnerTransaction": {
-        "required": ["operation", "account"],
-        "type": "object",
-        "properties": {
-          "operation": {
-            "$ref": "#/components/schemas/Core_XrplOperation"
-          },
-          "account": {
-            "type": "string"
-          },
-          "sequence": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "ticketSequence": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      },
-      "Core_BatchSigner": {
-        "required": ["account", "signingPubKey", "txnSignature"],
-        "type": "object",
-        "properties": {
-          "account": {
-            "type": "string"
-          },
-          "signingPubKey": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "txnSignature": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          }
-        }
-      },
       "Core_BitcoinFee": {
         "required": ["satoshiPerVbyte"],
         "type": "object",
@@ -12282,6 +12685,72 @@
         "properties": {
           "type": {
             "enum": ["Native"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_ComplianceConfiguration": {
+        "required": ["accountId", "domainId", "skipQuarantineFrom", "metadata"],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "skipQuarantineFrom": {
+            "$ref": "#/components/schemas/Core_SkipQuarantineScope"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Core_EntityMetadata"
+          }
+        }
+      },
+      "Core_ComplianceConfigurationUpdated": {
+        "required": ["accountReference", "skipQuarantineFrom", "revision", "type"],
+        "type": "object",
+        "properties": {
+          "accountReference": {
+            "$ref": "#/components/schemas/Core_AccountReference"
+          },
+          "skipQuarantineFrom": {
+            "$ref": "#/components/schemas/Core_SkipQuarantineScope"
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64"
+          },
+          "modifiedBy": {
+            "$ref": "#/components/schemas/Core_UserReference"
+          },
+          "type": {
+            "enum": ["ComplianceConfigurationUpdated"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_ComplianceConfigurationsCollection": {
+        "required": ["items", "count"],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_ComplianceConfiguration"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentStartingAfter": {
+            "type": "string"
+          },
+          "nextStartingAfter": {
             "type": "string"
           }
         }
@@ -13539,6 +14008,9 @@
             "$ref": "#/components/schemas/Core_BalancesUpdated"
           },
           {
+            "$ref": "#/components/schemas/Core_ComplianceConfigurationUpdated"
+          },
+          {
             "$ref": "#/components/schemas/Core_DomainCreated"
           },
           {
@@ -13584,6 +14056,12 @@
             "$ref": "#/components/schemas/Core_PolicyUpdated"
           },
           {
+            "$ref": "#/components/schemas/Core_QuarantineApplied"
+          },
+          {
+            "$ref": "#/components/schemas/Core_QuarantineSkipped"
+          },
+          {
             "$ref": "#/components/schemas/Core_SystemPropertySet"
           },
           {
@@ -13620,6 +14098,12 @@
             "$ref": "#/components/schemas/Core_VaultCreated"
           },
           {
+            "$ref": "#/components/schemas/Core_VaultKeyMaterialRewrapCompleted"
+          },
+          {
+            "$ref": "#/components/schemas/Core_VaultKeyMaterialRewrapFailed"
+          },
+          {
             "$ref": "#/components/schemas/Core_VaultUpdated"
           }
         ],
@@ -13632,6 +14116,7 @@
             "BackupCreated": "#/components/schemas/Core_BackupCreated",
             "BackupUpdated": "#/components/schemas/Core_BackupUpdated",
             "BalancesUpdated": "#/components/schemas/Core_BalancesUpdated",
+            "ComplianceConfigurationUpdated": "#/components/schemas/Core_ComplianceConfigurationUpdated",
             "DomainCreated": "#/components/schemas/Core_DomainCreated",
             "DomainUpdated": "#/components/schemas/Core_DomainUpdated",
             "EndpointCreated": "#/components/schemas/Core_EndpointCreated",
@@ -13647,6 +14132,8 @@
             "ManifestUpdated": "#/components/schemas/Core_ManifestUpdated",
             "PolicyCreated": "#/components/schemas/Core_PolicyCreated",
             "PolicyUpdated": "#/components/schemas/Core_PolicyUpdated",
+            "QuarantineApplied": "#/components/schemas/Core_QuarantineApplied",
+            "QuarantineSkipped": "#/components/schemas/Core_QuarantineSkipped",
             "SystemPropertySet": "#/components/schemas/Core_SystemPropertySet",
             "TickerCreated": "#/components/schemas/Core_TickerCreated",
             "TickerUpdated": "#/components/schemas/Core_TickerUpdated",
@@ -13659,6 +14146,8 @@
             "UserCreated": "#/components/schemas/Core_UserCreated",
             "UserUpdated": "#/components/schemas/Core_UserUpdated",
             "VaultCreated": "#/components/schemas/Core_VaultCreated",
+            "VaultKeyMaterialRewrapCompleted": "#/components/schemas/Core_VaultKeyMaterialRewrapCompleted",
+            "VaultKeyMaterialRewrapFailed": "#/components/schemas/Core_VaultKeyMaterialRewrapFailed",
             "VaultUpdated": "#/components/schemas/Core_VaultUpdated"
           }
         }
@@ -14042,6 +14531,9 @@
             "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_ReleaseQuarantinedTransfers"
           },
           {
+            "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_RewrapVaultKeyMaterial"
+          },
+          {
             "$ref": "#/components/schemas/Core_IntentDryRunResponse_v0_SetSystemProperty"
           },
           {
@@ -14128,6 +14620,7 @@
             "v0_MigrateSilo3AccountBatch": "#/components/schemas/Core_IntentDryRunResponse_v0_MigrateSilo3AccountBatch",
             "v0_NotarizeData": "#/components/schemas/Core_IntentDryRunResponse_v0_NotarizeData",
             "v0_ReleaseQuarantinedTransfers": "#/components/schemas/Core_IntentDryRunResponse_v0_ReleaseQuarantinedTransfers",
+            "v0_RewrapVaultKeyMaterial": "#/components/schemas/Core_IntentDryRunResponse_v0_RewrapVaultKeyMaterial",
             "v0_SetSystemProperty": "#/components/schemas/Core_IntentDryRunResponse_v0_SetSystemProperty",
             "v0_SignManifest": "#/components/schemas/Core_IntentDryRunResponse_v0_SignManifest",
             "v0_UnlockAccount": "#/components/schemas/Core_IntentDryRunResponse_v0_UnlockAccount",
@@ -14688,6 +15181,26 @@
           }
         }
       },
+      "Core_IntentDryRunResponse_v0_RewrapVaultKeyMaterial": {
+        "required": ["success", "type"],
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "errors": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "enum": ["v0_RewrapVaultKeyMaterial"],
+            "type": "string"
+          }
+        }
+      },
       "Core_IntentDryRunResponse_v0_SetSystemProperty": {
         "required": ["success", "type"],
         "type": "object",
@@ -15206,6 +15719,7 @@
           "v0_UpdateVault",
           "v0_UnlockVault",
           "v0_LockVault",
+          "v0_RewrapVaultKeyMaterial",
           "v0_UnlockTicker",
           "v0_LockTicker",
           "v0_CreateEndpoint",
@@ -15978,6 +16492,9 @@
             "$ref": "#/components/schemas/Core_ManifestProcessingDetails_Completed"
           },
           {
+            "$ref": "#/components/schemas/Core_ManifestProcessingDetails_Failed"
+          },
+          {
             "$ref": "#/components/schemas/Core_ManifestProcessingDetails_Pending"
           },
           {
@@ -15988,6 +16505,7 @@
           "propertyName": "type",
           "mapping": {
             "Completed": "#/components/schemas/Core_ManifestProcessingDetails_Completed",
+            "Failed": "#/components/schemas/Core_ManifestProcessingDetails_Failed",
             "Pending": "#/components/schemas/Core_ManifestProcessingDetails_Pending",
             "Preparing": "#/components/schemas/Core_ManifestProcessingDetails_Preparing"
           }
@@ -15999,6 +16517,16 @@
         "properties": {
           "type": {
             "enum": ["Completed"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_ManifestProcessingDetails_Failed": {
+        "required": ["type"],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": ["Failed"],
             "type": "string"
           }
         }
@@ -16024,7 +16552,7 @@
         }
       },
       "Core_ManifestProcessingStatus": {
-        "enum": ["Pending", "Preparing", "Completed"],
+        "enum": ["Pending", "Preparing", "Completed", "Failed"],
         "type": "string"
       },
       "Core_ManifestUpdated": {
@@ -16787,6 +17315,9 @@
             "$ref": "#/components/schemas/Core_v0_ReleaseQuarantinedTransfers"
           },
           {
+            "$ref": "#/components/schemas/Core_v0_RewrapVaultKeyMaterial"
+          },
+          {
             "$ref": "#/components/schemas/Core_v0_SetSystemProperty"
           },
           {
@@ -16873,6 +17404,7 @@
             "v0_MigrateSilo3AccountBatch": "#/components/schemas/Core_v0_MigrateSilo3AccountBatch",
             "v0_NotarizeData": "#/components/schemas/Core_v0_NotarizeData",
             "v0_ReleaseQuarantinedTransfers": "#/components/schemas/Core_v0_ReleaseQuarantinedTransfers",
+            "v0_RewrapVaultKeyMaterial": "#/components/schemas/Core_v0_RewrapVaultKeyMaterial",
             "v0_SetSystemProperty": "#/components/schemas/Core_v0_SetSystemProperty",
             "v0_SignManifest": "#/components/schemas/Core_v0_SignManifest",
             "v0_UnlockAccount": "#/components/schemas/Core_v0_UnlockAccount",
@@ -16928,6 +17460,38 @@
             "type": "string"
           }
         }
+      },
+      "Core_QuarantineApplied": {
+        "required": ["transferId", "type"],
+        "type": "object",
+        "properties": {
+          "transferId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["QuarantineApplied"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_QuarantineSkipped": {
+        "required": ["transferId", "type"],
+        "type": "object",
+        "properties": {
+          "transferId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["QuarantineSkipped"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_QuarantineStatus": {
+        "enum": ["Quarantined", "Released", "Skipped"],
+        "type": "string"
       },
       "Core_ReadAccess": {
         "required": [
@@ -17379,6 +17943,10 @@
             "type": "string"
           }
         }
+      },
+      "Core_SkipQuarantineScope": {
+        "enum": ["None", "Domain", "Instance"],
+        "type": "string"
       },
       "Core_SolanaFeeStrategy": {
         "oneOf": [
@@ -19695,9 +20263,6 @@
             "type": "string",
             "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
           },
-          "batchSigningData": {
-            "$ref": "#/components/schemas/Core_ApiBatchSigningData"
-          },
           "type": {
             "enum": ["XRPL"],
             "type": "string"
@@ -21045,6 +21610,20 @@
           }
         }
       },
+      "Core_UpsertComplianceConfigurationRequest": {
+        "required": ["skipQuarantineFrom", "revision"],
+        "type": "object",
+        "properties": {
+          "skipQuarantineFrom": {
+            "$ref": "#/components/schemas/Core_SkipQuarantineScope"
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "Core_User": {
         "required": ["id", "domainId", "alias", "publicKey", "roles", "lock", "metadata"],
         "type": "object",
@@ -21186,6 +21765,9 @@
             "$ref": "#/components/schemas/Core_v0_ReleaseQuarantinedTransfers"
           },
           {
+            "$ref": "#/components/schemas/Core_v0_RewrapVaultKeyMaterial"
+          },
+          {
             "$ref": "#/components/schemas/Core_v0_SetSystemProperty"
           },
           {
@@ -21272,6 +21854,7 @@
             "v0_MigrateSilo3AccountBatch": "#/components/schemas/Core_v0_MigrateSilo3AccountBatch",
             "v0_NotarizeData": "#/components/schemas/Core_v0_NotarizeData",
             "v0_ReleaseQuarantinedTransfers": "#/components/schemas/Core_v0_ReleaseQuarantinedTransfers",
+            "v0_RewrapVaultKeyMaterial": "#/components/schemas/Core_v0_RewrapVaultKeyMaterial",
             "v0_SetSystemProperty": "#/components/schemas/Core_v0_SetSystemProperty",
             "v0_SignManifest": "#/components/schemas/Core_v0_SignManifest",
             "v0_UnlockAccount": "#/components/schemas/Core_v0_UnlockAccount",
@@ -21340,6 +21923,7 @@
           "UnsupportedAccountKeyStrategy",
           "VaultNotFound",
           "VaultLocked",
+          "VaultHasRandomKeyAccounts",
           "VaultNotReady",
           "InvalidDestination",
           "InvalidTransactionOrderState",
@@ -21700,6 +22284,34 @@
             "format": "base64"
           },
           "hash": {
+            "type": "string"
+          }
+        }
+      },
+      "Core_VaultKeyMaterialRewrapCompleted": {
+        "required": ["id", "type"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["VaultKeyMaterialRewrapCompleted"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_VaultKeyMaterialRewrapFailed": {
+        "required": ["id", "type"],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["VaultKeyMaterialRewrapFailed"],
             "type": "string"
           }
         }
@@ -22200,9 +22812,6 @@
             "$ref": "#/components/schemas/Core_XrplOperation_AccountSet"
           },
           {
-            "$ref": "#/components/schemas/Core_XrplOperation_Batch"
-          },
-          {
             "$ref": "#/components/schemas/Core_XrplOperation_Clawback"
           },
           {
@@ -22230,9 +22839,6 @@
             "$ref": "#/components/schemas/Core_XrplOperation_Payment"
           },
           {
-            "$ref": "#/components/schemas/Core_XrplOperation_TicketCreate"
-          },
-          {
             "$ref": "#/components/schemas/Core_XrplOperation_TrustSet"
           }
         ],
@@ -22240,7 +22846,6 @@
           "propertyName": "type",
           "mapping": {
             "AccountSet": "#/components/schemas/Core_XrplOperation_AccountSet",
-            "Batch": "#/components/schemas/Core_XrplOperation_Batch",
             "Clawback": "#/components/schemas/Core_XrplOperation_Clawback",
             "DepositPreauth": "#/components/schemas/Core_XrplOperation_DepositPreauth",
             "EscrowFinish": "#/components/schemas/Core_XrplOperation_EscrowFinish",
@@ -22250,7 +22855,6 @@
             "MPTokenIssuanceSet": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceSet",
             "OfferCreate": "#/components/schemas/Core_XrplOperation_OfferCreate",
             "Payment": "#/components/schemas/Core_XrplOperation_Payment",
-            "TicketCreate": "#/components/schemas/Core_XrplOperation_TicketCreate",
             "TrustSet": "#/components/schemas/Core_XrplOperation_TrustSet"
           }
         }
@@ -22271,39 +22875,6 @@
           },
           "type": {
             "enum": ["AccountSet"],
-            "type": "string"
-          }
-        }
-      },
-      "Core_XrplOperation_Batch": {
-        "required": ["executionMode", "innerTransactions", "batchSigners", "type"],
-        "type": "object",
-        "properties": {
-          "executionMode": {
-            "$ref": "#/components/schemas/Core_Xrpl_BatchExecutionMode"
-          },
-          "innerTransactions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Core_BatchInnerTransaction"
-            }
-          },
-          "ticketSequence": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "lastLedgerSequence": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "batchSigners": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Core_BatchSigner"
-            }
-          },
-          "type": {
-            "enum": ["Batch"],
             "type": "string"
           }
         }
@@ -22527,20 +23098,6 @@
           }
         }
       },
-      "Core_XrplOperation_TicketCreate": {
-        "required": ["ticketCount", "type"],
-        "type": "object",
-        "properties": {
-          "ticketCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "type": {
-            "enum": ["TicketCreate"],
-            "type": "string"
-          }
-        }
-      },
       "Core_XrplOperation_TrustSet": {
         "required": ["flags", "limitAmount", "type"],
         "type": "object",
@@ -22725,10 +23282,6 @@
             "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
           }
         }
-      },
-      "Core_Xrpl_BatchExecutionMode": {
-        "enum": ["AllOrNothing", "OnlyOne", "UntilFailure", "Independent"],
-        "type": "string"
       },
       "Core_Xrpl_LimitAmount": {
         "required": ["currency", "value"],
@@ -23621,6 +24174,28 @@
           },
           "type": {
             "enum": ["v0_ReleaseQuarantinedTransfers"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_v0_RewrapVaultKeyMaterial": {
+        "required": ["vaultId", "customProperties", "type"],
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "maxLength": 250,
+            "minLength": 0,
+            "type": "string"
+          },
+          "customProperties": {
+            "$ref": "#/components/schemas/Core_StringsMap"
+          },
+          "type": {
+            "enum": ["v0_RewrapVaultKeyMaterial"],
             "type": "string"
           }
         }
@@ -26728,6 +27303,132 @@
           }
         },
         "description": "Individual travel rule detail for a single request"
+      },
+      "Compliance_CreateRelationshipRequest": {
+        "required": ["to"],
+        "type": "object",
+        "properties": {
+          "from": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "The DID of the source entity. Defaults to the entityDID from the domain credentials.",
+            "format": "did",
+            "example": "did:web:ripple.com:test:us"
+          },
+          "to": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "The DID of the target entity.",
+            "format": "did",
+            "example": "did:web:example.com:test:counterparty"
+          }
+        },
+        "description": "Request to create a relationship with a travel rule provider"
+      },
+      "Compliance_RelationshipList": {
+        "type": "object",
+        "properties": {
+          "relationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_RelationshipWithProofs"
+            },
+            "description": "Array of relationship objects with ownership proofs"
+          }
+        },
+        "description": "List of relationships from the travel rule provider"
+      },
+      "Compliance_RelationshipWithProofs": {
+        "required": ["@id", "from", "to", "status"],
+        "type": "object",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "Unique identifier for the relationship",
+            "example": "urn:uuid:12345678-1234-1234-1234-123456789abc"
+          },
+          "from": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the source entity",
+            "format": "did",
+            "example": "did:web:ripple.com:test:us"
+          },
+          "to": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the target entity",
+            "format": "did",
+            "example": "did:web:example.com:test:counterparty"
+          },
+          "custodian": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the custodian entity (optional)",
+            "format": "did",
+            "example": "did:web:custodian.com:test:vault"
+          },
+          "status": {
+            "enum": ["UNCONFIRMED", "CONFIRMED", "REJECTED"],
+            "type": "string",
+            "description": "Current state of the relationship",
+            "example": "CONFIRMED"
+          },
+          "confirmedBy": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the entity that confirmed the relationship",
+            "format": "did",
+            "example": "did:web:example.com:test:counterparty"
+          },
+          "proofs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_OwnershipProof"
+            },
+            "description": "Ownership proofs associated with this relationship"
+          }
+        },
+        "description": "A relationship between two entities with ownership proofs"
+      },
+      "Compliance_OwnershipProof": {
+        "required": ["address", "status"],
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The blockchain address being proven",
+            "example": "0x1234567890abcdef1234567890abcdef12345678"
+          },
+          "chain": {
+            "type": "string",
+            "description": "The blockchain network",
+            "example": "ethereum"
+          },
+          "status": {
+            "enum": ["PENDING", "CONFIRMED", "VERIFIED", "REJECTED"],
+            "type": "string",
+            "description": "Status of the ownership proof",
+            "example": "VERIFIED"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Cryptographic signature proving ownership",
+            "example": "0xabcdef..."
+          },
+          "message": {
+            "type": "string",
+            "description": "The message that was signed",
+            "example": "I own this address"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "When the proof was created",
+            "format": "date-time",
+            "example": "2026-03-10T14:30:00.0000000+00:00"
+          }
+        },
+        "description": "Proof of ownership for an address or entity"
       },
       "EDS_ChannelCreate": {
         "required": ["createdBy", "id", "name", "supportedEventTypes", "type"],

@@ -9,6 +9,8 @@ import type {
   Core_ApiAccount,
   Core_ApiManifest,
   Core_BalancesCollection,
+  Core_ComplianceConfiguration,
+  Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
@@ -25,9 +27,14 @@ import type {
   GetAddressesPathParams,
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
+  GetComplianceConfigurationPathParams,
   GetManifestPathParams,
   GetManifestsPathParams,
   GetManifestsQueryParams,
+  ListComplianceConfigurationsPathParams,
+  ListComplianceConfigurationsQueryParams,
+  UpsertComplianceConfigurationBody,
+  UpsertComplianceConfigurationPathParams,
 } from "../services/accounts/accounts.types.js"
 import type { TypedTransport } from "../transport/index.js"
 
@@ -102,6 +109,22 @@ export function createAccounts(t: TypedTransport) {
 
     getManifest: (params: GetManifestPathParams): Promise<Core_ApiManifest> =>
       t.get(URLs.accountManifest, params),
+
+    listComplianceConfigurations: (
+      params: ListComplianceConfigurationsPathParams,
+      query?: ListComplianceConfigurationsQueryParams,
+    ): Promise<Core_ComplianceConfigurationsCollection> =>
+      t.get(URLs.complianceConfigurations, params, query),
+
+    getComplianceConfiguration: (
+      params: GetComplianceConfigurationPathParams,
+    ): Promise<Core_ComplianceConfiguration> => t.get(URLs.accountComplianceConfiguration, params),
+
+    upsertComplianceConfiguration: (
+      params: UpsertComplianceConfigurationPathParams,
+      body: UpsertComplianceConfigurationBody,
+    ): Promise<Core_ComplianceConfiguration> =>
+      t.put(URLs.accountComplianceConfiguration, body, params),
 
     findByAddress: (address: string): Promise<AccountReference> => findByAddress(t, address),
   } as const

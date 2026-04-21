@@ -37,6 +37,19 @@ export type GetManifestsQueryParams = operations["getManifests"]["parameters"]["
 
 export type GetManifestPathParams = operations["getManifest"]["parameters"]["path"]
 
+export type ListComplianceConfigurationsPathParams =
+  operations["listComplianceConfigurations"]["parameters"]["path"]
+export type ListComplianceConfigurationsQueryParams =
+  operations["listComplianceConfigurations"]["parameters"]["query"]
+
+export type GetComplianceConfigurationPathParams =
+  operations["getComplianceConfiguration"]["parameters"]["path"]
+
+export type UpsertComplianceConfigurationPathParams =
+  operations["upsertComplianceConfiguration"]["parameters"]["path"]
+export type UpsertComplianceConfigurationBody =
+  operations["upsertComplianceConfiguration"]["requestBody"]["content"]["application/json"]
+
 // Response types
 
 export type Core_AccountsCollection =
@@ -62,6 +75,12 @@ export type Core_ManifestsCollection =
 
 export type Core_ApiManifest =
   operations["getManifest"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_ComplianceConfigurationsCollection =
+  operations["listComplianceConfigurations"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_ComplianceConfiguration =
+  operations["getComplianceConfiguration"]["responses"]["200"]["content"]["application/json"]
 
 /**
  * Account reference found by address lookup.

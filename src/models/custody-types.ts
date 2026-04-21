@@ -259,6 +259,41 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/domains/{domainId}/compliance-configurations": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List compliance configurations for all accounts in a domain */
+    get: operations["listComplianceConfigurations"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/accounts/{accountId}/compliance-configuration": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get compliance configuration for an account */
+    get: operations["getComplianceConfiguration"]
+    /** Create or update compliance configuration for an account */
+    put: operations["upsertComplianceConfiguration"]
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/v1/domains/{domainId}/accounts/{accountId}": {
     parameters: {
       query?: never
@@ -2385,6 +2420,30 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/relationships": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List all relationships registered with the travel rule provider
+     * @description Pass-through proxy API to list all relationships from the travel rule provider (e.g., Notabene)
+     */
+    get: operations["ListRelationships"]
+    put?: never
+    /**
+     * Create a relationship with the travel rule provider
+     * @description Pass-through proxy API to create a relationship with the travel rule provider (e.g., Notabene)
+     */
+    post: operations["CreateRelationship"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/v1/domains/{domainId}/channels": {
     parameters: {
       query?: never
@@ -2948,18 +3007,6 @@ export interface components {
        */
       type: "VaultMPC"
     }
-    Core_ApiBatchInnerTransactionMeta: {
-      /** Format: int32 */
-      index: number
-      account: string
-      operationType: string
-      role: string
-    }
-    Core_ApiBatchSigningData: {
-      signingPayloadHex: string
-      signingPayloadHashHex: string
-      innerTransactions: components["schemas"]["Core_ApiBatchInnerTransactionMeta"][]
-    }
     /** @enum {string} */
     Core_ApiBroadcastingTransactionProcessingHint:
       | "CurrentlyFeesTooSmall"
@@ -3167,7 +3214,9 @@ export interface components {
       transactionId?: string
       /** Format: uuid */
       tickerId: string
+      /** @deprecated */
       quarantined: boolean
+      quarantineStatus?: components["schemas"]["Core_QuarantineStatus"]
       senders: components["schemas"]["Core_SenderTransferParty"][]
       recipient?: components["schemas"]["Core_RecipientTransferParty"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
@@ -3355,21 +3404,6 @@ export interface components {
        */
       type: "BalancesUpdated"
     }
-    Core_BatchInnerTransaction: {
-      operation: components["schemas"]["Core_XrplOperation"]
-      account: string
-      /** Format: int64 */
-      sequence?: number
-      /** Format: int64 */
-      ticketSequence?: number
-    }
-    Core_BatchSigner: {
-      account: string
-      /** @description Hex encoded string. */
-      signingPubKey: string
-      /** @description Hex encoded string. */
-      txnSignature: string
-    }
     Core_BitcoinFee: {
       /** @description This field is a large decimal and represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       satoshiPerVbyte: string
@@ -3518,6 +3552,33 @@ export interface components {
        * @enum {string}
        */
       type: "Native"
+    }
+    Core_ComplianceConfiguration: {
+      /** Format: uuid */
+      accountId: string
+      /** Format: uuid */
+      domainId: string
+      skipQuarantineFrom: components["schemas"]["Core_SkipQuarantineScope"]
+      metadata: components["schemas"]["Core_EntityMetadata"]
+    }
+    Core_ComplianceConfigurationUpdated: {
+      accountReference: components["schemas"]["Core_AccountReference"]
+      skipQuarantineFrom: components["schemas"]["Core_SkipQuarantineScope"]
+      /** Format: int64 */
+      revision: number
+      modifiedBy?: components["schemas"]["Core_UserReference"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ComplianceConfigurationUpdated"
+    }
+    Core_ComplianceConfigurationsCollection: {
+      items: components["schemas"]["Core_ComplianceConfiguration"][]
+      /** Format: int32 */
+      count: number
+      currentStartingAfter?: string
+      nextStartingAfter?: string
     }
     Core_ContractParameters: components["schemas"]["Core_ContractParameters_Raw"]
     Core_ContractParameters_Raw: {
@@ -3984,6 +4045,7 @@ export interface components {
       | components["schemas"]["Core_BackupCreated"]
       | components["schemas"]["Core_BackupUpdated"]
       | components["schemas"]["Core_BalancesUpdated"]
+      | components["schemas"]["Core_ComplianceConfigurationUpdated"]
       | components["schemas"]["Core_DomainCreated"]
       | components["schemas"]["Core_DomainUpdated"]
       | components["schemas"]["Core_EndpointCreated"]
@@ -3999,6 +4061,8 @@ export interface components {
       | components["schemas"]["Core_ManifestUpdated"]
       | components["schemas"]["Core_PolicyCreated"]
       | components["schemas"]["Core_PolicyUpdated"]
+      | components["schemas"]["Core_QuarantineApplied"]
+      | components["schemas"]["Core_QuarantineSkipped"]
       | components["schemas"]["Core_SystemPropertySet"]
       | components["schemas"]["Core_TickerCreated"]
       | components["schemas"]["Core_TickerUpdated"]
@@ -4011,6 +4075,8 @@ export interface components {
       | components["schemas"]["Core_UserCreated"]
       | components["schemas"]["Core_UserUpdated"]
       | components["schemas"]["Core_VaultCreated"]
+      | components["schemas"]["Core_VaultKeyMaterialRewrapCompleted"]
+      | components["schemas"]["Core_VaultKeyMaterialRewrapFailed"]
       | components["schemas"]["Core_VaultUpdated"]
     Core_HederaFeeStrategy: components["schemas"]["Core_HederaFeeStrategy_Priority"]
     Core_HederaFeeStrategy_Priority: {
@@ -4164,6 +4230,7 @@ export interface components {
       | components["schemas"]["Core_IntentDryRunResponse_v0_MigrateSilo3AccountBatch"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_NotarizeData"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_ReleaseQuarantinedTransfers"]
+      | components["schemas"]["Core_IntentDryRunResponse_v0_RewrapVaultKeyMaterial"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_SetSystemProperty"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_SignManifest"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_UnlockAccount"]
@@ -4423,6 +4490,15 @@ export interface components {
        */
       type: "v0_ReleaseQuarantinedTransfers"
     }
+    Core_IntentDryRunResponse_v0_RewrapVaultKeyMaterial: {
+      success: boolean
+      errors?: string[]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "v0_RewrapVaultKeyMaterial"
+    }
     Core_IntentDryRunResponse_v0_SetSystemProperty: {
       success: boolean
       errors?: string[]
@@ -4668,6 +4744,7 @@ export interface components {
       | "v0_UpdateVault"
       | "v0_UnlockVault"
       | "v0_LockVault"
+      | "v0_RewrapVaultKeyMaterial"
       | "v0_UnlockTicker"
       | "v0_LockTicker"
       | "v0_CreateEndpoint"
@@ -4981,6 +5058,7 @@ export interface components {
     }
     Core_ManifestProcessingDetails:
       | components["schemas"]["Core_ManifestProcessingDetails_Completed"]
+      | components["schemas"]["Core_ManifestProcessingDetails_Failed"]
       | components["schemas"]["Core_ManifestProcessingDetails_Pending"]
       | components["schemas"]["Core_ManifestProcessingDetails_Preparing"]
     Core_ManifestProcessingDetails_Completed: {
@@ -4989,6 +5067,13 @@ export interface components {
        * @enum {string}
        */
       type: "Completed"
+    }
+    Core_ManifestProcessingDetails_Failed: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Failed"
     }
     Core_ManifestProcessingDetails_Pending: {
       /**
@@ -5005,7 +5090,7 @@ export interface components {
       type: "Preparing"
     }
     /** @enum {string} */
-    Core_ManifestProcessingStatus: "Pending" | "Preparing" | "Completed"
+    Core_ManifestProcessingStatus: "Pending" | "Preparing" | "Completed" | "Failed"
     Core_ManifestUpdated: {
       /** Format: uuid */
       id: string
@@ -5306,6 +5391,7 @@ export interface components {
       | components["schemas"]["Core_v0_MigrateSilo3AccountBatch"]
       | components["schemas"]["Core_v0_NotarizeData"]
       | components["schemas"]["Core_v0_ReleaseQuarantinedTransfers"]
+      | components["schemas"]["Core_v0_RewrapVaultKeyMaterial"]
       | components["schemas"]["Core_v0_SetSystemProperty"]
       | components["schemas"]["Core_v0_SignManifest"]
       | components["schemas"]["Core_v0_UnlockAccount"]
@@ -5340,6 +5426,26 @@ export interface components {
        */
       type: "v0_CreateTransactionOrder"
     }
+    Core_QuarantineApplied: {
+      /** Format: uuid */
+      transferId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "QuarantineApplied"
+    }
+    Core_QuarantineSkipped: {
+      /** Format: uuid */
+      transferId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "QuarantineSkipped"
+    }
+    /** @enum {string} */
+    Core_QuarantineStatus: "Quarantined" | "Released" | "Skipped"
     Core_ReadAccess: {
       domains: string[]
       users: string[]
@@ -5482,6 +5588,8 @@ export interface components {
        */
       type: "Address"
     }
+    /** @enum {string} */
+    Core_SkipQuarantineScope: "None" | "Domain" | "Instance"
     Core_SolanaFeeStrategy: components["schemas"]["Core_SolanaFeeStrategy_Priority"]
     Core_SolanaFeeStrategy_Priority: {
       priority: components["schemas"]["Core_FeePriority"]
@@ -6510,7 +6618,6 @@ export interface components {
       minimumCostInDrops: string
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       fee: string
-      batchSigningData?: components["schemas"]["Core_ApiBatchSigningData"]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -7103,6 +7210,11 @@ export interface components {
       currentStartingAfter?: string
       nextStartingAfter?: string
     }
+    Core_UpsertComplianceConfigurationRequest: {
+      skipQuarantineFrom: components["schemas"]["Core_SkipQuarantineScope"]
+      /** Format: int64 */
+      revision: number
+    }
     Core_User: {
       /** Format: uuid */
       id: string
@@ -7153,6 +7265,7 @@ export interface components {
       | components["schemas"]["Core_v0_MigrateSilo3AccountBatch"]
       | components["schemas"]["Core_v0_NotarizeData"]
       | components["schemas"]["Core_v0_ReleaseQuarantinedTransfers"]
+      | components["schemas"]["Core_v0_RewrapVaultKeyMaterial"]
       | components["schemas"]["Core_v0_SetSystemProperty"]
       | components["schemas"]["Core_v0_SignManifest"]
       | components["schemas"]["Core_v0_UnlockAccount"]
@@ -7218,6 +7331,7 @@ export interface components {
       | "UnsupportedAccountKeyStrategy"
       | "VaultNotFound"
       | "VaultLocked"
+      | "VaultHasRandomKeyAccounts"
       | "VaultNotReady"
       | "InvalidDestination"
       | "InvalidTransactionOrderState"
@@ -7388,6 +7502,24 @@ export interface components {
       /** Format: base64 */
       encryptedSeed: string
       hash: string
+    }
+    Core_VaultKeyMaterialRewrapCompleted: {
+      /** Format: uuid */
+      id: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "VaultKeyMaterialRewrapCompleted"
+    }
+    Core_VaultKeyMaterialRewrapFailed: {
+      /** Format: uuid */
+      id: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "VaultKeyMaterialRewrapFailed"
     }
     /** @enum {string} */
     Core_VaultKeyStrategy: "VaultHard" | "VaultSoft" | "Random"
@@ -7615,7 +7747,6 @@ export interface components {
     Core_XrplOnLedgerTokenData: components["schemas"]["Core_MultiPurposeToken"]
     Core_XrplOperation:
       | components["schemas"]["Core_XrplOperation_AccountSet"]
-      | components["schemas"]["Core_XrplOperation_Batch"]
       | components["schemas"]["Core_XrplOperation_Clawback"]
       | components["schemas"]["Core_XrplOperation_DepositPreauth"]
       | components["schemas"]["Core_XrplOperation_EscrowFinish"]
@@ -7625,7 +7756,6 @@ export interface components {
       | components["schemas"]["Core_XrplOperation_MPTokenIssuanceSet"]
       | components["schemas"]["Core_XrplOperation_OfferCreate"]
       | components["schemas"]["Core_XrplOperation_Payment"]
-      | components["schemas"]["Core_XrplOperation_TicketCreate"]
       | components["schemas"]["Core_XrplOperation_TrustSet"]
     Core_XrplOperation_AccountSet: {
       setFlag?: components["schemas"]["Core_Xrpl_AccountSetFlag"]
@@ -7637,20 +7767,6 @@ export interface components {
        * @enum {string}
        */
       type: "AccountSet"
-    }
-    Core_XrplOperation_Batch: {
-      executionMode: components["schemas"]["Core_Xrpl_BatchExecutionMode"]
-      innerTransactions: components["schemas"]["Core_BatchInnerTransaction"][]
-      /** Format: int64 */
-      ticketSequence?: number
-      /** Format: int64 */
-      lastLedgerSequence?: number
-      batchSigners: components["schemas"]["Core_BatchSigner"][]
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: "Batch"
     }
     Core_XrplOperation_Clawback: {
       currency: components["schemas"]["Core_XrplClawbackCurrency"]
@@ -7756,15 +7872,6 @@ export interface components {
        */
       type: "Payment"
     }
-    Core_XrplOperation_TicketCreate: {
-      /** Format: int32 */
-      ticketCount: number
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: "TicketCreate"
-    }
     Core_XrplOperation_TrustSet: {
       flags: components["schemas"]["Core_Xrpl_TrustSetFlag"][]
       limitAmount: components["schemas"]["Core_Xrpl_LimitAmount"]
@@ -7850,8 +7957,6 @@ export interface components {
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       amount: string
     }
-    /** @enum {string} */
-    Core_Xrpl_BatchExecutionMode: "AllOrNothing" | "OnlyOne" | "UntilFailure" | "Independent"
     Core_Xrpl_LimitAmount: {
       currency: components["schemas"]["Core_XrplIouCurrency"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
@@ -8230,6 +8335,17 @@ export interface components {
        * @enum {string}
        */
       type: "v0_ReleaseQuarantinedTransfers"
+    }
+    Core_v0_RewrapVaultKeyMaterial: {
+      /** Format: uuid */
+      vaultId: string
+      description?: string
+      customProperties: components["schemas"]["Core_StringsMap"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "v0_RewrapVaultKeyMaterial"
     }
     Core_v0_SetSystemProperty: {
       /** Format: int64 */
@@ -9485,6 +9601,101 @@ export interface components {
       direction?: "INCOMING" | "OUTGOING"
       transfer?: components["schemas"]["Compliance_Transfer"]
     }
+    /** @description Request to create a relationship with a travel rule provider */
+    Compliance_CreateRelationshipRequest: {
+      /**
+       * Format: did
+       * @description The DID of the source entity. Defaults to the entityDID from the domain credentials.
+       * @example did:web:ripple.com:test:us
+       */
+      from?: string
+      /**
+       * Format: did
+       * @description The DID of the target entity.
+       * @example did:web:example.com:test:counterparty
+       */
+      to: string
+    }
+    /** @description List of relationships from the travel rule provider */
+    Compliance_RelationshipList: {
+      /** @description Array of relationship objects with ownership proofs */
+      relationships?: components["schemas"]["Compliance_RelationshipWithProofs"][]
+    }
+    /** @description A relationship between two entities with ownership proofs */
+    Compliance_RelationshipWithProofs: {
+      /**
+       * @description Unique identifier for the relationship
+       * @example urn:uuid:12345678-1234-1234-1234-123456789abc
+       */
+      "@id": string
+      /**
+       * Format: did
+       * @description Decentralized Identifier (DID) of the source entity
+       * @example did:web:ripple.com:test:us
+       */
+      from: string
+      /**
+       * Format: did
+       * @description Decentralized Identifier (DID) of the target entity
+       * @example did:web:example.com:test:counterparty
+       */
+      to: string
+      /**
+       * Format: did
+       * @description Decentralized Identifier (DID) of the custodian entity (optional)
+       * @example did:web:custodian.com:test:vault
+       */
+      custodian?: string
+      /**
+       * @description Current state of the relationship
+       * @example CONFIRMED
+       * @enum {string}
+       */
+      status: "UNCONFIRMED" | "CONFIRMED" | "REJECTED"
+      /**
+       * Format: did
+       * @description Decentralized Identifier (DID) of the entity that confirmed the relationship
+       * @example did:web:example.com:test:counterparty
+       */
+      confirmedBy?: string
+      /** @description Ownership proofs associated with this relationship */
+      proofs?: components["schemas"]["Compliance_OwnershipProof"][]
+    }
+    /** @description Proof of ownership for an address or entity */
+    Compliance_OwnershipProof: {
+      /**
+       * @description The blockchain address being proven
+       * @example 0x1234567890abcdef1234567890abcdef12345678
+       */
+      address: string
+      /**
+       * @description The blockchain network
+       * @example ethereum
+       */
+      chain?: string
+      /**
+       * @description Status of the ownership proof
+       * @example VERIFIED
+       * @enum {string}
+       */
+      status: "PENDING" | "CONFIRMED" | "VERIFIED" | "REJECTED"
+      /**
+       * @description Cryptographic signature proving ownership
+       * @example 0xabcdef...
+       */
+      signature?: string
+      /**
+       * @description The message that was signed
+       * @example I own this address
+       */
+      message?: string
+      /**
+       * Format: date-time
+       * @description When the proof was created
+       * @example 2026-03-10T14:30:00.0000000+00:00
+       */
+      timestamp?: string
+    }
     EDS_ChannelCreate: {
       /** Format: uuid */
       id: string
@@ -10640,6 +10851,164 @@ export interface operations {
       }
     }
   }
+  listComplianceConfigurations: {
+    parameters: {
+      query?: {
+        /** @description The number of entities to return. */
+        limit?: number
+        /** @description Entity id used to the determine beginning of query results. */
+        startingAfter?: string
+      }
+      header?: never
+      path: {
+        /** @description Unique identifier for the domain. */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ComplianceConfigurationsCollection"]
+        }
+      }
+      /** @description One of: Domain locked (DomainLockedError); Requester locked (RequesterLockedError) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError) */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description Entity or Domain not found (EntityNotFoundError) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+    }
+  }
+  getComplianceConfiguration: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Unique identifier for the domain. */
+        domainId: string
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ComplianceConfiguration"]
+        }
+      }
+      /** @description One of: Domain locked (DomainLockedError); Requester locked (RequesterLockedError) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError) */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description Entity or Domain not found (EntityNotFoundError) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+    }
+  }
+  upsertComplianceConfiguration: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Unique identifier for the domain. */
+        domainId: string
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Core_UpsertComplianceConfigurationRequest"]
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ComplianceConfiguration"]
+        }
+      }
+      /** @description One of: Domain locked (DomainLockedError); Invalid request (InvalidRequestError); Requester locked (RequesterLockedError) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError) */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description Entity or Domain not found (EntityNotFoundError) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+    }
+  }
   getAccount: {
     parameters: {
       query?: never
@@ -11186,7 +11555,7 @@ export interface operations {
   forceUpdateAccountBalances: {
     parameters: {
       query?: {
-        /** @description Updates only balances with the given ledger id. Reduces execution time. */
+        /** @description Updates only balances for native and validated tickers with the given ledger id. Non-validated token tickers are excluded. Reduces execution time. */
         ledgerId?: string
         /** @description Updates only balances with the given ticker id. Reduces execution time. */
         tickerId?: string
@@ -11617,10 +11986,16 @@ export interface operations {
          */
         tickerId?: string
         /**
-         * @description Return entities matching given quarantined status.
+         * @deprecated
+         * @description Deprecated: use quarantineStatus instead. Return entities matching given quarantined status.
          * @example true
          */
         quarantined?: boolean
+        /**
+         * @description Return entities matching given quarantine status. Values: Quarantined, Released, Skipped.
+         * @example Quarantined
+         */
+        quarantineStatus?: components["schemas"]["Core_QuarantineStatus"]
         /**
          * @description Return entities matching given kind.
          * @example Fee
@@ -14699,6 +15074,151 @@ export interface operations {
         }
       }
       /** @description Domain or Travel rule details not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+    }
+  }
+  ListRelationships: {
+    parameters: {
+      query?: {
+        /** @description Filter by 'from' DID (Decentralized Identifier) */
+        from?: string
+        /** @description Filter by 'to' DID (Decentralized Identifier) */
+        to?: string
+        /** @description Filter by custodian DID (Decentralized Identifier) */
+        custodian?: string
+      }
+      header?: never
+      path: {
+        domainId: string
+        provider: "NOTABENE"
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Relationships retrieved successfully */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Compliance_RelationshipList"]
+        }
+      }
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Domain not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+    }
+  }
+  CreateRelationship: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        provider: "NOTABENE"
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Compliance_CreateRelationshipRequest"]
+      }
+    }
+    responses: {
+      /** @description Relationship created successfully */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description Domain not found */
       404: {
         headers: {
           [name: string]: unknown

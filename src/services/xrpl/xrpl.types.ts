@@ -1,6 +1,5 @@
 import type {
   AccountSet,
-  Batch,
   BatchSigner,
   Clawback,
   DepositPreauth,
@@ -10,7 +9,6 @@ import type {
   MPTokenIssuanceSet,
   OfferCreate,
   Payment,
-  TicketCreate,
   TrustSet,
 } from "xrpl"
 import type { components } from "../../models/custody-types.js"
@@ -94,11 +92,11 @@ export type CustodyOfferCreate = Prettify<
 
 // TicketCreate
 
-export type Core_XrplOperation_TicketCreate =
-  components["schemas"]["Core_XrplOperation_TicketCreate"]
-export type CustodyTicketCreate = Prettify<
-  Pick<TicketCreate, "Account"> & Omit<Core_XrplOperation_TicketCreate, "type">
->
+// export type Core_XrplOperation_TicketCreate =
+//   components["schemas"]["Core_XrplOperation_TicketCreate"]
+// export type CustodyTicketCreate = Prettify<
+//   Pick<TicketCreate, "Account"> & Omit<Core_XrplOperation_TicketCreate, "type">
+// >
 
 // AccountSet
 
@@ -109,14 +107,16 @@ export type CustodyAccountSet = Prettify<
 
 // Batch
 
-export type Core_XrplOperation_Batch = components["schemas"]["Core_XrplOperation_Batch"]
-export type CustodyBatch = Prettify<Pick<Batch, "Account"> & Omit<Core_XrplOperation_Batch, "type">>
+//TODO: delete comment once Batch is supported
+// export type Core_XrplOperation_Batch = components["schemas"]["Core_XrplOperation_Batch"]
+// export type CustodyBatch = Prettify<Pick<Batch, "Account"> & Omit<Core_XrplOperation_Batch, "type">>
 
 // Batch Adapters
 
-export type CustodyBatchSigner = CustodyBatch["batchSigners"][number]
-export type CustodyInnerTransaction = CustodyBatch["innerTransactions"][number]
-export type CustodyOperation = CustodyInnerTransaction["operation"]
+//TODO: delete comment once Batch is supported
+// export type CustodyBatchSigner = CustodyBatch["batchSigners"][number]
+// export type CustodyInnerTransaction = CustodyBatch["innerTransactions"][number]
+// export type CustodyOperation = CustodyInnerTransaction["operation"]
 
 export type CustodyAccountSetFlag = CustodyAccountSet["setFlag"]
 
@@ -201,7 +201,8 @@ export type RawSignInnerBatchAndWaitResult = RawSignAndWaitResult & {
   /** The batch signer in xrpl.js format */
   batchSigner: BatchSigner
   /** The batch signer in Ripple Custody API format */
-  custodyBatchSigner: CustodyBatchSigner
+  //TODO: delete comment once Batch is supported
+  // custodyBatchSigner: CustodyBatchSigner
 }
 
 type BatchSignerLookup = { accountId?: never; ledgerId?: never }
