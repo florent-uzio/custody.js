@@ -1,5 +1,11 @@
 # custody
 
+## 1.2.1
+
+### Patch Changes
+
+- 76665c9: Release a new version as the previous 1.2.0 didnt show up
+
 ## 1.2.0
 
 ### Minor Changes
