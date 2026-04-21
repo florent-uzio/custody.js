@@ -18,7 +18,6 @@ import type {
   IntentContext,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
-  RawSignInnerBatchAndWaitResult,
   RawSignInnerBatchOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
@@ -205,48 +204,48 @@ export class XrplService {
    * @throws {CustodyError} If signerAddress is not in the batch, the account is not found,
    *   or the manifest signature is not available after maximum retries
    */
-  public async rawSignInnerBatchAndWait(
-    batch: Batch,
-    signerAddress: string,
-    options: RawSignInnerBatchOptions = {},
-  ): Promise<RawSignInnerBatchAndWaitResult> {
-    this.validateBatchSigner(batch, signerAddress)
+  // public async rawSignInnerBatchAndWait(
+  //   batch: Batch,
+  //   signerAddress: string,
+  //   options: RawSignInnerBatchOptions = {},
+  // ): Promise<RawSignInnerBatchAndWaitResult> {
+  //   this.validateBatchSigner(batch, signerAddress)
 
-    const context = await this.resolveInnerBatchContext(signerAddress, options)
+  //   const context = await this.resolveInnerBatchContext(signerAddress, options)
 
-    const signingPubKey = await this.getPublicKey({
-      domainId: context.domainId,
-      accountId: context.accountId,
-    })
+  //   const signingPubKey = await this.getPublicKey({
+  //     domainId: context.domainId,
+  //     accountId: context.accountId,
+  //   })
 
-    const base64Encoded = this.encodeBatchForSigning(batch)
+  //   const base64Encoded = this.encodeBatchForSigning(batch)
 
-    const { payloadId } = await this.proposeRawSignIntent(base64Encoded, context, options)
+  //   const { payloadId } = await this.proposeRawSignIntent(base64Encoded, context, options)
 
-    const signature = await this.waitForManifestSignature(
-      context.domainId,
-      context.accountId,
-      payloadId,
-      options.polling,
-    )
+  //   const signature = await this.waitForManifestSignature(
+  //     context.domainId,
+  //     context.accountId,
+  //     payloadId,
+  //     options.polling,
+  //   )
 
-    return {
-      signature,
-      signingPubKey,
-      batchSigner: {
-        BatchSigner: {
-          Account: signerAddress,
-          SigningPubKey: signingPubKey,
-          TxnSignature: signature,
-        },
-      },
-      custodyBatchSigner: {
-        account: signerAddress,
-        signingPubKey,
-        txnSignature: signature,
-      },
-    }
-  }
+  //   return {
+  //     signature,
+  //     signingPubKey,
+  //     batchSigner: {
+  //       BatchSigner: {
+  //         Account: signerAddress,
+  //         SigningPubKey: signingPubKey,
+  //         TxnSignature: signature,
+  //       },
+  //     },
+  //     custodyBatchSigner: {
+  //       account: signerAddress,
+  //       signingPubKey,
+  //       txnSignature: signature,
+  //     },
+  //   }
+  // }
 
   /**
    * Resolves the intent context for an inner batch signer.

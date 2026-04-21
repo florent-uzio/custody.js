@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { Batch, SubmittableTransaction } from "xrpl"
-import { encodeForSigningBatch, hashes } from "xrpl"
+import type { SubmittableTransaction } from "xrpl"
+//TODO: restore Batch imports once Batch is supported
+// import type { Batch } from "xrpl"
+// import { encodeForSigningBatch, hashes } from "xrpl"
 import { CustodyError } from "../../models/index.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 import { XrplService } from "./xrpl.service.js"
@@ -9,10 +11,11 @@ import type { IntentContext } from "./xrpl.types.js"
 // Mock the xrpl encoding and hashing functions
 vi.mock("xrpl", () => ({
   encodeForSigning: vi.fn().mockReturnValue("deadbeef01020304"),
-  encodeForSigningBatch: vi.fn().mockReturnValue("batchencoded0102"),
-  hashes: {
-    hashSignedTx: vi.fn().mockReturnValue("TXHASH0123456789"),
-  },
+  //TODO: restore Batch mocks once Batch is supported
+  // encodeForSigningBatch: vi.fn().mockReturnValue("batchencoded0102"),
+  // hashes: {
+  //   hashSignedTx: vi.fn().mockReturnValue("TXHASH0123456789"),
+  // },
 }))
 
 // ── Test helpers ────────────────────────────────────────────────
@@ -286,28 +289,29 @@ describe("XrplService", () => {
       })
     })
 
-    it("should submit a Batch intent", async () => {
-      let capturedBody: any
-      ports = createTestPorts({
-        submitIntent: async (body) => {
-          capturedBody = body
-          return { requestId: "request-123" } as any
-        },
-      })
-      service = new XrplService(ports)
-
-      await service.proposeIntent({
-        Account: mockAddress,
-        operation: {
-          type: "Batch",
-          executionMode: "AllOrNothing",
-          batchSigners: [],
-          innerTransactions: [],
-        },
-      })
-
-      expect(capturedBody.request.payload.parameters.operation.type).toBe("Batch")
-    })
+    //TODO: restore Batch intent test once Batch is supported
+    // it("should submit a Batch intent", async () => {
+    //   let capturedBody: any
+    //   ports = createTestPorts({
+    //     submitIntent: async (body) => {
+    //       capturedBody = body
+    //       return { requestId: "request-123" } as any
+    //     },
+    //   })
+    //   service = new XrplService(ports)
+    //
+    //   await service.proposeIntent({
+    //     Account: mockAddress,
+    //     operation: {
+    //       type: "Batch",
+    //       executionMode: "AllOrNothing",
+    //       batchSigners: [],
+    //       innerTransactions: [],
+    //     },
+    //   })
+    //
+    //   expect(capturedBody.request.payload.parameters.operation.type).toBe("Batch")
+    // })
 
     it("should submit MPTokenIssuanceCreate, MPTokenIssuanceSet, MPTokenIssuanceDestroy intents", async () => {
       let capturedBody: any
@@ -748,130 +752,131 @@ describe("XrplService", () => {
     })
   })
 
-  // ── rawSignInnerBatch ─────────────────────────────────────────
-
-  describe("rawSignInnerBatch", () => {
-    const mockBatch: Batch = {
-      TransactionType: "Batch",
-      Account: "rSubmitterAddress",
-      Flags: 65536,
-      RawTransactions: [
-        {
-          RawTransaction: {
-            TransactionType: "Payment",
-            Account: mockAddress,
-            Destination: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
-            Amount: "1000000",
-            Fee: "0",
-            Sequence: 0,
-            SigningPubKey: "",
-          },
-        },
-      ],
-    }
-
-    it("should propose a raw sign intent with batch-encoded bytes", async () => {
-      let capturedBody: any
-      ports = createTestPorts({
-        submitIntent: async (body) => {
-          capturedBody = body
-          return { requestId: "r-1" } as any
-        },
-      })
-      service = new XrplService(ports)
-
-      await service.rawSignInnerBatch(mockBatch, mockAddress)
-
-      expect(hashes.hashSignedTx).toHaveBeenCalledWith(mockBatch.RawTransactions[0].RawTransaction)
-      expect(encodeForSigningBatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          flags: mockBatch.Flags,
-          txIDs: ["TXHASH0123456789"],
-        }),
-      )
-
-      expect(capturedBody.request.type).toBe("Propose")
-      expect(capturedBody.request.payload.type).toBe("v0_SignManifest")
-      expect(capturedBody.request.payload.content.type).toBe("Unsafe")
-      const expectedBase64 = Buffer.from("batchencoded0102", "hex").toString("base64")
-      expect(capturedBody.request.payload.content.value).toBe(expectedBase64)
-    })
-
-    it("should resolve context using signerAddress", async () => {
-      const resolveContext = vi.fn(async () => mockContext)
-      ports = createTestPorts({ resolveContext })
-      service = new XrplService(ports)
-
-      await service.rawSignInnerBatch(mockBatch, mockAddress)
-
-      expect(resolveContext).toHaveBeenCalledWith(mockAddress, { domainId: undefined })
-    })
-
-    it("should throw if signerAddress is not in any inner transaction", async () => {
-      await expect(service.rawSignInnerBatch(mockBatch, "rNotInBatchAddress")).rejects.toThrow(
-        "Address rNotInBatchAddress is not involved in any inner transaction",
-      )
-    })
-  })
-
-  // ── rawSignInnerBatchAndWait ──────────────────────────────────
-
-  describe("rawSignInnerBatchAndWait", () => {
-    const mockBatch: Batch = {
-      TransactionType: "Batch",
-      Account: "rSubmitterAddress",
-      Flags: 65536,
-      RawTransactions: [
-        {
-          RawTransaction: {
-            TransactionType: "Payment",
-            Account: mockAddress,
-            Destination: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
-            Amount: "1000000",
-            Fee: "0",
-            Sequence: 0,
-            SigningPubKey: "",
-          },
-        },
-      ],
-    }
-
-    it("should sign batch envelope and return signature with signingPubKey", async () => {
-      const result = await service.rawSignInnerBatchAndWait(mockBatch, mockAddress, {
-        polling: { maxRetries: 1, intervalMs: 0 },
-      })
-
-      expect(result.signature).toBe("AABBCCDD")
-      expect(result.signingPubKey).toBe(expectedCompressedKey)
-
-      // xrpl.js BatchSigner format
-      expect(result.batchSigner).toEqual({
-        BatchSigner: {
-          Account: mockAddress,
-          SigningPubKey: expectedCompressedKey,
-          TxnSignature: "AABBCCDD",
-        },
-      })
-
-      // Ripple Custody format
-      expect(result.custodyBatchSigner).toEqual({
-        account: mockAddress,
-        signingPubKey: expectedCompressedKey,
-        txnSignature: "AABBCCDD",
-      })
-    })
-
-    it("should throw CustodyError on timeout", async () => {
-      ports = createTestPorts({
-        getManifest: async () => ({ data: { value: undefined } }) as any,
-      })
-      service = new XrplService(ports)
-
-      await expect(
-        service.rawSignInnerBatchAndWait(mockBatch, mockAddress, {
-          polling: { maxRetries: 2, intervalMs: 0 },
-        }),
-      ).rejects.toThrow("Manifest signature not available after maximum retries")
-    })
-  })
+  //TODO: restore rawSignInnerBatch tests once Batch is supported
+  // // ── rawSignInnerBatch ─────────────────────────────────────────
+  //
+  // describe("rawSignInnerBatch", () => {
+  //   const mockBatch: Batch = {
+  //     TransactionType: "Batch",
+  //     Account: "rSubmitterAddress",
+  //     Flags: 65536,
+  //     RawTransactions: [
+  //       {
+  //         RawTransaction: {
+  //           TransactionType: "Payment",
+  //           Account: mockAddress,
+  //           Destination: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+  //           Amount: "1000000",
+  //           Fee: "0",
+  //           Sequence: 0,
+  //           SigningPubKey: "",
+  //         },
+  //       },
+  //     ],
+  //   }
+  //
+  //   it("should propose a raw sign intent with batch-encoded bytes", async () => {
+  //     let capturedBody: any
+  //     ports = createTestPorts({
+  //       submitIntent: async (body) => {
+  //         capturedBody = body
+  //         return { requestId: "r-1" } as any
+  //       },
+  //     })
+  //     service = new XrplService(ports)
+  //
+  //     await service.rawSignInnerBatch(mockBatch, mockAddress)
+  //
+  //     expect(hashes.hashSignedTx).toHaveBeenCalledWith(mockBatch.RawTransactions[0].RawTransaction)
+  //     expect(encodeForSigningBatch).toHaveBeenCalledWith(
+  //       expect.objectContaining({
+  //         flags: mockBatch.Flags,
+  //         txIDs: ["TXHASH0123456789"],
+  //       }),
+  //     )
+  //
+  //     expect(capturedBody.request.type).toBe("Propose")
+  //     expect(capturedBody.request.payload.type).toBe("v0_SignManifest")
+  //     expect(capturedBody.request.payload.content.type).toBe("Unsafe")
+  //     const expectedBase64 = Buffer.from("batchencoded0102", "hex").toString("base64")
+  //     expect(capturedBody.request.payload.content.value).toBe(expectedBase64)
+  //   })
+  //
+  //   it("should resolve context using signerAddress", async () => {
+  //     const resolveContext = vi.fn(async () => mockContext)
+  //     ports = createTestPorts({ resolveContext })
+  //     service = new XrplService(ports)
+  //
+  //     await service.rawSignInnerBatch(mockBatch, mockAddress)
+  //
+  //     expect(resolveContext).toHaveBeenCalledWith(mockAddress, { domainId: undefined })
+  //   })
+  //
+  //   it("should throw if signerAddress is not in any inner transaction", async () => {
+  //     await expect(service.rawSignInnerBatch(mockBatch, "rNotInBatchAddress")).rejects.toThrow(
+  //       "Address rNotInBatchAddress is not involved in any inner transaction",
+  //     )
+  //   })
+  // })
+  //
+  // // ── rawSignInnerBatchAndWait ──────────────────────────────────
+  //
+  // describe("rawSignInnerBatchAndWait", () => {
+  //   const mockBatch: Batch = {
+  //     TransactionType: "Batch",
+  //     Account: "rSubmitterAddress",
+  //     Flags: 65536,
+  //     RawTransactions: [
+  //       {
+  //         RawTransaction: {
+  //           TransactionType: "Payment",
+  //           Account: mockAddress,
+  //           Destination: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+  //           Amount: "1000000",
+  //           Fee: "0",
+  //           Sequence: 0,
+  //           SigningPubKey: "",
+  //         },
+  //       },
+  //     ],
+  //   }
+  //
+  //   it("should sign batch envelope and return signature with signingPubKey", async () => {
+  //     const result = await service.rawSignInnerBatchAndWait(mockBatch, mockAddress, {
+  //       polling: { maxRetries: 1, intervalMs: 0 },
+  //     })
+  //
+  //     expect(result.signature).toBe("AABBCCDD")
+  //     expect(result.signingPubKey).toBe(expectedCompressedKey)
+  //
+  //     // xrpl.js BatchSigner format
+  //     expect(result.batchSigner).toEqual({
+  //       BatchSigner: {
+  //         Account: mockAddress,
+  //         SigningPubKey: expectedCompressedKey,
+  //         TxnSignature: "AABBCCDD",
+  //       },
+  //     })
+  //
+  //     // Ripple Custody format
+  //     expect(result.custodyBatchSigner).toEqual({
+  //       account: mockAddress,
+  //       signingPubKey: expectedCompressedKey,
+  //       txnSignature: "AABBCCDD",
+  //     })
+  //   })
+  //
+  //   it("should throw CustodyError on timeout", async () => {
+  //     ports = createTestPorts({
+  //       getManifest: async () => ({ data: { value: undefined } }) as any,
+  //     })
+  //     service = new XrplService(ports)
+  //
+  //     await expect(
+  //       service.rawSignInnerBatchAndWait(mockBatch, mockAddress, {
+  //         polling: { maxRetries: 2, intervalMs: 0 },
+  //       }),
+  //     ).rejects.toThrow("Manifest signature not available after maximum retries")
+  //   })
+  // })
 })

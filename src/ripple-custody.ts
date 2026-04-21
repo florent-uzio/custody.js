@@ -1,4 +1,4 @@
-import type { Batch, SubmittableTransaction } from "xrpl"
+import type { SubmittableTransaction } from "xrpl"
 import {
   createAccounts,
   createDomains,
@@ -21,8 +21,6 @@ import {
   type Core_XrplOperation,
   type RawSignAndWaitOptions,
   type RawSignAndWaitResult,
-  type RawSignInnerBatchAndWaitResult,
-  type RawSignInnerBatchOptions,
   type XrplIntentOptions,
 } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
@@ -142,12 +140,12 @@ export class RippleCustody {
      * @param options - Optional configuration for the raw sign intent
      * @returns The proposed intent response
      */
-    rawSignInnerBatch: async (
-      batch: Batch,
-      signerAddress: string,
-      options?: RawSignInnerBatchOptions,
-    ): Promise<Core_IntentResponse> =>
-      this.xrplService.rawSignInnerBatch(batch, signerAddress, options),
+    // rawSignInnerBatch: async (
+    //   batch: Batch,
+    //   signerAddress: string,
+    //   options?: RawSignInnerBatchOptions,
+    // ): Promise<Core_IntentResponse> =>
+    //   this.xrplService.rawSignInnerBatch(batch, signerAddress, options),
 
     /**
      * Signs a Batch transaction envelope for a single inner account and waits
@@ -157,12 +155,12 @@ export class RippleCustody {
      * @param options - Optional configuration for the raw sign intent and polling
      * @returns The signature and signing public key in uppercase hex
      */
-    rawSignInnerBatchAndWait: async (
-      batch: Batch,
-      signerAddress: string,
-      options?: RawSignInnerBatchOptions,
-    ): Promise<RawSignInnerBatchAndWaitResult> =>
-      this.xrplService.rawSignInnerBatchAndWait(batch, signerAddress, options),
+    // rawSignInnerBatchAndWait: async (
+    //   batch: Batch,
+    //   signerAddress: string,
+    //   options?: RawSignInnerBatchOptions,
+    // ): Promise<RawSignInnerBatchAndWaitResult> =>
+    //   this.xrplService.rawSignInnerBatchAndWait(batch, signerAddress, options),
 
     /**
      * Get the compressed secp256k1 public key for an XRPL account.

@@ -1,7 +1,6 @@
 import {
   AccountSetAsfFlags,
   type Batch,
-  type BatchSigner,
   type IssuedCurrencyAmount,
   MPTokenAuthorizeFlags,
   MPTokenIssuanceCreateFlags,
@@ -9,13 +8,11 @@ import {
   OfferCreateFlags,
   TrustSetFlags,
 } from "xrpl"
-import { isString } from "../../helpers/index.js"
 import type {
   CustodyAccountSetFlag,
-  CustodyBatchSigner,
-  CustodyInnerTransaction,
+  // CustodyBatchSigner,
+  // CustodyInnerTransaction,
   CustodyMpTokenIssuanceCreate,
-  CustodyOperation,
 } from "./xrpl.types.js"
 
 type RawTx = Batch["RawTransactions"][number]["RawTransaction"]
@@ -138,155 +135,155 @@ const mpTokenIssuanceSetFlagsToStrings = (
   return result
 }
 
-const txToOperation = (tx: RawTx): CustodyOperation => {
-  switch (tx.TransactionType) {
-    case "Payment": {
-      const amount = tx.Amount
-      if (isString(amount)) {
-        // XRP drops
-        return {
-          type: "Payment",
-          destination: { type: "Address", address: tx.Destination },
-          amount,
-          ...(tx.DestinationTag !== undefined && { destinationTag: tx.DestinationTag }),
-        }
-      }
-      const isMPT = "mpt_issuance_id" in amount
-      return {
-        type: "Payment",
-        destination: { type: "Address", address: tx.Destination },
-        amount: amount.value,
-        ...(tx.DestinationTag !== undefined && { destinationTag: tx.DestinationTag }),
-        currency: isMPT
-          ? { type: "MultiPurposeToken" as const, issuanceId: amount.mpt_issuance_id }
-          : {
-              type: "Currency" as const,
-              code: (amount as IssuedCurrencyAmount).currency,
-              issuer: (amount as IssuedCurrencyAmount).issuer,
-            },
-      }
-    }
-    case "OfferCreate":
-      return {
-        type: "OfferCreate",
-        takerGets: amountToAssetQuantity(tx.TakerGets as IssuedCurrencyAmount | string),
-        takerPays: amountToAssetQuantity(tx.TakerPays as IssuedCurrencyAmount | string),
-        flags: offerCreateFlagsToStrings(tx.Flags),
-      }
-    case "TrustSet":
-      return {
-        type: "TrustSet",
-        limitAmount: {
-          currency: {
-            type: "Currency",
-            code: tx.LimitAmount.currency,
-            issuer: tx.LimitAmount.issuer,
-          },
-          value: tx.LimitAmount.value,
-        },
-        flags: trustSetFlagsToStrings(tx.Flags),
-      }
-    case "AccountSet":
-      return {
-        type: "AccountSet",
-        ...(tx.SetFlag !== undefined && { setFlag: accountSetAsfFlagToString(tx.SetFlag) }),
-        ...(tx.ClearFlag !== undefined && { clearFlag: accountSetAsfFlagToString(tx.ClearFlag) }),
-        ...(tx.TransferRate !== undefined && { transferRate: tx.TransferRate }),
-      }
-    case "TicketCreate":
-      return {
-        type: "TicketCreate",
-        ticketCount: tx.TicketCount,
-      }
-    case "Clawback": {
-      const amount = tx.Amount
-      // Clawback Amount can be either an IOU (IssuedCurrencyAmount) or an MPT amount,
-      // distinguished by the presence of `mpt_issuance_id`.
-      const isMPT = "mpt_issuance_id" in amount
-      return {
-        type: "Clawback",
-        currency: isMPT
-          ? { type: "MultiPurposeToken" as const, issuanceId: amount.mpt_issuance_id }
-          : {
-              type: "Currency" as const,
-              code: (amount as IssuedCurrencyAmount).currency,
-              issuer: (amount as IssuedCurrencyAmount).issuer,
-            },
-        holder: { type: "Address" as const, address: tx.Holder as string },
-        value: amount.value,
-      }
-    }
-    case "DepositPreauth":
-      return {
-        type: "DepositPreauth",
-        ...(tx.Authorize !== undefined && {
-          authorize: { type: "Address" as const, address: tx.Authorize },
-        }),
-        ...(tx.Unauthorize !== undefined && {
-          unauthorize: { type: "Address" as const, address: tx.Unauthorize },
-        }),
-      }
-    case "EscrowFinish":
-      return {
-        type: "EscrowFinish",
-        owner: { type: "Address" as const, address: tx.Owner },
-        offerSequence: Number(tx.OfferSequence),
-        ...(tx.Condition !== undefined && { condition: tx.Condition }),
-        ...(tx.Fulfillment !== undefined && { fulfillment: tx.Fulfillment }),
-        ...(tx.CredentialIDs !== undefined && { credentialIds: tx.CredentialIDs }),
-      }
-    case "MPTokenAuthorize":
-      return {
-        type: "MPTokenAuthorize",
-        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
-        flags: mpTokenAuthorizeFlagsToStrings(tx.Flags),
-        ...(tx.Holder !== undefined && {
-          holder: { type: "Address" as const, address: tx.Holder },
-        }),
-      }
-    case "MPTokenIssuanceCreate":
-      return {
-        type: "MPTokenIssuanceCreate",
-        flags: mpTokenIssuanceCreateFlagsToStrings(tx.Flags),
-        ...(tx.AssetScale !== undefined && { assetScale: tx.AssetScale }),
-        ...(tx.TransferFee !== undefined && { transferFee: tx.TransferFee }),
-        ...(tx.MaximumAmount !== undefined && { maximumAmount: tx.MaximumAmount }),
-        ...(tx.MPTokenMetadata !== undefined && {
-          metadata: { type: "HexEncodedMetadata" as const, value: tx.MPTokenMetadata },
-        }),
-      }
-    case "MPTokenIssuanceDestroy":
-      return {
-        type: "MPTokenIssuanceDestroy",
-        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
-      }
-    case "MPTokenIssuanceSet":
-      return {
-        type: "MPTokenIssuanceSet",
-        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
-        flags: mpTokenIssuanceSetFlagsToStrings(tx.Flags),
-        ...(tx.Holder !== undefined && {
-          holder: { type: "Address" as const, address: tx.Holder },
-        }),
-      }
-    default:
-      throw new Error(`Unsupported transaction type: ${tx.TransactionType}`)
-  }
-}
+// const txToOperation = (tx: RawTx): CustodyOperation => {
+//   switch (tx.TransactionType) {
+//     case "Payment": {
+//       const amount = tx.Amount
+//       if (isString(amount)) {
+//         // XRP drops
+//         return {
+//           type: "Payment",
+//           destination: { type: "Address", address: tx.Destination },
+//           amount,
+//           ...(tx.DestinationTag !== undefined && { destinationTag: tx.DestinationTag }),
+//         }
+//       }
+//       const isMPT = "mpt_issuance_id" in amount
+//       return {
+//         type: "Payment",
+//         destination: { type: "Address", address: tx.Destination },
+//         amount: amount.value,
+//         ...(tx.DestinationTag !== undefined && { destinationTag: tx.DestinationTag }),
+//         currency: isMPT
+//           ? { type: "MultiPurposeToken" as const, issuanceId: amount.mpt_issuance_id }
+//           : {
+//               type: "Currency" as const,
+//               code: (amount as IssuedCurrencyAmount).currency,
+//               issuer: (amount as IssuedCurrencyAmount).issuer,
+//             },
+//       }
+//     }
+//     case "OfferCreate":
+//       return {
+//         type: "OfferCreate",
+//         takerGets: amountToAssetQuantity(tx.TakerGets as IssuedCurrencyAmount | string),
+//         takerPays: amountToAssetQuantity(tx.TakerPays as IssuedCurrencyAmount | string),
+//         flags: offerCreateFlagsToStrings(tx.Flags),
+//       }
+//     case "TrustSet":
+//       return {
+//         type: "TrustSet",
+//         limitAmount: {
+//           currency: {
+//             type: "Currency",
+//             code: tx.LimitAmount.currency,
+//             issuer: tx.LimitAmount.issuer,
+//           },
+//           value: tx.LimitAmount.value,
+//         },
+//         flags: trustSetFlagsToStrings(tx.Flags),
+//       }
+//     case "AccountSet":
+//       return {
+//         type: "AccountSet",
+//         ...(tx.SetFlag !== undefined && { setFlag: accountSetAsfFlagToString(tx.SetFlag) }),
+//         ...(tx.ClearFlag !== undefined && { clearFlag: accountSetAsfFlagToString(tx.ClearFlag) }),
+//         ...(tx.TransferRate !== undefined && { transferRate: tx.TransferRate }),
+//       }
+//     case "TicketCreate":
+//       return {
+//         type: "TicketCreate",
+//         ticketCount: tx.TicketCount,
+//       }
+//     case "Clawback": {
+//       const amount = tx.Amount
+//       // Clawback Amount can be either an IOU (IssuedCurrencyAmount) or an MPT amount,
+//       // distinguished by the presence of `mpt_issuance_id`.
+//       const isMPT = "mpt_issuance_id" in amount
+//       return {
+//         type: "Clawback",
+//         currency: isMPT
+//           ? { type: "MultiPurposeToken" as const, issuanceId: amount.mpt_issuance_id }
+//           : {
+//               type: "Currency" as const,
+//               code: (amount as IssuedCurrencyAmount).currency,
+//               issuer: (amount as IssuedCurrencyAmount).issuer,
+//             },
+//         holder: { type: "Address" as const, address: tx.Holder as string },
+//         value: amount.value,
+//       }
+//     }
+//     case "DepositPreauth":
+//       return {
+//         type: "DepositPreauth",
+//         ...(tx.Authorize !== undefined && {
+//           authorize: { type: "Address" as const, address: tx.Authorize },
+//         }),
+//         ...(tx.Unauthorize !== undefined && {
+//           unauthorize: { type: "Address" as const, address: tx.Unauthorize },
+//         }),
+//       }
+//     case "EscrowFinish":
+//       return {
+//         type: "EscrowFinish",
+//         owner: { type: "Address" as const, address: tx.Owner },
+//         offerSequence: Number(tx.OfferSequence),
+//         ...(tx.Condition !== undefined && { condition: tx.Condition }),
+//         ...(tx.Fulfillment !== undefined && { fulfillment: tx.Fulfillment }),
+//         ...(tx.CredentialIDs !== undefined && { credentialIds: tx.CredentialIDs }),
+//       }
+//     case "MPTokenAuthorize":
+//       return {
+//         type: "MPTokenAuthorize",
+//         tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+//         flags: mpTokenAuthorizeFlagsToStrings(tx.Flags),
+//         ...(tx.Holder !== undefined && {
+//           holder: { type: "Address" as const, address: tx.Holder },
+//         }),
+//       }
+//     case "MPTokenIssuanceCreate":
+//       return {
+//         type: "MPTokenIssuanceCreate",
+//         flags: mpTokenIssuanceCreateFlagsToStrings(tx.Flags),
+//         ...(tx.AssetScale !== undefined && { assetScale: tx.AssetScale }),
+//         ...(tx.TransferFee !== undefined && { transferFee: tx.TransferFee }),
+//         ...(tx.MaximumAmount !== undefined && { maximumAmount: tx.MaximumAmount }),
+//         ...(tx.MPTokenMetadata !== undefined && {
+//           metadata: { type: "HexEncodedMetadata" as const, value: tx.MPTokenMetadata },
+//         }),
+//       }
+//     case "MPTokenIssuanceDestroy":
+//       return {
+//         type: "MPTokenIssuanceDestroy",
+//         tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+//       }
+//     case "MPTokenIssuanceSet":
+//       return {
+//         type: "MPTokenIssuanceSet",
+//         tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+//         flags: mpTokenIssuanceSetFlagsToStrings(tx.Flags),
+//         ...(tx.Holder !== undefined && {
+//           holder: { type: "Address" as const, address: tx.Holder },
+//         }),
+//       }
+//     default:
+//       throw new Error(`Unsupported transaction type: ${tx.TransactionType}`)
+//   }
+// }
 
 /**
  * Converts an XRPL SDK BatchSigners array (from a signed Batch transaction)
  * to the batchSigners format required by the Ripple Custody API.
  */
-export const batchSignersToCustodyBatchSigners = (
-  batchSigners: BatchSigner[],
-): CustodyBatchSigner[] => {
-  return batchSigners.map(({ BatchSigner: { Account, SigningPubKey, TxnSignature } }) => ({
-    account: Account,
-    signingPubKey: SigningPubKey ?? "",
-    txnSignature: TxnSignature ?? "",
-  }))
-}
+// export const batchSignersToCustodyBatchSigners = (
+//   batchSigners: BatchSigner[],
+// ): CustodyBatchSigner[] => {
+//   return batchSigners.map(({ BatchSigner: { Account, SigningPubKey, TxnSignature } }) => ({
+//     account: Account,
+//     signingPubKey: SigningPubKey ?? "",
+//     txnSignature: TxnSignature ?? "",
+//   }))
+// }
 
 /**
  * Converts an XRPL SDK Batch.RawTransactions array to the innerTransactions
@@ -295,15 +292,15 @@ export const batchSignersToCustodyBatchSigners = (
  * Supported transaction types: Payment, OfferCreate, TrustSet, AccountSet, TicketCreate.
  * Throws for any other type.
  */
-export const rawTransactionsToInnerTransactions = (
-  rawTransactions: Batch["RawTransactions"],
-): CustodyInnerTransaction[] => {
-  return rawTransactions.map(({ RawTransaction: tx }) => ({
-    account: tx.Account,
-    ...(tx.Sequence !== undefined && { sequence: tx.Sequence }),
-    ...(tx.TicketSequence !== undefined && {
-      ticketSequence: tx.TicketSequence,
-    }),
-    operation: txToOperation(tx),
-  }))
-}
+// export const rawTransactionsToInnerTransactions = (
+//   rawTransactions: Batch["RawTransactions"],
+// ): CustodyInnerTransaction[] => {
+//   return rawTransactions.map(({ RawTransaction: tx }) => ({
+//     account: tx.Account,
+//     ...(tx.Sequence !== undefined && { sequence: tx.Sequence }),
+//     ...(tx.TicketSequence !== undefined && {
+//       ticketSequence: tx.TicketSequence,
+//     }),
+//     operation: txToOperation(tx),
+//   }))
+// }

@@ -169,14 +169,14 @@ export type {
 } from "./services/vaults/index.js"
 
 // xrpl types and functions
-export {
-  batchSignersToCustodyBatchSigners,
-  rawTransactionsToInnerTransactions,
-} from "./services/xrpl/index.js"
+// export {
+//   batchSignersToCustodyBatchSigners,
+//   rawTransactionsToInnerTransactions,
+// } from "./services/xrpl/index.js"
 export type {
   Core_XrplOperation,
   CustodyAccountSet,
-  CustodyBatch,
+  // CustodyBatch,
   CustodyClawback,
   CustodyDepositPreauth,
   CustodyMpTokenAuthorize,
@@ -185,7 +185,7 @@ export type {
   CustodyMpTokenIssuanceSet,
   CustodyOfferCreate,
   CustodyPayment,
-  CustodyTicketCreate,
+  // CustodyTicketCreate,
   CustodyTrustline,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,

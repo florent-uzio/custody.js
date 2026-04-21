@@ -1,3 +1,6 @@
+// Batch is not part of an official Ripple Custody release yet, hence this file is using a .txt extension for now.
+// When the official release supports it, the file will be renamed to .ts and we will make sure the script works
+
 import { type Batch, BatchFlags, Client, GlobalFlags, type Payment, xrpToDrops } from "xrpl"
 import { rawTransactionsToInnerTransactions, RippleCustody } from "../../../../src/index"
 
