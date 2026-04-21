@@ -52,6 +52,9 @@ export const URLs = createURLs({
   accountBalancesRefresh: "/v1/domains/{domainId}/accounts/{accountId}/balances/refresh",
   accountManifests: "/v1/domains/{domainId}/accounts/{accountId}/manifests",
   accountManifest: "/v1/domains/{domainId}/accounts/{accountId}/manifests/{manifestId}",
+  accountComplianceConfiguration:
+    "/v1/domains/{domainId}/accounts/{accountId}/compliance-configuration",
+  complianceConfigurations: "/v1/domains/{domainId}/compliance-configurations",
 
   // Addresses
   addresses: "/v1/addresses",

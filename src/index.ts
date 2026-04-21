@@ -49,6 +49,8 @@ export type {
   Core_ApiAccount,
   Core_ApiManifest,
   Core_BalancesCollection,
+  Core_ComplianceConfiguration,
+  Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
@@ -65,9 +67,14 @@ export type {
   GetAddressesPathParams,
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
+  GetComplianceConfigurationPathParams,
   GetManifestPathParams,
   GetManifestsPathParams,
   GetManifestsQueryParams,
+  ListComplianceConfigurationsPathParams,
+  ListComplianceConfigurationsQueryParams,
+  UpsertComplianceConfigurationBody,
+  UpsertComplianceConfigurationPathParams,
 } from "./services/accounts/index.js"
 
 // transactions types

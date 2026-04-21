@@ -196,4 +196,36 @@ export class ApiService {
       }
     }
   }
+
+  /**
+   * Makes a PUT request to the API.
+   * @param url - The endpoint URL.
+   * @param body - The request payload (sent as-is; no canonicalization or signing).
+   * @returns {Promise<T>} The response data.
+   * @throws {CustodyError} If the request fails with a typed error response.
+   */
+  public async put<T>(url: string, body: any, config?: AxiosRequestConfig): Promise<T> {
+    try {
+      const response = await this.apiClient.put<T>(url, body, config)
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
+        const errorData = error.response?.data
+        if (isObject(errorData)) {
+          throw new CustodyError(errorData, error.response?.status, error)
+        }
+        throw new CustodyError(
+          { reason: `PUT API request failed: ${error.message}` },
+          error.response?.status,
+          error,
+        )
+      } else {
+        throw new CustodyError(
+          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
+      }
+    }
+  }
 }
