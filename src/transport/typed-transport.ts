@@ -49,7 +49,7 @@ export class TypedTransport {
       const result = splitParams(url, pathParams)
       resolvedUrl = result.url
     }
-    return this.api.post<T>(resolvedUrl, body, config as AxiosRequestConfig)
+    return this.api.post<T>(resolvedUrl, body, config as AxiosRequestConfig & { sign?: boolean })
   }
 
   /**

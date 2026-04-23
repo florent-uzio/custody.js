@@ -16,3 +16,9 @@ export type EDS_Channel = components["schemas"]["EDS_Channel"]
 export type EDS_Event = components["schemas"]["EDS_Event"]
 export type EDS_ChannelUpdate = components["schemas"]["EDS_ChannelUpdate"]
 export type EDS_WebhookChannelCreate = components["schemas"]["EDS_WebhookChannelCreate"]
+
+/**
+ * Request body for `channels.create`. Modeled as a discriminated union so new
+ * channel types (e.g. non-WEBHOOK) can be added without a breaking change.
+ */
+export type EDS_ChannelCreate = EDS_WebhookChannelCreate

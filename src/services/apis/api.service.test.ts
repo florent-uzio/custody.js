@@ -441,6 +441,32 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       expect(mockAxiosInstance.post).toHaveBeenCalledWith("/test-endpoint", undefined, undefined)
       expect(result).toEqual(mockResponse.data)
     })
+
+    it("should skip signing/canonicalization when sign: false is passed", async () => {
+      const canonicalize = (await import("canonicalize")).default
+      vi.mocked(canonicalize).mockClear()
+
+      const mockResponse = { data: { id: "ch-1" } }
+      mockAxiosInstance.post.mockResolvedValue(mockResponse)
+
+      // Flat body (no `request`/`signature` envelope) — would blow up if canonicalization ran
+      const body = { name: "hook", url: "https://example.com/webhook" }
+      await apiService.post("/test-endpoint", body, { sign: false })
+
+      expect(vi.mocked(canonicalize)).not.toHaveBeenCalled()
+      expect(body).not.toHaveProperty("signature")
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith("/test-endpoint", body, {})
+    })
+
+    it("should still sign when sign: true is passed explicitly", async () => {
+      const mockResponse = { data: { success: true } }
+      mockAxiosInstance.post.mockResolvedValue(mockResponse)
+
+      const body = { request: { type: "test" }, signature: "" }
+      await apiService.post("/test-endpoint", body, { sign: true })
+
+      expect(body.signature).toBe("mock-signature")
+    })
   })
 
   describe("response interceptor (401 retry)", () => {

@@ -125,5 +125,23 @@ describe("TypedTransport", () => {
 
       expect(result).toEqual(mockResponse)
     })
+
+    it("should forward { sign: false } through config to api.post", async () => {
+      const body = { name: "hook", url: "https://example.com" }
+      mockApiService.post.mockResolvedValue({})
+
+      await transport.post(
+        "/v1/domains/{domainId}/channels",
+        body,
+        { domainId: "d-1" },
+        {
+          sign: false,
+        },
+      )
+
+      expect(mockApiService.post).toHaveBeenCalledWith("/v1/domains/d-1/channels", body, {
+        sign: false,
+      })
+    })
   })
 })

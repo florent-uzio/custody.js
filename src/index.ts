@@ -55,6 +55,7 @@ export type {
   CreateChannelPathParams,
   DeleteChannelPathParams,
   EDS_Channel,
+  EDS_ChannelCreate,
   EDS_ChannelUpdate,
   EDS_Event,
   EDS_WebhookChannelCreate,
