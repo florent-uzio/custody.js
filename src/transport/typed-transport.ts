@@ -69,4 +69,22 @@ export class TypedTransport {
     }
     return this.api.put<T>(resolvedUrl, body, config as AxiosRequestConfig)
   }
+
+  /**
+   * Makes a typed PATCH request.
+   * Resolves path params from the URL template before sending.
+   */
+  async patch<T>(
+    url: string,
+    body: unknown,
+    pathParams?: Record<string, unknown>,
+    config?: RequestConfig,
+  ): Promise<T> {
+    let resolvedUrl = url
+    if (pathParams && Object.keys(pathParams).length > 0) {
+      const result = splitParams(url, pathParams)
+      resolvedUrl = result.url
+    }
+    return this.api.patch<T>(resolvedUrl, body, config as AxiosRequestConfig)
+  }
 }

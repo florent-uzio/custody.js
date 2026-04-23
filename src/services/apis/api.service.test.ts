@@ -10,6 +10,7 @@ vi.mock("axios", () => {
   const mockAxiosInstance: any = vi.fn(() => Promise.resolve({ data: {} }))
   mockAxiosInstance.get = vi.fn()
   mockAxiosInstance.post = vi.fn()
+  mockAxiosInstance.patch = vi.fn()
   mockAxiosInstance.defaults = { paramsSerializer: null }
   mockAxiosInstance.interceptors = {
     request: { use: vi.fn() },
@@ -65,6 +66,7 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
   let mockAxiosInstance: {
     get: ReturnType<typeof vi.fn>
     post: ReturnType<typeof vi.fn>
+    patch: ReturnType<typeof vi.fn>
     defaults: { paramsSerializer: unknown }
     interceptors: {
       request: { use: ReturnType<typeof vi.fn> }
@@ -466,6 +468,94 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       await apiService.post("/test-endpoint", body, { sign: true })
 
       expect(body.signature).toBe("mock-signature")
+    })
+  })
+
+  describe("patch", () => {
+    it("should make PATCH request and return data", async () => {
+      const mockResponse = { data: { id: "ch-1", name: "renamed" } }
+      mockAxiosInstance.patch.mockResolvedValue(mockResponse)
+
+      const body = { name: "renamed" }
+      const result = await apiService.patch("/test-endpoint", body)
+
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith("/test-endpoint", body, undefined)
+      expect(result).toEqual(mockResponse.data)
+    })
+
+    it("should forward body without canonicalization or signing", async () => {
+      const canonicalize = (await import("canonicalize")).default
+      vi.mocked(canonicalize).mockClear()
+
+      mockAxiosInstance.patch.mockResolvedValue({ data: {} })
+
+      const body = { name: "renamed", url: "https://example.com/webhook" }
+      await apiService.patch("/test-endpoint", body)
+
+      expect(vi.mocked(canonicalize)).not.toHaveBeenCalled()
+      expect(body).not.toHaveProperty("signature")
+    })
+
+    it("should pass config to PATCH request", async () => {
+      mockAxiosInstance.patch.mockResolvedValue({ data: {} })
+
+      const config = { headers: { "X-Custom": "header" } }
+      await apiService.patch("/test-endpoint", { name: "x" }, config)
+
+      expect(mockAxiosInstance.patch).toHaveBeenCalledWith("/test-endpoint", { name: "x" }, config)
+    })
+
+    it("should throw CustodyError on API error with error structure", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: {
+          status: 404,
+          data: { reason: "Not found", message: "Channel does not exist" },
+        },
+        message: "Request failed",
+      }
+      mockAxiosInstance.patch.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.patch("/test-endpoint", { name: "x" })
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toBe("Not found")
+        expect((error as CustodyError).statusCode).toBe(404)
+      }
+    })
+
+    it("should throw CustodyError with fallback message on unexpected error format", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: {
+          status: 500,
+          data: "Internal Server Error",
+        },
+        message: "Server error",
+      }
+      mockAxiosInstance.patch.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.patch("/test-endpoint", { name: "x" })
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toContain("PATCH API request failed")
+        expect((error as CustodyError).statusCode).toBe(500)
+      }
+    })
+
+    it("should wrap non-Axios errors as CustodyError", async () => {
+      const genericError = new Error("Network failure")
+      mockAxiosInstance.patch.mockRejectedValue(genericError)
+
+      try {
+        await apiService.patch("/test-endpoint", { name: "x" })
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toBe("Network failure")
+        expect((error as CustodyError).cause).toBe(genericError)
+      }
     })
   })
 

@@ -3,6 +3,7 @@ import type {
   CreateChannelPathParams,
   EDS_Channel,
   EDS_ChannelCreate,
+  EDS_ChannelUpdate,
   EDS_Event,
   GetAllChannelsEventsPathParams,
   GetChannelEventPathParams,
@@ -10,6 +11,7 @@ import type {
   GetChannelPathParams,
   GetChannelsPathParams,
   TestChannelPathParams,
+  UpdateChannelPathParams,
 } from "../services/channels/channels.types.js"
 import type { TypedTransport } from "../transport/index.js"
 
@@ -21,6 +23,9 @@ export function createChannels(t: TypedTransport) {
 
     create: (params: CreateChannelPathParams, body: EDS_ChannelCreate): Promise<EDS_Channel> =>
       t.post(URLs.channels, body, params, { sign: false }),
+
+    update: (params: UpdateChannelPathParams, body: EDS_ChannelUpdate): Promise<EDS_Channel> =>
+      t.patch(URLs.channel, body, params),
 
     test: (params: TestChannelPathParams): Promise<void> =>
       t.post(URLs.channelTest, undefined, params, { sign: false }),

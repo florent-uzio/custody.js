@@ -4,6 +4,7 @@ import { TypedTransport } from "./typed-transport.js"
 const mockApiService = {
   get: vi.fn(),
   post: vi.fn(),
+  patch: vi.fn(),
 }
 
 describe("TypedTransport", () => {
@@ -142,6 +143,51 @@ describe("TypedTransport", () => {
       expect(mockApiService.post).toHaveBeenCalledWith("/v1/domains/d-1/channels", body, {
         sign: false,
       })
+    })
+  })
+
+  describe("patch", () => {
+    it("should call api.patch with URL and body", async () => {
+      const body = { name: "renamed" }
+      mockApiService.patch.mockResolvedValue({})
+
+      await transport.patch("/v1/domains/{domainId}/channels/{channelId}", body, {
+        domainId: "d-1",
+        channelId: "ch-1",
+      })
+
+      expect(mockApiService.patch).toHaveBeenCalledWith(
+        "/v1/domains/d-1/channels/ch-1",
+        body,
+        undefined,
+      )
+    })
+
+    it("should call api.patch with URL and body when no path params", async () => {
+      const body = { name: "x" }
+      mockApiService.patch.mockResolvedValue({})
+
+      await transport.patch("/v1/some/path", body)
+
+      expect(mockApiService.patch).toHaveBeenCalledWith("/v1/some/path", body, undefined)
+    })
+
+    it("should forward config to api.patch", async () => {
+      mockApiService.patch.mockResolvedValue({})
+      const config = { headers: { "X-Custom": "x" } }
+
+      await transport.patch("/v1/some/path", { name: "x" }, undefined, config)
+
+      expect(mockApiService.patch).toHaveBeenCalledWith("/v1/some/path", { name: "x" }, config)
+    })
+
+    it("should return the data from api.patch", async () => {
+      const mockResponse = { id: "ch-1", name: "renamed" }
+      mockApiService.patch.mockResolvedValue(mockResponse)
+
+      const result = await transport.patch("/v1/some/path", { name: "renamed" })
+
+      expect(result).toEqual(mockResponse)
     })
   })
 })
