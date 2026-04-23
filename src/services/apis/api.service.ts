@@ -150,13 +150,21 @@ export class ApiService {
    * Makes a POST request to the API.
    * @param url - The endpoint URL.
    * @param body - The request payload.
+   * @param config - Axios config; set `sign: false` to skip canonicalization/signing.
    * @returns {Promise<T>} The response data.
    * @throws {CustodyError} If the request fails with a typed error response.
    */
-  public async post<T>(url: string, body: any, config?: AxiosRequestConfig): Promise<T> {
+  public async post<T>(
+    url: string,
+    body: any,
+    config?: AxiosRequestConfig & { sign?: boolean },
+  ): Promise<T> {
+    const { sign, ...rest } = config ?? {}
+    // Preserve `undefined` when no config was passed so axios receives its own default
+    const axiosConfig: AxiosRequestConfig | undefined = config ? rest : undefined
     try {
-      // Sign the request if signature is missing
-      if (body && (!body.signature || body.signature === "")) {
+      // Sign the request (default) unless the caller opted out
+      if (sign !== false && body && (!body.signature || body.signature === "")) {
         // Canonicalize the request body
         // @ts-expect-error canonicalize works fine but has complex types
         const canonicalizedRequest = canonicalize(body.request)
@@ -171,7 +179,7 @@ export class ApiService {
         body.signature = signature
       }
 
-      const response = await this.apiClient.post<T>(url, body, config)
+      const response = await this.apiClient.post<T>(url, body, axiosConfig)
       return response.data
     } catch (error) {
       if (axios.isAxiosError<Core_ErrorMessage>(error)) {
@@ -216,6 +224,69 @@ export class ApiService {
         }
         throw new CustodyError(
           { reason: `PUT API request failed: ${error.message}` },
+          error.response?.status,
+          error,
+        )
+      } else {
+        throw new CustodyError(
+          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
+      }
+    }
+  }
+
+  /**
+   * Makes a PATCH request to the API.
+   * @param url - The endpoint URL.
+   * @param body - The request payload (sent as-is; no canonicalization or signing).
+   * @returns {Promise<T>} The response data.
+   * @throws {CustodyError} If the request fails with a typed error response.
+   */
+  public async patch<T>(url: string, body: any, config?: AxiosRequestConfig): Promise<T> {
+    try {
+      const response = await this.apiClient.patch<T>(url, body, config)
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
+        const errorData = error.response?.data
+        if (isObject(errorData)) {
+          throw new CustodyError(errorData, error.response?.status, error)
+        }
+        throw new CustodyError(
+          { reason: `PATCH API request failed: ${error.message}` },
+          error.response?.status,
+          error,
+        )
+      } else {
+        throw new CustodyError(
+          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
+      }
+    }
+  }
+
+  /**
+   * Makes a DELETE request to the API.
+   * @param url - The endpoint URL.
+   * @returns {Promise<T>} The response data.
+   * @throws {CustodyError} If the request fails with a typed error response.
+   */
+  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    try {
+      const response = await this.apiClient.delete<T>(url, config)
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
+        const errorData = error.response?.data
+        if (isObject(errorData)) {
+          throw new CustodyError(errorData, error.response?.status, error)
+        }
+        throw new CustodyError(
+          { reason: `DELETE API request failed: ${error.message}` },
           error.response?.status,
           error,
         )
