@@ -1,5 +1,6 @@
 export { createAccounts, findByAddress } from "./accounts.js"
 export { createDomains } from "./domains.js"
+export { createEvents } from "./events.js"
 export { createIntents } from "./intents.js"
 export { createLedgers } from "./ledgers.js"
 export { createRequests } from "./requests.js"
