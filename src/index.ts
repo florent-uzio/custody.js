@@ -49,6 +49,24 @@ export type {
   GetEventsQueryParams,
 } from "./services/events/index.js"
 
+// channels (EDS) types and helpers
+export { parseEventPayload } from "./services/channels/index.js"
+export type {
+  CreateChannelPathParams,
+  DeleteChannelPathParams,
+  EDS_Channel,
+  EDS_ChannelUpdate,
+  EDS_Event,
+  EDS_WebhookChannelCreate,
+  GetAllChannelsEventsPathParams,
+  GetChannelEventPathParams,
+  GetChannelEventsPathParams,
+  GetChannelPathParams,
+  GetChannelsPathParams,
+  TestChannelPathParams,
+  UpdateChannelPathParams,
+} from "./services/channels/index.js"
+
 // accounts types
 export type {
   AccountReference,

@@ -1,6 +1,7 @@
 export * from "./accounts/index.js"
 export * from "./apis/index.js"
 export * from "./auth/index.js"
+export * from "./channels/index.js"
 export * from "./domain-resolver/index.js"
 export * from "./domains/index.js"
 export * from "./events/index.js"
