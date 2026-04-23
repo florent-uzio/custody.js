@@ -268,4 +268,35 @@ export class ApiService {
       }
     }
   }
+
+  /**
+   * Makes a DELETE request to the API.
+   * @param url - The endpoint URL.
+   * @returns {Promise<T>} The response data.
+   * @throws {CustodyError} If the request fails with a typed error response.
+   */
+  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    try {
+      const response = await this.apiClient.delete<T>(url, config)
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
+        const errorData = error.response?.data
+        if (isObject(errorData)) {
+          throw new CustodyError(errorData, error.response?.status, error)
+        }
+        throw new CustodyError(
+          { reason: `DELETE API request failed: ${error.message}` },
+          error.response?.status,
+          error,
+        )
+      } else {
+        throw new CustodyError(
+          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
+      }
+    }
+  }
 }

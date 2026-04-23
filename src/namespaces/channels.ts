@@ -1,6 +1,7 @@
 import { URLs } from "../constants/urls.js"
 import type {
   CreateChannelPathParams,
+  DeleteChannelPathParams,
   EDS_Channel,
   EDS_ChannelCreate,
   EDS_ChannelUpdate,
@@ -26,6 +27,8 @@ export function createChannels(t: TypedTransport) {
 
     update: (params: UpdateChannelPathParams, body: EDS_ChannelUpdate): Promise<EDS_Channel> =>
       t.patch(URLs.channel, body, params),
+
+    delete: (params: DeleteChannelPathParams): Promise<void> => t.delete(URLs.channel, params),
 
     test: (params: TestChannelPathParams): Promise<void> =>
       t.post(URLs.channelTest, undefined, params, { sign: false }),

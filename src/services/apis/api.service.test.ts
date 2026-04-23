@@ -11,6 +11,7 @@ vi.mock("axios", () => {
   mockAxiosInstance.get = vi.fn()
   mockAxiosInstance.post = vi.fn()
   mockAxiosInstance.patch = vi.fn()
+  mockAxiosInstance.delete = vi.fn()
   mockAxiosInstance.defaults = { paramsSerializer: null }
   mockAxiosInstance.interceptors = {
     request: { use: vi.fn() },
@@ -67,6 +68,7 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
     get: ReturnType<typeof vi.fn>
     post: ReturnType<typeof vi.fn>
     patch: ReturnType<typeof vi.fn>
+    delete: ReturnType<typeof vi.fn>
     defaults: { paramsSerializer: unknown }
     interceptors: {
       request: { use: ReturnType<typeof vi.fn> }
@@ -551,6 +553,80 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
 
       try {
         await apiService.patch("/test-endpoint", { name: "x" })
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toBe("Network failure")
+        expect((error as CustodyError).cause).toBe(genericError)
+      }
+    })
+  })
+
+  describe("delete", () => {
+    it("should make DELETE request and return data", async () => {
+      const mockResponse = { data: undefined }
+      mockAxiosInstance.delete.mockResolvedValue(mockResponse)
+
+      const result = await apiService.delete("/test-endpoint")
+
+      expect(mockAxiosInstance.delete).toHaveBeenCalledWith("/test-endpoint", undefined)
+      expect(result).toEqual(mockResponse.data)
+    })
+
+    it("should pass config to DELETE request", async () => {
+      mockAxiosInstance.delete.mockResolvedValue({ data: undefined })
+
+      const config = { headers: { "X-Custom": "header" } }
+      await apiService.delete("/test-endpoint", config)
+
+      expect(mockAxiosInstance.delete).toHaveBeenCalledWith("/test-endpoint", config)
+    })
+
+    it("should throw CustodyError on API error with error structure", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: {
+          status: 404,
+          data: { reason: "Not found", message: "Channel does not exist" },
+        },
+        message: "Request failed",
+      }
+      mockAxiosInstance.delete.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.delete("/test-endpoint")
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toBe("Not found")
+        expect((error as CustodyError).statusCode).toBe(404)
+      }
+    })
+
+    it("should throw CustodyError with fallback message on unexpected error format", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: {
+          status: 500,
+          data: "Internal Server Error",
+        },
+        message: "Server error",
+      }
+      mockAxiosInstance.delete.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.delete("/test-endpoint")
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toContain("DELETE API request failed")
+        expect((error as CustodyError).statusCode).toBe(500)
+      }
+    })
+
+    it("should wrap non-Axios errors as CustodyError", async () => {
+      const genericError = new Error("Network failure")
+      mockAxiosInstance.delete.mockRejectedValue(genericError)
+
+      try {
+        await apiService.delete("/test-endpoint")
       } catch (error) {
         expect(error).toBeInstanceOf(CustodyError)
         expect((error as CustodyError).message).toBe("Network failure")

@@ -5,6 +5,7 @@ const mockApiService = {
   get: vi.fn(),
   post: vi.fn(),
   patch: vi.fn(),
+  delete: vi.fn(),
 }
 
 describe("TypedTransport", () => {
@@ -186,6 +187,45 @@ describe("TypedTransport", () => {
       mockApiService.patch.mockResolvedValue(mockResponse)
 
       const result = await transport.patch("/v1/some/path", { name: "renamed" })
+
+      expect(result).toEqual(mockResponse)
+    })
+  })
+
+  describe("delete", () => {
+    it("should call api.delete with resolved URL when path params provided", async () => {
+      mockApiService.delete.mockResolvedValue(undefined)
+
+      await transport.delete("/v1/domains/{domainId}/channels/{channelId}", {
+        domainId: "d-1",
+        channelId: "ch-1",
+      })
+
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/domains/d-1/channels/ch-1", undefined)
+    })
+
+    it("should call api.delete with plain URL when no path params", async () => {
+      mockApiService.delete.mockResolvedValue(undefined)
+
+      await transport.delete("/v1/some/path")
+
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/some/path", undefined)
+    })
+
+    it("should forward config to api.delete", async () => {
+      mockApiService.delete.mockResolvedValue(undefined)
+      const config = { headers: { "X-Custom": "x" } }
+
+      await transport.delete("/v1/some/path", undefined, config)
+
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/some/path", config)
+    })
+
+    it("should return the data from api.delete", async () => {
+      const mockResponse = { deleted: true }
+      mockApiService.delete.mockResolvedValue(mockResponse)
+
+      const result = await transport.delete("/v1/some/path")
 
       expect(result).toEqual(mockResponse)
     })

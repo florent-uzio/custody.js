@@ -87,4 +87,21 @@ export class TypedTransport {
     }
     return this.api.patch<T>(resolvedUrl, body, config as AxiosRequestConfig)
   }
+
+  /**
+   * Makes a typed DELETE request.
+   * Resolves path params from the URL template before sending.
+   */
+  async delete<T>(
+    url: string,
+    pathParams?: Record<string, unknown>,
+    config?: RequestConfig,
+  ): Promise<T> {
+    let resolvedUrl = url
+    if (pathParams && Object.keys(pathParams).length > 0) {
+      const result = splitParams(url, pathParams)
+      resolvedUrl = result.url
+    }
+    return this.api.delete<T>(resolvedUrl, config as AxiosRequestConfig)
+  }
 }
