@@ -193,6 +193,21 @@ export type {
   ProcessEthereumContractCallPathParams,
 } from "./services/ledgers/index.js"
 
+// policies types
+export type {
+  Core_Policy,
+  Core_PolicyCondition,
+  Core_PolicyCondition_And,
+  Core_PolicyCondition_Expression,
+  Core_PolicyCondition_Or,
+  Core_PolicyScope,
+  Core_TrustedPoliciesCollection,
+  Core_TrustedPolicy,
+  GetPoliciesPathParams,
+  GetPoliciesQueryParams,
+  GetPolicyPathParams,
+} from "./services/policies/index.js"
+
 // vaults types
 export type {
   Core_ApiVault,

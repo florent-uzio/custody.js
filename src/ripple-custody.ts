@@ -6,6 +6,7 @@ import {
   createEvents,
   createIntents,
   createLedgers,
+  createPolicies,
   createRequests,
   createTickers,
   createTransactions,
@@ -51,6 +52,7 @@ export class RippleCustody {
   public readonly userInvitations: ReturnType<typeof createUserInvitations>
   public readonly tickers: ReturnType<typeof createTickers>
   public readonly ledgers: ReturnType<typeof createLedgers>
+  public readonly policies: ReturnType<typeof createPolicies>
   public readonly vaults: ReturnType<typeof createVaults>
   public readonly requests: ReturnType<typeof createRequests>
 
@@ -81,6 +83,7 @@ export class RippleCustody {
     this.userInvitations = createUserInvitations(this.transport)
     this.tickers = createTickers(this.transport)
     this.ledgers = createLedgers(this.transport)
+    this.policies = createPolicies(this.transport)
     this.vaults = createVaults(this.transport)
     this.requests = createRequests(this.transport)
   }
