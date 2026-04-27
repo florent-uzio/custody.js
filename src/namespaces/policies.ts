@@ -5,7 +5,7 @@ import type {
   GetPoliciesPathParams,
   GetPoliciesQueryParams,
   GetPolicyPathParams,
-} from "../services/policies/policies.types.js"
+} from "../services/policies/index.js"
 import type { TypedTransport } from "../transport/index.js"
 
 export function createPolicies(t: TypedTransport) {

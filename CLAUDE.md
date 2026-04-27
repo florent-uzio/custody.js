@@ -32,11 +32,9 @@ export type Core_EventsCollection = components["schemas"]["Core_EventsCollection
 
 Hand-written interfaces or type aliases that mirror OpenAPI schemas are not
 allowed — they drift from the API contract and make the SDK lie about what the
-server actually accepts and returns. If a needed shape is missing or wrong:
+server actually accepts and returns.
 
-1. Update the OpenAPI spec at `openapi/Ripple-Custody-v1-OpenAPI.json`
-2. Regenerate with `npm run generate:custody-types`
-3. Re-export the updated type from `src/services/<area>/<area>.types.ts`
+Never update or touch `openapi/Ripple-Custody-v1-OpenAPI.json` as it comes from the Ripple Custody server.
 
 The only types that may be hand-authored are SDK-internal types that have no
 API counterpart (for example, polling option bags like `WaitForExecutionOptions`,
