@@ -7,7 +7,7 @@
       "url": "images/ripple-custody.png",
       "altText": "Ripple Custody logo"
     },
-    "x-app-version": "1.34.1"
+    "x-app-version": "1.32.1"
   },
   "paths": {
     "/v1/backups/{backupId}": {
@@ -9893,227 +9893,6 @@
         ]
       }
     },
-    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/relationships": {
-      "post": {
-        "tags": ["Compliance"],
-        "summary": "Create a relationship with the travel rule provider",
-        "description": "Pass-through proxy API to create a relationship with the travel rule provider (e.g., Notabene)",
-        "operationId": "CreateRelationship",
-        "parameters": [
-          {
-            "name": "domainId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "provider",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": ["NOTABENE"],
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Compliance_CreateRelationshipRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Relationship created successfully"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Domain not found",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "httpAuth": []
-          }
-        ]
-      },
-      "get": {
-        "tags": ["Compliance"],
-        "summary": "List all relationships registered with the travel rule provider",
-        "description": "Pass-through proxy API to list all relationships from the travel rule provider (e.g., Notabene)",
-        "operationId": "ListRelationships",
-        "parameters": [
-          {
-            "name": "domainId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "provider",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "enum": ["NOTABENE"],
-              "type": "string"
-            }
-          },
-          {
-            "name": "from",
-            "in": "query",
-            "description": "Filter by 'from' DID (Decentralized Identifier)",
-            "schema": {
-              "pattern": "^did:[a-z0-9]+:.+$",
-              "type": "string",
-              "format": "did"
-            }
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "description": "Filter by 'to' DID (Decentralized Identifier)",
-            "schema": {
-              "pattern": "^did:[a-z0-9]+:.+$",
-              "type": "string",
-              "format": "did"
-            }
-          },
-          {
-            "name": "custodian",
-            "in": "query",
-            "description": "Filter by custodian DID (Decentralized Identifier)",
-            "schema": {
-              "pattern": "^did:[a-z0-9]+:.+$",
-              "type": "string",
-              "format": "did"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Relationships retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_RelationshipList"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Domain not found",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "httpAuth": []
-          }
-        ]
-      }
-    },
     "/v1/domains/{domainId}/channels": {
       "get": {
         "tags": ["Event Distribution Service"],
@@ -11457,6 +11236,32 @@
           }
         }
       },
+      "Core_ApiBatchSigningData": {
+        "required": ["signingPayload", "signingPayloadHash", "executionMode", "transactions"],
+        "type": "object",
+        "properties": {
+          "signingPayload": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "signingPayloadHash": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "executionMode": {
+            "$ref": "#/components/schemas/Core_Xrpl_BatchExecutionMode"
+          },
+          "transactions": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_ApiInnerTransactionData"
+            }
+          }
+        }
+      },
       "Core_ApiBroadcastingTransactionProcessingHint": {
         "enum": [
           "CurrentlyFeesTooSmall",
@@ -11510,6 +11315,23 @@
           "TransientIssue"
         ],
         "type": "string"
+      },
+      "Core_ApiInnerTransactionData": {
+        "required": ["account", "operation", "sequencing"],
+        "type": "object",
+        "properties": {
+          "account": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation"
+          },
+          "sequencing": {
+            "$ref": "#/components/schemas/Core_ResolvedSequencing"
+          }
+        }
       },
       "Core_ApiInterruptedTransactionCause": {
         "enum": ["Cancellation", "Internal", "Replacement"],
@@ -12319,6 +12141,412 @@
           "type": {
             "enum": ["BalancesUpdated"],
             "type": "string"
+          }
+        }
+      },
+      "Core_BatchEntry": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_BatchEntry_ParticipantOperation"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchEntry_SubmitterOperation"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "ParticipantOperation": "#/components/schemas/Core_BatchEntry_ParticipantOperation",
+            "SubmitterOperation": "#/components/schemas/Core_BatchEntry_SubmitterOperation"
+          }
+        }
+      },
+      "Core_BatchEntry_ParticipantOperation": {
+        "required": ["participant", "operation", "sequencing", "type"],
+        "type": "object",
+        "properties": {
+          "participant": {
+            "$ref": "#/components/schemas/Core_Participant"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation"
+          },
+          "sequencing": {
+            "$ref": "#/components/schemas/Core_ParticipantSequencing"
+          },
+          "type": {
+            "enum": ["ParticipantOperation"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchEntry_SubmitterOperation": {
+        "required": ["operation", "sequencing", "type"],
+        "type": "object",
+        "properties": {
+          "operation": {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation"
+          },
+          "sequencing": {
+            "$ref": "#/components/schemas/Core_Sequencing"
+          },
+          "type": {
+            "enum": ["SubmitterOperation"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_AccountSet"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_Clawback"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_DepositPreauth"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_EscrowFinish"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_MPTokenAuthorize"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_MPTokenIssuanceCreate"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_MPTokenIssuanceDestroy"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_MPTokenIssuanceSet"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_OfferCreate"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_Payment"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_TicketCreate"
+          },
+          {
+            "$ref": "#/components/schemas/Core_BatchInnerOperation_TrustSet"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "AccountSet": "#/components/schemas/Core_BatchInnerOperation_AccountSet",
+            "Clawback": "#/components/schemas/Core_BatchInnerOperation_Clawback",
+            "DepositPreauth": "#/components/schemas/Core_BatchInnerOperation_DepositPreauth",
+            "EscrowFinish": "#/components/schemas/Core_BatchInnerOperation_EscrowFinish",
+            "MPTokenAuthorize": "#/components/schemas/Core_BatchInnerOperation_MPTokenAuthorize",
+            "MPTokenIssuanceCreate": "#/components/schemas/Core_BatchInnerOperation_MPTokenIssuanceCreate",
+            "MPTokenIssuanceDestroy": "#/components/schemas/Core_BatchInnerOperation_MPTokenIssuanceDestroy",
+            "MPTokenIssuanceSet": "#/components/schemas/Core_BatchInnerOperation_MPTokenIssuanceSet",
+            "OfferCreate": "#/components/schemas/Core_BatchInnerOperation_OfferCreate",
+            "Payment": "#/components/schemas/Core_BatchInnerOperation_Payment",
+            "TicketCreate": "#/components/schemas/Core_BatchInnerOperation_TicketCreate",
+            "TrustSet": "#/components/schemas/Core_BatchInnerOperation_TrustSet"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_AccountSet": {
+        "required": ["type"],
+        "type": "object",
+        "properties": {
+          "setFlag": {
+            "$ref": "#/components/schemas/Core_Xrpl_AccountSetFlag"
+          },
+          "clearFlag": {
+            "$ref": "#/components/schemas/Core_Xrpl_AccountSetFlag"
+          },
+          "transferRate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "enum": ["AccountSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_Clawback": {
+        "required": ["currency", "holder", "value", "type"],
+        "type": "object",
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Core_XrplClawbackCurrency"
+          },
+          "holder": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "value": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "type": {
+            "enum": ["Clawback"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_DepositPreauth": {
+        "required": ["type"],
+        "type": "object",
+        "properties": {
+          "authorize": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "unauthorize": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "type": {
+            "enum": ["DepositPreauth"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_EscrowFinish": {
+        "required": ["owner", "offerSequence", "type"],
+        "type": "object",
+        "properties": {
+          "owner": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "offerSequence": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "condition": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "credentialIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "pattern": "^[A-Fa-f0-9]*$",
+              "type": "string",
+              "description": "Hex encoded string."
+            }
+          },
+          "fulfillment": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "type": {
+            "enum": ["EscrowFinish"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_MPTokenAuthorize": {
+        "required": ["tokenIdentifier", "flags", "type"],
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "$ref": "#/components/schemas/Core_Xrpl_MPTokenIdentifier"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenAuthorizeFlag"
+            }
+          },
+          "holder": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "type": {
+            "enum": ["MPTokenAuthorize"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_MPTokenIssuanceCreate": {
+        "required": ["flags", "type"],
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenIssuanceCreateFlag"
+            }
+          },
+          "assetScale": {
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "transferFee": {
+            "maximum": 50000,
+            "minimum": 0,
+            "type": "integer",
+            "description": "Transfer fee for MultiPurposeToken, must be from 0 to 50000",
+            "format": "int32"
+          },
+          "maximumAmount": {
+            "maximum": 18446744073709551615,
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a unsigned 64bit integer that can store values in range from 0 to 18446744073709551615.It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Core_MPTokenIssuanceMetadata"
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceCreate"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_MPTokenIssuanceDestroy": {
+        "required": ["tokenIdentifier", "type"],
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "$ref": "#/components/schemas/Core_Xrpl_MPTokenIdentifier"
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceDestroy"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_MPTokenIssuanceSet": {
+        "required": ["tokenIdentifier", "flags", "type"],
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "$ref": "#/components/schemas/Core_Xrpl_MPTokenIdentifier"
+          },
+          "holder": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenIssuanceSetFlag"
+            }
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_OfferCreate": {
+        "required": ["flags", "takerGets", "takerPays", "type"],
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_OfferCreateFlag"
+            }
+          },
+          "takerGets": {
+            "$ref": "#/components/schemas/Core_Xrpl_AssetQuantity"
+          },
+          "takerPays": {
+            "$ref": "#/components/schemas/Core_Xrpl_AssetQuantity"
+          },
+          "type": {
+            "enum": ["OfferCreate"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_Payment": {
+        "required": ["destination", "amount", "type"],
+        "type": "object",
+        "properties": {
+          "destination": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "amount": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "destinationTag": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Core_XrplPaymentCurrency"
+          },
+          "type": {
+            "enum": ["Payment"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_TicketCreate": {
+        "required": ["ticketCount", "type"],
+        "type": "object",
+        "properties": {
+          "ticketCount": {
+            "maximum": 250,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Number of tickets to create, must be from 1 to 250",
+            "format": "int32"
+          },
+          "type": {
+            "enum": ["TicketCreate"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchInnerOperation_TrustSet": {
+        "required": ["flags", "limitAmount", "type"],
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_TrustSetFlag"
+            }
+          },
+          "limitAmount": {
+            "$ref": "#/components/schemas/Core_Xrpl_LimitAmount"
+          },
+          "enableRippling": {
+            "type": "boolean"
+          },
+          "type": {
+            "enum": ["TrustSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_BatchSigner": {
+        "required": ["participant", "publicKey", "signature"],
+        "type": "object",
+        "properties": {
+          "participant": {
+            "$ref": "#/components/schemas/Core_Participant"
+          },
+          "publicKey": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "signature": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
           }
         }
       },
@@ -16906,6 +17134,119 @@
           }
         }
       },
+      "Core_Participant": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_Participant_Account"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Participant_Address"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Participant_Endpoint"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Account": "#/components/schemas/Core_Participant_Account",
+            "Address": "#/components/schemas/Core_Participant_Address",
+            "Endpoint": "#/components/schemas/Core_Participant_Endpoint"
+          }
+        }
+      },
+      "Core_ParticipantSequencing": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_ParticipantSequencing_AccountSequence"
+          },
+          {
+            "$ref": "#/components/schemas/Core_ParticipantSequencing_Ticket"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "AccountSequence": "#/components/schemas/Core_ParticipantSequencing_AccountSequence",
+            "Ticket": "#/components/schemas/Core_ParticipantSequencing_Ticket"
+          }
+        }
+      },
+      "Core_ParticipantSequencing_AccountSequence": {
+        "required": ["value", "type"],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": ["AccountSequence"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_ParticipantSequencing_Ticket": {
+        "required": ["value", "type"],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": ["Ticket"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Participant_Account": {
+        "required": ["accountId", "type"],
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["Account"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Participant_Address": {
+        "required": ["address", "type"],
+        "type": "object",
+        "properties": {
+          "address": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
+          "type": {
+            "enum": ["Address"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Participant_Endpoint": {
+        "required": ["endpointId", "type"],
+        "type": "object",
+        "properties": {
+          "endpointId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "enum": ["Endpoint"],
+            "type": "string"
+          }
+        }
+      },
       "Core_Permissions": {
         "required": ["readAccess"],
         "type": "object",
@@ -17808,6 +18149,55 @@
           }
         }
       },
+      "Core_ResolvedSequencing": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_ResolvedSequencing_AccountSequence"
+          },
+          {
+            "$ref": "#/components/schemas/Core_ResolvedSequencing_Ticket"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "AccountSequence": "#/components/schemas/Core_ResolvedSequencing_AccountSequence",
+            "Ticket": "#/components/schemas/Core_ResolvedSequencing_Ticket"
+          }
+        }
+      },
+      "Core_ResolvedSequencing_AccountSequence": {
+        "required": ["value", "type"],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": ["AccountSequence"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_ResolvedSequencing_Ticket": {
+        "required": ["value", "type"],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": ["Ticket"],
+            "type": "string"
+          }
+        }
+      },
       "Core_ResultLedger": {
         "required": ["ledgerId", "available"],
         "type": "object",
@@ -17940,6 +18330,69 @@
           },
           "type": {
             "enum": ["Address"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Sequencing": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_Sequencing_AccountSequence"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Sequencing_PlatformManaged"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Sequencing_Ticket"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "AccountSequence": "#/components/schemas/Core_Sequencing_AccountSequence",
+            "PlatformManaged": "#/components/schemas/Core_Sequencing_PlatformManaged",
+            "Ticket": "#/components/schemas/Core_Sequencing_Ticket"
+          }
+        }
+      },
+      "Core_Sequencing_AccountSequence": {
+        "required": ["value", "type"],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": ["AccountSequence"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Sequencing_PlatformManaged": {
+        "required": ["type"],
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": ["PlatformManaged"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Sequencing_Ticket": {
+        "required": ["value", "type"],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": ["Ticket"],
             "type": "string"
           }
         }
@@ -20262,6 +20715,9 @@
             "minimum": 0,
             "type": "string",
             "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "batchSigningData": {
+            "$ref": "#/components/schemas/Core_ApiBatchSigningData"
           },
           "type": {
             "enum": ["XRPL"],
@@ -22812,6 +23268,9 @@
             "$ref": "#/components/schemas/Core_XrplOperation_AccountSet"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplOperation_Batch"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplOperation_Clawback"
           },
           {
@@ -22839,6 +23298,9 @@
             "$ref": "#/components/schemas/Core_XrplOperation_Payment"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplOperation_TicketCreate"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplOperation_TrustSet"
           }
         ],
@@ -22846,6 +23308,7 @@
           "propertyName": "type",
           "mapping": {
             "AccountSet": "#/components/schemas/Core_XrplOperation_AccountSet",
+            "Batch": "#/components/schemas/Core_XrplOperation_Batch",
             "Clawback": "#/components/schemas/Core_XrplOperation_Clawback",
             "DepositPreauth": "#/components/schemas/Core_XrplOperation_DepositPreauth",
             "EscrowFinish": "#/components/schemas/Core_XrplOperation_EscrowFinish",
@@ -22855,6 +23318,7 @@
             "MPTokenIssuanceSet": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceSet",
             "OfferCreate": "#/components/schemas/Core_XrplOperation_OfferCreate",
             "Payment": "#/components/schemas/Core_XrplOperation_Payment",
+            "TicketCreate": "#/components/schemas/Core_XrplOperation_TicketCreate",
             "TrustSet": "#/components/schemas/Core_XrplOperation_TrustSet"
           }
         }
@@ -22875,6 +23339,41 @@
           },
           "type": {
             "enum": ["AccountSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_Batch": {
+        "required": ["executionMode", "entries", "batchSigners", "sequencing", "type"],
+        "type": "object",
+        "properties": {
+          "executionMode": {
+            "$ref": "#/components/schemas/Core_Xrpl_BatchExecutionMode"
+          },
+          "entries": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_BatchEntry"
+            }
+          },
+          "batchSigners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_BatchSigner"
+            }
+          },
+          "sequencing": {
+            "$ref": "#/components/schemas/Core_Sequencing"
+          },
+          "lastLedgerSequence": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": ["Batch"],
             "type": "string"
           }
         }
@@ -23098,6 +23597,23 @@
           }
         }
       },
+      "Core_XrplOperation_TicketCreate": {
+        "required": ["ticketCount", "type"],
+        "type": "object",
+        "properties": {
+          "ticketCount": {
+            "maximum": 250,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Number of tickets to create, must be from 1 to 250",
+            "format": "int32"
+          },
+          "type": {
+            "enum": ["TicketCreate"],
+            "type": "string"
+          }
+        }
+      },
       "Core_XrplOperation_TrustSet": {
         "required": ["flags", "limitAmount", "type"],
         "type": "object",
@@ -23283,6 +23799,10 @@
           }
         }
       },
+      "Core_Xrpl_BatchExecutionMode": {
+        "enum": ["AllOrNothing", "OnlyOne", "UntilFailure", "Independent"],
+        "type": "string"
+      },
       "Core_Xrpl_LimitAmount": {
         "required": ["currency", "value"],
         "type": "object",
@@ -23365,6 +23885,514 @@
       "Core_Xrpl_OfferCreateFlag": {
         "enum": ["tfImmediateOrCancel", "tfFillOrKill", "tfSell"],
         "type": "string"
+      },
+      "Core_Xrpl_ResolvedAssetQuantity": {
+        "required": ["amount"],
+        "type": "object",
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedIouCurrency"
+          },
+          "amount": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_AccountSet"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_Clawback"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_DepositPreauth"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_EscrowFinish"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenAuthorize"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceCreate"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceDestroy"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceSet"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_OfferCreate"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_Payment"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_TicketCreate"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_TrustSet"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "AccountSet": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_AccountSet",
+            "Clawback": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_Clawback",
+            "DepositPreauth": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_DepositPreauth",
+            "EscrowFinish": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_EscrowFinish",
+            "MPTokenAuthorize": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenAuthorize",
+            "MPTokenIssuanceCreate": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceCreate",
+            "MPTokenIssuanceDestroy": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceDestroy",
+            "MPTokenIssuanceSet": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceSet",
+            "OfferCreate": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_OfferCreate",
+            "Payment": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_Payment",
+            "TicketCreate": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_TicketCreate",
+            "TrustSet": "#/components/schemas/Core_Xrpl_ResolvedBatchInnerOperation_TrustSet"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_AccountSet": {
+        "required": ["type"],
+        "type": "object",
+        "properties": {
+          "setFlag": {
+            "$ref": "#/components/schemas/Core_Xrpl_AccountSetFlag"
+          },
+          "clearFlag": {
+            "$ref": "#/components/schemas/Core_Xrpl_AccountSetFlag"
+          },
+          "transferRate": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "enum": ["AccountSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_Clawback": {
+        "required": ["currency", "holder", "value", "type"],
+        "type": "object",
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedClawbackCurrency"
+          },
+          "holder": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "value": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "type": {
+            "enum": ["Clawback"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_DepositPreauth": {
+        "required": ["type"],
+        "type": "object",
+        "properties": {
+          "authorize": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "unauthorize": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": ["DepositPreauth"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_EscrowFinish": {
+        "required": ["owner", "offerSequence", "type"],
+        "type": "object",
+        "properties": {
+          "owner": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "offerSequence": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "condition": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "credentialIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "pattern": "^[A-Fa-f0-9]*$",
+              "type": "string",
+              "description": "Hex encoded string."
+            }
+          },
+          "fulfillment": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "type": {
+            "enum": ["EscrowFinish"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_MPTokenAuthorize": {
+        "required": ["tokenIdentifier", "flags", "type"],
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedMPTokenIdentifier"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenAuthorizeFlag"
+            }
+          },
+          "holder": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": ["MPTokenAuthorize"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceCreate": {
+        "required": ["flags", "type"],
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenIssuanceCreateFlag"
+            }
+          },
+          "assetScale": {
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "transferFee": {
+            "maximum": 50000,
+            "minimum": 0,
+            "type": "integer",
+            "description": "Transfer fee for MultiPurposeToken, must be from 0 to 50000",
+            "format": "int32"
+          },
+          "maximumAmount": {
+            "maximum": 18446744073709551615,
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a unsigned 64bit integer that can store values in range from 0 to 18446744073709551615.It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/Core_MPTokenIssuanceMetadata"
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceCreate"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceDestroy": {
+        "required": ["tokenIdentifier", "type"],
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedMPTokenIdentifier"
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceDestroy"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceSet": {
+        "required": ["tokenIdentifier", "flags", "type"],
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedMPTokenIdentifier"
+          },
+          "holder": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_MPTokenIssuanceSetFlag"
+            }
+          },
+          "type": {
+            "enum": ["MPTokenIssuanceSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_OfferCreate": {
+        "required": ["flags", "takerGets", "takerPays", "type"],
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_OfferCreateFlag"
+            }
+          },
+          "takerGets": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedAssetQuantity"
+          },
+          "takerPays": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedAssetQuantity"
+          },
+          "type": {
+            "enum": ["OfferCreate"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_Payment": {
+        "required": ["destination", "amount", "type"],
+        "type": "object",
+        "properties": {
+          "destination": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "amount": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "destinationTag": {
+            "maximum": 4294967295,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int64"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedPaymentCurrency"
+          },
+          "type": {
+            "enum": ["Payment"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_TicketCreate": {
+        "required": ["ticketCount", "type"],
+        "type": "object",
+        "properties": {
+          "ticketCount": {
+            "maximum": 250,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Number of tickets to create, must be from 1 to 250",
+            "format": "int32"
+          },
+          "type": {
+            "enum": ["TicketCreate"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedBatchInnerOperation_TrustSet": {
+        "required": ["flags", "limitAmount", "type"],
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_TrustSetFlag"
+            }
+          },
+          "limitAmount": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedLimitAmount"
+          },
+          "enableRippling": {
+            "type": "boolean"
+          },
+          "type": {
+            "enum": ["TrustSet"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedClawbackCurrency": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedClawbackCurrency_Fungible"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedClawbackCurrency_MultiPurposeToken"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Fungible": "#/components/schemas/Core_Xrpl_ResolvedClawbackCurrency_Fungible",
+            "MultiPurposeToken": "#/components/schemas/Core_Xrpl_ResolvedClawbackCurrency_MultiPurposeToken"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedClawbackCurrency_Fungible": {
+        "required": ["code", "issuer", "type"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "issuer": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
+          "type": {
+            "enum": ["Fungible"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedClawbackCurrency_MultiPurposeToken": {
+        "required": ["issuanceId", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "type": {
+            "enum": ["MultiPurposeToken"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedIouCurrency": {
+        "required": ["code", "issuer"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "issuer": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedLimitAmount": {
+        "required": ["currency", "value"],
+        "type": "object",
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedIouCurrency"
+          },
+          "value": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedMPTokenIdentifier": {
+        "required": ["issuanceId"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedPaymentCurrency": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedPaymentCurrency_Fungible"
+          },
+          {
+            "$ref": "#/components/schemas/Core_Xrpl_ResolvedPaymentCurrency_MultiPurposeToken"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "Fungible": "#/components/schemas/Core_Xrpl_ResolvedPaymentCurrency_Fungible",
+            "MultiPurposeToken": "#/components/schemas/Core_Xrpl_ResolvedPaymentCurrency_MultiPurposeToken"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedPaymentCurrency_Fungible": {
+        "required": ["code", "issuer", "type"],
+        "type": "object",
+        "properties": {
+          "code": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "issuer": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
+          "type": {
+            "enum": ["Fungible"],
+            "type": "string"
+          }
+        }
+      },
+      "Core_Xrpl_ResolvedPaymentCurrency_MultiPurposeToken": {
+        "required": ["issuanceId", "type"],
+        "type": "object",
+        "properties": {
+          "issuanceId": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "XRPL MPToken Issuance ID (192-bit integer hex encoded)"
+          },
+          "type": {
+            "enum": ["MultiPurposeToken"],
+            "type": "string"
+          }
+        }
       },
       "Core_Xrpl_TrustSetFlag": {
         "enum": ["tfSetFreeze", "tfClearFreeze", "tfSetfAuth"],
@@ -27303,132 +28331,6 @@
           }
         },
         "description": "Individual travel rule detail for a single request"
-      },
-      "Compliance_CreateRelationshipRequest": {
-        "required": ["to"],
-        "type": "object",
-        "properties": {
-          "from": {
-            "pattern": "^did:[a-z0-9]+:.+$",
-            "type": "string",
-            "description": "The DID of the source entity. Defaults to the entityDID from the domain credentials.",
-            "format": "did",
-            "example": "did:web:ripple.com:test:us"
-          },
-          "to": {
-            "pattern": "^did:[a-z0-9]+:.+$",
-            "type": "string",
-            "description": "The DID of the target entity.",
-            "format": "did",
-            "example": "did:web:example.com:test:counterparty"
-          }
-        },
-        "description": "Request to create a relationship with a travel rule provider"
-      },
-      "Compliance_RelationshipList": {
-        "type": "object",
-        "properties": {
-          "relationships": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Compliance_RelationshipWithProofs"
-            },
-            "description": "Array of relationship objects with ownership proofs"
-          }
-        },
-        "description": "List of relationships from the travel rule provider"
-      },
-      "Compliance_RelationshipWithProofs": {
-        "required": ["@id", "from", "to", "status"],
-        "type": "object",
-        "properties": {
-          "@id": {
-            "type": "string",
-            "description": "Unique identifier for the relationship",
-            "example": "urn:uuid:12345678-1234-1234-1234-123456789abc"
-          },
-          "from": {
-            "pattern": "^did:[a-z0-9]+:.+$",
-            "type": "string",
-            "description": "Decentralized Identifier (DID) of the source entity",
-            "format": "did",
-            "example": "did:web:ripple.com:test:us"
-          },
-          "to": {
-            "pattern": "^did:[a-z0-9]+:.+$",
-            "type": "string",
-            "description": "Decentralized Identifier (DID) of the target entity",
-            "format": "did",
-            "example": "did:web:example.com:test:counterparty"
-          },
-          "custodian": {
-            "pattern": "^did:[a-z0-9]+:.+$",
-            "type": "string",
-            "description": "Decentralized Identifier (DID) of the custodian entity (optional)",
-            "format": "did",
-            "example": "did:web:custodian.com:test:vault"
-          },
-          "status": {
-            "enum": ["UNCONFIRMED", "CONFIRMED", "REJECTED"],
-            "type": "string",
-            "description": "Current state of the relationship",
-            "example": "CONFIRMED"
-          },
-          "confirmedBy": {
-            "pattern": "^did:[a-z0-9]+:.+$",
-            "type": "string",
-            "description": "Decentralized Identifier (DID) of the entity that confirmed the relationship",
-            "format": "did",
-            "example": "did:web:example.com:test:counterparty"
-          },
-          "proofs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Compliance_OwnershipProof"
-            },
-            "description": "Ownership proofs associated with this relationship"
-          }
-        },
-        "description": "A relationship between two entities with ownership proofs"
-      },
-      "Compliance_OwnershipProof": {
-        "required": ["address", "status"],
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string",
-            "description": "The blockchain address being proven",
-            "example": "0x1234567890abcdef1234567890abcdef12345678"
-          },
-          "chain": {
-            "type": "string",
-            "description": "The blockchain network",
-            "example": "ethereum"
-          },
-          "status": {
-            "enum": ["PENDING", "CONFIRMED", "VERIFIED", "REJECTED"],
-            "type": "string",
-            "description": "Status of the ownership proof",
-            "example": "VERIFIED"
-          },
-          "signature": {
-            "type": "string",
-            "description": "Cryptographic signature proving ownership",
-            "example": "0xabcdef..."
-          },
-          "message": {
-            "type": "string",
-            "description": "The message that was signed",
-            "example": "I own this address"
-          },
-          "timestamp": {
-            "type": "string",
-            "description": "When the proof was created",
-            "format": "date-time",
-            "example": "2026-03-10T14:30:00.0000000+00:00"
-          }
-        },
-        "description": "Proof of ownership for an address or entity"
       },
       "EDS_ChannelCreate": {
         "required": ["createdBy", "id", "name", "supportedEventTypes", "type"],
