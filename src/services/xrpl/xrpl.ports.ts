@@ -1,5 +1,10 @@
 import type { Core_ApiAccount, Core_ApiManifest } from "../accounts/accounts.types.js"
-import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
+import type {
+  Core_IntentDryRunRequest,
+  Core_IntentDryRunResponse,
+  Core_IntentResponse,
+  Core_ProposeIntentBody,
+} from "../intents/intents.types.js"
 import type { IntentContext } from "./xrpl.types.js"
 
 /**
@@ -20,6 +25,13 @@ export interface XrplPorts {
    * Wraps POST /v1/intents.
    */
   submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse>
+
+  /**
+   * Dry-runs an intent and returns the resolved estimate (including
+   * `batchSigningData` for Batch operations).
+   * Wraps POST /v1/intents/dry-run.
+   */
+  dryRunIntent(body: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse>
 
   /**
    * Retrieves a manifest for polling signature availability.

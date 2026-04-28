@@ -1,24 +1,27 @@
 import { createPublicKey } from "crypto"
 import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
-import {
-  encodeForSigning,
-  encodeForSigningBatch,
-  hashes,
-  type Batch,
-  type SubmittableTransaction,
-} from "xrpl"
+import { encodeForSigning, type SubmittableTransaction } from "xrpl"
 import { sleep } from "../../helpers/async/async.js"
 import { CustodyError } from "../../models/index.js"
-import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
+import type {
+  Core_IntentDryRunRequest,
+  Core_IntentResponse,
+  Core_ProposeIntentBody,
+} from "../intents/intents.types.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 import type {
+  BatchPayloadInput,
   BuildTransactionIntentProps,
+  Core_ApiBatchSigningData,
+  Core_BatchSigner,
   Core_XrplOperation,
+  Core_XrplOperation_Batch,
   IntentContext,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
-  RawSignInnerBatchOptions,
+  SignBatchPayloadOptions,
+  SignBatchPayloadResult,
   WaitForSignatureOptions,
   XrplIntentOptions,
 } from "./xrpl.types.js"
@@ -160,101 +163,142 @@ export class XrplService {
   }
 
   /**
-   * Proposes a raw sign intent for a Batch transaction envelope for a single
-   * inner account. The batch envelope (`flags` + all inner transaction hashes)
-   * is encoded using `encodeForSigningBatch` and signed with the key of the
-   * specified `signerAddress`.
+   * Step 1 of the XLS-56 Batch flow — dry-runs a Batch transaction order and
+   * returns the canonical signing data. Each participant must sign
+   * `signingPayload` with their own XRPL key; collect those signatures and pass
+   * them to `proposeBatch` (Step 3).
    *
-   * All signers sign the same envelope data. Call this once per inner account
-   * that is managed by this custody instance.
+   * Use `signBatchPayloadAndWait` to sign for inner accounts managed by this
+   * custody instance.
    *
-   * @param batch - The autofilled Batch transaction (with all inner transactions)
-   * @param signerAddress - The XRPL address of the inner account to sign for
-   * @param options - Optional configuration for the raw sign intent
-   * @returns The proposed intent response
-   * @throws {CustodyError} If signerAddress is not in the batch, or the account is not found
+   * @param payload - Submitter address, execution mode, and inner entries
+   * @param options - Optional configuration for the dry-run intent
+   * @returns The batch signing data (`signingPayload`, `signingPayloadHash`, resolved transactions)
+   * @throws {CustodyError} If the dry run fails or does not return batch signing data
    */
-  public async rawSignInnerBatch(
-    batch: Batch,
-    signerAddress: string,
-    options: RawSignInnerBatchOptions = {},
-  ): Promise<Core_IntentResponse> {
-    this.validateBatchSigner(batch, signerAddress)
+  public async dryRunBatch(
+    payload: BatchPayloadInput,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_ApiBatchSigningData> {
+    const context = await this.ports.resolveContext(payload.Account, {
+      domainId: options.domainId,
+    })
 
-    const context = await this.resolveInnerBatchContext(signerAddress, options)
+    const operation = this.buildBatchOperation(payload, [])
+    const body = this.buildDryRunBody(operation, context, options)
 
-    const base64Encoded = this.encodeBatchForSigning(batch)
+    const response = await this.ports.dryRunIntent(body)
 
-    const { intentResponse } = await this.proposeRawSignIntent(base64Encoded, context, options)
-    return intentResponse
+    if (response.type !== "v0_CreateTransactionOrder") {
+      throw new CustodyError({
+        reason: `Unexpected dry-run response type: ${response.type}`,
+      })
+    }
+    if (!response.success) {
+      throw new CustodyError({
+        reason: `Batch dry run failed: ${response.errors?.join(", ") ?? "unknown error"}`,
+      })
+    }
+    if (response.estimate.type !== "XRPL" || !response.estimate.batchSigningData) {
+      throw new CustodyError({
+        reason: "Dry run did not return batchSigningData — confirm the operation type is Batch",
+      })
+    }
+
+    return response.estimate.batchSigningData
   }
 
   /**
-   * Signs a Batch transaction envelope for a single inner account and waits
-   * for the manifest signature.
+   * Step 2 of the XLS-56 Batch flow — signs the `signingPayload` returned by
+   * `dryRunBatch` for a single inner account managed by this custody instance,
+   * and waits for the manifest signature.
    *
-   * All signers sign the same envelope (`flags` + all inner transaction hashes).
-   * Call this method once per inner account managed by this custody instance.
-   * Inner accounts on other custody instances sign independently with their own SDK.
+   * Inner accounts on other custody instances (or non-custody participants)
+   * sign independently with their own keys.
    *
-   * @param batch - The autofilled Batch transaction (with all inner transactions)
-   * @param signerAddress - The XRPL address of the inner account to sign for
+   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
+   * @param signerAddress - XRPL address of the inner account to sign for
    * @param options - Optional configuration for the raw sign intent and polling
-   * @returns The signature and signing public key in uppercase hex
-   * @throws {CustodyError} If signerAddress is not in the batch, the account is not found,
-   *   or the manifest signature is not available after maximum retries
+   * @returns The signature, signing public key, and pre-built BatchSigner shapes
+   * @throws {CustodyError} If the signer account is not found, or the signature is not
+   *   available after maximum retries
    */
-  // public async rawSignInnerBatchAndWait(
-  //   batch: Batch,
-  //   signerAddress: string,
-  //   options: RawSignInnerBatchOptions = {},
-  // ): Promise<RawSignInnerBatchAndWaitResult> {
-  //   this.validateBatchSigner(batch, signerAddress)
+  public async signBatchPayloadAndWait(
+    signingPayload: string,
+    signerAddress: string,
+    options: SignBatchPayloadOptions = {},
+  ): Promise<SignBatchPayloadResult> {
+    const context = await this.resolveSignerContext(signerAddress, options)
 
-  //   const context = await this.resolveInnerBatchContext(signerAddress, options)
+    const signingPubKey = await this.getPublicKey({
+      domainId: context.domainId,
+      accountId: context.accountId,
+    })
 
-  //   const signingPubKey = await this.getPublicKey({
-  //     domainId: context.domainId,
-  //     accountId: context.accountId,
-  //   })
+    const base64Encoded = Buffer.from(signingPayload, "hex").toString("base64")
 
-  //   const base64Encoded = this.encodeBatchForSigning(batch)
+    const { payloadId } = await this.proposeRawSignIntent(base64Encoded, context, options)
 
-  //   const { payloadId } = await this.proposeRawSignIntent(base64Encoded, context, options)
+    const signature = await this.waitForManifestSignature(
+      context.domainId,
+      context.accountId,
+      payloadId,
+      options.polling,
+    )
 
-  //   const signature = await this.waitForManifestSignature(
-  //     context.domainId,
-  //     context.accountId,
-  //     payloadId,
-  //     options.polling,
-  //   )
-
-  //   return {
-  //     signature,
-  //     signingPubKey,
-  //     batchSigner: {
-  //       BatchSigner: {
-  //         Account: signerAddress,
-  //         SigningPubKey: signingPubKey,
-  //         TxnSignature: signature,
-  //       },
-  //     },
-  //     custodyBatchSigner: {
-  //       account: signerAddress,
-  //       signingPubKey,
-  //       txnSignature: signature,
-  //     },
-  //   }
-  // }
+    return {
+      signature,
+      signingPubKey,
+      batchSigner: {
+        BatchSigner: {
+          Account: signerAddress,
+          SigningPubKey: signingPubKey,
+          TxnSignature: signature,
+        },
+      },
+      custodyBatchSigner: {
+        participant: { type: "Address", address: signerAddress },
+        publicKey: signingPubKey,
+        signature,
+      },
+    }
+  }
 
   /**
-   * Resolves the intent context for an inner batch signer.
-   * When `accountId` and `ledgerId` are provided in options, skips the address lookup.
+   * Step 3 of the XLS-56 Batch flow — submits the Batch as a real intent with
+   * collected `batchSigners`. The payload must match the one used for
+   * `dryRunBatch`; reuse `options.payloadId` and `options.requestId` if you
+   * need referential identity with the dry-run.
+   *
+   * @param payload - Same submitter, execution mode, and entries as the dry-run
+   * @param batchSigners - Signatures collected in Step 2 (one per participant)
+   * @param options - Optional configuration for the intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If validation fails or the submitter account is not found
+   */
+  public async proposeBatch(
+    payload: BatchPayloadInput,
+    batchSigners: Core_BatchSigner[],
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    const context = await this.ports.resolveContext(payload.Account, {
+      domainId: options.domainId,
+    })
+
+    const operation = this.buildBatchOperation(payload, batchSigners)
+    const body = this.buildTransactionIntent({ operation, context, options })
+
+    return this.ports.submitIntent(body)
+  }
+
+  /**
+   * Resolves the intent context for an inner-batch signer. Skips the address
+   * lookup when `accountId` and `ledgerId` are provided.
    * @private
    */
-  private async resolveInnerBatchContext(
+  private async resolveSignerContext(
     signerAddress: string,
-    options: RawSignInnerBatchOptions,
+    options: SignBatchPayloadOptions,
   ): Promise<IntentContext> {
     if (options.accountId && options.ledgerId) {
       const fullContext = await this.ports.resolveContext(signerAddress, {
@@ -272,39 +316,64 @@ export class XrplService {
   }
 
   /**
-   * Validates that the signer address is involved in at least one inner transaction.
+   * Constructs a `Core_XrplOperation_Batch` from `BatchPayloadInput`.
    * @private
    */
-  private validateBatchSigner(batch: Batch, signerAddress: string): void {
-    const involvedAccounts = new Set(
-      batch.RawTransactions.map((rawTx) => rawTx.RawTransaction.Account),
-    )
-    if (!involvedAccounts.has(signerAddress)) {
-      throw new CustodyError({
-        reason: `Address ${signerAddress} is not involved in any inner transaction of the Batch`,
-      })
+  private buildBatchOperation(
+    payload: BatchPayloadInput,
+    batchSigners: Core_BatchSigner[],
+  ): Core_XrplOperation_Batch {
+    return {
+      type: "Batch",
+      executionMode: payload.executionMode,
+      entries: payload.entries,
+      batchSigners,
+      sequencing: payload.sequencing ?? { type: "PlatformManaged" },
+      ...(payload.lastLedgerSequence !== undefined && {
+        lastLedgerSequence: payload.lastLedgerSequence,
+      }),
     }
   }
 
   /**
-   * Encodes a Batch transaction envelope for signing.
-   * Computes txIDs from inner transactions and encodes with `encodeForSigningBatch`.
+   * Builds a `Core_IntentDryRunRequest` body for an XRPL transaction order.
    * @private
    */
-  private encodeBatchForSigning(batch: Batch): string {
-    const txIDs = batch.RawTransactions.map((rawTx) => hashes.hashSignedTx(rawTx.RawTransaction))
+  private buildDryRunBody(
+    operation: Core_XrplOperation,
+    context: IntentContext,
+    options: XrplIntentOptions,
+  ): Core_IntentDryRunRequest {
+    const feePriority = options.feePriority ?? "Low"
+    const expiryDays = options.expiryDays ?? 1
+    const requestId = options.requestId ?? uuidv7()
+    const payloadId = options.payloadId ?? uuidv7()
 
-    const batchEncodedHex = encodeForSigningBatch({
-      flags: batch.Flags,
-      txIDs,
-    } as unknown as Batch)
-
-    return Buffer.from(batchEncodedHex, "hex").toString("base64")
+    return {
+      author: { domainId: context.domainId, id: context.userId },
+      customProperties: options.requestCustomProperties ?? {},
+      expiryAt: dayjs().add(expiryDays, "day").toISOString(),
+      id: requestId,
+      payload: {
+        accountId: context.accountId,
+        customProperties: options.payloadCustomProperties ?? {},
+        id: payloadId,
+        ledgerId: context.ledgerId,
+        parameters: {
+          feeStrategy: { priority: feePriority, type: "Priority" },
+          memos: [],
+          operation,
+          type: "XRPL",
+        },
+        type: "v0_CreateTransactionOrder",
+      },
+      targetDomainId: context.domainId,
+    }
   }
 
   /**
    * Proposes a raw sign intent with base64-encoded bytes.
-   * Shared by rawSign, rawSignAndWait, and signBytesAndWait.
+   * Shared by rawSign, rawSignAndWait, and signBatchPayloadAndWait.
    * @private
    */
   private async proposeRawSignIntent(
