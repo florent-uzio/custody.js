@@ -40,7 +40,9 @@ export function createHttpPorts(transport: TypedTransport): XrplPorts {
     },
 
     dryRunIntent(body: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> {
-      return transport.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, body)
+      return transport.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, body, undefined, {
+        sign: false,
+      })
     },
 
     getManifest(
