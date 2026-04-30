@@ -1,5 +1,6 @@
 import type { components, operations } from "../../models/custody-types.js"
 import type { Prettify } from "../../type-utils/index.js"
+import type { Core_HarmonizeEventPayload } from "../events/index.js"
 
 // Path-param types
 export type GetChannelsPathParams = operations["getAllChannels"]["parameters"]["path"]
@@ -21,9 +22,13 @@ export type EDS_ChannelUpdate = components["schemas"]["EDS_ChannelUpdate"]
 // `type: "EDS_WebhookChannelCreate"` and intersects it with the allOf branch's
 // `type?: "WEBHOOK"`, collapsing `type` to `never`. Compose from the generated
 // base instead.
-export type EDS_WebhookChannelCreate = Omit<components["schemas"]["EDS_ChannelCreate"], "type"> & {
+export type EDS_WebhookChannelCreate = Omit<
+  components["schemas"]["EDS_ChannelCreate"],
+  "type" | "supportedEventTypes"
+> & {
   type: "WEBHOOK"
   url: string
+  supportedEventTypes: (Core_HarmonizeEventPayload["type"] | (string & {}))[]
 }
 
 /**
