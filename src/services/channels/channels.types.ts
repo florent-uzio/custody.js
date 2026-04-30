@@ -26,9 +26,9 @@ export type EDS_WebhookChannelCreate = Omit<
   components["schemas"]["EDS_ChannelCreate"],
   "type" | "supportedEventTypes"
 > & {
+  supportedEventTypes: (Core_HarmonizeEventPayload["type"] | (string & {}))[]
   type: "WEBHOOK"
   url: string
-  supportedEventTypes: (Core_HarmonizeEventPayload["type"] | (string & {}))[]
 }
 
 /**
