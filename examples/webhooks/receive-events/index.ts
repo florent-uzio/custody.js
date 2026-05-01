@@ -30,19 +30,6 @@ app.post("/webhook", async (c) => {
 
   console.dir(event, { depth: null })
 
-  // Switch on the event variant — TypeScript narrows `payload` from the
-  // `Core_HarmonizeEventPayload` union by its `type` discriminator.
-  switch (event.msg.payload.type) {
-    case "Core_IntentExecuted":
-      console.log("Intent executed:", event.msg.payload)
-      break
-    case "Core_IntentClosed":
-      console.log("Intent closed:", event.msg.payload)
-      break
-    default:
-      console.log("Other event:", event.msg.payload.type)
-  }
-
   return c.json({ received: true })
 })
 
