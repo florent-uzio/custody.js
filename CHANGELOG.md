@@ -1,5 +1,11 @@
 # custody
 
+## 1.4.2
+
+### Patch Changes
+
+- ea37203: Provides an EDS Webhook Event type that includes traceId and msg. This is a custom type.
+
 ## 1.4.1
 
 ### Patch Changes
