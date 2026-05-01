@@ -41,7 +41,7 @@ const createWebhookChannel = async () => {
       // Subscribe to the event variants you care about. `Core_HarmonizeEventPayload["type"]`
       // is auto-completed by TypeScript — narrow it to just the events your
       // webhook handler is built to process.
-      supportedEventTypes: ["Core_IntentExecuted", "Core_IntentClosed"],
+      supportedEventTypes: ["TransactionCreated", "TransactionUpdated"],
       createdBy,
     }
 
