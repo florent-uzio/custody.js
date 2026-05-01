@@ -1,6 +1,6 @@
 import type { components, operations } from "../../models/custody-types.js"
 import type { Prettify } from "../../type-utils/index.js"
-import type { Core_HarmonizeEventPayload } from "../events/index.js"
+import type { Core_HarmonizeEvent, Core_HarmonizeEventPayload } from "../events/index.js"
 
 // Path-param types
 export type GetChannelsPathParams = operations["getAllChannels"]["parameters"]["path"]
@@ -36,3 +36,15 @@ export type EDS_WebhookChannelCreate = Omit<
  * channel types (e.g. non-WEBHOOK) can be added without a breaking change.
  */
 export type EDS_ChannelCreate = Prettify<EDS_WebhookChannelCreate>
+
+/**
+ * Body shape delivered to a webhook channel's URL. The outer envelope adds a
+ * W3C `traceId` for distributed tracing; `msg` is a fully-parsed
+ * `Core_HarmonizeEvent` (its `payload` is an object, not a JSON string — this
+ * is distinct from `EDS_Event`, which the REST API returns with `payload` as
+ * a string and which is what `parseEventPayload` operates on).
+ */
+export type EDS_WebhookEvent = {
+  traceId: string
+  msg: Core_HarmonizeEvent
+}
