@@ -763,9 +763,9 @@ describe("XrplService", () => {
 
     it("should throw CustodyError if signerAccount is not a valid XRPL address", async () => {
       const tx = { ...mockXrplTransaction, SigningPubKey: "PK" }
-      await expect(
-        service.rawSignAndWait(tx, { signerAccount: "not-an-address" }),
-      ).rejects.toThrow("Invalid signerAccount address: not-an-address")
+      await expect(service.rawSignAndWait(tx, { signerAccount: "not-an-address" })).rejects.toThrow(
+        "Invalid signerAccount address: not-an-address",
+      )
     })
 
     it("should use signerAccount to resolve context and build intent", async () => {
@@ -806,14 +806,19 @@ describe("XrplService", () => {
         address: signerAddress,
       }
       const resolveContext = vi.fn(async () => signerContext)
-      const getAccount = vi.fn(async () => ({
-        data: {
-          providerDetails: {
-            type: "Vault" as const,
-            keys: [{ id: "SECP256K1_CUSTODY_1" as const, publicKey: { value: mockBase64PublicKey } }],
-          },
-        },
-      } as any))
+      const getAccount = vi.fn(
+        async () =>
+          ({
+            data: {
+              providerDetails: {
+                type: "Vault" as const,
+                keys: [
+                  { id: "SECP256K1_CUSTODY_1" as const, publicKey: { value: mockBase64PublicKey } },
+                ],
+              },
+            },
+          }) as any,
+      )
       ports = createTestPorts({ resolveContext, getAccount })
       service = new XrplService(ports)
 
