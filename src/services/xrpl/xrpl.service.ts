@@ -121,7 +121,7 @@ export class XrplService {
    *
    * @param xrplTransaction - The XRPL transaction details
    * @param options - Optional configuration for the raw sign intent and polling
-   * @returns The signature and signing public key in uppercase hex
+   * @returns The signature, signing public key in uppercase hex and the signed transaction
    * @throws {CustodyError} If validation fails, the sender account is not found,
    *   or the manifest signature is not available after maximum retries
    */
@@ -153,9 +153,12 @@ export class XrplService {
       options.polling,
     )
 
+    xrplTransaction.TxnSignature = signature
+
     return {
       signature,
       signingPubKey: xrplTransaction.SigningPubKey,
+      signedTransaction: xrplTransaction,
     }
   }
 

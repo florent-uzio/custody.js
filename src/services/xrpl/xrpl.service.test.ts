@@ -268,26 +268,27 @@ describe("XrplService", () => {
       })
     })
 
-    it("should submit a TicketCreate intent", async () => {
-      let capturedBody: any
-      ports = createTestPorts({
-        submitIntent: async (body) => {
-          capturedBody = body
-          return { requestId: "request-123" } as any
-        },
-      })
-      service = new XrplService(ports)
+    // TODO: Restore ticketCreate when it is in an official release
+    // it("should submit a TicketCreate intent", async () => {
+    //   let capturedBody: any
+    //   ports = createTestPorts({
+    //     submitIntent: async (body) => {
+    //       capturedBody = body
+    //       return { requestId: "request-123" } as any
+    //     },
+    //   })
+    //   service = new XrplService(ports)
 
-      await service.proposeIntent({
-        Account: mockAddress,
-        operation: { type: "TicketCreate", ticketCount: 5 },
-      })
+    //   await service.proposeIntent({
+    //     Account: mockAddress,
+    //     operation: { type: "TicketCreate", ticketCount: 5 },
+    //   })
 
-      expect(capturedBody.request.payload.parameters.operation).toMatchObject({
-        type: "TicketCreate",
-        ticketCount: 5,
-      })
-    })
+    //   expect(capturedBody.request.payload.parameters.operation).toMatchObject({
+    //     type: "TicketCreate",
+    //     ticketCount: 5,
+    //   })
+    // })
 
     //TODO: restore Batch intent test once Batch is supported
     // it("should submit a Batch intent", async () => {
@@ -678,6 +679,8 @@ describe("XrplService", () => {
       expect(result.signature).toBe("AABBCCDD")
       expect(result.signingPubKey).toBe(expectedCompressedKey)
       expect(tx.SigningPubKey).toBe(expectedCompressedKey)
+      expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
+      expect(result.signedTransaction.SigningPubKey).toBe(expectedCompressedKey)
     })
 
     it("should not override SigningPubKey if already set", async () => {
@@ -692,6 +695,8 @@ describe("XrplService", () => {
 
       expect(result.signingPubKey).toBe("EXISTING_PUB_KEY")
       expect(getAccount).not.toHaveBeenCalled()
+      expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
+      expect(result.signedTransaction.SigningPubKey).toBe("EXISTING_PUB_KEY")
     })
 
     it("should throw CustodyError on timeout", async () => {
@@ -749,6 +754,7 @@ describe("XrplService", () => {
       })
 
       expect(result.signature).toBe("AABBCCDD")
+      expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
     })
   })
 

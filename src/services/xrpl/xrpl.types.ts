@@ -9,6 +9,7 @@ import type {
   MPTokenIssuanceSet,
   OfferCreate,
   Payment,
+  SubmittableTransaction,
   TrustSet,
 } from "xrpl"
 import type { components } from "../../models/custody-types.js"
@@ -191,6 +192,8 @@ export type RawSignAndWaitResult = {
   signature: string
   /** The compressed secp256k1 public key in uppercase hex */
   signingPubKey: string
+  /** The transaction with TxnSignature and SigningPubKey set, ready to submit */
+  signedTransaction: SubmittableTransaction
 }
 
 /**
