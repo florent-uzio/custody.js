@@ -5,6 +5,7 @@ import {
   encodeForSigning,
   encodeForSigningBatch,
   hashes,
+  isValidAddress,
   type Batch,
   type SubmittableTransaction,
 } from "xrpl"
@@ -129,7 +130,12 @@ export class XrplService {
     xrplTransaction: SubmittableTransaction,
     options: RawSignAndWaitOptions = {},
   ): Promise<RawSignAndWaitResult> {
-    const context = await this.ports.resolveContext(xrplTransaction.Account, {
+    if (options.signerAccount !== undefined && !isValidAddress(options.signerAccount)) {
+      throw new CustodyError({ reason: `Invalid signerAccount address: ${options.signerAccount}` })
+    }
+
+    const signerAddress = options.signerAccount ?? xrplTransaction.Account
+    const context = await this.ports.resolveContext(signerAddress, {
       domainId: options.domainId,
     })
 

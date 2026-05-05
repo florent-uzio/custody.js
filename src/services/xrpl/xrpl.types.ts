@@ -182,6 +182,12 @@ export type WaitForSignatureOptions = {
 export type RawSignAndWaitOptions = XrplIntentOptions & {
   /** Polling options for waiting for the manifest signature */
   polling?: WaitForSignatureOptions
+  /**
+   * XRPL address of the account whose custody key will sign the transaction.
+   * Defaults to xrplTransaction.Account. Set this when the account has a regular key
+   * (via SetRegularKey) and you want to sign with that regular key's custody account.
+   */
+  signerAccount?: string
 }
 
 /**
