@@ -10,6 +10,7 @@ import {
   type SubmittableTransaction,
 } from "xrpl"
 import { sleep } from "../../helpers/async/async.js"
+import { isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
 import type { XrplPorts } from "./xrpl.ports.js"
@@ -130,7 +131,7 @@ export class XrplService {
     xrplTransaction: SubmittableTransaction,
     options: RawSignAndWaitOptions = {},
   ): Promise<RawSignAndWaitResult> {
-    if (options.signerAccount !== undefined && !isValidAddress(options.signerAccount)) {
+    if (!isUndefined(options.signerAccount) && !isValidAddress(options.signerAccount)) {
       throw new CustodyError({ reason: `Invalid signerAccount address: ${options.signerAccount}` })
     }
 
