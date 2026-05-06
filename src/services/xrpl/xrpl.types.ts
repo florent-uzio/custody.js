@@ -259,7 +259,11 @@ export type SignBatchPayloadOptions = XrplIntentOptions & {
  * xrpl.js `BatchSigner` shape; `custodyBatchSigner` is the {% PUBLIC_VAR_CUS %}
  * shape — pick whichever the next step needs.
  */
-export type SignBatchPayloadResult = RawSignAndWaitResult & {
+export type SignBatchPayloadResult = {
+  /** The signature in uppercase hex */
+  signature: string
+  /** The compressed secp256k1 public key in uppercase hex */
+  signingPubKey: string
   /** xrpl.js BatchSigner — for inclusion in an xrpl.js Batch.BatchSigners array */
   batchSigner: BatchSigner
   /** Custody BatchSigner — for inclusion in batchSigners on `proposeBatch` */
