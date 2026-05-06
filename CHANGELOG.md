@@ -1,5 +1,11 @@
 # custody
 
+## 1.5.0
+
+### Minor Changes
+
+- dc9222b: `rawSignAndWait` now returns a `signedTransaction` field — the input transaction with `TxnSignature` and `SigningPubKey` set — so callers receive a ready-to-submit `SubmittableTransaction` without having to manually apply the signature fields.
+
 ## 1.4.2
 
 ### Patch Changes
