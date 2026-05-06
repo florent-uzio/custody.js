@@ -9,14 +9,18 @@ import { XrplService } from "./xrpl.service.js"
 import type { IntentContext } from "./xrpl.types.js"
 
 // Mock the xrpl encoding and hashing functions
-vi.mock("xrpl", () => ({
-  encodeForSigning: vi.fn().mockReturnValue("deadbeef01020304"),
-  //TODO: restore Batch mocks once Batch is supported
-  // encodeForSigningBatch: vi.fn().mockReturnValue("batchencoded0102"),
-  // hashes: {
-  //   hashSignedTx: vi.fn().mockReturnValue("TXHASH0123456789"),
-  // },
-}))
+vi.mock("xrpl", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("xrpl")>()
+  return {
+    encodeForSigning: vi.fn().mockReturnValue("deadbeef01020304"),
+    isValidAddress: actual.isValidAddress,
+    //TODO: restore Batch mocks once Batch is supported
+    // encodeForSigningBatch: vi.fn().mockReturnValue("batchencoded0102"),
+    // hashes: {
+    //   hashSignedTx: vi.fn().mockReturnValue("TXHASH0123456789"),
+    // },
+  }
+})
 
 // ── Test helpers ────────────────────────────────────────────────
 
@@ -268,26 +272,27 @@ describe("XrplService", () => {
       })
     })
 
-    it("should submit a TicketCreate intent", async () => {
-      let capturedBody: any
-      ports = createTestPorts({
-        submitIntent: async (body) => {
-          capturedBody = body
-          return { requestId: "request-123" } as any
-        },
-      })
-      service = new XrplService(ports)
+    // TODO: Restore ticketCreate when it is in an official release
+    // it("should submit a TicketCreate intent", async () => {
+    //   let capturedBody: any
+    //   ports = createTestPorts({
+    //     submitIntent: async (body) => {
+    //       capturedBody = body
+    //       return { requestId: "request-123" } as any
+    //     },
+    //   })
+    //   service = new XrplService(ports)
 
-      await service.proposeIntent({
-        Account: mockAddress,
-        operation: { type: "TicketCreate", ticketCount: 5 },
-      })
+    //   await service.proposeIntent({
+    //     Account: mockAddress,
+    //     operation: { type: "TicketCreate", ticketCount: 5 },
+    //   })
 
-      expect(capturedBody.request.payload.parameters.operation).toMatchObject({
-        type: "TicketCreate",
-        ticketCount: 5,
-      })
-    })
+    //   expect(capturedBody.request.payload.parameters.operation).toMatchObject({
+    //     type: "TicketCreate",
+    //     ticketCount: 5,
+    //   })
+    // })
 
     //TODO: restore Batch intent test once Batch is supported
     // it("should submit a Batch intent", async () => {
@@ -678,6 +683,8 @@ describe("XrplService", () => {
       expect(result.signature).toBe("AABBCCDD")
       expect(result.signingPubKey).toBe(expectedCompressedKey)
       expect(tx.SigningPubKey).toBe(expectedCompressedKey)
+      expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
+      expect(result.signedTransaction.SigningPubKey).toBe(expectedCompressedKey)
     })
 
     it("should not override SigningPubKey if already set", async () => {
@@ -692,6 +699,8 @@ describe("XrplService", () => {
 
       expect(result.signingPubKey).toBe("EXISTING_PUB_KEY")
       expect(getAccount).not.toHaveBeenCalled()
+      expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
+      expect(result.signedTransaction.SigningPubKey).toBe("EXISTING_PUB_KEY")
     })
 
     it("should throw CustodyError on timeout", async () => {
@@ -749,6 +758,78 @@ describe("XrplService", () => {
       })
 
       expect(result.signature).toBe("AABBCCDD")
+      expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
+    })
+
+    it("should throw CustodyError if signerAccount is not a valid XRPL address", async () => {
+      const tx = { ...mockXrplTransaction, SigningPubKey: "PK" }
+      await expect(service.rawSignAndWait(tx, { signerAccount: "not-an-address" })).rejects.toThrow(
+        "Invalid signerAccount address: not-an-address",
+      )
+    })
+
+    it("should use signerAccount to resolve context and build intent", async () => {
+      const signerAddress = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+      const signerContext: IntentContext = {
+        ...mockContext,
+        accountId: "signer-account-id",
+        ledgerId: "signer-ledger-id",
+        address: signerAddress,
+      }
+      const resolveContext = vi.fn(async () => signerContext)
+      let capturedBody: any
+      ports = createTestPorts({
+        resolveContext,
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "r" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const tx = { ...mockXrplTransaction, SigningPubKey: "EXISTING_PUB_KEY" }
+      await service.rawSignAndWait(tx, {
+        signerAccount: signerAddress,
+        polling: { maxRetries: 1, intervalMs: 0 },
+      })
+
+      expect(resolveContext).toHaveBeenCalledWith(signerAddress, { domainId: undefined })
+      expect(capturedBody.request.payload.accountId).toBe("signer-account-id")
+      expect(capturedBody.request.payload.ledgerId).toBe("signer-ledger-id")
+    })
+
+    it("should fetch SigningPubKey from signerAccount when not pre-set", async () => {
+      const signerAddress = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+      const signerContext: IntentContext = {
+        ...mockContext,
+        accountId: "signer-account-id",
+        address: signerAddress,
+      }
+      const resolveContext = vi.fn(async () => signerContext)
+      const getAccount = vi.fn(
+        async () =>
+          ({
+            data: {
+              providerDetails: {
+                type: "Vault" as const,
+                keys: [
+                  { id: "SECP256K1_CUSTODY_1" as const, publicKey: { value: mockBase64PublicKey } },
+                ],
+              },
+            },
+          }) as any,
+      )
+      ports = createTestPorts({ resolveContext, getAccount })
+      service = new XrplService(ports)
+
+      const tx = { ...mockXrplTransaction }
+      const result = await service.rawSignAndWait(tx, {
+        signerAccount: signerAddress,
+        polling: { maxRetries: 1, intervalMs: 0 },
+      })
+
+      expect(getAccount).toHaveBeenCalledWith(signerContext.domainId, "signer-account-id")
+      expect(result.signingPubKey).toBe(expectedCompressedKey)
     })
   })
 

@@ -5,10 +5,12 @@ import {
   encodeForSigning,
   encodeForSigningBatch,
   hashes,
+  isValidAddress,
   type Batch,
   type SubmittableTransaction,
 } from "xrpl"
 import { sleep } from "../../helpers/async/async.js"
+import { isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
 import type { XrplPorts } from "./xrpl.ports.js"
@@ -121,7 +123,7 @@ export class XrplService {
    *
    * @param xrplTransaction - The XRPL transaction details
    * @param options - Optional configuration for the raw sign intent and polling
-   * @returns The signature and signing public key in uppercase hex
+   * @returns The signature, signing public key in uppercase hex and the signed transaction
    * @throws {CustodyError} If validation fails, the sender account is not found,
    *   or the manifest signature is not available after maximum retries
    */
@@ -129,7 +131,12 @@ export class XrplService {
     xrplTransaction: SubmittableTransaction,
     options: RawSignAndWaitOptions = {},
   ): Promise<RawSignAndWaitResult> {
-    const context = await this.ports.resolveContext(xrplTransaction.Account, {
+    if (!isUndefined(options.signerAccount) && !isValidAddress(options.signerAccount)) {
+      throw new CustodyError({ reason: `Invalid signerAccount address: ${options.signerAccount}` })
+    }
+
+    const signerAddress = options.signerAccount ?? xrplTransaction.Account
+    const context = await this.ports.resolveContext(signerAddress, {
       domainId: options.domainId,
     })
 
@@ -153,9 +160,12 @@ export class XrplService {
       options.polling,
     )
 
+    xrplTransaction.TxnSignature = signature
+
     return {
       signature,
       signingPubKey: xrplTransaction.SigningPubKey,
+      signedTransaction: xrplTransaction,
     }
   }
 
