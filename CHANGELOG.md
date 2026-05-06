@@ -1,5 +1,23 @@
 # custody
 
+## 1.5.0
+
+### Minor Changes
+
+- dc9222b: `rawSignAndWait` now returns a `signedTransaction` field — the input transaction with `TxnSignature` and `SigningPubKey` set — so callers receive a ready-to-submit `SubmittableTransaction` without having to manually apply the signature fields.
+
+## 1.4.2
+
+### Patch Changes
+
+- ea37203: Provides an EDS Webhook Event type that includes traceId and msg. This is a custom type.
+
+## 1.4.1
+
+### Patch Changes
+
+- 159a7d4: The generated EDS_WebhookChannelCreate collapsed to never because the spec's discriminator carries no mapping, so openapi-typescript injects type: "EDS_WebhookChannelCreate" and intersects it with the allOf branch's type?: "WEBHOOK". Compose the type from the generated EDS_ChannelCreate base instead, dropping the poisoned type field and re-pinning it to "WEBHOOK".
+
 ## 1.4.0
 
 ### Minor Changes

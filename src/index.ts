@@ -59,6 +59,7 @@ export type {
   EDS_ChannelUpdate,
   EDS_Event,
   EDS_WebhookChannelCreate,
+  EDS_WebhookEvent,
   GetAllChannelsEventsPathParams,
   GetChannelEventPathParams,
   GetChannelEventsPathParams,
