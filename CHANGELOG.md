@@ -1,5 +1,11 @@
 # custody
 
+## 1.6.0
+
+### Minor Changes
+
+- 9cbdfa0: Adds the Genesis endpoint and the types
+
 ## 1.5.0
 
 ### Minor Changes
