@@ -248,5 +248,14 @@ export type {
   XrplPorts,
 } from "./services/xrpl/index.js"
 
+// genesis types
+export type {
+  Core_CreateLedgerGenesis,
+  Core_GenesisCryptoSetup,
+  Core_GenesisRequest,
+  Core_RootDomainSetup,
+  RunGenesisBody,
+} from "./services/genesis/index.js"
+
 // errors types
 export type { Core_ErrorMessage, CustodyError } from "./models/index.js"
