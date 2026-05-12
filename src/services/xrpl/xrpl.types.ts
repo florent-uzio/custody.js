@@ -1,6 +1,5 @@
 import type {
   AccountSet,
-  BatchSigner,
   Clawback,
   DepositPreauth,
   MPTokenAuthorize,
@@ -129,6 +128,12 @@ export type XrplIntentOptions = {
    */
   domainId?: string
   /**
+   * Ledger ID to disambiguate when the same address exists on multiple ledgers
+   * under the same login (e.g. "xrpl-mainnet" vs "xrpl-testnet"). Required when
+   * the address is registered on more than one ledger; otherwise optional.
+   */
+  ledgerId?: string
+  /**
    * Fee strategy priority. Defaults to "Low".
    */
   feePriority?: "Low" | "Medium" | "High"
@@ -206,21 +211,21 @@ export type RawSignAndWaitResult = {
  * Result of rawSignInnerBatchAndWait.
  * Extends RawSignAndWaitResult with batch signer representations.
  */
-export type RawSignInnerBatchAndWaitResult = RawSignAndWaitResult & {
-  /** The batch signer in xrpl.js format */
-  batchSigner: BatchSigner
-  /** The batch signer in Ripple Custody API format */
-  //TODO: delete comment once Batch is supported
-  // custodyBatchSigner: CustodyBatchSigner
-}
+// export type RawSignInnerBatchAndWaitResult = RawSignAndWaitResult & {
+//   /** The batch signer in xrpl.js format */
+//   batchSigner: BatchSigner
+//   /** The batch signer in Ripple Custody API format */
+//   //TODO: delete comment once Batch is supported
+//   // custodyBatchSigner: CustodyBatchSigner
+// }
 
-type BatchSignerLookup = { accountId?: never; ledgerId?: never }
-type BatchSignerDirect = {
-  /** Custody account ID — skips the address lookup when provided with ledgerId */
-  accountId: string
-  /** Ledger ID for the account */
-  ledgerId: string
-}
+// type BatchSignerLookup = { accountId?: never; ledgerId?: never }
+// type BatchSignerDirect = {
+//   /** Custody account ID — skips the address lookup when provided with ledgerId */
+//   accountId: string
+//   /** Ledger ID for the account */
+//   ledgerId: string
+// }
 
 /**
  * Options for rawSignInnerBatch / rawSignInnerBatchAndWait: intent options + polling configuration.
@@ -228,7 +233,7 @@ type BatchSignerDirect = {
  * When `accountId` and `ledgerId` are provided, the address-to-account lookup is
  * skipped, saving an API call.
  */
-export type RawSignInnerBatchOptions = XrplIntentOptions & {
-  /** Polling options for waiting for the manifest signature */
-  polling?: WaitForSignatureOptions
-} & (BatchSignerLookup | BatchSignerDirect)
+// export type RawSignInnerBatchOptions = XrplIntentOptions & {
+//   /** Polling options for waiting for the manifest signature */
+//   polling?: WaitForSignatureOptions
+// } & (BatchSignerLookup | BatchSignerDirect)

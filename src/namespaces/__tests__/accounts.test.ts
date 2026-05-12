@@ -88,4 +88,45 @@ describe("findByAddress", () => {
     expect(result.accountId).toBe("acc-2")
     expect(result.ledgerId).toBe("l-2")
   })
+
+  it("should throw when the address matches on multiple ledgers and no ledgerId is given", async () => {
+    mockTransport.get.mockResolvedValue({
+      items: [
+        { address: "rAddress123", accountId: "acc-mainnet", ledgerId: "xrpl-mainnet" },
+        { address: "rAddress123", accountId: "acc-testnet", ledgerId: "xrpl-testnet" },
+      ],
+    })
+
+    await expect(findByAddress(mockTransport as any, "rAddress123")).rejects.toThrow(CustodyError)
+    await expect(findByAddress(mockTransport as any, "rAddress123")).rejects.toThrow(
+      "Multiple accounts found for address rAddress123. Please specify ledgerId to disambiguate.",
+    )
+  })
+
+  it("should disambiguate by ledgerId when multiple matches exist", async () => {
+    mockTransport.get.mockResolvedValue({
+      items: [
+        { address: "rAddress123", accountId: "acc-mainnet", ledgerId: "xrpl-mainnet" },
+        { address: "rAddress123", accountId: "acc-testnet", ledgerId: "xrpl-testnet" },
+      ],
+    })
+
+    const result = await findByAddress(mockTransport as any, "rAddress123", "xrpl-testnet")
+
+    expect(result).toEqual({
+      accountId: "acc-testnet",
+      ledgerId: "xrpl-testnet",
+      address: "rAddress123",
+    })
+  })
+
+  it("should throw with ledger suffix when ledgerId is given but no match is found", async () => {
+    mockTransport.get.mockResolvedValue({
+      items: [{ address: "rAddress123", accountId: "acc-1", ledgerId: "xrpl-mainnet" }],
+    })
+
+    await expect(
+      findByAddress(mockTransport as any, "rAddress123", "xrpl-testnet"),
+    ).rejects.toThrow("Account not found for address rAddress123 on ledger xrpl-testnet")
+  })
 })
