@@ -20,7 +20,6 @@ import type {
   IntentContext,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
-  RawSignInnerBatchOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
 } from "./xrpl.types.js"
@@ -187,20 +186,20 @@ export class XrplService {
    * @returns The proposed intent response
    * @throws {CustodyError} If signerAddress is not in the batch, or the account is not found
    */
-  public async rawSignInnerBatch(
-    batch: Batch,
-    signerAddress: string,
-    options: RawSignInnerBatchOptions = {},
-  ): Promise<Core_IntentResponse> {
-    this.validateBatchSigner(batch, signerAddress)
+  // public async rawSignInnerBatch(
+  //   batch: Batch,
+  //   signerAddress: string,
+  //   options: RawSignInnerBatchOptions = {},
+  // ): Promise<Core_IntentResponse> {
+  //   this.validateBatchSigner(batch, signerAddress)
 
-    const context = await this.resolveInnerBatchContext(signerAddress, options)
+  //   const context = await this.resolveInnerBatchContext(signerAddress, options)
 
-    const base64Encoded = this.encodeBatchForSigning(batch)
+  //   const base64Encoded = this.encodeBatchForSigning(batch)
 
-    const { intentResponse } = await this.proposeRawSignIntent(base64Encoded, context, options)
-    return intentResponse
-  }
+  //   const { intentResponse } = await this.proposeRawSignIntent(base64Encoded, context, options)
+  //   return intentResponse
+  // }
 
   /**
    * Signs a Batch transaction envelope for a single inner account and waits
@@ -265,28 +264,28 @@ export class XrplService {
    * When `accountId` and `ledgerId` are provided in options, skips the address lookup.
    * @private
    */
-  private async resolveInnerBatchContext(
-    signerAddress: string,
-    options: RawSignInnerBatchOptions,
-  ): Promise<IntentContext> {
-    if (options.accountId && options.ledgerId) {
-      const fullContext = await this.ports.resolveContext(signerAddress, {
-        domainId: options.domainId,
-        ledgerId: options.ledgerId,
-      })
-      return {
-        domainId: fullContext.domainId,
-        userId: fullContext.userId,
-        accountId: options.accountId,
-        ledgerId: options.ledgerId,
-        address: signerAddress,
-      }
-    }
-    return this.ports.resolveContext(signerAddress, {
-      domainId: options.domainId,
-      ledgerId: options.ledgerId,
-    })
-  }
+  // private async resolveInnerBatchContext(
+  //   signerAddress: string,
+  //   options: RawSignInnerBatchOptions,
+  // ): Promise<IntentContext> {
+  //   if (options.accountId && options.ledgerId) {
+  //     const fullContext = await this.ports.resolveContext(signerAddress, {
+  //       domainId: options.domainId,
+  //       ledgerId: options.ledgerId,
+  //     })
+  //     return {
+  //       domainId: fullContext.domainId,
+  //       userId: fullContext.userId,
+  //       accountId: options.accountId,
+  //       ledgerId: options.ledgerId,
+  //       address: signerAddress,
+  //     }
+  //   }
+  //   return this.ports.resolveContext(signerAddress, {
+  //     domainId: options.domainId,
+  //     ledgerId: options.ledgerId,
+  //   })
+  // }
 
   /**
    * Validates that the signer address is involved in at least one inner transaction.
