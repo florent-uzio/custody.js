@@ -129,6 +129,12 @@ export type XrplIntentOptions = {
    */
   domainId?: string
   /**
+   * Ledger ID to disambiguate when the same address exists on multiple ledgers
+   * under the same login (e.g. "xrpl-mainnet" vs "xrpl-testnet"). Required when
+   * the address is registered on more than one ledger; otherwise optional.
+   */
+  ledgerId?: string
+  /**
    * Fee strategy priority. Defaults to "Low".
    */
   feePriority?: "Low" | "Medium" | "High"

@@ -439,7 +439,10 @@ describe("XrplService", () => {
         { domainId: "domain-456" },
       )
 
-      expect(resolveContext).toHaveBeenCalledWith(mockAddress, { domainId: "domain-456" })
+      expect(resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: "domain-456",
+        ledgerId: undefined,
+      })
     })
 
     it("should propagate resolveContext errors", async () => {
@@ -647,7 +650,10 @@ describe("XrplService", () => {
 
       await service.rawSign(mockXrplTransaction, { domainId: "domain-456" })
 
-      expect(resolveContext).toHaveBeenCalledWith(mockAddress, { domainId: "domain-456" })
+      expect(resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: "domain-456",
+        ledgerId: undefined,
+      })
     })
 
     it("should propagate resolveContext errors", async () => {
@@ -793,7 +799,10 @@ describe("XrplService", () => {
         polling: { maxRetries: 1, intervalMs: 0 },
       })
 
-      expect(resolveContext).toHaveBeenCalledWith(signerAddress, { domainId: undefined })
+      expect(resolveContext).toHaveBeenCalledWith(signerAddress, {
+        domainId: undefined,
+        ledgerId: undefined,
+      })
       expect(capturedBody.request.payload.accountId).toBe("signer-account-id")
       expect(capturedBody.request.payload.ledgerId).toBe("signer-ledger-id")
     })

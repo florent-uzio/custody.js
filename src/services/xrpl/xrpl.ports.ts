@@ -13,7 +13,10 @@ export interface XrplPorts {
    * Resolves the full intent context (domain, user, account) for a given XRPL address.
    * Absorbs domain resolution (GET /v1/me) and account lookup (GET /v1/addresses).
    */
-  resolveContext(address: string, opts?: { domainId?: string }): Promise<IntentContext>
+  resolveContext(
+    address: string,
+    opts?: { domainId?: string; ledgerId?: string },
+  ): Promise<IntentContext>
 
   /**
    * Submits a proposed intent to the custody platform.

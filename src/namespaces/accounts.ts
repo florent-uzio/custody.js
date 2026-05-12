@@ -1,4 +1,5 @@
 import { URLs } from "../constants/urls.js"
+import { isUndefined } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
 import type {
   AccountReference,
@@ -42,18 +43,33 @@ import type { TypedTransport } from "../transport/index.js"
  * Finds an account by its blockchain address across all domains.
  * Exported separately so XrplService can use it without the full namespace.
  */
-export async function findByAddress(t: TypedTransport, address: string): Promise<AccountReference> {
+export async function findByAddress(
+  t: TypedTransport,
+  address: string,
+  ledgerId?: string,
+): Promise<AccountReference> {
   const addressAcrossDomains = await t.get<Core_AddressReferenceCollection>(
     URLs.addresses,
     undefined,
     { address },
   )
-  const account = addressAcrossDomains.items.find((item) => item.address === address)
 
-  if (!account) {
-    throw new CustodyError({ reason: `Account not found for address ${address}` })
+  const matches = addressAcrossDomains.items.filter(
+    (item) => item.address === address && (isUndefined(ledgerId) || item.ledgerId === ledgerId),
+  )
+
+  if (matches.length === 0) {
+    const suffix = ledgerId ? ` on ledger ${ledgerId}` : ""
+    throw new CustodyError({ reason: `Account not found for address ${address}${suffix}` })
   }
 
+  if (matches.length > 1) {
+    throw new CustodyError({
+      reason: `Multiple accounts found for address ${address}. Please specify ledgerId to disambiguate.`,
+    })
+  }
+
+  const account = matches[0]!
   return {
     accountId: account.accountId,
     ledgerId: account.ledgerId ?? "",
@@ -126,6 +142,7 @@ export function createAccounts(t: TypedTransport) {
     ): Promise<Core_ComplianceConfiguration> =>
       t.put(URLs.accountComplianceConfiguration, body, params),
 
-    findByAddress: (address: string): Promise<AccountReference> => findByAddress(t, address),
+    findByAddress: (address: string, ledgerId?: string): Promise<AccountReference> =>
+      findByAddress(t, address, ledgerId),
   } as const
 }

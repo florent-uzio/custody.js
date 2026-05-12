@@ -49,6 +49,7 @@ export class XrplService {
   ): Promise<Core_IntentResponse> {
     const context = await this.ports.resolveContext(params.Account, {
       domainId: options.domainId,
+      ledgerId: options.ledgerId,
     })
 
     const intent = this.buildTransactionIntent({
@@ -106,6 +107,7 @@ export class XrplService {
   ): Promise<Core_IntentResponse> {
     const context = await this.ports.resolveContext(xrplTransaction.Account, {
       domainId: options.domainId,
+      ledgerId: options.ledgerId,
     })
 
     const encoded = encodeForSigning(xrplTransaction)
@@ -138,6 +140,7 @@ export class XrplService {
     const signerAddress = options.signerAccount ?? xrplTransaction.Account
     const context = await this.ports.resolveContext(signerAddress, {
       domainId: options.domainId,
+      ledgerId: options.ledgerId,
     })
 
     if (!xrplTransaction.SigningPubKey) {
@@ -269,6 +272,7 @@ export class XrplService {
     if (options.accountId && options.ledgerId) {
       const fullContext = await this.ports.resolveContext(signerAddress, {
         domainId: options.domainId,
+        ledgerId: options.ledgerId,
       })
       return {
         domainId: fullContext.domainId,
@@ -278,7 +282,10 @@ export class XrplService {
         address: signerAddress,
       }
     }
-    return this.ports.resolveContext(signerAddress, { domainId: options.domainId })
+    return this.ports.resolveContext(signerAddress, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
   }
 
   /**

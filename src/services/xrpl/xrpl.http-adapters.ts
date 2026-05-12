@@ -1,4 +1,5 @@
 import { URLs } from "../../constants/urls.js"
+import { isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type { TypedTransport } from "../../transport/index.js"
 import type {
@@ -26,7 +27,7 @@ export function createHttpPorts(transport: TypedTransport): XrplPorts {
     async resolveContext(address, opts = {}) {
       const me = await transport.get<Core_MeReference>(URLs.me)
       const { domainId, userId } = resolveDomainAndUser(me, opts.domainId)
-      const account = await findByAddress(transport, address)
+      const account = await findByAddress(transport, address, opts.ledgerId)
       return { domainId, userId, ...account }
     },
 
@@ -104,18 +105,30 @@ function resolveDomainAndUser(
 async function findByAddress(
   transport: TypedTransport,
   address: string,
+  ledgerId?: string,
 ): Promise<AccountReference> {
   const addressAcrossDomains = await transport.get<Core_AddressReferenceCollection>(
     URLs.addresses,
     undefined,
     { address },
   )
-  const account = addressAcrossDomains.items.find((item) => item.address === address)
 
-  if (!account) {
-    throw new CustodyError({ reason: `Account not found for address ${address}` })
+  const matches = addressAcrossDomains.items.filter(
+    (item) => item.address === address && (isUndefined(ledgerId) || item.ledgerId === ledgerId),
+  )
+
+  if (matches.length === 0) {
+    const suffix = ledgerId ? ` on ledger ${ledgerId}` : ""
+    throw new CustodyError({ reason: `Account not found for address ${address}${suffix}` })
   }
 
+  if (matches.length > 1) {
+    throw new CustodyError({
+      reason: `Multiple accounts found for address ${address}. Please specify ledgerId to disambiguate.`,
+    })
+  }
+
+  const account = matches[0]!
   return {
     accountId: account.accountId,
     ledgerId: account.ledgerId ?? "",
