@@ -133,7 +133,7 @@ export type XrplIntentOptions = {
    * the address is registered on more than one ledger; otherwise optional.
    * The auto-completion is loose, you can write any value.
    */
-  ledgerId?: "xrpl-mainnet" | "xrpl-testnet-august-2024" | (string & {})
+  ledgerId?: "xrpl" | "xrpl-testnet-august-2024" | (string & {})
   /**
    * Fee strategy priority. Defaults to "Low".
    */
