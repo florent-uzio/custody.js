@@ -1,5 +1,11 @@
 # custody
 
+## 1.7.1
+
+### Patch Changes
+
+- 94b22d2: Provides loose autocomplete for ledgerId in XrplIntentOptions
+
 ## 1.7.0
 
 ### Minor Changes
