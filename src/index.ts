@@ -2,6 +2,9 @@ export { DEFAULT_TIMEOUT_MS } from "./constants/index.js"
 export { RippleCustody } from "./ripple-custody.js"
 export type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 
+// shared SDK-only types
+export type { LedgerId, NonXrplLedgerId, XrplLedgerId } from "./models/ledger-ids.js"
+
 // keypairs types
 export { KeypairService } from "./services/keypairs/index.js"
 export type {
@@ -71,8 +74,8 @@ export type {
 
 // accounts types
 export type {
-  AccountReference,
   Core_AccountAddress,
+  Core_AccountAddressReference,
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
   Core_AddressesCollection,
@@ -82,6 +85,7 @@ export type {
   Core_ComplianceConfiguration,
   Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
+  FindByAddressOptions,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
   GenerateNewAccountExternalAddressDeprecatedPathParams,
@@ -242,6 +246,7 @@ export type {
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   WaitForSignatureOptions,
+  XrplAccountReference,
   XrplIntentOptions,
   XrplPorts,
 } from "./services/xrpl/index.js"

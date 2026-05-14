@@ -14,6 +14,7 @@ A comprehensive JavaScript/Typescript SDK for interacting with the Ripple Custod
 - **User & Invitation Management**: Manage users, roles, and invitations
 - **Vault Operations**: Export and import prepared operations
 - **Type Safety**: Full TypeScript support with types derived from the OpenAPI specification
+- **Ledger ID Autocomplete**: `LedgerId`, `XrplLedgerId`, and `NonXrplLedgerId` exports give IDE autocomplete for the supported ledgers (e.g. `"ethereum"`, `"xrpl"`, `"solana"`, …) while still accepting any string — so newly added ledgers never break the SDK
 - **XRPL Intent Proposal**: Single `proposeIntent()` method for all XRPL transaction types (Payment, TrustSet, DepositPreauth, Clawback, OfferCreate, AccountSet, TicketCreate, Batch, MPToken operations) using a type-safe discriminated union
 - **Raw Signing**: Sign arbitrary XRPL transactions and Batch inner transactions via Custody
 
@@ -135,8 +136,21 @@ const newAddress = await custody.accounts.generateNewExternalAddress({
   ledgerId: "ledger-id",
 })
 
-// Find an account by its blockchain address (searches across all domains)
+// Find an account by its blockchain address (searches across all domains).
+// Returns the full address reference, or undefined if not found.
+// Use the options bag to disambiguate when the same address exists on
+// multiple ledgers or in multiple domains.
 const ref = await custody.accounts.findByAddress("rAddress...")
+const refOnLedger = await custody.accounts.findByAddress("rAddress...", {
+  ledgerId: "xrpl",
+})
+const refInDomain = await custody.accounts.findByAddress("rAddress...", {
+  domainId: "domain-id",
+})
+// `findByAddressOrThrow` throws a `CustodyError` instead of returning undefined.
+const account = await custody.accounts.findByAddressOrThrow("rAddress...", {
+  ledgerId: "xrpl",
+})
 
 // Transaction Operations
 const orders = await custody.transactions.orders({ domainId: "domain-id" }, { limit: 10 })
@@ -213,15 +227,16 @@ See the [`examples/xrpl/`](./examples/xrpl/) directory for working code:
 
 `proposeIntent()` and the raw-sign methods accept an optional second parameter with these options:
 
-| Option                    | Type                          | Default | Description                                       |
-| ------------------------- | ----------------------------- | ------- | ------------------------------------------------- |
-| `domainId`                | `string`                      | -       | Domain ID (required if user has multiple domains) |
-| `feePriority`             | `"Low" \| "Medium" \| "High"` | `"Low"` | Transaction fee priority                          |
-| `expiryDays`              | `number`                      | `1`     | Days until the intent expires                     |
-| `requestCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the request                    |
-| `payloadCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the payload                    |
-| `requestId`               | `string`                      | auto    | Override the auto-generated request ID            |
-| `payloadId`               | `string`                      | auto    | Override the auto-generated payload ID            |
+| Option                    | Type                          | Default | Description                                                                                          |
+| ------------------------- | ----------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
+| `domainId`                | `string`                      | -       | Domain ID (required if user has multiple domains)                                                    |
+| `ledgerId`                | `XrplLedgerId`                | -       | XRPL ledger to use (`"xrpl"` or `"xrpl-testnet-august-2024"`) — required when the address spans both |
+| `feePriority`             | `"Low" \| "Medium" \| "High"` | `"Low"` | Transaction fee priority                                                                             |
+| `expiryDays`              | `number`                      | `1`     | Days until the intent expires                                                                        |
+| `requestCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the request                                                                       |
+| `payloadCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the payload                                                                       |
+| `requestId`               | `string`                      | auto    | Override the auto-generated request ID                                                               |
+| `payloadId`               | `string`                      | auto    | Override the auto-generated payload ID                                                               |
 
 ## Error Handling
 

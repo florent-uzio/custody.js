@@ -1,4 +1,5 @@
-import type { operations } from "../../models/custody-types.js"
+import type { components, operations } from "../../models/custody-types.js"
+import type { LedgerId } from "../../models/ledger-ids.js"
 
 // Request types
 
@@ -58,6 +59,8 @@ export type Core_AccountsCollection =
 export type Core_AddressReferenceCollection =
   operations["getAllDomainsAddresses"]["responses"]["200"]["content"]["application/json"]
 
+export type Core_AccountAddressReference = components["schemas"]["Core_AccountAddressReference"]
+
 export type Core_ApiAccount =
   operations["getAccount"]["responses"]["200"]["content"]["application/json"]
 
@@ -83,10 +86,13 @@ export type Core_ComplianceConfiguration =
   operations["getComplianceConfiguration"]["responses"]["200"]["content"]["application/json"]
 
 /**
- * Account reference found by address lookup.
+ * Optional filters for {@link findByAddress} / {@link findByAddressOrThrow}.
+ * Both filters are applied client-side; the `/v1/addresses` endpoint only
+ * accepts `address` as a query parameter.
  */
-export type AccountReference = {
-  accountId: string
-  ledgerId: string
-  address: string
+export type FindByAddressOptions = {
+  /** Disambiguates when the same address exists on multiple ledgers. */
+  ledgerId?: LedgerId
+  /** Disambiguates when the same address belongs to multiple domains. */
+  domainId?: string
 }
