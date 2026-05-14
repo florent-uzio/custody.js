@@ -1,8 +1,9 @@
 import { URLs } from "../constants/urls.js"
+import { isUndefined } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
 import type {
-  AccountReference,
   Core_AccountAddress,
+  Core_AccountAddressReference,
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
   Core_AddressesCollection,
@@ -12,6 +13,7 @@ import type {
   Core_ComplianceConfiguration,
   Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
+  FindByAddressOptions,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
   GenerateNewAccountExternalAddressDeprecatedPathParams,
@@ -40,25 +42,64 @@ import type { TypedTransport } from "../transport/index.js"
 
 /**
  * Finds an account by its blockchain address across all domains.
- * Exported separately so XrplService can use it without the full namespace.
+ * Returns `undefined` when no account matches. Throws when the match is
+ * ambiguous (multiple results without a `ledgerId` / `domainId` to disambiguate).
  */
-export async function findByAddress(t: TypedTransport, address: string): Promise<AccountReference> {
+export async function findByAddress(
+  t: TypedTransport,
+  address: string,
+  opts: FindByAddressOptions = {},
+): Promise<Core_AccountAddressReference | undefined> {
+  const { ledgerId, domainId } = opts
   const addressAcrossDomains = await t.get<Core_AddressReferenceCollection>(
     URLs.addresses,
     undefined,
     { address },
   )
-  const account = addressAcrossDomains.items.find((item) => item.address === address)
 
-  if (!account) {
-    throw new CustodyError({ reason: `Account not found for address ${address}` })
+  const matches = addressAcrossDomains.items.filter(
+    (item) =>
+      item.address === address &&
+      (isUndefined(ledgerId) || item.ledgerId === ledgerId) &&
+      (isUndefined(domainId) || item.domainId === domainId),
+  )
+
+  if (matches.length === 0) {
+    return undefined
   }
 
-  return {
-    accountId: account.accountId,
-    ledgerId: account.ledgerId ?? "",
-    address: account.address,
+  if (matches.length > 1) {
+    throw new CustodyError({
+      reason: `Multiple accounts found for address ${address}. Please specify ledgerId and/or domainId to disambiguate.`,
+    })
   }
+
+  return matches[0]!
+}
+
+/**
+ * Like {@link findByAddress} but throws a `CustodyError` when no account is
+ * found. Use this when the caller treats absence as a programmer error.
+ */
+export async function findByAddressOrThrow(
+  t: TypedTransport,
+  address: string,
+  opts: FindByAddressOptions = {},
+): Promise<Core_AccountAddressReference> {
+  const account = await findByAddress(t, address, opts)
+  if (isUndefined(account)) {
+    throw new CustodyError({
+      reason: `Account not found for address ${address}${notFoundSuffix(opts)}`,
+    })
+  }
+  return account
+}
+
+function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
+  const parts: string[] = []
+  if (ledgerId) parts.push(`on ledger ${ledgerId}`)
+  if (domainId) parts.push(`in domain ${domainId}`)
+  return parts.length > 0 ? ` ${parts.join(" ")}` : ""
 }
 
 export function createAccounts(t: TypedTransport) {
@@ -126,6 +167,14 @@ export function createAccounts(t: TypedTransport) {
     ): Promise<Core_ComplianceConfiguration> =>
       t.put(URLs.accountComplianceConfiguration, body, params),
 
-    findByAddress: (address: string): Promise<AccountReference> => findByAddress(t, address),
+    findByAddress: (
+      address: string,
+      opts?: FindByAddressOptions,
+    ): Promise<Core_AccountAddressReference | undefined> => findByAddress(t, address, opts),
+
+    findByAddressOrThrow: (
+      address: string,
+      opts?: FindByAddressOptions,
+    ): Promise<Core_AccountAddressReference> => findByAddressOrThrow(t, address, opts),
   } as const
 }

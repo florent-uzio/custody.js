@@ -4,6 +4,7 @@ import {
   createChannels,
   createDomains,
   createEvents,
+  createGenesis,
   createIntents,
   createLedgers,
   createPolicies,
@@ -50,6 +51,7 @@ export class RippleCustody {
   public readonly channels: ReturnType<typeof createChannels>
   public readonly domains: ReturnType<typeof createDomains>
   public readonly events: ReturnType<typeof createEvents>
+  public readonly genesis: ReturnType<typeof createGenesis>
   public readonly intents: ReturnType<typeof createIntents>
   public readonly transactions: ReturnType<typeof createTransactions>
   public readonly accounts: ReturnType<typeof createAccounts>
@@ -81,6 +83,7 @@ export class RippleCustody {
     this.channels = createChannels(this.transport)
     this.domains = createDomains(this.transport)
     this.events = createEvents(this.transport)
+    this.genesis = createGenesis(this.transport)
     this.intents = createIntents(this.transport)
     this.transactions = createTransactions(this.transport)
     this.accounts = createAccounts(this.transport)

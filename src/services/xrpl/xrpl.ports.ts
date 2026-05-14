@@ -1,3 +1,4 @@
+import type { XrplLedgerId } from "../../models/ledger-ids.js"
 import type { Core_ApiAccount, Core_ApiManifest } from "../accounts/accounts.types.js"
 import type {
   Core_IntentDryRunRequest,
@@ -18,7 +19,10 @@ export interface XrplPorts {
    * Resolves the full intent context (domain, user, account) for a given XRPL address.
    * Absorbs domain resolution (GET /v1/me) and account lookup (GET /v1/addresses).
    */
-  resolveContext(address: string, opts?: { domainId?: string }): Promise<IntentContext>
+  resolveContext(
+    address: string,
+    opts?: { domainId?: string; ledgerId?: XrplLedgerId },
+  ): Promise<IntentContext>
 
   /**
    * Submits a proposed intent to the custody platform.

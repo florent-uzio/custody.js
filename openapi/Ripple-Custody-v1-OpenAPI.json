@@ -7,7 +7,7 @@
       "url": "images/ripple-custody.png",
       "altText": "Ripple Custody logo"
     },
-    "x-app-version": "1.32.1"
+    "x-app-version": "1.35.0"
   },
   "paths": {
     "/v1/backups/{backupId}": {

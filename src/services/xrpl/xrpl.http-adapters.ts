@@ -1,12 +1,8 @@
 import { URLs } from "../../constants/urls.js"
 import { CustodyError } from "../../models/index.js"
+import { findByAddressOrThrow } from "../../namespaces/accounts.js"
 import type { TypedTransport } from "../../transport/index.js"
-import type {
-  AccountReference,
-  Core_AddressReferenceCollection,
-  Core_ApiAccount,
-  Core_ApiManifest,
-} from "../accounts/accounts.types.js"
+import type { Core_ApiAccount, Core_ApiManifest } from "../accounts/accounts.types.js"
 import type {
   Core_IntentDryRunRequest,
   Core_IntentDryRunResponse,
@@ -21,7 +17,7 @@ import type { XrplPorts } from "./xrpl.ports.js"
  *
  * Absorbs:
  * - DomainResolverService (GET /v1/me + validation + domain resolution)
- * - findByAddress (GET /v1/addresses)
+ * - findByAddressOrThrow (GET /v1/addresses)
  * - intent submission (POST /v1/intents)
  * - manifest retrieval (GET /v1/domains/.../manifests/...)
  * - account details (GET /v1/domains/.../accounts/...)
@@ -31,8 +27,17 @@ export function createHttpPorts(transport: TypedTransport): XrplPorts {
     async resolveContext(address, opts = {}) {
       const me = await transport.get<Core_MeReference>(URLs.me)
       const { domainId, userId } = resolveDomainAndUser(me, opts.domainId)
-      const account = await findByAddress(transport, address)
-      return { domainId, userId, ...account }
+      const account = await findByAddressOrThrow(transport, address, {
+        ledgerId: opts.ledgerId,
+        domainId: opts.domainId,
+      })
+      return {
+        domainId,
+        userId,
+        accountId: account.accountId,
+        ledgerId: account.ledgerId,
+        address: account.address,
+      }
     },
 
     submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse> {
@@ -108,28 +113,4 @@ function resolveDomainAndUser(
   }
 
   return { domainId: domain.id, userId: domain.userReference.id }
-}
-
-// ── Inlined from accounts namespace findByAddress ──────────────
-
-async function findByAddress(
-  transport: TypedTransport,
-  address: string,
-): Promise<AccountReference> {
-  const addressAcrossDomains = await transport.get<Core_AddressReferenceCollection>(
-    URLs.addresses,
-    undefined,
-    { address },
-  )
-  const account = addressAcrossDomains.items.find((item) => item.address === address)
-
-  if (!account) {
-    throw new CustodyError({ reason: `Account not found for address ${address}` })
-  }
-
-  return {
-    accountId: account.accountId,
-    ledgerId: account.ledgerId ?? "",
-    address: account.address,
-  }
 }

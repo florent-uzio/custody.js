@@ -1,5 +1,35 @@
 # custody
 
+## 2.0.0
+
+### Major Changes
+
+- ad207f0: Reworked `accounts.findByAddress` (breaking).
+  - Split into two variants. `accounts.findByAddress(address, opts?)` returns `Core_AccountAddressReference | undefined` when no account matches the address (previously threw). The throwing behavior is preserved under the new `accounts.findByAddressOrThrow(address, opts?)`. Callers relying on the old throw-on-not-found behavior should migrate to `findByAddressOrThrow`.
+  - The optional `ledgerId` parameter has moved into an options bag, which also accepts a new `domainId` filter to disambiguate the same address across multiple domains: `findByAddress(address, { ledgerId?, domainId? })`.
+  - Both helpers now return the full `Core_AccountAddressReference` from the OpenAPI spec (`id`, `address`, `ledgerId`, `domainId`, `accountId`, `createdAt`, `custodyType`, `type`) instead of the previous lean `{ accountId, ledgerId, address }`. The hand-authored `AccountReference` type has been renamed to `XrplAccountReference` and moved to the xrpl service — it is the SDK-internal shape consumed by `IntentContext`, not the address-lookup return type.
+  - Ambiguous matches (multiple results without enough filters to disambiguate) still throw in both variants. The error message now reads `Please specify ledgerId and/or domainId to disambiguate.`
+  - Added three new public type exports — `LedgerId`, `XrplLedgerId`, and `NonXrplLedgerId` — backed by a loose-autocompletion union (`"ethereum" | "xrpl" | … | (string & {})`). Any `string` is still assignable, so this is non-breaking, but IDEs now suggest the supported ledgers. Applied to `FindByAddressOptions.ledgerId` (any ledger), `XrplAccountReference.ledgerId` and `XrplIntentOptions.ledgerId` (XRPL-only).
+  - Supports API for Ripple Custody 1.35.0.
+
+## 1.7.1
+
+### Patch Changes
+
+- 94b22d2: Provides loose autocomplete for ledgerId in XrplIntentOptions
+
+## 1.7.0
+
+### Minor Changes
+
+- ebb7a38: `findByAddress` and `XrplService` now accept an optional `ledgerId` to disambiguate addresses that exist on multiple ledgers (e.g. `xrpl-mainnet` and `xrpl-testnet`) under the same login. Previously the first match was silently returned, which could route intents to the wrong ledger. When the lookup is ambiguous and no `ledgerId` is provided, a `CustodyError` is now thrown asking the caller to specify one. The new `ledgerId` option is available on `XrplIntentOptions` (and therefore on `proposeIntent`, `rawSign`, and `rawSignAndWait`).
+
+## 1.6.0
+
+### Minor Changes
+
+- 9cbdfa0: Adds the Genesis endpoint and the types
+
 ## 1.5.0
 
 ### Minor Changes
