@@ -12,6 +12,7 @@ import type {
   TrustSet,
 } from "xrpl"
 import type { components } from "../../models/custody-types.js"
+import type { XrplLedgerId } from "../../models/ledger-ids.js"
 import type { Prettify } from "../../type-utils/index.js"
 import type { AccountReference } from "../accounts/index.js"
 import type { DomainUserReference } from "../domain-resolver/index.js"
@@ -133,7 +134,7 @@ export type XrplIntentOptions = {
    * the address is registered on more than one ledger; otherwise optional.
    * The auto-completion is loose, you can write any value.
    */
-  ledgerId?: "xrpl" | "xrpl-testnet-august-2024" | (string & {})
+  ledgerId?: XrplLedgerId
   /**
    * Fee strategy priority. Defaults to "Low".
    */

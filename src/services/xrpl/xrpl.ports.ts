@@ -1,3 +1,4 @@
+import type { XrplLedgerId } from "../../models/ledger-ids.js"
 import type { Core_ApiAccount, Core_ApiManifest } from "../accounts/accounts.types.js"
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
 import type { IntentContext } from "./xrpl.types.js"
@@ -15,7 +16,7 @@ export interface XrplPorts {
    */
   resolveContext(
     address: string,
-    opts?: { domainId?: string; ledgerId?: string },
+    opts?: { domainId?: string; ledgerId?: XrplLedgerId },
   ): Promise<IntentContext>
 
   /**

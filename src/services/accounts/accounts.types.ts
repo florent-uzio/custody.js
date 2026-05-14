@@ -1,4 +1,5 @@
 import type { components, operations } from "../../models/custody-types.js"
+import type { LedgerId, XrplLedgerId } from "../../models/ledger-ids.js"
 
 // Request types
 
@@ -91,7 +92,7 @@ export type Core_ComplianceConfiguration =
  */
 export type AccountReference = {
   accountId: string
-  ledgerId: string
+  ledgerId: XrplLedgerId
   address: string
 }
 
@@ -102,7 +103,7 @@ export type AccountReference = {
  */
 export type FindByAddressOptions = {
   /** Disambiguates when the same address exists on multiple ledgers. */
-  ledgerId?: string
+  ledgerId?: LedgerId
   /** Disambiguates when the same address belongs to multiple domains. */
   domainId?: string
 }
