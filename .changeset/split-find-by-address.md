@@ -8,3 +8,4 @@ Reworked `accounts.findByAddress` (breaking).
 - The optional `ledgerId` parameter has moved into an options bag, which also accepts a new `domainId` filter to disambiguate the same address across multiple domains: `findByAddress(address, { ledgerId?, domainId? })`.
 - Both helpers now return the full `Core_AccountAddressReference` from the OpenAPI spec (`id`, `address`, `ledgerId`, `domainId`, `accountId`, `createdAt`, `custodyType`, `type`) instead of the previous lean `{ accountId, ledgerId, address }`. The hand-authored `AccountReference` type is still exported but is now an SDK-internal shape consumed by `IntentContext`, not the address-lookup return type.
 - Ambiguous matches (multiple results without enough filters to disambiguate) still throw in both variants. The error message now reads `Please specify ledgerId and/or domainId to disambiguate.`
+- Supports API for Ripple Custody 1.35.0.
