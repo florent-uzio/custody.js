@@ -8,7 +8,9 @@ const mockTransport = {
   post: vi.fn(),
 }
 
-function makeRef(overrides: Partial<Core_AccountAddressReference> = {}): Core_AccountAddressReference {
+function makeRef(
+  overrides: Partial<Core_AccountAddressReference> = {},
+): Core_AccountAddressReference {
   return {
     id: "ref-id",
     address: "rAddress123",
