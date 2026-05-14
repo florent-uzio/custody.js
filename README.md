@@ -135,8 +135,21 @@ const newAddress = await custody.accounts.generateNewExternalAddress({
   ledgerId: "ledger-id",
 })
 
-// Find an account by its blockchain address (searches across all domains)
+// Find an account by its blockchain address (searches across all domains).
+// Returns the full address reference, or undefined if not found.
+// Use the options bag to disambiguate when the same address exists on
+// multiple ledgers or in multiple domains.
 const ref = await custody.accounts.findByAddress("rAddress...")
+const refOnLedger = await custody.accounts.findByAddress("rAddress...", {
+  ledgerId: "xrpl",
+})
+const refInDomain = await custody.accounts.findByAddress("rAddress...", {
+  domainId: "domain-id",
+})
+// `findByAddressOrThrow` throws a `CustodyError` instead of returning undefined.
+const account = await custody.accounts.findByAddressOrThrow("rAddress...", {
+  ledgerId: "xrpl",
+})
 
 // Transaction Operations
 const orders = await custody.transactions.orders({ domainId: "domain-id" }, { limit: 10 })

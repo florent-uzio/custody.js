@@ -73,6 +73,7 @@ export type {
 export type {
   AccountReference,
   Core_AccountAddress,
+  Core_AccountAddressReference,
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
   Core_AddressesCollection,
@@ -82,6 +83,7 @@ export type {
   Core_ComplianceConfiguration,
   Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
+  FindByAddressOptions,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
   GenerateNewAccountExternalAddressDeprecatedPathParams,

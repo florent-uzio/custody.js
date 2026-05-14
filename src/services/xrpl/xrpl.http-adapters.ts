@@ -22,8 +22,17 @@ export function createHttpPorts(transport: TypedTransport): XrplPorts {
     async resolveContext(address, opts = {}) {
       const me = await transport.get<Core_MeReference>(URLs.me)
       const { domainId, userId } = resolveDomainAndUser(me, opts.domainId)
-      const account = await findByAddressOrThrow(transport, address, opts.ledgerId)
-      return { domainId, userId, ...account }
+      const account = await findByAddressOrThrow(transport, address, {
+        ledgerId: opts.ledgerId,
+        domainId: opts.domainId,
+      })
+      return {
+        domainId,
+        userId,
+        accountId: account.accountId,
+        ledgerId: account.ledgerId,
+        address: account.address,
+      }
     },
 
     submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse> {

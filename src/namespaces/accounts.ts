@@ -2,8 +2,8 @@ import { URLs } from "../constants/urls.js"
 import { isUndefined } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
 import type {
-  AccountReference,
   Core_AccountAddress,
+  Core_AccountAddressReference,
   Core_AccountsCollection,
   Core_AddressReferenceCollection,
   Core_AddressesCollection,
@@ -13,6 +13,7 @@ import type {
   Core_ComplianceConfiguration,
   Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
+  FindByAddressOptions,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
   GenerateNewAccountExternalAddressDeprecatedPathParams,
@@ -42,13 +43,14 @@ import type { TypedTransport } from "../transport/index.js"
 /**
  * Finds an account by its blockchain address across all domains.
  * Returns `undefined` when no account matches. Throws when the match is
- * ambiguous (multiple results without a `ledgerId` to disambiguate).
+ * ambiguous (multiple results without a `ledgerId` / `domainId` to disambiguate).
  */
 export async function findByAddress(
   t: TypedTransport,
   address: string,
-  ledgerId?: string,
-): Promise<AccountReference | undefined> {
+  opts: FindByAddressOptions = {},
+): Promise<Core_AccountAddressReference | undefined> {
+  const { ledgerId, domainId } = opts
   const addressAcrossDomains = await t.get<Core_AddressReferenceCollection>(
     URLs.addresses,
     undefined,
@@ -56,7 +58,10 @@ export async function findByAddress(
   )
 
   const matches = addressAcrossDomains.items.filter(
-    (item) => item.address === address && (isUndefined(ledgerId) || item.ledgerId === ledgerId),
+    (item) =>
+      item.address === address &&
+      (isUndefined(ledgerId) || item.ledgerId === ledgerId) &&
+      (isUndefined(domainId) || item.domainId === domainId),
   )
 
   if (matches.length === 0) {
@@ -65,16 +70,11 @@ export async function findByAddress(
 
   if (matches.length > 1) {
     throw new CustodyError({
-      reason: `Multiple accounts found for address ${address}. Please specify ledgerId to disambiguate.`,
+      reason: `Multiple accounts found for address ${address}. Please specify ledgerId and/or domainId to disambiguate.`,
     })
   }
 
-  const account = matches[0]!
-  return {
-    accountId: account.accountId,
-    ledgerId: account.ledgerId ?? "",
-    address: account.address,
-  }
+  return matches[0]!
 }
 
 /**
@@ -84,14 +84,22 @@ export async function findByAddress(
 export async function findByAddressOrThrow(
   t: TypedTransport,
   address: string,
-  ledgerId?: string,
-): Promise<AccountReference> {
-  const account = await findByAddress(t, address, ledgerId)
+  opts: FindByAddressOptions = {},
+): Promise<Core_AccountAddressReference> {
+  const account = await findByAddress(t, address, opts)
   if (isUndefined(account)) {
-    const suffix = ledgerId ? ` on ledger ${ledgerId}` : ""
-    throw new CustodyError({ reason: `Account not found for address ${address}${suffix}` })
+    throw new CustodyError({
+      reason: `Account not found for address ${address}${notFoundSuffix(opts)}`,
+    })
   }
   return account
+}
+
+function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
+  const parts: string[] = []
+  if (ledgerId) parts.push(`on ledger ${ledgerId}`)
+  if (domainId) parts.push(`in domain ${domainId}`)
+  return parts.length > 0 ? ` ${parts.join(" ")}` : ""
 }
 
 export function createAccounts(t: TypedTransport) {
@@ -159,10 +167,14 @@ export function createAccounts(t: TypedTransport) {
     ): Promise<Core_ComplianceConfiguration> =>
       t.put(URLs.accountComplianceConfiguration, body, params),
 
-    findByAddress: (address: string, ledgerId?: string): Promise<AccountReference | undefined> =>
-      findByAddress(t, address, ledgerId),
+    findByAddress: (
+      address: string,
+      opts?: FindByAddressOptions,
+    ): Promise<Core_AccountAddressReference | undefined> => findByAddress(t, address, opts),
 
-    findByAddressOrThrow: (address: string, ledgerId?: string): Promise<AccountReference> =>
-      findByAddressOrThrow(t, address, ledgerId),
+    findByAddressOrThrow: (
+      address: string,
+      opts?: FindByAddressOptions,
+    ): Promise<Core_AccountAddressReference> => findByAddressOrThrow(t, address, opts),
   } as const
 }
