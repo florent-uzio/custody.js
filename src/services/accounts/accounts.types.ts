@@ -1,5 +1,5 @@
 import type { components, operations } from "../../models/custody-types.js"
-import type { LedgerId, XrplLedgerId } from "../../models/ledger-ids.js"
+import type { LedgerId } from "../../models/ledger-ids.js"
 
 // Request types
 
@@ -84,17 +84,6 @@ export type Core_ComplianceConfigurationsCollection =
 
 export type Core_ComplianceConfiguration =
   operations["getComplianceConfiguration"]["responses"]["200"]["content"]["application/json"]
-
-/**
- * Minimum set of account fields required to build an XRPL intent.
- * Consumed by `IntentContext`. Not an API response shape — see
- * {@link Core_AccountAddressReference} for the full address-lookup result.
- */
-export type AccountReference = {
-  accountId: string
-  ledgerId: XrplLedgerId
-  address: string
-}
 
 /**
  * Optional filters for {@link findByAddress} / {@link findByAddressOrThrow}.

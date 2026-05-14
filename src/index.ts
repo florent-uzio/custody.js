@@ -74,7 +74,6 @@ export type {
 
 // accounts types
 export type {
-  AccountReference,
   Core_AccountAddress,
   Core_AccountAddressReference,
   Core_AccountsCollection,
@@ -247,6 +246,7 @@ export type {
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   WaitForSignatureOptions,
+  XrplAccountReference,
   XrplIntentOptions,
   XrplPorts,
 } from "./services/xrpl/index.js"

@@ -14,14 +14,24 @@ import type {
 import type { components } from "../../models/custody-types.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
 import type { Prettify } from "../../type-utils/index.js"
-import type { AccountReference } from "../accounts/index.js"
 import type { DomainUserReference } from "../domain-resolver/index.js"
+
+/**
+ * Minimum set of account fields required to build an XRPL intent.
+ * Consumed by `IntentContext`. Not an API response shape — see
+ * `Core_AccountAddressReference` for the full address-lookup result.
+ */
+export type XrplAccountReference = {
+  accountId: string
+  ledgerId: XrplLedgerId
+  address: string
+}
 
 /**
  * Combined context required to build an intent.
  * Contains domain/user reference and account reference.
  */
-export type IntentContext = DomainUserReference & AccountReference
+export type IntentContext = DomainUserReference & XrplAccountReference
 
 // Payments
 
