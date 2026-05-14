@@ -41,13 +41,14 @@ import type { TypedTransport } from "../transport/index.js"
 
 /**
  * Finds an account by its blockchain address across all domains.
- * Exported separately so XrplService can use it without the full namespace.
+ * Returns `undefined` when no account matches. Throws when the match is
+ * ambiguous (multiple results without a `ledgerId` to disambiguate).
  */
 export async function findByAddress(
   t: TypedTransport,
   address: string,
   ledgerId?: string,
-): Promise<AccountReference> {
+): Promise<AccountReference | undefined> {
   const addressAcrossDomains = await t.get<Core_AddressReferenceCollection>(
     URLs.addresses,
     undefined,
@@ -59,8 +60,7 @@ export async function findByAddress(
   )
 
   if (matches.length === 0) {
-    const suffix = ledgerId ? ` on ledger ${ledgerId}` : ""
-    throw new CustodyError({ reason: `Account not found for address ${address}${suffix}` })
+    return undefined
   }
 
   if (matches.length > 1) {
@@ -75,6 +75,23 @@ export async function findByAddress(
     ledgerId: account.ledgerId ?? "",
     address: account.address,
   }
+}
+
+/**
+ * Like {@link findByAddress} but throws a `CustodyError` when no account is
+ * found. Use this when the caller treats absence as a programmer error.
+ */
+export async function findByAddressOrThrow(
+  t: TypedTransport,
+  address: string,
+  ledgerId?: string,
+): Promise<AccountReference> {
+  const account = await findByAddress(t, address, ledgerId)
+  if (isUndefined(account)) {
+    const suffix = ledgerId ? ` on ledger ${ledgerId}` : ""
+    throw new CustodyError({ reason: `Account not found for address ${address}${suffix}` })
+  }
+  return account
 }
 
 export function createAccounts(t: TypedTransport) {
@@ -142,7 +159,10 @@ export function createAccounts(t: TypedTransport) {
     ): Promise<Core_ComplianceConfiguration> =>
       t.put(URLs.accountComplianceConfiguration, body, params),
 
-    findByAddress: (address: string, ledgerId?: string): Promise<AccountReference> =>
+    findByAddress: (address: string, ledgerId?: string): Promise<AccountReference | undefined> =>
       findByAddress(t, address, ledgerId),
+
+    findByAddressOrThrow: (address: string, ledgerId?: string): Promise<AccountReference> =>
+      findByAddressOrThrow(t, address, ledgerId),
   } as const
 }
