@@ -19,9 +19,9 @@
     "module": "NodeNext",
     "outDir": "dist",
     "rootDir": "src",
-    "sourceMap": false,
+    "sourceMap": true,
     "declaration": true,
-    "declarationMap": false
+    "declarationMap": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]
