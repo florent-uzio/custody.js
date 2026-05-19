@@ -30,11 +30,15 @@ The SDK is built around a few key layers:
 
 ## Installation
 
+### From npm
+
+```bash
+npm install @florent-uzio/custody
+```
+
 ### From GitHub
 
-This repo is not published on NPM.
-
-Install directly from the GitHub repository:
+Alternatively, install directly from the GitHub repository:
 
 ```bash
 npm install github:florent-uzio/custody.js
@@ -47,7 +51,7 @@ npm install github:florent-uzio/custody.js
 First, you'll need to generate cryptographic keypairs for authentication and signing:
 
 ```typescript
-import { KeypairService } from "custody"
+import { KeypairService } from "@florent-uzio/custody"
 
 // Generate Ed25519 keypair
 const ed25519Service = new KeypairService("ed25519")
@@ -73,7 +77,7 @@ Use a `.env` file to store your public and private key.
 ### 2. Initialize the RippleCustody Client
 
 ```typescript
-import { RippleCustody } from "custody"
+import { RippleCustody } from "@florent-uzio/custody"
 
 const custody = new RippleCustody({
   apiUrl: "https://api.ripple.com",
@@ -254,7 +258,7 @@ See the [`examples/xrpl/`](./examples/xrpl/) directory for working code:
 The SDK throws `CustodyError` instances for all API errors:
 
 ```typescript
-import { CustodyError } from "custody"
+import { CustodyError } from "@florent-uzio/custody"
 
 try {
   const domains = await custody.domains.list()

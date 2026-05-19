@@ -14,7 +14,7 @@
  * owning or holding any XRP, enabling regulatory compliance scenarios.
  */
 
-import { RippleCustody } from "custody"
+import { RippleCustody } from "@florent-uzio/custody"
 import {
   AccountSet,
   AccountSetAsfFlags,
