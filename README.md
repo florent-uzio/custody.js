@@ -8,6 +8,7 @@ A comprehensive JavaScript/Typescript SDK for interacting with the Ripple Custod
 
 - **Cryptographic Support**: Ed25519, secp256k1, secp256r1 keypair generation and signing
 - **Domain Management**: List and retrieve domain information
+- **Endpoint Management**: List and retrieve endpoints within a domain
 - **Intent Operations**: Propose, approve, reject, and manage intents with built-in polling
 - **Account Management**: Manage accounts, addresses, and balances
 - **Transaction Operations**: Handle transaction orders, transfers, and dry runs
@@ -90,6 +91,16 @@ The SDK provides a namespaced API for easy discovery and usage:
 // Domain Operations
 const domains = await custody.domains.list()
 const domain = await custody.domains.get({ domainId: "your-domain-id" })
+
+// Endpoint Operations
+const endpoints = await custody.endpoints.list(
+  { domainId: "domain-id" },
+  { limit: 10, sortBy: "alias" },
+)
+const endpoint = await custody.endpoints.get({
+  domainId: "domain-id",
+  endpointId: "endpoint-id",
+})
 
 // Intent Operations
 const intent = await custody.intents.propose({

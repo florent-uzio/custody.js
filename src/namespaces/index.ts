@@ -1,6 +1,7 @@
 export { createAccounts, findByAddress, findByAddressOrThrow } from "./accounts.js"
 export { createChannels } from "./channels.js"
 export { createDomains } from "./domains.js"
+export { createEndpoints } from "./endpoints.js"
 export { createEvents } from "./events.js"
 export { createGenesis } from "./genesis.js"
 export { createIntents } from "./intents.js"
