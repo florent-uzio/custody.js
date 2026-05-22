@@ -8,6 +8,7 @@ A comprehensive JavaScript/Typescript SDK for interacting with the Ripple Custod
 
 - **Cryptographic Support**: Ed25519, secp256k1, secp256r1 keypair generation and signing
 - **Domain Management**: List and retrieve domain information
+- **Endpoint Management**: List and retrieve endpoints within a domain
 - **Intent Operations**: Propose, approve, reject, and manage intents with built-in polling
 - **Account Management**: Manage accounts, addresses, and balances
 - **Transaction Operations**: Handle transaction orders, transfers, and dry runs
@@ -29,11 +30,15 @@ The SDK is built around a few key layers:
 
 ## Installation
 
+### From npm
+
+```bash
+npm install @florent-uzio/custody
+```
+
 ### From GitHub
 
-This repo is not published on NPM.
-
-Install directly from the GitHub repository:
+Alternatively, install directly from the GitHub repository:
 
 ```bash
 npm install github:florent-uzio/custody.js
@@ -46,7 +51,7 @@ npm install github:florent-uzio/custody.js
 First, you'll need to generate cryptographic keypairs for authentication and signing:
 
 ```typescript
-import { KeypairService } from "custody"
+import { KeypairService } from "@florent-uzio/custody"
 
 // Generate Ed25519 keypair
 const ed25519Service = new KeypairService("ed25519")
@@ -72,7 +77,7 @@ Use a `.env` file to store your public and private key.
 ### 2. Initialize the RippleCustody Client
 
 ```typescript
-import { RippleCustody } from "custody"
+import { RippleCustody } from "@florent-uzio/custody"
 
 const custody = new RippleCustody({
   apiUrl: "https://api.ripple.com",
@@ -90,6 +95,16 @@ The SDK provides a namespaced API for easy discovery and usage:
 // Domain Operations
 const domains = await custody.domains.list()
 const domain = await custody.domains.get({ domainId: "your-domain-id" })
+
+// Endpoint Operations
+const endpoints = await custody.endpoints.list(
+  { domainId: "domain-id" },
+  { limit: 10, sortBy: "alias" },
+)
+const endpoint = await custody.endpoints.get({
+  domainId: "domain-id",
+  endpointId: "endpoint-id",
+})
 
 // Intent Operations
 const intent = await custody.intents.propose({
@@ -243,7 +258,7 @@ See the [`examples/xrpl/`](./examples/xrpl/) directory for working code:
 The SDK throws `CustodyError` instances for all API errors:
 
 ```typescript
-import { CustodyError } from "custody"
+import { CustodyError } from "@florent-uzio/custody"
 
 try {
   const domains = await custody.domains.list()

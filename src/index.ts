@@ -42,6 +42,15 @@ export type {
   GetDomainsQueryParams,
 } from "./services/domains/index.js"
 
+// endpoints types
+export type {
+  Core_TrustedEndpoint,
+  Core_TrustedEndpointsCollection,
+  GetEndpointPathParams,
+  GetEndpointsPathParams,
+  GetEndpointsQueryParams,
+} from "./services/endpoints/index.js"
+
 // events types
 export type {
   Core_EventScope,

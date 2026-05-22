@@ -3,6 +3,7 @@ import {
   createAccounts,
   createChannels,
   createDomains,
+  createEndpoints,
   createEvents,
   createGenesis,
   createIntents,
@@ -50,6 +51,7 @@ export class RippleCustody {
   // Namespace objects built from factory functions
   public readonly channels: ReturnType<typeof createChannels>
   public readonly domains: ReturnType<typeof createDomains>
+  public readonly endpoints: ReturnType<typeof createEndpoints>
   public readonly events: ReturnType<typeof createEvents>
   public readonly genesis: ReturnType<typeof createGenesis>
   public readonly intents: ReturnType<typeof createIntents>
@@ -82,6 +84,7 @@ export class RippleCustody {
     // Initialize namespaces from factories
     this.channels = createChannels(this.transport)
     this.domains = createDomains(this.transport)
+    this.endpoints = createEndpoints(this.transport)
     this.events = createEvents(this.transport)
     this.genesis = createGenesis(this.transport)
     this.intents = createIntents(this.transport)
