@@ -27,10 +27,13 @@ import {
   type Core_ApiBatchSigningData,
   type Core_BatchSigner,
   type Core_XrplOperation,
+  type GetBatchSignatureParams,
   type RawSignAndWaitOptions,
   type RawSignAndWaitResult,
+  type SignBatchPayloadHandle,
   type SignBatchPayloadOptions,
   type SignBatchPayloadResult,
+  type WaitForSignatureOptions,
   type XrplIntentOptions,
 } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
@@ -183,6 +186,45 @@ export class RippleCustody {
       options?: SignBatchPayloadOptions,
     ): Promise<SignBatchPayloadResult> =>
       this.xrplService.signBatchPayloadAndWait(signingPayload, signerAddress, options),
+
+    /**
+     * Step 2 of the XLS-56 Batch flow (non-blocking) — proposes the raw sign
+     * intent for an inner account managed by this custody instance and returns
+     * immediately, without waiting for the manifest signature.
+     *
+     * Use when the operator approves signatures out-of-band: persist the
+     * returned handle and pass it to `getBatchSignature` later to fetch the
+     * signature once available.
+     *
+     * @param signingPayload - Hex-encoded payload from `dryRunBatch`
+     * @param signerAddress - The XRPL address of the inner account to sign for
+     * @param options - Optional configuration for the raw sign intent
+     * @returns A handle with the manifest ID and fields needed to retrieve the signature
+     */
+    signBatchPayload: async (
+      signingPayload: string,
+      signerAddress: string,
+      options?: SignBatchPayloadOptions,
+    ): Promise<SignBatchPayloadHandle> =>
+      this.xrplService.signBatchPayload(signingPayload, signerAddress, options),
+
+    /**
+     * Retrieves the signature for a payload proposed via `signBatchPayload`,
+     * building the BatchSigner shapes when available.
+     *
+     * Performs a single fetch by default; returns `undefined` if the operator
+     * has not approved the signature yet. Pass `maxRetries`/`intervalMs` to opt
+     * into light polling.
+     *
+     * @param params - Fields from the `signBatchPayload` handle (a handle may be passed directly)
+     * @param options - Optional polling configuration (defaults to a single attempt)
+     * @returns Signature and BatchSigner shapes, or `undefined` if not yet signed
+     */
+    getBatchSignature: async (
+      params: GetBatchSignatureParams,
+      options?: WaitForSignatureOptions,
+    ): Promise<SignBatchPayloadResult | undefined> =>
+      this.xrplService.getBatchSignature(params, options),
 
     /**
      * Step 3 of the XLS-56 Batch flow — submits the Batch with collected

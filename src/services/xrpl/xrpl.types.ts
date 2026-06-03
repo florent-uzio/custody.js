@@ -18,6 +18,7 @@ import type { components } from "../../models/custody-types.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
 import type { Prettify } from "../../type-utils/index.js"
 import type { DomainUserReference } from "../domain-resolver/index.js"
+import type { Core_IntentResponse } from "../intents/intents.types.js"
 
 /**
  * Minimum set of account fields required to build an XRPL intent.
@@ -286,4 +287,43 @@ export type SignBatchPayloadResult = {
   batchSigner: BatchSigner
   /** Custody BatchSigner — for inclusion in batchSigners on `proposeBatch` */
   custodyBatchSigner: CustodyBatchSigner
+}
+
+/**
+ * Serializable handle returned by `signBatchPayload`. Persist these fields
+ * (e.g. to a database or queue) and pass them to `getBatchSignature` once the
+ * custody instance operator has approved the signature — possibly from a
+ * different process.
+ */
+export type SignBatchPayloadHandle = {
+  /** Manifest ID to poll for the signature */
+  payloadId: string
+  /** Domain ID of the signer account */
+  domainId: string
+  /** Account ID of the signer account */
+  accountId: string
+  /** XRPL address of the signer */
+  signerAddress: string
+  /** The compressed secp256k1 public key in uppercase hex */
+  signingPubKey: string
+  /** The proposed intent response */
+  intentResponse: Core_IntentResponse
+}
+
+/**
+ * Fields `getBatchSignature` needs to fetch the signature and build the
+ * BatchSigner shapes. A `SignBatchPayloadHandle` is a structural superset, so a
+ * stored handle can be passed directly.
+ */
+export type GetBatchSignatureParams = {
+  /** Manifest ID returned by `signBatchPayload` */
+  payloadId: string
+  /** Domain ID of the signer account */
+  domainId: string
+  /** Account ID of the signer account */
+  accountId: string
+  /** XRPL address of the signer */
+  signerAddress: string
+  /** The compressed secp256k1 public key in uppercase hex */
+  signingPubKey: string
 }

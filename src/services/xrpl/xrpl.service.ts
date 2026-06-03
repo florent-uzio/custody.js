@@ -18,9 +18,11 @@ import type {
   Core_BatchSigner,
   Core_XrplOperation,
   Core_XrplOperation_Batch,
+  GetBatchSignatureParams,
   IntentContext,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
+  SignBatchPayloadHandle,
   SignBatchPayloadOptions,
   SignBatchPayloadResult,
   WaitForSignatureOptions,
@@ -240,6 +242,44 @@ export class XrplService {
     signerAddress: string,
     options: SignBatchPayloadOptions = {},
   ): Promise<SignBatchPayloadResult> {
+    const handle = await this.signBatchPayload(signingPayload, signerAddress, options)
+
+    const signature = await this.waitForManifestSignature(
+      handle.domainId,
+      handle.accountId,
+      handle.payloadId,
+      options.polling,
+    )
+
+    return this.buildSignBatchPayloadResult(handle, signature)
+  }
+
+  /**
+   * Step 2 of the XLS-56 Batch flow (non-blocking variant) — proposes the raw
+   * sign intent for the `signingPayload` returned by `dryRunBatch` for a single
+   * inner account managed by this custody instance, then returns immediately
+   * without waiting for the manifest signature.
+   *
+   * Use this when the custody instance operator approves signatures
+   * out-of-band: persist the returned `SignBatchPayloadHandle` and pass it to
+   * `getBatchSignature` later (possibly from another process) to fetch the
+   * signature once it is available.
+   *
+   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
+   * @param signerAddress - XRPL address of the inner account to sign for
+   * @param options - Optional configuration for the raw sign intent
+   * @returns A handle with the manifest ID and the fields needed to retrieve the signature
+   * @throws {CustodyError} If the signer account is not found
+   */
+  public async signBatchPayload(
+    signingPayload: string,
+    signerAddress: string,
+    options: SignBatchPayloadOptions = {},
+  ): Promise<SignBatchPayloadHandle> {
+    if (!isValidAddress(signerAddress)) {
+      throw new CustodyError({ reason: `Invalid signerAddress: ${signerAddress}` })
+    }
+
     const context = await this.resolveSignerContext(signerAddress, options)
 
     const signingPubKey = await this.getPublicKey({
@@ -249,28 +289,75 @@ export class XrplService {
 
     const base64Encoded = Buffer.from(signingPayload, "hex").toString("base64")
 
-    const { payloadId } = await this.proposeRawSignIntent(base64Encoded, context, options)
-
-    const signature = await this.waitForManifestSignature(
-      context.domainId,
-      context.accountId,
-      payloadId,
-      options.polling,
+    const { intentResponse, payloadId } = await this.proposeRawSignIntent(
+      base64Encoded,
+      context,
+      options,
     )
 
     return {
-      signature,
+      payloadId,
+      domainId: context.domainId,
+      accountId: context.accountId,
+      signerAddress,
       signingPubKey,
+      intentResponse,
+    }
+  }
+
+  /**
+   * Retrieves the signature for a payload proposed via `signBatchPayload`,
+   * building the BatchSigner shapes when it is available.
+   *
+   * Performs a single fetch by default (`maxRetries: 1`); the operator may not
+   * have approved the signature yet, in which case `undefined` is returned and
+   * the caller decides when to retry. Pass `maxRetries`/`intervalMs` to opt into
+   * light polling.
+   *
+   * @param params - Fields from the `SignBatchPayloadHandle` (a handle may be passed directly)
+   * @param options - Optional polling configuration (defaults to a single attempt)
+   * @returns The signature and BatchSigner shapes, or `undefined` if not yet signed
+   * @throws {CustodyError} On any non-404 error fetching the manifest
+   */
+  public async getBatchSignature(
+    params: GetBatchSignatureParams,
+    options: WaitForSignatureOptions = {},
+  ): Promise<SignBatchPayloadResult | undefined> {
+    const signature = await this.pollManifestSignature(
+      params.domainId,
+      params.accountId,
+      params.payloadId,
+      { maxRetries: 1, ...options },
+    )
+
+    if (isUndefined(signature)) {
+      return undefined
+    }
+
+    return this.buildSignBatchPayloadResult(params, signature)
+  }
+
+  /**
+   * Assembles a `SignBatchPayloadResult` from the signer details and signature.
+   * @private
+   */
+  private buildSignBatchPayloadResult(
+    params: { signerAddress: string; signingPubKey: string },
+    signature: string,
+  ): SignBatchPayloadResult {
+    return {
+      signature,
+      signingPubKey: params.signingPubKey,
       batchSigner: {
         BatchSigner: {
-          Account: signerAddress,
-          SigningPubKey: signingPubKey,
+          Account: params.signerAddress,
+          SigningPubKey: params.signingPubKey,
           TxnSignature: signature,
         },
       },
       custodyBatchSigner: {
-        participant: { type: "Address", address: signerAddress },
-        publicKey: signingPubKey,
+        participant: { type: "Address", address: params.signerAddress },
+        publicKey: params.signingPubKey,
         signature,
       },
     }
@@ -430,8 +517,7 @@ export class XrplService {
 
   /**
    * Polls the manifest until a signature is available, then returns it as uppercase hex.
-   * Handles both the manifest not existing yet (404) and the manifest existing
-   * but not yet having a signature.
+   * Throws if the signature is still unavailable after the maximum retries.
    * @private
    */
   private async waitForManifestSignature(
@@ -440,22 +526,36 @@ export class XrplService {
     manifestId: string,
     options: WaitForSignatureOptions = {},
   ): Promise<string> {
+    const signature = await this.pollManifestSignature(domainId, accountId, manifestId, options)
+
+    if (isUndefined(signature)) {
+      throw new CustodyError({
+        reason: "Manifest signature not available after maximum retries",
+      })
+    }
+
+    return signature
+  }
+
+  /**
+   * Polls the manifest for a signature, returning it as uppercase hex once
+   * available, or `undefined` if still unavailable after the maximum retries.
+   * @private
+   */
+  private async pollManifestSignature(
+    domainId: string,
+    accountId: string,
+    manifestId: string,
+    options: WaitForSignatureOptions = {},
+  ): Promise<string | undefined> {
     const { maxRetries = 3, intervalMs = 3000, onAttempt } = options
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       onAttempt?.(attempt)
 
-      try {
-        const manifest = await this.ports.getManifest(domainId, accountId, manifestId)
-
-        const { value } = manifest.data
-        if (value && value.type === "Unsafe") {
-          return Buffer.from(value.signature, "base64").toString("hex").toUpperCase()
-        }
-      } catch (error) {
-        if (!(error instanceof CustodyError && error.statusCode === 404)) {
-          throw error
-        }
+      const signature = await this.fetchManifestSignature(domainId, accountId, manifestId)
+      if (!isUndefined(signature)) {
+        return signature
       }
 
       if (attempt < maxRetries) {
@@ -463,9 +563,33 @@ export class XrplService {
       }
     }
 
-    throw new CustodyError({
-      reason: "Manifest signature not available after maximum retries",
-    })
+    return undefined
+  }
+
+  /**
+   * Fetches the manifest once and returns its signature as uppercase hex, or
+   * `undefined` if the manifest does not exist yet (404) or has no signature.
+   * @private
+   */
+  private async fetchManifestSignature(
+    domainId: string,
+    accountId: string,
+    manifestId: string,
+  ): Promise<string | undefined> {
+    try {
+      const manifest = await this.ports.getManifest(domainId, accountId, manifestId)
+
+      const { value } = manifest.data
+      if (value && value.type === "Unsafe") {
+        return Buffer.from(value.signature, "base64").toString("hex").toUpperCase()
+      }
+    } catch (error) {
+      if (!(error instanceof CustodyError && error.statusCode === 404)) {
+        throw error
+      }
+    }
+
+    return undefined
   }
 
   /**

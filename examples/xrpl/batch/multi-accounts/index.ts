@@ -11,6 +11,8 @@ import { batchToCustodyBatchPayload, RippleCustody } from "../../../../src/index
  *  4. Convert the autofilled Batch to a custody `BatchPayloadInput`
  *  5. Dry-run to obtain the canonical `signingPayload` from Ripple Custody
  *  6. Sign the payload for each inner account managed by this custody instance
+ *     (blocking `signBatchPayloadAndWait`, or non-blocking `signBatchPayload`
+ *     + `getBatchSignature` when an operator approves signatures out-of-band)
  *  7. Submit the Batch with the collected `batchSigners`
  *
  * In this example, ACCOUNT_1 and ACCOUNT_2 are the inner signers (they each
@@ -97,12 +99,49 @@ const submitMultiAccountBatch = async () => {
 
     // ── 5. Sign the payload for each inner account ───────────────
 
-    // `signBatchPayloadAndWait` returns:
+    // There are two ways to sign for an inner account managed by this custody
+    // instance. Both return the same data once a signature exists:
     //   - signature / signingPubKey  (uppercase hex)
     //   - batchSigner                (xrpl.js BatchSigner shape)
     //   - custodyBatchSigner         (Ripple Custody API shape)
+    //
+    // Which one to use depends on how signatures get approved:
+    //
+    //   • signBatchPayloadAndWait — proposes the sign intent AND polls until the
+    //     manifest signature is available, all in one call. Convenient when
+    //     signatures are approved automatically (no human in the loop), so the
+    //     wait is short and blocking is acceptable.
+    //
+    //   • signBatchPayload + getBatchSignature — proposes the sign intent and
+    //     returns a serializable handle immediately, WITHOUT waiting. Use this
+    //     when an operator approves signatures out-of-band and the wait could be
+    //     long (minutes/hours): persist the handle, then call getBatchSignature
+    //     later (e.g. from a webhook or a different process) to fetch the
+    //     signature once it has been approved.
+
+    // ACCOUNT_1 — blocking: propose and wait for the signature in one call.
     const signer1 = await custody.xrpl.signBatchPayloadAndWait(signingPayload, ACCOUNT_1)
-    const signer2 = await custody.xrpl.signBatchPayloadAndWait(signingPayload, ACCOUNT_2)
+
+    // ACCOUNT_2 — non-blocking: propose now, retrieve the signature later.
+    const handle2 = await custody.xrpl.signBatchPayload(signingPayload, ACCOUNT_2)
+
+    // `handle2` is plain serializable data ({ payloadId, domainId, accountId,
+    // signerAddress, signingPubKey, ... }). In a real out-of-band flow you would
+    // persist it here and return, then resume once the operator has approved.
+
+    // getBatchSignature does a single fetch by default and returns `undefined`
+    // if the signature is not approved yet. Pass maxRetries/intervalMs to opt
+    // into light polling. The stored handle can be passed straight in.
+    const signer2 = await custody.xrpl.getBatchSignature(handle2, {
+      maxRetries: 5,
+      intervalMs: 3000,
+    })
+
+    if (!signer2) {
+      console.log("ACCOUNT_2 signature not approved yet — retry getBatchSignature later")
+      await xrplClient.disconnect()
+      return
+    }
 
     console.log("Signer 1 (xrpl.js format):", signer1.batchSigner)
     console.log("Signer 2 (xrpl.js format):", signer2.batchSigner)

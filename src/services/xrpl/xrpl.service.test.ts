@@ -30,7 +30,7 @@ const mockDomainId = "domain-123"
 const mockUserId = "user-123"
 const mockAccountId = "account-123"
 const mockLedgerId = "ledger-123"
-const mockAddress = "rLpUHpWU455zTvVq65EEeHss52Dk4WvQHn"
+const mockAddress = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"
 
 const mockContext: IntentContext = {
   domainId: mockDomainId,
@@ -1019,6 +1019,12 @@ describe("XrplService", () => {
       expect(resolveContext).toHaveBeenCalledTimes(1)
     })
 
+    it("throws CustodyError when signerAddress is invalid", async () => {
+      await expect(
+        service.signBatchPayloadAndWait("deadbeef", "not-an-address"),
+      ).rejects.toThrow("Invalid signerAddress: not-an-address")
+    })
+
     it("throws CustodyError when the signature never arrives", async () => {
       ports = createTestPorts({
         getManifest: async () => ({ data: { value: undefined } }) as any,
@@ -1030,6 +1036,116 @@ describe("XrplService", () => {
           polling: { maxRetries: 2, intervalMs: 0 },
         }),
       ).rejects.toThrow("Manifest signature not available after maximum retries")
+    })
+  })
+
+  // ── signBatchPayload ──────────────────────────────────────────
+
+  describe("signBatchPayload", () => {
+    it("proposes the sign intent and returns a handle without waiting", async () => {
+      let capturedBody: any
+      const getManifest = vi.fn(async () => ({
+        data: { value: { type: "Unsafe" as const, signature: mockBase64Signature } },
+      }))
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "r-1" } as any
+        },
+        getManifest,
+      })
+      service = new XrplService(ports)
+
+      const handle = await service.signBatchPayload("deadbeef", mockAddress)
+
+      const expectedBase64 = Buffer.from("deadbeef", "hex").toString("base64")
+      expect(capturedBody.request.payload.type).toBe("v0_SignManifest")
+      expect(capturedBody.request.payload.content).toEqual({
+        value: expectedBase64,
+        type: "Unsafe",
+      })
+
+      // Never polls the manifest
+      expect(getManifest).not.toHaveBeenCalled()
+
+      expect(handle.payloadId).toBe(capturedBody.request.payload.id)
+      expect(handle.domainId).toBe(mockDomainId)
+      expect(handle.accountId).toBe(mockAccountId)
+      expect(handle.signerAddress).toBe(mockAddress)
+      expect(handle.signingPubKey).toBe(expectedCompressedKey)
+      expect(handle.intentResponse).toEqual({ requestId: "r-1" })
+    })
+
+    it("throws CustodyError when signerAddress is invalid", async () => {
+      await expect(service.signBatchPayload("deadbeef", "not-an-address")).rejects.toThrow(
+        "Invalid signerAddress: not-an-address",
+      )
+    })
+  })
+
+  // ── getBatchSignature ─────────────────────────────────────────
+
+  describe("getBatchSignature", () => {
+    const params = {
+      payloadId: "payload-123",
+      domainId: mockDomainId,
+      accountId: mockAccountId,
+      signerAddress: mockAddress,
+      signingPubKey: expectedCompressedKey,
+    }
+
+    it("returns both BatchSigner shapes when the signature is available", async () => {
+      const result = await service.getBatchSignature(params)
+
+      expect(result).toEqual({
+        signature: "AABBCCDD",
+        signingPubKey: expectedCompressedKey,
+        batchSigner: {
+          BatchSigner: {
+            Account: mockAddress,
+            SigningPubKey: expectedCompressedKey,
+            TxnSignature: "AABBCCDD",
+          },
+        },
+        custodyBatchSigner: {
+          participant: { type: "Address", address: mockAddress },
+          publicKey: expectedCompressedKey,
+          signature: "AABBCCDD",
+        },
+      })
+    })
+
+    it("fetches the manifest only once by default", async () => {
+      const getManifest = vi.fn(async () => ({ data: { value: undefined } }) as any)
+      ports = createTestPorts({ getManifest })
+      service = new XrplService(ports)
+
+      const result = await service.getBatchSignature(params)
+
+      expect(result).toBeUndefined()
+      expect(getManifest).toHaveBeenCalledTimes(1)
+    })
+
+    it("returns undefined on a 404 manifest", async () => {
+      ports = createTestPorts({
+        getManifest: async () => {
+          throw new CustodyError({ reason: "not found" }, 404)
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getBatchSignature(params)).resolves.toBeUndefined()
+    })
+
+    it("polls when maxRetries is provided", async () => {
+      const getManifest = vi.fn(async () => ({ data: { value: undefined } }) as any)
+      ports = createTestPorts({ getManifest })
+      service = new XrplService(ports)
+
+      const result = await service.getBatchSignature(params, { maxRetries: 3, intervalMs: 0 })
+
+      expect(result).toBeUndefined()
+      expect(getManifest).toHaveBeenCalledTimes(3)
     })
   })
 
