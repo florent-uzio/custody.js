@@ -22,65 +22,42 @@ import {
 import type { TypedTransport } from "../transport/index.js"
 
 /**
- * Fetches an intent with retry logic for 404 errors.
- * Useful when the intent might not be immediately available after creation.
- */
-async function getIntentWithRetry(
-  t: TypedTransport,
-  params: Core_GetIntentPathParams,
-  maxRetries: number,
-  intervalMs: number,
-): Promise<Core_TrustedIntent> {
-  let lastError: Error | undefined
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await t.get<Core_TrustedIntent>(URLs.getIntent, params)
-    } catch (error) {
-      if (error instanceof CustodyError && error.statusCode === 404) {
-        lastError = error
-        if (attempt < maxRetries) {
-          await sleep(intervalMs)
-        }
-        continue
-      }
-      throw error
-    }
-  }
-
-  throw lastError
-}
-
-/**
  * Wait for an intent to reach a terminal status (Executed, Failed, Expired, or Rejected).
  * Polls the intent status at regular intervals until it completes or max retries is reached.
+ *
+ * A 404 is treated as "not available yet" (e.g. when called immediately after proposing)
+ * and is retried within the same polling loop rather than aborting the wait.
  */
 async function waitForExecution(
   t: TypedTransport,
   params: Core_GetIntentPathParams,
   options: WaitForExecutionOptions = {},
 ): Promise<WaitForExecutionResult> {
-  const {
-    maxRetries = 10,
-    intervalMs = 3000,
-    notFoundRetries = 3,
-    notFoundIntervalMs = 1000,
-    onStatusCheck,
-  } = options
+  const { maxRetries = 10, intervalMs = 3000, onStatusCheck } = options
+
+  let lastIntent: Core_TrustedIntent | undefined
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const intent = await getIntentWithRetry(t, params, notFoundRetries, notFoundIntervalMs)
-    const status = intent.data.state.status
+    try {
+      const intent = await t.get<Core_TrustedIntent>(URLs.getIntent, params)
+      lastIntent = intent
+      const status = intent.data.state.status
 
-    onStatusCheck?.(status, attempt)
+      onStatusCheck?.(status, attempt)
 
-    if (TERMINAL_STATUSES.includes(status)) {
-      return {
-        status,
-        isTerminal: true,
-        isSuccess: status === "Executed",
-        intent,
+      if (TERMINAL_STATUSES.includes(status)) {
+        return {
+          status,
+          isTerminal: true,
+          isSuccess: status === "Executed",
+          intent,
+        }
       }
+    } catch (error) {
+      if (!(error instanceof CustodyError && error.statusCode === 404)) {
+        throw error
+      }
+      // 404 → the intent is not available yet, keep polling.
     }
 
     if (attempt < maxRetries) {
@@ -88,12 +65,21 @@ async function waitForExecution(
     }
   }
 
-  const finalIntent = await getIntentWithRetry(t, params, notFoundRetries, notFoundIntervalMs)
+  // Retries exhausted. If the intent never materialized, surface that as a 404;
+  // otherwise return the last observed (non-terminal) state.
+  if (!lastIntent) {
+    throw new CustodyError(
+      { reason: `Intent ${params.intentId} not found after ${maxRetries} attempts` },
+      404,
+    )
+  }
+
+  const status = lastIntent.data.state.status
   return {
-    status: finalIntent.data.state.status,
+    status,
     isTerminal: false,
     isSuccess: false,
-    intent: finalIntent,
+    intent: lastIntent,
   }
 }
 

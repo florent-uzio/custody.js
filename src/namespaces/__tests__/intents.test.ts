@@ -72,7 +72,8 @@ describe("createIntents", () => {
 
       const result = await intents.getAndWait(params, { maxRetries: 2 })
 
-      // 2 attempts in main loop + 1 final fetch
+      // 2 attempts in the polling loop, no extra fetch afterwards
+      expect(mockTransport.get).toHaveBeenCalledTimes(2)
       expect(result.isTerminal).toBe(false)
       expect(result.isSuccess).toBe(false)
       expect(result.status).toBe("Executing")
@@ -118,12 +119,33 @@ describe("createIntents", () => {
         .mockRejectedValueOnce(notFoundError)
         .mockResolvedValueOnce({ data: { state: { status: "Executed" } } })
 
-      const result = await intents.getAndWait(params, {
-        notFoundRetries: 3,
-        notFoundIntervalMs: 100,
-      })
+      const result = await intents.getAndWait(params)
 
       expect(result.isSuccess).toBe(true)
+    })
+
+    it("should keep polling through repeated 404s until terminal (regression)", async () => {
+      const notFoundError = new CustodyError({ reason: "Not found" }, 404)
+      mockTransport.get
+        .mockRejectedValueOnce(notFoundError)
+        .mockRejectedValueOnce(notFoundError)
+        .mockRejectedValueOnce(notFoundError)
+        .mockRejectedValueOnce(notFoundError)
+        .mockResolvedValueOnce({ data: { state: { status: "Executed" } } })
+
+      const result = await intents.getAndWait(params, { maxRetries: 10 })
+
+      expect(result.isSuccess).toBe(true)
+      expect(mockTransport.get).toHaveBeenCalledTimes(5)
+    })
+
+    it("should throw 404 when the intent never materializes", async () => {
+      const notFoundError = new CustodyError({ reason: "Not found" }, 404)
+      mockTransport.get.mockRejectedValue(notFoundError)
+
+      await expect(intents.getAndWait(params, { maxRetries: 2 })).rejects.toMatchObject({
+        statusCode: 404,
+      })
     })
 
     it("should throw non-404 errors immediately", async () => {
