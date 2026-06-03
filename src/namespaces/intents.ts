@@ -77,8 +77,8 @@ async function waitForExecution(
   const status = lastIntent.data.state.status
   return {
     status,
-    isTerminal: false,
-    isSuccess: false,
+    isTerminal: TERMINAL_STATUSES.includes(status),
+    isSuccess: status === "Executed",
     intent: lastIntent,
   }
 }
