@@ -1080,6 +1080,22 @@ describe("XrplService", () => {
       expect(op.sequencing).toEqual({ type: "PlatformManaged" })
     })
 
+    it("passes domainId and ledgerId to resolveContext", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({ resolveContext })
+      service = new XrplService(ports)
+
+      await service.proposeBatch(batchPayload, batchSigners, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+
+      expect(resolveContext).toHaveBeenCalledWith(submitterAddress, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+    })
+
     it("reuses caller-provided requestId and payloadId for dry-run/propose pairing", async () => {
       let capturedBody: any
       ports = createTestPorts({

@@ -295,6 +295,7 @@ export class XrplService {
   ): Promise<Core_IntentResponse> {
     const context = await this.ports.resolveContext(payload.Account, {
       domainId: options.domainId,
+      ledgerId: options.ledgerId,
     })
 
     const operation = this.buildBatchOperation(payload, batchSigners)
