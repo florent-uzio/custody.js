@@ -1,23 +1,23 @@
-import { createPublicKey } from "crypto"
 import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
 import { encodeForSigning, isValidAddress, type SubmittableTransaction } from "xrpl"
 import { sleep } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
-import type {
-  Core_IntentDryRunRequest,
-  Core_IntentResponse,
-  Core_ProposeIntentBody,
-} from "../intents/intents.types.js"
+import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
+import {
+  buildBatchOperation,
+  buildDryRunBody,
+  buildSignBatchPayloadResult,
+  buildTransactionIntent,
+} from "./xrpl.builders.js"
+import { compressPublicKey } from "./xrpl.crypto.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 import type {
   BatchPayloadInput,
-  BuildTransactionIntentProps,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
   Core_XrplOperation,
-  Core_XrplOperation_Batch,
   GetBatchSignatureParams,
   IntentContext,
   RawSignAndWaitOptions,
@@ -56,7 +56,7 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
-    const intent = this.buildTransactionIntent({
+    const intent = buildTransactionIntent({
       operation: params.operation,
       context,
       options,
@@ -198,8 +198,8 @@ export class XrplService {
       domainId: options.domainId,
     })
 
-    const operation = this.buildBatchOperation(payload, [])
-    const body = this.buildDryRunBody(operation, context, options)
+    const operation = buildBatchOperation(payload, [])
+    const body = buildDryRunBody(operation, context, options)
 
     const response = await this.ports.dryRunIntent(body)
 
@@ -251,7 +251,7 @@ export class XrplService {
       options.polling,
     )
 
-    return this.buildSignBatchPayloadResult(handle, signature)
+    return buildSignBatchPayloadResult(handle, signature)
   }
 
   /**
@@ -334,33 +334,7 @@ export class XrplService {
       return undefined
     }
 
-    return this.buildSignBatchPayloadResult(params, signature)
-  }
-
-  /**
-   * Assembles a `SignBatchPayloadResult` from the signer details and signature.
-   * @private
-   */
-  private buildSignBatchPayloadResult(
-    params: { signerAddress: string; signingPubKey: string },
-    signature: string,
-  ): SignBatchPayloadResult {
-    return {
-      signature,
-      signingPubKey: params.signingPubKey,
-      batchSigner: {
-        BatchSigner: {
-          Account: params.signerAddress,
-          SigningPubKey: params.signingPubKey,
-          TxnSignature: signature,
-        },
-      },
-      custodyBatchSigner: {
-        participant: { type: "Address", address: params.signerAddress },
-        publicKey: params.signingPubKey,
-        signature,
-      },
-    }
+    return buildSignBatchPayloadResult(params, signature)
   }
 
   /**
@@ -385,8 +359,8 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
-    const operation = this.buildBatchOperation(payload, batchSigners)
-    const body = this.buildTransactionIntent({ operation, context, options })
+    const operation = buildBatchOperation(payload, batchSigners)
+    const body = buildTransactionIntent({ operation, context, options })
 
     return this.ports.submitIntent(body)
   }
@@ -413,62 +387,6 @@ export class XrplService {
       }
     }
     return this.ports.resolveContext(signerAddress, { domainId: options.domainId })
-  }
-
-  /**
-   * Constructs a `Core_XrplOperation_Batch` from `BatchPayloadInput`.
-   * @private
-   */
-  private buildBatchOperation(
-    payload: BatchPayloadInput,
-    batchSigners: Core_BatchSigner[],
-  ): Core_XrplOperation_Batch {
-    return {
-      type: "Batch",
-      executionMode: payload.executionMode,
-      entries: payload.entries,
-      batchSigners,
-      sequencing: payload.sequencing ?? { type: "PlatformManaged" },
-      ...(payload.lastLedgerSequence !== undefined && {
-        lastLedgerSequence: payload.lastLedgerSequence,
-      }),
-    }
-  }
-
-  /**
-   * Builds a `Core_IntentDryRunRequest` body for an XRPL transaction order.
-   * @private
-   */
-  private buildDryRunBody(
-    operation: Core_XrplOperation,
-    context: IntentContext,
-    options: XrplIntentOptions,
-  ): Core_IntentDryRunRequest {
-    const feePriority = options.feePriority ?? "Low"
-    const expiryDays = options.expiryDays ?? 1
-    const requestId = options.requestId ?? uuidv7()
-    const payloadId = options.payloadId ?? uuidv7()
-
-    return {
-      author: { domainId: context.domainId, id: context.userId },
-      customProperties: options.requestCustomProperties ?? {},
-      expiryAt: dayjs().add(expiryDays, "day").toISOString(),
-      id: requestId,
-      payload: {
-        accountId: context.accountId,
-        customProperties: options.payloadCustomProperties ?? {},
-        id: payloadId,
-        ledgerId: context.ledgerId,
-        parameters: {
-          feeStrategy: { priority: feePriority, type: "Priority" },
-          memos: [],
-          operation,
-          type: "XRPL",
-        },
-        type: "v0_CreateTransactionOrder",
-      },
-      targetDomainId: context.domainId,
-    }
   }
 
   /**
@@ -591,68 +509,4 @@ export class XrplService {
 
     return undefined
   }
-
-  /**
-   * Builds an XRPL intent body.
-   * @private
-   */
-  private buildTransactionIntent({
-    operation,
-    context,
-    options,
-  }: BuildTransactionIntentProps): Core_ProposeIntentBody {
-    const feePriority = options.feePriority ?? "Low"
-    const expiryDays = options.expiryDays ?? 1
-    const requestId = options.requestId ?? uuidv7()
-    const payloadId = options.payloadId ?? uuidv7()
-
-    return {
-      request: {
-        author: {
-          domainId: context.domainId,
-          id: context.userId,
-        },
-        customProperties: options.requestCustomProperties ?? {},
-        expiryAt: dayjs().add(expiryDays, "day").toISOString(),
-        id: requestId,
-        payload: {
-          accountId: context.accountId,
-          customProperties: options.payloadCustomProperties ?? {},
-          id: payloadId,
-          ledgerId: context.ledgerId,
-          parameters: {
-            feeStrategy: {
-              priority: feePriority,
-              type: "Priority",
-            },
-            memos: [],
-            operation,
-            type: "XRPL",
-          },
-          type: "v0_CreateTransactionOrder",
-        },
-        targetDomainId: context.domainId,
-        type: "Propose",
-      },
-    }
-  }
-}
-
-/**
- * Compresses a base64-encoded SPKI/DER secp256k1 public key to its compressed hex form.
- * Uses Node.js built-in crypto via JWK export to extract the raw EC point coordinates.
- */
-function compressPublicKey(base64PublicKey: string): string {
-  const publicKey = createPublicKey({
-    key: Buffer.from(base64PublicKey, "base64"),
-    format: "der",
-    type: "spki",
-  })
-
-  const jwk = publicKey.export({ format: "jwk" })
-  const x = Buffer.from(jwk.x!, "base64url")
-  const y = Buffer.from(jwk.y!, "base64url")
-  const lastByte = y[y.length - 1]!
-  const prefix = lastByte % 2 === 0 ? "02" : "03"
-  return (prefix + x.toString("hex")).toUpperCase()
 }
