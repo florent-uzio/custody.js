@@ -1,5 +1,5 @@
 ---
-"@florent-uzio/custody": patch
+"@florent-uzio/custody": minor
 ---
 
 fix: flatten intent polling retry logic in `waitForExecution` (`intents.getAndWait`)
