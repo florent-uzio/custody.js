@@ -14,19 +14,14 @@ export const PENDING_STATUSES: Core_IntentStatus[] = ["Open", "Approved", "Execu
  * Options for waiting for intent execution
  */
 export type WaitForExecutionOptions = {
-  /** Maximum number of polling attempts (default: 10) */
+  /**
+   * Maximum number of polling attempts (default: 10). Also bounds how long a
+   * not-yet-available (404) intent is waited for, since 404s are retried within
+   * the same loop.
+   */
   maxRetries?: number
   /** Interval between polling attempts in milliseconds (default: 3000) */
   intervalMs?: number
-  /**
-   * Maximum number of retries when the intent is not found (404).
-   * Useful when calling immediately after proposeIntent. (default: 3)
-   */
-  notFoundRetries?: number
-  /**
-   * Interval between retries when the intent is not found in milliseconds (default: 1000)
-   */
-  notFoundIntervalMs?: number
   /**
    * Callback function called on each status check.
    * Useful for logging or updating UI.
