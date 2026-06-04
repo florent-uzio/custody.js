@@ -1020,9 +1020,9 @@ describe("XrplService", () => {
     })
 
     it("throws CustodyError when signerAddress is invalid", async () => {
-      await expect(
-        service.signBatchPayloadAndWait("deadbeef", "not-an-address"),
-      ).rejects.toThrow("Invalid signerAddress: not-an-address")
+      await expect(service.signBatchPayloadAndWait("deadbeef", "not-an-address")).rejects.toThrow(
+        "Invalid signerAddress: not-an-address",
+      )
     })
 
     it("throws CustodyError when the signature never arrives", async () => {
