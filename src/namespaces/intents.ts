@@ -65,8 +65,7 @@ async function waitForExecution(
     }
   }
 
-  // Retries exhausted. If the intent never materialized, surface that as a 404;
-  // otherwise return the last observed (non-terminal) state.
+  // Retries exhausted. If the intent never materialized, surface that as a 404.
   if (!lastIntent) {
     throw new CustodyError(
       { reason: `Intent ${params.intentId} not found after ${maxRetries} attempts` },
@@ -74,11 +73,12 @@ async function waitForExecution(
     )
   }
 
-  const status = lastIntent.data.state.status
+  // The loop returns early on any terminal status, so the last observed intent is
+  // necessarily non-terminal here.
   return {
-    status,
-    isTerminal: TERMINAL_STATUSES.includes(status),
-    isSuccess: status === "Executed",
+    status: lastIntent.data.state.status,
+    isTerminal: false,
+    isSuccess: false,
     intent: lastIntent,
   }
 }
