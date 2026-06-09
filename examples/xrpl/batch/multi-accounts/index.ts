@@ -151,7 +151,14 @@ const submitMultiAccountBatch = async () => {
 
     // ── 6. Submit the Batch intent with collected signers ────────
 
-    const { requestId } = await custody.xrpl.proposeBatch(batchPayload, batchSigners)
+    // Generate or use a unique identifier to track this specific payment intent
+    // This allows you to retrieve the transaction status later
+    const intentId = crypto.randomUUID()
+    console.log({ intentId })
+
+    const { requestId } = await custody.xrpl.proposeBatch(batchPayload, batchSigners, {
+      requestId: intentId,
+    })
 
     console.log("Batch intent proposed, requestId:", requestId)
 
@@ -160,7 +167,7 @@ const submitMultiAccountBatch = async () => {
     const domainId = me.domains[0].id
 
     // Wait for the intent to be processed and retrieve the final result
-    const intent = await custody.intents.getAndWait({ domainId, intentId: requestId })
+    const intent = await custody.intents.getAndWait({ domainId, intentId })
 
     console.dir(intent, { depth: null })
 
