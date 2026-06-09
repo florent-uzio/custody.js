@@ -3,7 +3,12 @@ import { CustodyError } from "../../models/index.js"
 import { findByAddressOrThrow } from "../../namespaces/accounts.js"
 import type { TypedTransport } from "../../transport/index.js"
 import type { Core_ApiAccount, Core_ApiManifest } from "../accounts/accounts.types.js"
-import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
+import type {
+  Core_IntentDryRunRequest,
+  Core_IntentDryRunResponse,
+  Core_IntentResponse,
+  Core_ProposeIntentBody,
+} from "../intents/intents.types.js"
 import type { Core_MeReference } from "../users/users.types.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 
@@ -37,6 +42,12 @@ export function createHttpPorts(transport: TypedTransport): XrplPorts {
 
     submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse> {
       return transport.post<Core_IntentResponse>(URLs.intents, body)
+    },
+
+    dryRunIntent(body: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> {
+      return transport.post<Core_IntentDryRunResponse>(URLs.intentsDryRun, body, undefined, {
+        sign: false,
+      })
     },
 
     getManifest(

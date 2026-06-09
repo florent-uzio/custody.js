@@ -1,5 +1,7 @@
 import type {
   AccountSet,
+  Batch,
+  BatchSigner,
   Clawback,
   DepositPreauth,
   MPTokenAuthorize,
@@ -9,12 +11,14 @@ import type {
   OfferCreate,
   Payment,
   SubmittableTransaction,
+  TicketCreate,
   TrustSet,
 } from "xrpl"
 import type { components } from "../../models/custody-types.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
 import type { Prettify } from "../../type-utils/index.js"
 import type { DomainUserReference } from "../domain-resolver/index.js"
+import type { Core_IntentResponse } from "../intents/intents.types.js"
 
 /**
  * Minimum set of account fields required to build an XRPL intent.
@@ -103,11 +107,11 @@ export type CustodyOfferCreate = Prettify<
 
 // TicketCreate
 
-// export type Core_XrplOperation_TicketCreate =
-//   components["schemas"]["Core_XrplOperation_TicketCreate"]
-// export type CustodyTicketCreate = Prettify<
-//   Pick<TicketCreate, "Account"> & Omit<Core_XrplOperation_TicketCreate, "type">
-// >
+export type Core_XrplOperation_TicketCreate =
+  components["schemas"]["Core_XrplOperation_TicketCreate"]
+export type CustodyTicketCreate = Prettify<
+  Pick<TicketCreate, "Account"> & Omit<Core_XrplOperation_TicketCreate, "type">
+>
 
 // AccountSet
 
@@ -117,17 +121,22 @@ export type CustodyAccountSet = Prettify<
 >
 
 // Batch
-
-//TODO: delete comment once Batch is supported
-// export type Core_XrplOperation_Batch = components["schemas"]["Core_XrplOperation_Batch"]
-// export type CustodyBatch = Prettify<Pick<Batch, "Account"> & Omit<Core_XrplOperation_Batch, "type">>
+export type Core_XrplOperation_Batch = components["schemas"]["Core_XrplOperation_Batch"]
+export type CustodyBatch = Prettify<Pick<Batch, "Account"> & Omit<Core_XrplOperation_Batch, "type">>
 
 // Batch Adapters
-
-//TODO: delete comment once Batch is supported
-// export type CustodyBatchSigner = CustodyBatch["batchSigners"][number]
-// export type CustodyInnerTransaction = CustodyBatch["innerTransactions"][number]
-// export type CustodyOperation = CustodyInnerTransaction["operation"]
+export type CustodyBatchSigner = CustodyBatch["batchSigners"][number]
+export type CustodyInnerTransaction = CustodyBatch["entries"][number]
+export type CustodyOperation = CustodyInnerTransaction["operation"]
+export type Core_ParticipantSequencing = components["schemas"]["Core_ParticipantSequencing"]
+export type Core_BatchEntry = components["schemas"]["Core_BatchEntry"]
+export type Core_BatchSigner = components["schemas"]["Core_BatchSigner"]
+export type Core_Sequencing = components["schemas"]["Core_Sequencing"]
+export type Core_BatchExecutionMode = components["schemas"]["Core_Xrpl_BatchExecutionMode"]
+export type Core_ApiBatchSigningData = components["schemas"]["Core_ApiBatchSigningData"]
+export type Core_TransactionEstimate_XRPL = components["schemas"]["Core_TransactionEstimate_XRPL"]
+export type Core_IntentDryRunResponse_v0_CreateTransactionOrder =
+  components["schemas"]["Core_IntentDryRunResponse_v0_CreateTransactionOrder"]
 
 export type CustodyAccountSetFlag = CustodyAccountSet["setFlag"]
 
@@ -219,33 +228,102 @@ export type RawSignAndWaitResult = {
   signedTransaction: SubmittableTransaction
 }
 
-/**
- * Result of rawSignInnerBatchAndWait.
- * Extends RawSignAndWaitResult with batch signer representations.
- */
-// export type RawSignInnerBatchAndWaitResult = RawSignAndWaitResult & {
-//   /** The batch signer in xrpl.js format */
-//   batchSigner: BatchSigner
-//   /** The batch signer in Ripple Custody API format */
-//   //TODO: delete comment once Batch is supported
-//   // custodyBatchSigner: CustodyBatchSigner
-// }
+type BatchSignerLookup = { accountId?: never; ledgerId?: never }
+type BatchSignerDirect = {
+  /** Custody account ID — skips the address lookup when provided with ledgerId */
+  accountId: string
+  /** Ledger ID for the account */
+  ledgerId: string
+}
 
-// type BatchSignerLookup = { accountId?: never; ledgerId?: never }
-// type BatchSignerDirect = {
-//   /** Custody account ID — skips the address lookup when provided with ledgerId */
-//   accountId: string
-//   /** Ledger ID for the account */
-//   ledgerId: string
-// }
+// Batch flow (XLS-56)
 
 /**
- * Options for rawSignInnerBatch / rawSignInnerBatchAndWait: intent options + polling configuration.
+ * Input for `dryRunBatch` / `proposeBatch`.
  *
- * When `accountId` and `ledgerId` are provided, the address-to-account lookup is
- * skipped, saving an API call.
+ * `Account` is the submitter (pays the outer Batch fee). `entries` mixes
+ * `SubmitterOperation` and `ParticipantOperation`; build them by hand with
+ * `Core_BatchEntry`, or convert from an autofilled xrpl.js `Batch` with
+ * `batchToCustodyInnerTransactions`.
  */
-// export type RawSignInnerBatchOptions = XrplIntentOptions & {
-//   /** Polling options for waiting for the manifest signature */
-//   polling?: WaitForSignatureOptions
-// } & (BatchSignerLookup | BatchSignerDirect)
+export type BatchPayloadInput = {
+  /** XRPL address of the submitter (the account that pays the outer Batch fee) */
+  Account: string
+  /** How the XRP Ledger handles inner-operation failures */
+  executionMode: Core_BatchExecutionMode
+  /** Inner operations (SubmitterOperation or ParticipantOperation) */
+  entries: Core_BatchEntry[]
+  /** Outer Batch sequencing. Defaults to `{ type: "PlatformManaged" }` */
+  sequencing?: Core_Sequencing
+  /** Optional last ledger sequence for the outer Batch */
+  lastLedgerSequence?: number
+}
+
+/**
+ * Options for signing the `signingPayload` returned by `dryRunBatch` for an
+ * inner account managed by this custody instance.
+ *
+ * When `accountId` and `ledgerId` are provided, the address-to-account lookup
+ * is skipped.
+ */
+export type SignBatchPayloadOptions = XrplIntentOptions & {
+  /** Polling options for waiting for the manifest signature */
+  polling?: WaitForSignatureOptions
+} & (BatchSignerLookup | BatchSignerDirect)
+
+/**
+ * Result of `signBatchPayloadAndWait`.
+ *
+ * `signature` and `signingPubKey` are uppercase hex. `batchSigner` is the
+ * xrpl.js `BatchSigner` shape; `custodyBatchSigner` is the {% PUBLIC_VAR_CUS %}
+ * shape — pick whichever the next step needs.
+ */
+export type SignBatchPayloadResult = {
+  /** The signature in uppercase hex */
+  signature: string
+  /** The compressed secp256k1 public key in uppercase hex */
+  signingPubKey: string
+  /** xrpl.js BatchSigner — for inclusion in an xrpl.js Batch.BatchSigners array */
+  batchSigner: BatchSigner
+  /** Custody BatchSigner — for inclusion in batchSigners on `proposeBatch` */
+  custodyBatchSigner: CustodyBatchSigner
+}
+
+/**
+ * Serializable handle returned by `signBatchPayload`. Persist these fields
+ * (e.g. to a database or queue) and pass them to `getBatchSignature` once the
+ * custody instance operator has approved the signature — possibly from a
+ * different process.
+ */
+export type SignBatchPayloadHandle = {
+  /** Manifest ID to poll for the signature */
+  payloadId: string
+  /** Domain ID of the signer account */
+  domainId: string
+  /** Account ID of the signer account */
+  accountId: string
+  /** XRPL address of the signer */
+  signerAddress: string
+  /** The compressed secp256k1 public key in uppercase hex */
+  signingPubKey: string
+  /** The proposed intent response */
+  intentResponse: Core_IntentResponse
+}
+
+/**
+ * Fields `getBatchSignature` needs to fetch the signature and build the
+ * BatchSigner shapes. A `SignBatchPayloadHandle` is a structural superset, so a
+ * stored handle can be passed directly.
+ */
+export type GetBatchSignatureParams = {
+  /** Manifest ID returned by `signBatchPayload` */
+  payloadId: string
+  /** Domain ID of the signer account */
+  domainId: string
+  /** Account ID of the signer account */
+  accountId: string
+  /** XRPL address of the signer */
+  signerAddress: string
+  /** The compressed secp256k1 public key in uppercase hex */
+  signingPubKey: string
+}

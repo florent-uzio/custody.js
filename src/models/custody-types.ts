@@ -2420,30 +2420,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/relationships": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List all relationships registered with the travel rule provider
-     * @description Pass-through proxy API to list all relationships from the travel rule provider (e.g., Notabene)
-     */
-    get: operations["ListRelationships"]
-    put?: never
-    /**
-     * Create a relationship with the travel rule provider
-     * @description Pass-through proxy API to create a relationship with the travel rule provider (e.g., Notabene)
-     */
-    post: operations["CreateRelationship"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   "/v1/domains/{domainId}/channels": {
     parameters: {
       query?: never
@@ -3007,6 +2983,14 @@ export interface components {
        */
       type: "VaultMPC"
     }
+    Core_ApiBatchSigningData: {
+      /** @description Hex encoded string. */
+      signingPayload: string
+      /** @description Hex encoded string. */
+      signingPayloadHash: string
+      executionMode: components["schemas"]["Core_Xrpl_BatchExecutionMode"]
+      transactions: components["schemas"]["Core_ApiInnerTransactionData"][]
+    }
     /** @enum {string} */
     Core_ApiBroadcastingTransactionProcessingHint:
       | "CurrentlyFeesTooSmall"
@@ -3052,6 +3036,11 @@ export interface components {
       | "TransactionNotEligibleForReplacement"
       | "TransactionRejected"
       | "TransientIssue"
+    Core_ApiInnerTransactionData: {
+      account: string
+      operation: components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation"]
+      sequencing: components["schemas"]["Core_ResolvedSequencing"]
+    }
     /** @enum {string} */
     Core_ApiInterruptedTransactionCause: "Cancellation" | "Internal" | "Replacement"
     Core_ApiManifest: {
@@ -3403,6 +3392,185 @@ export interface components {
        * @enum {string}
        */
       type: "BalancesUpdated"
+    }
+    Core_BatchEntry:
+      | components["schemas"]["Core_BatchEntry_ParticipantOperation"]
+      | components["schemas"]["Core_BatchEntry_SubmitterOperation"]
+    Core_BatchEntry_ParticipantOperation: {
+      participant: components["schemas"]["Core_Participant"]
+      operation: components["schemas"]["Core_BatchInnerOperation"]
+      sequencing: components["schemas"]["Core_ParticipantSequencing"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ParticipantOperation"
+    }
+    Core_BatchEntry_SubmitterOperation: {
+      operation: components["schemas"]["Core_BatchInnerOperation"]
+      sequencing: components["schemas"]["Core_Sequencing"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "SubmitterOperation"
+    }
+    Core_BatchInnerOperation:
+      | components["schemas"]["Core_BatchInnerOperation_AccountSet"]
+      | components["schemas"]["Core_BatchInnerOperation_Clawback"]
+      | components["schemas"]["Core_BatchInnerOperation_DepositPreauth"]
+      | components["schemas"]["Core_BatchInnerOperation_EscrowFinish"]
+      | components["schemas"]["Core_BatchInnerOperation_MPTokenAuthorize"]
+      | components["schemas"]["Core_BatchInnerOperation_MPTokenIssuanceCreate"]
+      | components["schemas"]["Core_BatchInnerOperation_MPTokenIssuanceDestroy"]
+      | components["schemas"]["Core_BatchInnerOperation_MPTokenIssuanceSet"]
+      | components["schemas"]["Core_BatchInnerOperation_OfferCreate"]
+      | components["schemas"]["Core_BatchInnerOperation_Payment"]
+      | components["schemas"]["Core_BatchInnerOperation_TicketCreate"]
+      | components["schemas"]["Core_BatchInnerOperation_TrustSet"]
+    Core_BatchInnerOperation_AccountSet: {
+      setFlag?: components["schemas"]["Core_Xrpl_AccountSetFlag"]
+      clearFlag?: components["schemas"]["Core_Xrpl_AccountSetFlag"]
+      /** Format: int32 */
+      transferRate?: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "AccountSet"
+    }
+    Core_BatchInnerOperation_Clawback: {
+      currency: components["schemas"]["Core_XrplClawbackCurrency"]
+      holder: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      value: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Clawback"
+    }
+    Core_BatchInnerOperation_DepositPreauth: {
+      authorize?: components["schemas"]["Core_TransactionDestination"]
+      unauthorize?: components["schemas"]["Core_TransactionDestination"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "DepositPreauth"
+    }
+    Core_BatchInnerOperation_EscrowFinish: {
+      owner: components["schemas"]["Core_TransactionDestination"]
+      /** Format: int64 */
+      offerSequence: number
+      /** @description Hex encoded string. */
+      condition?: string
+      credentialIds?: string[]
+      /** @description Hex encoded string. */
+      fulfillment?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "EscrowFinish"
+    }
+    Core_BatchInnerOperation_MPTokenAuthorize: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      flags: components["schemas"]["Core_Xrpl_MPTokenAuthorizeFlag"][]
+      holder?: components["schemas"]["Core_TransactionDestination"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenAuthorize"
+    }
+    Core_BatchInnerOperation_MPTokenIssuanceCreate: {
+      flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceCreateFlag"][]
+      /** Format: int32 */
+      assetScale?: number
+      /**
+       * Format: int32
+       * @description Transfer fee for MultiPurposeToken, must be from 0 to 50000
+       */
+      transferFee?: number
+      /** @description This field is a unsigned 64bit integer that can store values in range from 0 to 18446744073709551615.It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      maximumAmount?: string
+      metadata?: components["schemas"]["Core_MPTokenIssuanceMetadata"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceCreate"
+    }
+    Core_BatchInnerOperation_MPTokenIssuanceDestroy: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceDestroy"
+    }
+    Core_BatchInnerOperation_MPTokenIssuanceSet: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      holder?: components["schemas"]["Core_TransactionDestination"]
+      flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceSetFlag"][]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceSet"
+    }
+    Core_BatchInnerOperation_OfferCreate: {
+      flags: components["schemas"]["Core_Xrpl_OfferCreateFlag"][]
+      takerGets: components["schemas"]["Core_Xrpl_AssetQuantity"]
+      takerPays: components["schemas"]["Core_Xrpl_AssetQuantity"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "OfferCreate"
+    }
+    Core_BatchInnerOperation_Payment: {
+      destination: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /** Format: int64 */
+      destinationTag?: number
+      currency?: components["schemas"]["Core_XrplPaymentCurrency"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Payment"
+    }
+    Core_BatchInnerOperation_TicketCreate: {
+      /**
+       * Format: int32
+       * @description Number of tickets to create, must be from 1 to 250
+       */
+      ticketCount: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TicketCreate"
+    }
+    Core_BatchInnerOperation_TrustSet: {
+      flags: components["schemas"]["Core_Xrpl_TrustSetFlag"][]
+      limitAmount: components["schemas"]["Core_Xrpl_LimitAmount"]
+      enableRippling?: boolean
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TrustSet"
+    }
+    Core_BatchSigner: {
+      participant: components["schemas"]["Core_Participant"]
+      /** @description Hex encoded string. */
+      publicKey: string
+      /** @description Hex encoded string. */
+      signature: string
     }
     Core_BitcoinFee: {
       /** @description This field is a large decimal and represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
@@ -5227,6 +5395,57 @@ export interface components {
        */
       type: "Xrpl"
     }
+    Core_Participant:
+      | components["schemas"]["Core_Participant_Account"]
+      | components["schemas"]["Core_Participant_Address"]
+      | components["schemas"]["Core_Participant_Endpoint"]
+    Core_ParticipantSequencing:
+      | components["schemas"]["Core_ParticipantSequencing_AccountSequence"]
+      | components["schemas"]["Core_ParticipantSequencing_Ticket"]
+    Core_ParticipantSequencing_AccountSequence: {
+      /** Format: int64 */
+      value: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "AccountSequence"
+    }
+    Core_ParticipantSequencing_Ticket: {
+      /** Format: int64 */
+      value: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Ticket"
+    }
+    Core_Participant_Account: {
+      /** Format: uuid */
+      accountId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Account"
+    }
+    Core_Participant_Address: {
+      address: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Address"
+    }
+    Core_Participant_Endpoint: {
+      /** Format: uuid */
+      endpointId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Endpoint"
+    }
     Core_Permissions: {
       readAccess: components["schemas"]["Core_ReadAccess"]
     }
@@ -5543,6 +5762,27 @@ export interface components {
       /** Format: uuid */
       domainId: string
     }
+    Core_ResolvedSequencing:
+      | components["schemas"]["Core_ResolvedSequencing_AccountSequence"]
+      | components["schemas"]["Core_ResolvedSequencing_Ticket"]
+    Core_ResolvedSequencing_AccountSequence: {
+      /** Format: int64 */
+      value: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "AccountSequence"
+    }
+    Core_ResolvedSequencing_Ticket: {
+      /** Format: int64 */
+      value: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Ticket"
+    }
     Core_ResultLedger: {
       ledgerId: string
       available: boolean
@@ -5587,6 +5827,35 @@ export interface components {
        * @enum {string}
        */
       type: "Address"
+    }
+    Core_Sequencing:
+      | components["schemas"]["Core_Sequencing_AccountSequence"]
+      | components["schemas"]["Core_Sequencing_PlatformManaged"]
+      | components["schemas"]["Core_Sequencing_Ticket"]
+    Core_Sequencing_AccountSequence: {
+      /** Format: int64 */
+      value: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "AccountSequence"
+    }
+    Core_Sequencing_PlatformManaged: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "PlatformManaged"
+    }
+    Core_Sequencing_Ticket: {
+      /** Format: int64 */
+      value: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Ticket"
     }
     /** @enum {string} */
     Core_SkipQuarantineScope: "None" | "Domain" | "Instance"
@@ -6618,6 +6887,7 @@ export interface components {
       minimumCostInDrops: string
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       fee: string
+      batchSigningData?: components["schemas"]["Core_ApiBatchSigningData"]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -7747,6 +8017,7 @@ export interface components {
     Core_XrplOnLedgerTokenData: components["schemas"]["Core_MultiPurposeToken"]
     Core_XrplOperation:
       | components["schemas"]["Core_XrplOperation_AccountSet"]
+      | components["schemas"]["Core_XrplOperation_Batch"]
       | components["schemas"]["Core_XrplOperation_Clawback"]
       | components["schemas"]["Core_XrplOperation_DepositPreauth"]
       | components["schemas"]["Core_XrplOperation_EscrowFinish"]
@@ -7756,6 +8027,7 @@ export interface components {
       | components["schemas"]["Core_XrplOperation_MPTokenIssuanceSet"]
       | components["schemas"]["Core_XrplOperation_OfferCreate"]
       | components["schemas"]["Core_XrplOperation_Payment"]
+      | components["schemas"]["Core_XrplOperation_TicketCreate"]
       | components["schemas"]["Core_XrplOperation_TrustSet"]
     Core_XrplOperation_AccountSet: {
       setFlag?: components["schemas"]["Core_Xrpl_AccountSetFlag"]
@@ -7767,6 +8039,19 @@ export interface components {
        * @enum {string}
        */
       type: "AccountSet"
+    }
+    Core_XrplOperation_Batch: {
+      executionMode: components["schemas"]["Core_Xrpl_BatchExecutionMode"]
+      entries: components["schemas"]["Core_BatchEntry"][]
+      batchSigners: components["schemas"]["Core_BatchSigner"][]
+      sequencing: components["schemas"]["Core_Sequencing"]
+      /** Format: int64 */
+      lastLedgerSequence?: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Batch"
     }
     Core_XrplOperation_Clawback: {
       currency: components["schemas"]["Core_XrplClawbackCurrency"]
@@ -7872,6 +8157,18 @@ export interface components {
        */
       type: "Payment"
     }
+    Core_XrplOperation_TicketCreate: {
+      /**
+       * Format: int32
+       * @description Number of tickets to create, must be from 1 to 250
+       */
+      ticketCount: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TicketCreate"
+    }
     Core_XrplOperation_TrustSet: {
       flags: components["schemas"]["Core_Xrpl_TrustSetFlag"][]
       limitAmount: components["schemas"]["Core_Xrpl_LimitAmount"]
@@ -7957,6 +8254,8 @@ export interface components {
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       amount: string
     }
+    /** @enum {string} */
+    Core_Xrpl_BatchExecutionMode: "AllOrNothing" | "OnlyOne" | "UntilFailure" | "Independent"
     Core_Xrpl_LimitAmount: {
       currency: components["schemas"]["Core_XrplIouCurrency"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
@@ -7997,6 +8296,216 @@ export interface components {
     Core_Xrpl_MPTokenIssuanceSetFlag: "tfMPTLock" | "tfMPTUnlock"
     /** @enum {string} */
     Core_Xrpl_OfferCreateFlag: "tfImmediateOrCancel" | "tfFillOrKill" | "tfSell"
+    Core_Xrpl_ResolvedAssetQuantity: {
+      currency?: components["schemas"]["Core_Xrpl_ResolvedIouCurrency"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation:
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_AccountSet"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_Clawback"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_DepositPreauth"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_EscrowFinish"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_MPTokenAuthorize"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceCreate"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceDestroy"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceSet"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_OfferCreate"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_Payment"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_TicketCreate"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_TrustSet"]
+    Core_Xrpl_ResolvedBatchInnerOperation_AccountSet: {
+      setFlag?: components["schemas"]["Core_Xrpl_AccountSetFlag"]
+      clearFlag?: components["schemas"]["Core_Xrpl_AccountSetFlag"]
+      /** Format: int32 */
+      transferRate?: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "AccountSet"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_Clawback: {
+      currency: components["schemas"]["Core_Xrpl_ResolvedClawbackCurrency"]
+      holder: string
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      value: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Clawback"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_DepositPreauth: {
+      authorize?: string
+      unauthorize?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "DepositPreauth"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_EscrowFinish: {
+      owner: string
+      /** Format: int64 */
+      offerSequence: number
+      /** @description Hex encoded string. */
+      condition?: string
+      credentialIds?: string[]
+      /** @description Hex encoded string. */
+      fulfillment?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "EscrowFinish"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_MPTokenAuthorize: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
+      flags: components["schemas"]["Core_Xrpl_MPTokenAuthorizeFlag"][]
+      holder?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenAuthorize"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceCreate: {
+      flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceCreateFlag"][]
+      /** Format: int32 */
+      assetScale?: number
+      /**
+       * Format: int32
+       * @description Transfer fee for MultiPurposeToken, must be from 0 to 50000
+       */
+      transferFee?: number
+      /** @description This field is a unsigned 64bit integer that can store values in range from 0 to 18446744073709551615.It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      maximumAmount?: string
+      metadata?: components["schemas"]["Core_MPTokenIssuanceMetadata"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceCreate"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceDestroy: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceDestroy"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_MPTokenIssuanceSet: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
+      holder?: string
+      flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceSetFlag"][]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MPTokenIssuanceSet"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_OfferCreate: {
+      flags: components["schemas"]["Core_Xrpl_OfferCreateFlag"][]
+      takerGets: components["schemas"]["Core_Xrpl_ResolvedAssetQuantity"]
+      takerPays: components["schemas"]["Core_Xrpl_ResolvedAssetQuantity"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "OfferCreate"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_Payment: {
+      destination: string
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /** Format: int64 */
+      destinationTag?: number
+      currency?: components["schemas"]["Core_Xrpl_ResolvedPaymentCurrency"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Payment"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_TicketCreate: {
+      /**
+       * Format: int32
+       * @description Number of tickets to create, must be from 1 to 250
+       */
+      ticketCount: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TicketCreate"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_TrustSet: {
+      flags: components["schemas"]["Core_Xrpl_TrustSetFlag"][]
+      limitAmount: components["schemas"]["Core_Xrpl_ResolvedLimitAmount"]
+      enableRippling?: boolean
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TrustSet"
+    }
+    Core_Xrpl_ResolvedClawbackCurrency:
+      | components["schemas"]["Core_Xrpl_ResolvedClawbackCurrency_Fungible"]
+      | components["schemas"]["Core_Xrpl_ResolvedClawbackCurrency_MultiPurposeToken"]
+    Core_Xrpl_ResolvedClawbackCurrency_Fungible: {
+      code: string
+      issuer: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Fungible"
+    }
+    Core_Xrpl_ResolvedClawbackCurrency_MultiPurposeToken: {
+      /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
+      issuanceId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MultiPurposeToken"
+    }
+    Core_Xrpl_ResolvedIouCurrency: {
+      code: string
+      issuer: string
+    }
+    Core_Xrpl_ResolvedLimitAmount: {
+      currency: components["schemas"]["Core_Xrpl_ResolvedIouCurrency"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      value: string
+    }
+    Core_Xrpl_ResolvedMPTokenIdentifier: {
+      /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
+      issuanceId: string
+    }
+    Core_Xrpl_ResolvedPaymentCurrency:
+      | components["schemas"]["Core_Xrpl_ResolvedPaymentCurrency_Fungible"]
+      | components["schemas"]["Core_Xrpl_ResolvedPaymentCurrency_MultiPurposeToken"]
+    Core_Xrpl_ResolvedPaymentCurrency_Fungible: {
+      code: string
+      issuer: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Fungible"
+    }
+    Core_Xrpl_ResolvedPaymentCurrency_MultiPurposeToken: {
+      /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
+      issuanceId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "MultiPurposeToken"
+    }
     /** @enum {string} */
     Core_Xrpl_TrustSetFlag: "tfSetFreeze" | "tfClearFreeze" | "tfSetfAuth"
     Core_v0_AcknowledgeBackup: {
@@ -9600,101 +10109,6 @@ export interface components {
       /** @enum {string} */
       direction?: "INCOMING" | "OUTGOING"
       transfer?: components["schemas"]["Compliance_Transfer"]
-    }
-    /** @description Request to create a relationship with a travel rule provider */
-    Compliance_CreateRelationshipRequest: {
-      /**
-       * Format: did
-       * @description The DID of the source entity. Defaults to the entityDID from the domain credentials.
-       * @example did:web:ripple.com:test:us
-       */
-      from?: string
-      /**
-       * Format: did
-       * @description The DID of the target entity.
-       * @example did:web:example.com:test:counterparty
-       */
-      to: string
-    }
-    /** @description List of relationships from the travel rule provider */
-    Compliance_RelationshipList: {
-      /** @description Array of relationship objects with ownership proofs */
-      relationships?: components["schemas"]["Compliance_RelationshipWithProofs"][]
-    }
-    /** @description A relationship between two entities with ownership proofs */
-    Compliance_RelationshipWithProofs: {
-      /**
-       * @description Unique identifier for the relationship
-       * @example urn:uuid:12345678-1234-1234-1234-123456789abc
-       */
-      "@id": string
-      /**
-       * Format: did
-       * @description Decentralized Identifier (DID) of the source entity
-       * @example did:web:ripple.com:test:us
-       */
-      from: string
-      /**
-       * Format: did
-       * @description Decentralized Identifier (DID) of the target entity
-       * @example did:web:example.com:test:counterparty
-       */
-      to: string
-      /**
-       * Format: did
-       * @description Decentralized Identifier (DID) of the custodian entity (optional)
-       * @example did:web:custodian.com:test:vault
-       */
-      custodian?: string
-      /**
-       * @description Current state of the relationship
-       * @example CONFIRMED
-       * @enum {string}
-       */
-      status: "UNCONFIRMED" | "CONFIRMED" | "REJECTED"
-      /**
-       * Format: did
-       * @description Decentralized Identifier (DID) of the entity that confirmed the relationship
-       * @example did:web:example.com:test:counterparty
-       */
-      confirmedBy?: string
-      /** @description Ownership proofs associated with this relationship */
-      proofs?: components["schemas"]["Compliance_OwnershipProof"][]
-    }
-    /** @description Proof of ownership for an address or entity */
-    Compliance_OwnershipProof: {
-      /**
-       * @description The blockchain address being proven
-       * @example 0x1234567890abcdef1234567890abcdef12345678
-       */
-      address: string
-      /**
-       * @description The blockchain network
-       * @example ethereum
-       */
-      chain?: string
-      /**
-       * @description Status of the ownership proof
-       * @example VERIFIED
-       * @enum {string}
-       */
-      status: "PENDING" | "CONFIRMED" | "VERIFIED" | "REJECTED"
-      /**
-       * @description Cryptographic signature proving ownership
-       * @example 0xabcdef...
-       */
-      signature?: string
-      /**
-       * @description The message that was signed
-       * @example I own this address
-       */
-      message?: string
-      /**
-       * Format: date-time
-       * @description When the proof was created
-       * @example 2026-03-10T14:30:00.0000000+00:00
-       */
-      timestamp?: string
     }
     EDS_ChannelCreate: {
       /** Format: uuid */
@@ -15074,151 +15488,6 @@ export interface operations {
         }
       }
       /** @description Domain or Travel rule details not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Internal Server Error */
-      500: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-    }
-  }
-  ListRelationships: {
-    parameters: {
-      query?: {
-        /** @description Filter by 'from' DID (Decentralized Identifier) */
-        from?: string
-        /** @description Filter by 'to' DID (Decentralized Identifier) */
-        to?: string
-        /** @description Filter by custodian DID (Decentralized Identifier) */
-        custodian?: string
-      }
-      header?: never
-      path: {
-        domainId: string
-        provider: "NOTABENE"
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Relationships retrieved successfully */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["Compliance_RelationshipList"]
-        }
-      }
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Domain not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Internal Server Error */
-      500: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-    }
-  }
-  CreateRelationship: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        domainId: string
-        provider: "NOTABENE"
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["Compliance_CreateRelationshipRequest"]
-      }
-    }
-    responses: {
-      /** @description Relationship created successfully */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "*/*": components["schemas"]["Compliance_ErrorResponse"]
-        }
-      }
-      /** @description Domain not found */
       404: {
         headers: {
           [name: string]: unknown

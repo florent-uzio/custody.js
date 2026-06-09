@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { SubmittableTransaction } from "xrpl"
-//TODO: restore Batch imports once Batch is supported
-// import type { Batch } from "xrpl"
-// import { encodeForSigningBatch, hashes } from "xrpl"
 import { CustodyError } from "../../models/index.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 import { XrplService } from "./xrpl.service.js"
-import type { IntentContext } from "./xrpl.types.js"
+import type {
+  BatchPayloadInput,
+  Core_BatchSigner,
+  Core_IntentDryRunResponse_v0_CreateTransactionOrder,
+  IntentContext,
+} from "./xrpl.types.js"
 
 // Mock the xrpl encoding and hashing functions
 vi.mock("xrpl", async (importOriginal) => {
@@ -28,7 +30,7 @@ const mockDomainId = "domain-123"
 const mockUserId = "user-123"
 const mockAccountId = "account-123"
 const mockLedgerId = "ledger-123"
-const mockAddress = "rLpUHpWU455zTvVq65EEeHss52Dk4WvQHn"
+const mockAddress = "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"
 
 const mockContext: IntentContext = {
   domainId: mockDomainId,
@@ -45,10 +47,30 @@ const expectedCompressedKey = "026C69D2EF5C90DC83E19945DEE870D66733244E26F131DEB
 
 const mockBase64Signature = Buffer.from("aabbccdd", "hex").toString("base64")
 
+const mockBatchSigningData = {
+  signingPayload: "deadbeefcafebabe",
+  signingPayloadHash: "0011223344556677",
+  executionMode: "AllOrNothing" as const,
+  transactions: [],
+}
+
+const mockDryRunResponse: Core_IntentDryRunResponse_v0_CreateTransactionOrder = {
+  type: "v0_CreateTransactionOrder",
+  success: true,
+  result: { type: "Successful" } as any,
+  estimate: {
+    type: "XRPL",
+    minimumCostInDrops: "10",
+    fee: "12",
+    batchSigningData: mockBatchSigningData,
+  },
+}
+
 function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
   return {
     resolveContext: overrides.resolveContext ?? (async () => mockContext),
     submitIntent: overrides.submitIntent ?? (async () => ({ requestId: "request-123" }) as any),
+    dryRunIntent: overrides.dryRunIntent ?? (async () => mockDryRunResponse),
     getManifest:
       overrides.getManifest ??
       (async () => ({
@@ -842,131 +864,371 @@ describe("XrplService", () => {
     })
   })
 
-  //TODO: restore rawSignInnerBatch tests once Batch is supported
-  // // ── rawSignInnerBatch ─────────────────────────────────────────
-  //
-  // describe("rawSignInnerBatch", () => {
-  //   const mockBatch: Batch = {
-  //     TransactionType: "Batch",
-  //     Account: "rSubmitterAddress",
-  //     Flags: 65536,
-  //     RawTransactions: [
-  //       {
-  //         RawTransaction: {
-  //           TransactionType: "Payment",
-  //           Account: mockAddress,
-  //           Destination: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
-  //           Amount: "1000000",
-  //           Fee: "0",
-  //           Sequence: 0,
-  //           SigningPubKey: "",
-  //         },
-  //       },
-  //     ],
-  //   }
-  //
-  //   it("should propose a raw sign intent with batch-encoded bytes", async () => {
-  //     let capturedBody: any
-  //     ports = createTestPorts({
-  //       submitIntent: async (body) => {
-  //         capturedBody = body
-  //         return { requestId: "r-1" } as any
-  //       },
-  //     })
-  //     service = new XrplService(ports)
-  //
-  //     await service.rawSignInnerBatch(mockBatch, mockAddress)
-  //
-  //     expect(hashes.hashSignedTx).toHaveBeenCalledWith(mockBatch.RawTransactions[0].RawTransaction)
-  //     expect(encodeForSigningBatch).toHaveBeenCalledWith(
-  //       expect.objectContaining({
-  //         flags: mockBatch.Flags,
-  //         txIDs: ["TXHASH0123456789"],
-  //       }),
-  //     )
-  //
-  //     expect(capturedBody.request.type).toBe("Propose")
-  //     expect(capturedBody.request.payload.type).toBe("v0_SignManifest")
-  //     expect(capturedBody.request.payload.content.type).toBe("Unsafe")
-  //     const expectedBase64 = Buffer.from("batchencoded0102", "hex").toString("base64")
-  //     expect(capturedBody.request.payload.content.value).toBe(expectedBase64)
-  //   })
-  //
-  //   it("should resolve context using signerAddress", async () => {
-  //     const resolveContext = vi.fn(async () => mockContext)
-  //     ports = createTestPorts({ resolveContext })
-  //     service = new XrplService(ports)
-  //
-  //     await service.rawSignInnerBatch(mockBatch, mockAddress)
-  //
-  //     expect(resolveContext).toHaveBeenCalledWith(mockAddress, { domainId: undefined })
-  //   })
-  //
-  //   it("should throw if signerAddress is not in any inner transaction", async () => {
-  //     await expect(service.rawSignInnerBatch(mockBatch, "rNotInBatchAddress")).rejects.toThrow(
-  //       "Address rNotInBatchAddress is not involved in any inner transaction",
-  //     )
-  //   })
-  // })
-  //
-  // // ── rawSignInnerBatchAndWait ──────────────────────────────────
-  //
-  // describe("rawSignInnerBatchAndWait", () => {
-  //   const mockBatch: Batch = {
-  //     TransactionType: "Batch",
-  //     Account: "rSubmitterAddress",
-  //     Flags: 65536,
-  //     RawTransactions: [
-  //       {
-  //         RawTransaction: {
-  //           TransactionType: "Payment",
-  //           Account: mockAddress,
-  //           Destination: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
-  //           Amount: "1000000",
-  //           Fee: "0",
-  //           Sequence: 0,
-  //           SigningPubKey: "",
-  //         },
-  //       },
-  //     ],
-  //   }
-  //
-  //   it("should sign batch envelope and return signature with signingPubKey", async () => {
-  //     const result = await service.rawSignInnerBatchAndWait(mockBatch, mockAddress, {
-  //       polling: { maxRetries: 1, intervalMs: 0 },
-  //     })
-  //
-  //     expect(result.signature).toBe("AABBCCDD")
-  //     expect(result.signingPubKey).toBe(expectedCompressedKey)
-  //
-  //     // xrpl.js BatchSigner format
-  //     expect(result.batchSigner).toEqual({
-  //       BatchSigner: {
-  //         Account: mockAddress,
-  //         SigningPubKey: expectedCompressedKey,
-  //         TxnSignature: "AABBCCDD",
-  //       },
-  //     })
-  //
-  //     // Ripple Custody format
-  //     expect(result.custodyBatchSigner).toEqual({
-  //       account: mockAddress,
-  //       signingPubKey: expectedCompressedKey,
-  //       txnSignature: "AABBCCDD",
-  //     })
-  //   })
-  //
-  //   it("should throw CustodyError on timeout", async () => {
-  //     ports = createTestPorts({
-  //       getManifest: async () => ({ data: { value: undefined } }) as any,
-  //     })
-  //     service = new XrplService(ports)
-  //
-  //     await expect(
-  //       service.rawSignInnerBatchAndWait(mockBatch, mockAddress, {
-  //         polling: { maxRetries: 2, intervalMs: 0 },
-  //       }),
-  //     ).rejects.toThrow("Manifest signature not available after maximum retries")
-  //   })
-  // })
+  // ── dryRunBatch ───────────────────────────────────────────────
+
+  describe("dryRunBatch", () => {
+    const submitterAddress = "rSubmitterAddress"
+    const batchPayload: BatchPayloadInput = {
+      Account: submitterAddress,
+      executionMode: "AllOrNothing",
+      entries: [
+        {
+          type: "SubmitterOperation",
+          sequencing: { type: "PlatformManaged" },
+          operation: {
+            type: "Payment",
+            destination: { type: "Address", address: "rDestination" },
+            amount: "1000",
+          },
+        },
+      ],
+    }
+
+    it("returns batchSigningData from the dry-run estimate", async () => {
+      const result = await service.dryRunBatch(batchPayload)
+      expect(result).toEqual(mockBatchSigningData)
+    })
+
+    it("submits a v0_CreateTransactionOrder dry-run with empty batchSigners and PlatformManaged sequencing", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        dryRunIntent: async (body) => {
+          capturedBody = body
+          return mockDryRunResponse
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.dryRunBatch(batchPayload)
+
+      expect(capturedBody.payload.type).toBe("v0_CreateTransactionOrder")
+      expect(capturedBody.payload.parameters.type).toBe("XRPL")
+      const op = capturedBody.payload.parameters.operation
+      expect(op.type).toBe("Batch")
+      expect(op.batchSigners).toEqual([])
+      expect(op.sequencing).toEqual({ type: "PlatformManaged" })
+      expect(op.executionMode).toBe("AllOrNothing")
+      expect(op.entries).toEqual(batchPayload.entries)
+    })
+
+    it("preserves caller-provided sequencing and lastLedgerSequence", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        dryRunIntent: async (body) => {
+          capturedBody = body
+          return mockDryRunResponse
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.dryRunBatch({
+        ...batchPayload,
+        sequencing: { type: "AccountSequence", value: 42 },
+        lastLedgerSequence: 999,
+      })
+
+      expect(capturedBody.payload.parameters.operation.sequencing).toEqual({
+        type: "AccountSequence",
+        value: 42,
+      })
+      expect(capturedBody.payload.parameters.operation.lastLedgerSequence).toBe(999)
+    })
+
+    it("throws when the dry run reports failure", async () => {
+      ports = createTestPorts({
+        dryRunIntent: async () => ({
+          type: "v0_CreateTransactionOrder",
+          success: false,
+          errors: ["Insufficient XRP"],
+          result: { type: "Failure" } as any,
+          estimate: { type: "XRPL", minimumCostInDrops: "10", fee: "12" },
+        }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.dryRunBatch(batchPayload)).rejects.toThrow(/Insufficient XRP/)
+    })
+
+    it("throws when the response carries no batchSigningData", async () => {
+      ports = createTestPorts({
+        dryRunIntent: async () => ({
+          type: "v0_CreateTransactionOrder",
+          success: true,
+          result: { type: "Successful" } as any,
+          estimate: { type: "XRPL", minimumCostInDrops: "10", fee: "12" },
+        }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.dryRunBatch(batchPayload)).rejects.toThrow(/batchSigningData/)
+    })
+  })
+
+  // ── signBatchPayloadAndWait ───────────────────────────────────
+
+  describe("signBatchPayloadAndWait", () => {
+    it("signs the hex payload and returns both BatchSigner shapes", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "r-1" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.signBatchPayloadAndWait("deadbeef", mockAddress, {
+        polling: { maxRetries: 1, intervalMs: 0 },
+      })
+
+      const expectedBase64 = Buffer.from("deadbeef", "hex").toString("base64")
+      expect(capturedBody.request.payload.type).toBe("v0_SignManifest")
+      expect(capturedBody.request.payload.content).toEqual({
+        value: expectedBase64,
+        type: "Unsafe",
+      })
+
+      expect(result.signature).toBe("AABBCCDD")
+      expect(result.signingPubKey).toBe(expectedCompressedKey)
+      expect(result.batchSigner).toEqual({
+        BatchSigner: {
+          Account: mockAddress,
+          SigningPubKey: expectedCompressedKey,
+          TxnSignature: "AABBCCDD",
+        },
+      })
+      expect(result.custodyBatchSigner).toEqual({
+        participant: { type: "Address", address: mockAddress },
+        publicKey: expectedCompressedKey,
+        signature: "AABBCCDD",
+      })
+    })
+
+    it("skips the address lookup when accountId and ledgerId are provided", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({ resolveContext })
+      service = new XrplService(ports)
+
+      await service.signBatchPayloadAndWait("deadbeef", mockAddress, {
+        accountId: "explicit-account",
+        ledgerId: "explicit-ledger",
+        polling: { maxRetries: 1, intervalMs: 0 },
+      })
+
+      // Still resolves once to obtain domain/user context
+      expect(resolveContext).toHaveBeenCalledTimes(1)
+    })
+
+    it("throws CustodyError when signerAddress is invalid", async () => {
+      await expect(service.signBatchPayloadAndWait("deadbeef", "not-an-address")).rejects.toThrow(
+        "Invalid signerAddress: not-an-address",
+      )
+    })
+
+    it("throws CustodyError when the signature never arrives", async () => {
+      ports = createTestPorts({
+        getManifest: async () => ({ data: { value: undefined } }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.signBatchPayloadAndWait("deadbeef", mockAddress, {
+          polling: { maxRetries: 2, intervalMs: 0 },
+        }),
+      ).rejects.toThrow("Manifest signature not available after maximum retries")
+    })
+  })
+
+  // ── signBatchPayload ──────────────────────────────────────────
+
+  describe("signBatchPayload", () => {
+    it("proposes the sign intent and returns a handle without waiting", async () => {
+      let capturedBody: any
+      const getManifest = vi.fn(async () => ({
+        data: { value: { type: "Unsafe" as const, signature: mockBase64Signature } },
+      }))
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "r-1" } as any
+        },
+        getManifest,
+      })
+      service = new XrplService(ports)
+
+      const handle = await service.signBatchPayload("deadbeef", mockAddress)
+
+      const expectedBase64 = Buffer.from("deadbeef", "hex").toString("base64")
+      expect(capturedBody.request.payload.type).toBe("v0_SignManifest")
+      expect(capturedBody.request.payload.content).toEqual({
+        value: expectedBase64,
+        type: "Unsafe",
+      })
+
+      // Never polls the manifest
+      expect(getManifest).not.toHaveBeenCalled()
+
+      expect(handle.payloadId).toBe(capturedBody.request.payload.id)
+      expect(handle.domainId).toBe(mockDomainId)
+      expect(handle.accountId).toBe(mockAccountId)
+      expect(handle.signerAddress).toBe(mockAddress)
+      expect(handle.signingPubKey).toBe(expectedCompressedKey)
+      expect(handle.intentResponse).toEqual({ requestId: "r-1" })
+    })
+
+    it("throws CustodyError when signerAddress is invalid", async () => {
+      await expect(service.signBatchPayload("deadbeef", "not-an-address")).rejects.toThrow(
+        "Invalid signerAddress: not-an-address",
+      )
+    })
+  })
+
+  // ── getBatchSignature ─────────────────────────────────────────
+
+  describe("getBatchSignature", () => {
+    const params = {
+      payloadId: "payload-123",
+      domainId: mockDomainId,
+      accountId: mockAccountId,
+      signerAddress: mockAddress,
+      signingPubKey: expectedCompressedKey,
+    }
+
+    it("returns both BatchSigner shapes when the signature is available", async () => {
+      const result = await service.getBatchSignature(params)
+
+      expect(result).toEqual({
+        signature: "AABBCCDD",
+        signingPubKey: expectedCompressedKey,
+        batchSigner: {
+          BatchSigner: {
+            Account: mockAddress,
+            SigningPubKey: expectedCompressedKey,
+            TxnSignature: "AABBCCDD",
+          },
+        },
+        custodyBatchSigner: {
+          participant: { type: "Address", address: mockAddress },
+          publicKey: expectedCompressedKey,
+          signature: "AABBCCDD",
+        },
+      })
+    })
+
+    it("fetches the manifest only once by default", async () => {
+      const getManifest = vi.fn(async () => ({ data: { value: undefined } }) as any)
+      ports = createTestPorts({ getManifest })
+      service = new XrplService(ports)
+
+      const result = await service.getBatchSignature(params)
+
+      expect(result).toBeUndefined()
+      expect(getManifest).toHaveBeenCalledTimes(1)
+    })
+
+    it("returns undefined on a 404 manifest", async () => {
+      ports = createTestPorts({
+        getManifest: async () => {
+          throw new CustodyError({ reason: "not found" }, 404)
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getBatchSignature(params)).resolves.toBeUndefined()
+    })
+
+    it("polls when maxRetries is provided", async () => {
+      const getManifest = vi.fn(async () => ({ data: { value: undefined } }) as any)
+      ports = createTestPorts({ getManifest })
+      service = new XrplService(ports)
+
+      const result = await service.getBatchSignature(params, { maxRetries: 3, intervalMs: 0 })
+
+      expect(result).toBeUndefined()
+      expect(getManifest).toHaveBeenCalledTimes(3)
+    })
+  })
+
+  // ── proposeBatch ──────────────────────────────────────────────
+
+  describe("proposeBatch", () => {
+    const submitterAddress = "rSubmitterAddress"
+    const batchPayload: BatchPayloadInput = {
+      Account: submitterAddress,
+      executionMode: "AllOrNothing",
+      entries: [
+        {
+          type: "SubmitterOperation",
+          sequencing: { type: "PlatformManaged" },
+          operation: {
+            type: "Payment",
+            destination: { type: "Address", address: "rDestination" },
+            amount: "1000",
+          },
+        },
+      ],
+    }
+    const batchSigners: Core_BatchSigner[] = [
+      {
+        participant: { type: "Address", address: "rParticipant" },
+        publicKey: "PK",
+        signature: "SIG",
+      },
+    ]
+
+    it("submits a v0_CreateTransactionOrder propose with the provided batchSigners", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.proposeBatch(batchPayload, batchSigners)
+
+      expect(capturedBody.request.type).toBe("Propose")
+      expect(capturedBody.request.payload.type).toBe("v0_CreateTransactionOrder")
+      const op = capturedBody.request.payload.parameters.operation
+      expect(op.type).toBe("Batch")
+      expect(op.batchSigners).toEqual(batchSigners)
+      expect(op.sequencing).toEqual({ type: "PlatformManaged" })
+    })
+
+    it("passes domainId and ledgerId to resolveContext", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({ resolveContext })
+      service = new XrplService(ports)
+
+      await service.proposeBatch(batchPayload, batchSigners, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+
+      expect(resolveContext).toHaveBeenCalledWith(submitterAddress, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+    })
+
+    it("reuses caller-provided requestId and payloadId for dry-run/propose pairing", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.proposeBatch(batchPayload, batchSigners, {
+        requestId: "shared-request",
+        payloadId: "shared-payload",
+      })
+
+      expect(capturedBody.request.id).toBe("shared-request")
+      expect(capturedBody.request.payload.id).toBe("shared-payload")
+    })
+  })
 })

@@ -23,9 +23,17 @@ import type { Core_IntentResponse } from "./services/intents/intents.types.js"
 import {
   createHttpPorts,
   XrplService,
+  type BatchPayloadInput,
+  type Core_ApiBatchSigningData,
+  type Core_BatchSigner,
   type Core_XrplOperation,
+  type GetBatchSignatureParams,
   type RawSignAndWaitOptions,
   type RawSignAndWaitResult,
+  type SignBatchPayloadHandle,
+  type SignBatchPayloadOptions,
+  type SignBatchPayloadResult,
+  type WaitForSignatureOptions,
   type XrplIntentOptions,
 } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
@@ -149,33 +157,91 @@ export class RippleCustody {
     ): Promise<RawSignAndWaitResult> => this.xrplService.rawSignAndWait(xrplTransaction, options),
 
     /**
-     * Proposes a raw sign intent for a Batch transaction envelope for a single inner account.
-     * @param batch - The autofilled Batch transaction
-     * @param signerAddress - The XRPL address of the inner account to sign for
-     * @param options - Optional configuration for the raw sign intent
-     * @returns The proposed intent response
+     * Step 1 of the XLS-56 Batch flow — dry-runs a Batch and returns the
+     * canonical signing data. Each participant signs `signingPayload` with
+     * their own XRPL key; collect signatures and pass them to `proposeBatch`.
+     *
+     * @param payload - Submitter, execution mode, and inner entries
+     * @param options - Optional configuration for the dry-run intent
+     * @returns The batch signing data (signingPayload, hash, resolved transactions)
      */
-    // rawSignInnerBatch: async (
-    //   batch: Batch,
-    //   signerAddress: string,
-    //   options?: RawSignInnerBatchOptions,
-    // ): Promise<Core_IntentResponse> =>
-    //   this.xrplService.rawSignInnerBatch(batch, signerAddress, options),
+    dryRunBatch: async (
+      payload: BatchPayloadInput,
+      options?: XrplIntentOptions,
+    ): Promise<Core_ApiBatchSigningData> => this.xrplService.dryRunBatch(payload, options),
 
     /**
-     * Signs a Batch transaction envelope for a single inner account and waits
-     * for the manifest signature. Call once per inner account.
-     * @param batch - The autofilled Batch transaction
+     * Step 2 of the XLS-56 Batch flow — signs the `signingPayload` from a dry
+     * run for an inner account managed by this custody instance and waits for
+     * the manifest signature. Call once per locally-managed signer.
+     *
+     * @param signingPayload - Hex-encoded payload from `dryRunBatch`
      * @param signerAddress - The XRPL address of the inner account to sign for
      * @param options - Optional configuration for the raw sign intent and polling
-     * @returns The signature and signing public key in uppercase hex
+     * @returns Signature, public key, and pre-built BatchSigner shapes
      */
-    // rawSignInnerBatchAndWait: async (
-    //   batch: Batch,
-    //   signerAddress: string,
-    //   options?: RawSignInnerBatchOptions,
-    // ): Promise<RawSignInnerBatchAndWaitResult> =>
-    //   this.xrplService.rawSignInnerBatchAndWait(batch, signerAddress, options),
+    signBatchPayloadAndWait: async (
+      signingPayload: string,
+      signerAddress: string,
+      options?: SignBatchPayloadOptions,
+    ): Promise<SignBatchPayloadResult> =>
+      this.xrplService.signBatchPayloadAndWait(signingPayload, signerAddress, options),
+
+    /**
+     * Step 2 of the XLS-56 Batch flow (non-blocking) — proposes the raw sign
+     * intent for an inner account managed by this custody instance and returns
+     * immediately, without waiting for the manifest signature.
+     *
+     * Use when the operator approves signatures out-of-band: persist the
+     * returned handle and pass it to `getBatchSignature` later to fetch the
+     * signature once available.
+     *
+     * @param signingPayload - Hex-encoded payload from `dryRunBatch`
+     * @param signerAddress - The XRPL address of the inner account to sign for
+     * @param options - Optional configuration for the raw sign intent
+     * @returns A handle with the manifest ID and fields needed to retrieve the signature
+     */
+    signBatchPayload: async (
+      signingPayload: string,
+      signerAddress: string,
+      options?: SignBatchPayloadOptions,
+    ): Promise<SignBatchPayloadHandle> =>
+      this.xrplService.signBatchPayload(signingPayload, signerAddress, options),
+
+    /**
+     * Retrieves the signature for a payload proposed via `signBatchPayload`,
+     * building the BatchSigner shapes when available.
+     *
+     * Performs a single fetch by default; returns `undefined` if the operator
+     * has not approved the signature yet. Pass `maxRetries`/`intervalMs` to opt
+     * into light polling.
+     *
+     * @param params - Fields from the `signBatchPayload` handle (a handle may be passed directly)
+     * @param options - Optional polling configuration (defaults to a single attempt)
+     * @returns Signature and BatchSigner shapes, or `undefined` if not yet signed
+     */
+    getBatchSignature: async (
+      params: GetBatchSignatureParams,
+      options?: WaitForSignatureOptions,
+    ): Promise<SignBatchPayloadResult | undefined> =>
+      this.xrplService.getBatchSignature(params, options),
+
+    /**
+     * Step 3 of the XLS-56 Batch flow — submits the Batch with collected
+     * `batchSigners`. Reuse `options.payloadId`/`options.requestId` if you
+     * need referential identity with the dry-run.
+     *
+     * @param payload - Same submitter, execution mode, and entries as the dry-run
+     * @param batchSigners - Signatures collected in Step 2
+     * @param options - Optional configuration for the intent
+     * @returns The proposed intent response
+     */
+    proposeBatch: async (
+      payload: BatchPayloadInput,
+      batchSigners: Core_BatchSigner[],
+      options?: XrplIntentOptions,
+    ): Promise<Core_IntentResponse> =>
+      this.xrplService.proposeBatch(payload, batchSigners, options),
 
     /**
      * Get the compressed secp256k1 public key for an XRPL account.
