@@ -1,5 +1,6 @@
 import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
+import { isUndefined } from "../../helpers/index.js"
 import type { Core_IntentDryRunRequest, Core_ProposeIntentBody } from "../intents/intents.types.js"
 import type {
   BatchPayloadInput,
@@ -25,7 +26,7 @@ export function buildBatchOperation(
     entries: payload.entries,
     batchSigners,
     sequencing: payload.sequencing ?? { type: "PlatformManaged" },
-    ...(payload.lastLedgerSequence !== undefined && {
+    ...(!isUndefined(payload.lastLedgerSequence) && {
       lastLedgerSequence: payload.lastLedgerSequence,
     }),
   }
