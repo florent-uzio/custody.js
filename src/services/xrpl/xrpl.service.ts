@@ -413,6 +413,7 @@ export class XrplService {
           .toISOString(),
         targetDomainId: context.domainId,
         id: requestId,
+        ...(!isUndefined(options.description) && { description: options.description }),
         customProperties: options.requestCustomProperties ?? {},
         payload: {
           id: payloadId,
