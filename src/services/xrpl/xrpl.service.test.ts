@@ -923,6 +923,17 @@ describe("XrplService", () => {
 
       await service.dryRunBatch({
         ...batchPayload,
+        entries: [
+          {
+            type: "SubmitterOperation",
+            sequencing: { type: "AccountSequence", value: 7 },
+            operation: {
+              type: "Payment",
+              destination: { type: "Address", address: "rDestination" },
+              amount: "1000",
+            },
+          },
+        ],
         sequencing: { type: "AccountSequence", value: 42 },
         lastLedgerSequence: 999,
       })
@@ -961,6 +972,20 @@ describe("XrplService", () => {
       service = new XrplService(ports)
 
       await expect(service.dryRunBatch(batchPayload)).rejects.toThrow(/batchSigningData/)
+    })
+
+    it("rejects a mixed sequencing configuration before calling the dry-run port", async () => {
+      const dryRunIntent = vi.fn(async () => mockDryRunResponse)
+      ports = createTestPorts({ dryRunIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.dryRunBatch({
+          ...batchPayload,
+          sequencing: { type: "AccountSequence", value: 1 },
+        }),
+      ).rejects.toThrow(/Mixed configurations are not allowed/)
+      expect(dryRunIntent).not.toHaveBeenCalled()
     })
   })
 
@@ -1229,6 +1254,20 @@ describe("XrplService", () => {
 
       expect(capturedBody.request.id).toBe("shared-request")
       expect(capturedBody.request.payload.id).toBe("shared-payload")
+    })
+
+    it("rejects a mixed sequencing configuration before calling the submit port", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.proposeBatch(
+          { ...batchPayload, sequencing: { type: "AccountSequence", value: 1 } },
+          batchSigners,
+        ),
+      ).rejects.toThrow(/Mixed configurations are not allowed/)
+      expect(submitIntent).not.toHaveBeenCalled()
     })
   })
 })

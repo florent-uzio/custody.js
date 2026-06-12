@@ -28,6 +28,7 @@ import type {
   WaitForSignatureOptions,
   XrplIntentOptions,
 } from "./xrpl.types.js"
+import { validateBatchSequencing } from "./xrpl.validators.js"
 
 export class XrplService {
   constructor(private readonly ports: XrplPorts) {}
@@ -194,6 +195,8 @@ export class XrplService {
     payload: BatchPayloadInput,
     options: XrplIntentOptions = {},
   ): Promise<Core_ApiBatchSigningData> {
+    validateBatchSequencing(payload)
+
     const context = await this.ports.resolveContext(payload.Account, {
       domainId: options.domainId,
     })
@@ -354,6 +357,8 @@ export class XrplService {
     batchSigners: Core_BatchSigner[],
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
+    validateBatchSequencing(payload)
+
     const context = await this.ports.resolveContext(payload.Account, {
       domainId: options.domainId,
       ledgerId: options.ledgerId,
