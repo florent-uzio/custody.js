@@ -163,6 +163,10 @@ export type XrplIntentOptions = {
    */
   expiryDays?: number
   /**
+   * Human-readable description for the intent request (`request.description`).
+   */
+  description?: string
+  /**
    * Custom properties to include in the intent request.
    */
   requestCustomProperties?: Record<string, string>

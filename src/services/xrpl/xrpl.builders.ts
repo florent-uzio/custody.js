@@ -48,6 +48,7 @@ export function buildDryRunBody(
   return {
     author: { domainId: context.domainId, id: context.userId },
     customProperties: options.requestCustomProperties ?? {},
+    ...(!isUndefined(options.description) && { description: options.description }),
     expiryAt: dayjs().add(expiryDays, "day").toISOString(),
     id: requestId,
     payload: {
@@ -87,6 +88,7 @@ export function buildTransactionIntent({
         id: context.userId,
       },
       customProperties: options.requestCustomProperties ?? {},
+      ...(!isUndefined(options.description) && { description: options.description }),
       expiryAt: dayjs().add(expiryDays, "day").toISOString(),
       id: requestId,
       payload: {
