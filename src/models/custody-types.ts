@@ -249,7 +249,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get an address from all addresses including deposit instructions across domains */
+    /** Get address from all generated addresses across domains */
     get: operations["getAllDomainsAddresses"]
     put?: never
     post?: never
@@ -2651,6 +2651,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/system-signing/info": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get the system-signing info */
+    get: operations["getSystemSigningInfo"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -3714,6 +3731,7 @@ export interface components {
       lock: components["schemas"]["Core_IntentLockStatus"]
       description?: string
       customProperties: components["schemas"]["Core_StringsMap"]
+      intentOrigin?: components["schemas"]["Core_IntentOrigin"]
     }
     Core_CreateDomainGenesisUser: {
       /** Format: uuid */
@@ -4111,6 +4129,8 @@ export interface components {
       tickers?: components["schemas"]["Core_TickerToValidate"][]
       systemProperties?: components["schemas"]["Core_ReadWriteSystemPropertyKeyValue"][]
       ledgers?: components["schemas"]["Core_CreateLedgerGenesis"][]
+      /** Format: base64 */
+      systemSignaturesPublicKey?: string
     }
     Core_GenesisRequest: {
       rootDomainSetup: components["schemas"]["Core_RootDomainSetup"]
@@ -4118,6 +4138,8 @@ export interface components {
       tickers?: components["schemas"]["Core_TickerToValidate"][]
       systemProperties?: components["schemas"]["Core_ReadWriteSystemPropertyKeyValue"][]
       ledgers?: components["schemas"]["Core_CreateLedgerGenesis"][]
+      /** Format: base64 */
+      systemSignaturesPublicKey?: string
     }
     Core_GenesisSucceeded: {
       /** Format: base64 */
@@ -4131,6 +4153,8 @@ export interface components {
        * @enum {string}
        */
       type: "GenesisSucceeded"
+      /** Format: base64 */
+      systemSignaturesPublicKey?: string
     }
     /** @enum {string} */
     Core_GoverningStrategy: "ConsiderDescendants" | "CoerceDescendants"
@@ -4297,12 +4321,14 @@ export interface components {
       payload: components["schemas"]["Core_UserIntentPayload"]
       /** Format: date-time */
       expiryAt: string
-      author: components["schemas"]["Core_UserReference"]
+      author: components["schemas"]["Core_IntentAuthor"]
       /** Format: uuid */
       targetDomainId: string
       metadata: components["schemas"]["Core_IntentMetadata"]
       /** Format: base64 */
       proposalSignature: string
+      /** Format: base64 */
+      signingKey?: string
     }
     Core_IntentDryRunRequest: {
       author: components["schemas"]["Core_UserReference"]
@@ -4366,6 +4392,7 @@ export interface components {
       | components["schemas"]["Core_IntentDryRunResponse_v0_AddProviderKey"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_ConnectProvider"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_RequestDepositInstructions"]
+      | components["schemas"]["Core_IntentDryRunResponse_v0_RegisterTrustedPublicKey"]
     Core_IntentDryRunResponse_v0_AcknowledgeBackup: {
       success: boolean
       errors?: string[]
@@ -4890,6 +4917,7 @@ export interface components {
       | "v0_ConnectProvider"
       | "v0_RequestDepositInstructions"
       | "v0_AddProviderKey"
+      | "v0_RegisterTrustedPublicKey"
     Core_IntentUpdated: {
       /** Format: uuid */
       id: string
@@ -5366,6 +5394,7 @@ export interface components {
       workflow?: components["schemas"]["Core_WorkflowCondition"][]
       lock: components["schemas"]["Core_LockStatus"]
       metadata: components["schemas"]["Core_EntityMetadata"]
+      intentOrigin?: components["schemas"]["Core_IntentOrigin"]
     }
     /** @example {
      *       "left": {
@@ -5536,6 +5565,7 @@ export interface components {
       | components["schemas"]["Core_v0_AddProviderKey"]
       | components["schemas"]["Core_v0_ConnectProvider"]
       | components["schemas"]["Core_v0_RequestDepositInstructions"]
+      | components["schemas"]["Core_v0_RegisterTrustedPublicKey"]
     Core_Propose_v0_CreateTransactionOrder: {
       /** Format: uuid */
       id: string
@@ -5581,7 +5611,9 @@ export interface components {
       requests: string[]
       events: string[]
     }
-    Core_ReadWriteSystemPropertyKeyValue: components["schemas"]["Core_ReadWriteSystemPropertyKeyValue_StateReviewAuthorityProperty"]
+    Core_ReadWriteSystemPropertyKeyValue:
+      | components["schemas"]["Core_ReadWriteSystemPropertyKeyValue_StateReviewAuthorityProperty"]
+      | components["schemas"]["Core_ReadWriteSystemPropertyKeyValue_NotarySystemSignedIntentsEnabledProperty"]
     Core_ReadWriteSystemPropertyKeyValue_StateReviewAuthorityProperty: {
       value: components["schemas"]["Core_StateReviewAuthorityValue"]
       /**
@@ -5646,7 +5678,7 @@ export interface components {
     Core_RequestState: {
       /** Format: uuid */
       id: string
-      requester: components["schemas"]["Core_UserReference"]
+      requester: components["schemas"]["Core_IntentAuthor"]
       status: components["schemas"]["Core_RequestStateStatus"]
       history: components["schemas"]["Core_RequestStateHistory"][]
       /** Format: date-time */
@@ -6242,12 +6274,16 @@ export interface components {
       | components["schemas"]["Core_SystemProperty_NotaryCollectionsKeySystemProperty"]
       | components["schemas"]["Core_SystemProperty_NotaryCommunicationKeySystemProperty"]
       | components["schemas"]["Core_SystemProperty_StateReviewAuthoritySystemProperty"]
+      | components["schemas"]["Core_SystemProperty_NotarySystemSignedIntentsEnabledSystemProperty"]
+      | components["schemas"]["Core_SystemProperty_NotarySystemSigningKeySystemProperty"]
     /** @enum {string} */
     Core_SystemPropertyId:
       | "NOTARY_COMMUNICATION_KEY"
       | "NOTARY_COLLECTIONS_KEY"
       | "NOTARY_API_KEY"
       | "STATE_REVIEW_AUTHORITY"
+      | "NOTARY_SYSTEM_SIGNING_KEY"
+      | "NOTARY_SYSTEM_SIGNED_INTENTS_ENABLED"
     Core_SystemPropertySet: {
       id: components["schemas"]["Core_SystemPropertyId"]
       /**
@@ -7277,6 +7313,7 @@ export interface components {
       | "ApiSignatures"
       | "TrustedCollectionSignatures"
       | "MessagingSignatures"
+      | "SystemSignatures"
     Core_TrustedPublicKeyUpdated: {
       /** Format: base64 */
       publicKey: string
@@ -7421,6 +7458,7 @@ export interface components {
       | components["schemas"]["Core_v0_AddProviderKey"]
       | components["schemas"]["Core_v0_ConnectProvider"]
       | components["schemas"]["Core_v0_RequestDepositInstructions"]
+      | components["schemas"]["Core_v0_RegisterTrustedPublicKey"]
     /** @enum {string} */
     Core_UserOperationRejectionCode:
       | "AccountLocked"
@@ -7506,6 +7544,13 @@ export interface components {
       | "VaultOperationOnExternalAccount"
       | "ExternalOperationOnVaultAccount"
       | "DepositInstructionPostProcessingFailure"
+      | "SystemSignatureInvalid"
+      | "SystemSigningKeyNotRegistered"
+      | "SystemSigningKeyMismatch"
+      | "SystemSignaturesKeyAlreadyRegistered"
+      | "SystemSignedProcessingDisabled"
+      | "UnsupportedTrustedPublicKeyPurpose"
+      | "TrustedPublicKeyAlreadyActive"
     Core_UserReference: {
       /** Format: uuid */
       id: string
@@ -8304,6 +8349,7 @@ export interface components {
        * @enum {string}
        */
       type: "v0_CreatePolicy"
+      intentOrigin?: components["schemas"]["Core_IntentOrigin"]
     }
     Core_v0_CreateTicker: {
       ledgerId: string
@@ -8654,6 +8700,7 @@ export interface components {
        * @enum {string}
        */
       type: "v0_UpdatePolicy"
+      intentOrigin?: components["schemas"]["Core_IntentOrigin"]
     }
     Core_v0_UpdateTicker: {
       reference: components["schemas"]["Core_EntityIdAndRevision"]
@@ -10392,6 +10439,97 @@ export interface components {
        * @enum {string}
        */
       type: "v0_RequestDepositInstructions"
+    }
+    Core_IntentAuthor:
+      | components["schemas"]["Core_IntentAuthor_Service"]
+      | components["schemas"]["Core_IntentAuthor_User"]
+    Core_IntentAuthor_Service: {
+      subject: string
+    }
+    Core_IntentAuthor_User: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      domainId: string
+    }
+    Core_IntentBody:
+      | components["schemas"]["Core_SystemSigned"]
+      | components["schemas"]["Core_UserSigned"]
+    Core_IntentDryRunResponse_v0_RegisterTrustedPublicKey: {
+      success: boolean
+      errors?: string[]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "v0_RegisterTrustedPublicKey"
+    }
+    /** @enum {string} */
+    Core_IntentOrigin: "UserSigned" | "SystemSigned"
+    Core_NotarySystemSignedIntentsEnabledValue: {
+      enabled: boolean
+    }
+    Core_NotarySystemSigningKeyValue: {
+      publicKey: components["schemas"]["Core_AccountPublicKeyOnly"]
+    }
+    Core_ReadWriteSystemPropertyKeyValue_NotarySystemSignedIntentsEnabledProperty: {
+      value: components["schemas"]["Core_NotarySystemSignedIntentsEnabledValue"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "NotarySystemSignedIntentsEnabledProperty"
+    }
+    Core_SystemProperty_NotarySystemSignedIntentsEnabledSystemProperty: {
+      id: components["schemas"]["Core_SystemPropertyId"]
+      value: components["schemas"]["Core_NotarySystemSignedIntentsEnabledValue"]
+      metadata: components["schemas"]["Core_EntityMetadata"]
+    }
+    Core_SystemProperty_NotarySystemSigningKeySystemProperty: {
+      id: components["schemas"]["Core_SystemPropertyId"]
+      value: components["schemas"]["Core_NotarySystemSigningKeyValue"]
+      metadata: components["schemas"]["Core_EntityMetadata"]
+    }
+    Core_SystemSigned: {
+      request: components["schemas"]["Core_SystemSignedRequest"]
+    }
+    Core_SystemSignedRequest: {
+      /** Format: uuid */
+      targetDomainId: string
+      /** Format: uuid */
+      id: string
+      /** Format: date-time */
+      expiryAt: string
+      payload: components["schemas"]["Core_UserIntentPayload"]
+      description?: string
+      customProperties: components["schemas"]["Core_StringsMap"]
+      /** @enum {string} */
+      type: "SystemSigned"
+    }
+    Core_SystemSigningInfo: {
+      signingKeys: components["schemas"]["Core_SystemSigningKey"][]
+    }
+    Core_SystemSigningKey: {
+      /** Format: base64 */
+      publicKey: string
+      /** Format: date-time */
+      createdAt: string
+      active: boolean
+    }
+    Core_UserSigned: {
+      request: components["schemas"]["Core_Propose"]
+      /** Format: base64 */
+      signature: string
+    }
+    Core_v0_RegisterTrustedPublicKey: {
+      /** Format: base64 */
+      publicKey: string
+      purpose: components["schemas"]["Core_TrustedPublicKeyPurpose"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "v0_RegisterTrustedPublicKey"
     }
     Core_ApiBatchSigningData: {
       /** @description Hex encoded string. */
@@ -13666,7 +13804,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        "application/json": components["schemas"]["Core_ProposeIntentBody"]
+        "application/json": components["schemas"]["Core_IntentBody"]
       }
     }
     responses: {
@@ -13680,7 +13818,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_IntentResponse"]
         }
       }
-      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid intent (InvalidIntentError); Invalid request (InvalidRequestError); Requester locked (RequesterLockedError) */
+      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid intent (InvalidIntentError); Invalid intent body discriminator (InvalidDiscriminator); Invalid request (InvalidRequestError); Missing system-signed fields (MissingSystemSignedFields); Missing user-signed fields (MissingUserSignedFields); Requester locked (RequesterLockedError); Unexpected system-signed fields (UnexpectedSystemSignedFields) */
       400: {
         headers: {
           [name: string]: unknown
@@ -13691,6 +13829,15 @@ export interface operations {
       }
       /** @description One of: Invalid JWT (InvalidJwtError); Invalid signature (InvalidSignatureError); User not authorized (PermissionDeniedError) */
       401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description System-signed intents are disabled (SystemSignedDisabled) */
+      403: {
         headers: {
           [name: string]: unknown
         }
@@ -13709,6 +13856,15 @@ export interface operations {
       }
       /** @description Request already exists (ConflictingRequestIdError) */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description Service unavailable (ServiceUnavailable) */
+      503: {
         headers: {
           [name: string]: unknown
         }
@@ -13995,6 +14151,11 @@ export interface operations {
          * @example 8e92eb53-40e7-4809-bb52-7e7b3b41a4be
          */
         policyId?: string
+        /**
+         * @description Return entities intents matching given service-author subject.
+         * @example gas-station-svc
+         */
+        "details.author.subject"?: string
       }
       header?: never
       path: {
@@ -14013,7 +14174,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_TrustedIntentsCollection"]
         }
       }
-      /** @description Invalid value for: path parameter domainId, Invalid value for: query parameter limit, Invalid value for: query parameter startingAfter, Invalid value for: query parameter sortBy, Invalid value for: query parameter sortOrder, Invalid value for: query parameter details.payload.type, Invalid value for: query parameter details.author.domainId, Invalid value for: query parameter details.author.id, Invalid value for: query parameter details.targetDomainId, Invalid value for: query parameter details.metadata.description, Invalid value for: query parameter details.metadata.customProperties, Invalid value for: query parameter state.status, Invalid value for: query parameter entityId, Invalid value for: query parameter revision, Invalid value for: query parameter policyId */
+      /** @description Invalid value for: path parameter domainId, Invalid value for: query parameter limit, Invalid value for: query parameter startingAfter, Invalid value for: query parameter sortBy, Invalid value for: query parameter sortOrder, Invalid value for: query parameter details.payload.type, Invalid value for: query parameter details.author.domainId, Invalid value for: query parameter details.author.id, Invalid value for: query parameter details.author.subject, Invalid value for: query parameter details.targetDomainId, Invalid value for: query parameter details.metadata.description, Invalid value for: query parameter details.metadata.customProperties, Invalid value for: query parameter state.status, Invalid value for: query parameter entityId, Invalid value for: query parameter revision, Invalid value for: query parameter policyId */
       400: {
         headers: {
           [name: string]: unknown
@@ -16978,6 +17139,34 @@ export interface operations {
       }
       /** @description Entity or Domain not found (EntityNotFoundError) */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+    }
+  }
+  getSystemSigningInfo: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_SystemSigningInfo"]
+        }
+      }
+      /** @description One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError) */
+      401: {
         headers: {
           [name: string]: unknown
         }
