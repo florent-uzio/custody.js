@@ -1,5 +1,6 @@
 import { generateKeyPairSync } from "node:crypto"
 import { describe, expect, it, vi } from "vitest"
+import type { KnownAppVersion } from "./models/capabilities.generated.js"
 import { CustodyError } from "./models/index.js"
 import { RippleCustody } from "./ripple-custody.js"
 import type { SpecSource } from "./versioning/detect.js"
@@ -21,7 +22,9 @@ describe("RippleCustody apiVersion option", () => {
   it("throws at construction for an unrecognized apiVersion, listing known versions", () => {
     let caught: unknown
     try {
-      new RippleCustody({ ...creds, apiVersion: "9.9.9" })
+      // Cast simulates an untyped / JS caller — the typed surface only accepts
+      // bundled versions, but the runtime backstop still guards against others.
+      new RippleCustody({ ...creds, apiVersion: "9.9.9" as KnownAppVersion })
     } catch (e) {
       caught = e
     }

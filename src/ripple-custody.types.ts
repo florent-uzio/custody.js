@@ -5,11 +5,15 @@ export type RippleCustodyClientOptions = {
   /**
    * Pin the SDK to a specific Ripple Custody backend app version. When set,
    * calls that the version cannot serve throw `UnsupportedInVersionError`,
-   * gated against the bundled capability data (no network). Known bundled
-   * versions autocomplete; any other string throws at construction. Setting
-   * this skips live auto-detection.
+   * gated against the bundled capability data (no network). Setting this skips
+   * live auto-detection.
+   *
+   * Only versions the SDK bundles are accepted — this is a closed set (explicit
+   * pinning is offline-only, so a version without bundled data has no meaning;
+   * use auto-detection for unbundled versions). Untyped callers that pass an
+   * unbundled value still get a clear throw at construction.
    */
-  apiVersion?: KnownAppVersion | (string & {})
+  apiVersion?: KnownAppVersion
   /**
    * Auto-detect the backend's capabilities from its live OpenAPI spec on the
    * first API call (cached thereafter). Ignored when `apiVersion` is set.

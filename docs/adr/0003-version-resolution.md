@@ -17,8 +17,12 @@ uses, apparently unauthenticated).
 **Resolution order:** explicit `apiVersion` → auto-detection → _unresolved_.
 
 - **Explicit `apiVersion`** (opt-in): skips detection, gates against the bundled
-  capability data for that version (ADR-0004). If the value isn't among bundled
-  versions, throw at construction listing the known versions.
+  capability data for that version (ADR-0004). This is a **closed set** — the
+  option's type is `KnownAppVersion` (the bundled versions), so an unbundled
+  value is a compile error for typed callers. An untyped/cast caller that passes
+  an unbundled value still throws at construction, listing the known versions.
+  (There is no coherent offline meaning for an unbundled explicit version;
+  unbundled versions are the job of auto-detection.)
 - **Auto-detection** (default): on the **first** API call, fetch the live spec,
   build the capability set from it (ADR-0002), and cache it for the client's
   lifetime. Concurrent first calls **dedupe** to a single fetch.

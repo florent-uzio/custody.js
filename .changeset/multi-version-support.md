@@ -10,7 +10,7 @@ Multi-version support (foundation): generate the SDK's types from **all** bundle
 New `apiVersion` client option pins the SDK to a specific backend version and enables **runtime capability gating**:
 
 - Calls the pinned version cannot serve throw `UnsupportedInVersionError` (exposing the missing capability, its kind, the version, and the SDK method). Endpoint availability is checked centrally in the transport; XRPL feature availability (e.g. Batch) is checked in the xrpl service, including operations passed through `xrpl.proposeIntent`. `xrpl.rawSign` is never gated.
-- An unrecognized `apiVersion` throws at construction, listing the known bundled versions.
+- `apiVersion` accepts only versions the SDK bundles (its type is `KnownAppVersion`), so a typo is a compile error; an unbundled value from untyped code throws at construction, listing the known versions.
 
 By default (no `apiVersion`), the SDK now **auto-detects** the backend's capabilities from its live OpenAPI spec:
 
