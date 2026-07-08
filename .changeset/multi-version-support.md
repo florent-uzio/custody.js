@@ -18,3 +18,8 @@ By default (no `apiVersion`), the SDK now **auto-detects** the backend's capabil
 - The constructor stays synchronous. `await client.ready()` front-loads detection and surfaces its errors. `autoDetectVersion: false` disables it; `openApiUrl` overrides the fetch URL; `specSource` fully overrides the fetch (advanced).
 
 Gating **fails open**: whenever no backend version can be resolved — the live-spec fetch fails, or auto-detection is disabled with no `apiVersion` — calls pass through unchanged (the backend stays the authority) and the SDK emits a single warning per client. It never invents an `UnsupportedInVersionError` it cannot justify.
+
+Bundled specs are organized by **channel** — official releases (`openapi/official/`) and devbox/feature-branch builds (`openapi/devbox/`):
+
+- Both channels merge into the one superset type universe, so preview features that ship ahead of an official release (XRPL Batch today) stay typed in the main namespace. On a merge conflict, official is authoritative and devbox is additive-only.
+- The offline capability data — and therefore the versions `apiVersion` accepts — is built from **official specs only**. Pinning `apiVersion` to an official release correctly blocks preview features until an official release ships them; real devbox instances are handled by live auto-detection. `apiVersion` stays a plain official version string (no devbox/channel flag).

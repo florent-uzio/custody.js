@@ -1,22 +1,27 @@
 // @ts-check
 /**
- * Merge many Ripple Custody OpenAPI documents into one **superset** document.
+ * Merge many Ripple Custody OpenAPI documents into one **superset** document,
+ * respecting spec **channels** (ADR-0005).
  *
- * Ripple Custody releases are not monotonic supersets of one another: a higher
- * `x-app-version` can add some schemas/endpoints while lacking others a lower
- * version has (e.g. 1.35.0 has XRPL Batch; 1.35.4 lacks it but adds provider
- * endpoints). So we cannot simply take the newest document — we structurally
- * **union** the docs so nothing any version defines is ever dropped:
+ * Ripple Custody releases are not monotonic supersets of one another, and specs
+ * come from two channels — **official** releases and **devbox** feature-branch
+ * builds — whose `x-app-version` strings are not unique across channels. So we
+ * cannot simply take the newest document. Instead:
  *
- * - arrays (`oneOf`, `anyOf`, `allOf`, `enum`, `required`, `type`) are unioned
- *   and de-duplicated;
- * - objects (`paths`, `components`, `properties`, …) are merged key-by-key,
- *   recursing into shared keys;
- * - an irreconcilable scalar conflict (e.g. `type: "string"` vs `"number"` on
- *   the same schema) falls back to newest-wins and records a warning.
+ * - **Official is authoritative.** Official specs establish the superset and its
+ *   identity (`info`/`servers`/…), merged newest-wins among themselves. The base
+ *   document is the newest official spec, never a devbox spec.
+ * - **Devbox is additive.** Devbox specs are unioned in afterwards: they may add
+ *   new schemas/endpoints (e.g. XRPL Batch) and union array members, but on an
+ *   irreconcilable scalar conflict the **official** value wins and a warning is
+ *   recorded. A feature-branch build can never silently redefine an officially-
+ *   typed shape.
  *
- * Only `paths` and `components` are unioned; every other top-level field
- * (`openapi`, `info`, `servers`, …) is taken from the newest document.
+ * Union rules (both phases): arrays (`oneOf`, `anyOf`, `allOf`, `enum`,
+ * `required`, `type`) are unioned and de-duplicated; objects (`paths`,
+ * `components`, `properties`, …) are merged key-by-key, recursing into shared
+ * keys. Only `paths` and `components` are unioned; every other top-level field
+ * is taken from the base (newest official) document.
  */
 
 /** @param {any} v @returns {v is Record<string, unknown>} */
@@ -60,10 +65,13 @@ function unionArrays(a, b) {
 }
 
 /**
- * Deep-union `b` into `a`, returning a new value. `path` is a dotted trail used
- * for warnings; `warnings` collects irreconcilable-conflict messages.
+ * Deep-union `b` into `a`, returning a new value. On an irreconcilable scalar
+ * conflict, `prefer` decides the winner: `"b"` keeps the incoming (newer) value
+ * — official-vs-official newest-wins; `"a"` keeps the accumulated value —
+ * devbox-vs-official, official wins. `path` is a dotted trail used for warnings;
+ * `warnings` collects conflict messages.
  */
-function mergeValue(a, b, path, warnings) {
+function mergeValue(a, b, path, warnings, prefer = "b") {
   if (a === undefined) return b
   if (b === undefined) return a
 
@@ -75,36 +83,63 @@ function mergeValue(a, b, path, warnings) {
     /** @type {Record<string, unknown>} */
     const out = { ...a }
     for (const key of Object.keys(b)) {
-      out[key] = key in out ? mergeValue(a[key], b[key], `${path}.${key}`, warnings) : b[key]
+      out[key] =
+        key in out ? mergeValue(a[key], b[key], `${path}.${key}`, warnings, prefer) : b[key]
     }
     return out
   }
 
-  // Scalars (or mismatched kinds): if equal, keep; otherwise newest-wins + warn.
+  // Scalars (or mismatched kinds): if equal, keep; otherwise the configured
+  // side wins and we warn.
   if (JSON.stringify(a) !== JSON.stringify(b)) {
-    warnings.push(`diverging shape at ${path.replace(/^\./, "")}: kept newer value`)
+    const at = path.replace(/^\./, "")
+    if (prefer === "a") {
+      warnings.push(`devbox diverges from official at ${at}; kept official`)
+      return a
+    }
+    warnings.push(`diverging shape at ${at}: kept newer value`)
     return b
   }
   return a
 }
 
 /**
- * @param {any[]} docs - parsed OpenAPI documents
+ * @param {Array<{ doc: any, channel: string }>} taggedDocs - channel-tagged
+ *   OpenAPI documents (channel is the spec's `openapi/<channel>/` folder).
  * @returns {{ merged: any, warnings: string[] }}
  */
-export function mergeOpenApiDocs(docs) {
-  if (docs.length === 0) throw new Error("mergeOpenApiDocs: no documents provided")
+export function mergeOpenApiDocs(taggedDocs) {
+  if (!taggedDocs || taggedDocs.length === 0) {
+    throw new Error("mergeOpenApiDocs: no documents provided")
+  }
 
-  const sorted = [...docs].sort((x, y) => compareVersions(appVersion(x), appVersion(y)))
-  const newest = sorted[sorted.length - 1]
+  const official = taggedDocs.filter((t) => t.channel === "official").map((t) => t.doc)
+  const additive = taggedDocs.filter((t) => t.channel !== "official").map((t) => t.doc)
+
+  // Official specs are authoritative. When none are bundled, the additive pool
+  // stands in as the authority so generation still works.
+  const authoritative = official.length ? official : additive
+  const secondary = official.length ? additive : []
+
+  const byVersionAsc = (x, y) => compareVersions(appVersion(x), appVersion(y))
+  const authSorted = [...authoritative].sort(byVersionAsc)
+  const secSorted = [...secondary].sort(byVersionAsc)
+
+  const base = authSorted[authSorted.length - 1]
   const warnings = []
 
   let paths = {}
   let components = {}
-  for (const doc of sorted) {
-    paths = mergeValue(paths, doc.paths ?? {}, "paths", warnings)
-    components = mergeValue(components, doc.components ?? {}, "components", warnings)
+  // Phase 1: official specs, newest-wins on conflict.
+  for (const doc of authSorted) {
+    paths = mergeValue(paths, doc.paths ?? {}, "paths", warnings, "b")
+    components = mergeValue(components, doc.components ?? {}, "components", warnings, "b")
+  }
+  // Phase 2: devbox specs, additive — official wins on conflict.
+  for (const doc of secSorted) {
+    paths = mergeValue(paths, doc.paths ?? {}, "paths", warnings, "a")
+    components = mergeValue(components, doc.components ?? {}, "components", warnings, "a")
   }
 
-  return { merged: { ...newest, paths, components }, warnings }
+  return { merged: { ...base, paths, components }, warnings }
 }

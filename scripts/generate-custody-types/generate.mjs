@@ -32,23 +32,59 @@ const TYPES_HEADER = `/**
 
 `
 
+/**
+ * Load every bundled spec, tagged with its **channel** — the `openapi/<channel>/`
+ * subfolder it lives in (`official`, `devbox`, …). Specs must live in a channel
+ * subfolder; a `.json` directly under `openapi/` is a build error (ADR-0005).
+ */
 function loadDocs() {
-  const files = readdirSync(openapiDir)
-    .filter((f) => f.endsWith(".json"))
+  const entries = readdirSync(openapiDir, { withFileTypes: true })
+
+  const stray = entries.filter((e) => e.isFile() && e.name.endsWith(".json")).map((e) => e.name)
+  if (stray.length > 0) {
+    throw new Error(
+      `OpenAPI specs must live in a channel subfolder (e.g. openapi/official/, ` +
+        `openapi/devbox/). Found stray spec(s) directly in openapi/: ${stray.join(", ")}`,
+    )
+  }
+
+  const channels = entries
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
     .sort()
-  if (files.length === 0) throw new Error(`No OpenAPI specs found in ${openapiDir}`)
-  return files.map((file) => {
-    const doc = JSON.parse(readFileSync(join(openapiDir, file), "utf8"))
-    return { file, version: doc?.info?.["x-app-version"] ?? "(unknown)", doc }
-  })
+
+  const docs = []
+  for (const channel of channels) {
+    const channelDir = join(openapiDir, channel)
+    const files = readdirSync(channelDir)
+      .filter((f) => f.endsWith(".json"))
+      .sort()
+    for (const file of files) {
+      const doc = JSON.parse(readFileSync(join(channelDir, file), "utf8"))
+      docs.push({
+        file: `${channel}/${file}`,
+        channel,
+        version: doc?.info?.["x-app-version"] ?? "(unknown)",
+        doc,
+      })
+    }
+  }
+
+  if (docs.length === 0) throw new Error(`No OpenAPI specs found in ${openapiDir}`)
+  return docs
 }
 
 async function main() {
   const docs = loadDocs()
   console.log(`Found ${docs.length} bundled spec(s):`)
-  for (const { file, version } of docs) console.log(`  - ${file}  (x-app-version ${version})`)
+  for (const { file, channel, version } of docs) {
+    console.log(`  - ${file}  (${channel}, x-app-version ${version})`)
+  }
 
-  const { merged, warnings } = mergeOpenApiDocs(docs.map((d) => d.doc))
+  // Superset types are merged from every channel (devbox features stay typed).
+  const { merged, warnings } = mergeOpenApiDocs(
+    docs.map((d) => ({ doc: d.doc, channel: d.channel })),
+  )
   for (const w of warnings) console.warn(`  ⚠ ${w}`)
   console.log(
     `Superset: ${Object.keys(merged.paths).length} paths, ` +
@@ -59,7 +95,9 @@ async function main() {
   const ast = await openapiTS(merged)
   writeFileSync(join(modelsDir, "custody-types.ts"), TYPES_HEADER + astToString(ast))
 
-  const dataset = buildCapabilityDataset(docs.map((d) => d.doc))
+  // The offline capability dataset (and thus apiVersion) is official-only.
+  const officialDocs = docs.filter((d) => d.channel === "official").map((d) => d.doc)
+  const dataset = buildCapabilityDataset(officialDocs)
   writeFileSync(join(modelsDir, "capabilities.generated.ts"), renderCapabilitiesModule(dataset))
 
   console.log("Wrote src/models/custody-types.ts and src/models/capabilities.generated.ts")

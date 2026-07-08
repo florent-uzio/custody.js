@@ -40,7 +40,13 @@ export function extractCapabilities(doc) {
 }
 
 /**
- * @param {any[]} docs
+ * Build the offline capability dataset from the **official** specs only
+ * (ADR-0005): devbox specs contribute to the superset types but not to the
+ * per-version dataset that backs `apiVersion`. Official releases have unique
+ * `x-app-version` strings, so a duplicate version is a collision we refuse to
+ * resolve silently.
+ *
+ * @param {any[]} docs - official OpenAPI documents
  * @returns {Record<string, { endpoints: string[], schemas: string[] }>}
  */
 export function buildCapabilityDataset(docs) {
@@ -48,6 +54,12 @@ export function buildCapabilityDataset(docs) {
   const dataset = {}
   for (const doc of docs) {
     const { version, endpoints, schemas } = extractCapabilities(doc)
+    if (version in dataset) {
+      throw new Error(
+        `Duplicate app version "${version}" in the capability dataset — two ` +
+          `official specs report the same x-app-version.`,
+      )
+    }
     dataset[version] = { endpoints, schemas }
   }
   return dataset

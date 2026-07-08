@@ -17,8 +17,9 @@ describe("VersionGuard.assertFeature", () => {
   })
 
   it("passes when the feature schema is present in the resolved version", () => {
+    // Core_AccountProvider is present in 1.35.4 but not 1.35.0.
     expect(() =>
-      guardFor("1.35.0").assertFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch"),
+      guardFor("1.35.4").assertFeature("Core_AccountProvider", "accounts.getProvider"),
     ).not.toThrow()
   })
 
@@ -91,10 +92,10 @@ describe("VersionGuard deferred (lazy) resolution", () => {
   })
 
   it("checkFeature passes when the detected version has the feature", async () => {
-    const g = VersionGuard.deferred(async () => resolveExplicitCapabilities("1.35.0"))
+    const g = VersionGuard.deferred(async () => resolveExplicitCapabilities("1.35.4"))
 
     await expect(
-      g.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch"),
+      g.checkFeature("Core_AccountProvider", "accounts.getProvider"),
     ).resolves.toBeUndefined()
   })
 
@@ -161,7 +162,7 @@ describe("VersionGuard fail-open (unresolved version)", () => {
     const g = VersionGuard.deferred(async () => resolveExplicitCapabilities("1.35.0"), onFailOpen)
 
     await g.checkEndpoint("GET", "/v1/domains")
-    await expect(g.checkFeature("Core_XrplOperation_Batch", "x")).resolves.toBeUndefined()
+    await expect(g.checkFeature("Core_XrplOperation_Payment", "x")).resolves.toBeUndefined()
     await expect(g.checkEndpoint("GET", "/v1/providers")).rejects.toBeInstanceOf(
       UnsupportedInVersionError,
     )

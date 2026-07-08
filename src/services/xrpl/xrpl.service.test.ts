@@ -1279,6 +1279,16 @@ describe("XrplService", () => {
 
 describe("XrplService version gating", () => {
   const guardFor = (version: string) => new VersionGuard(resolveExplicitCapabilities(version))
+  // A resolved instance that exposes Batch — what auto-detection derives from a
+  // live devbox spec. No official bundled version has Batch (ADR-0005).
+  const guardWithBatch = () => {
+    const base = resolveExplicitCapabilities("1.35.0")
+    return new VersionGuard({
+      appVersion: "1.35.0-devbox",
+      endpoints: base.endpoints,
+      schemas: new Set([...base.schemas, "Core_XrplOperation_Batch"]),
+    })
+  }
 
   const batchPayload: BatchPayloadInput = {
     Account: mockAddress,
@@ -1306,9 +1316,19 @@ describe("XrplService version gating", () => {
     expect(submitIntent).not.toHaveBeenCalled()
   })
 
-  it("allows proposeBatch on a version with the Batch feature (1.35.0)", async () => {
+  it("blocks proposeBatch on an official version that lacks Batch (1.35.0)", async () => {
     const submitIntent = vi.fn(async () => ({ requestId: "r" }) as any)
     const service = new XrplService(createTestPorts({ submitIntent }), guardFor("1.35.0"))
+
+    await expect(service.proposeBatch(batchPayload, [])).rejects.toBeInstanceOf(
+      UnsupportedInVersionError,
+    )
+    expect(submitIntent).not.toHaveBeenCalled()
+  })
+
+  it("allows proposeBatch when the resolved instance exposes Batch (auto-detected devbox)", async () => {
+    const submitIntent = vi.fn(async () => ({ requestId: "r" }) as any)
+    const service = new XrplService(createTestPorts({ submitIntent }), guardWithBatch())
 
     await expect(service.proposeBatch(batchPayload, [])).resolves.toBeDefined()
     expect(submitIntent).toHaveBeenCalled()

@@ -10,8 +10,11 @@ The Ripple Custody backend has **no API versioning** — every instance serves
 `/v1/...` regardless of which app release it runs. Different instances run
 different releases, and releases are **not monotonic supersets** of one another:
 a higher `x-app-version` can expose _fewer_ endpoints than a lower one (e.g.
-`1.35.4` lacks the XRPL Batch operation type that `1.35.0` has, while `1.35.0`
-lacks the provider/deposit-instruction endpoints `1.35.4` has).
+`1.35.4` lacks the provider/deposit-instruction endpoints an earlier build has).
+Bundled specs also come from two **channels** — official releases and devbox
+(feature-branch) builds — and `x-app-version` is not unique across them (the
+devbox `1.35.0` build carries XRPL Batch that no official release has yet). See
+[ADR-0005](docs/adr/0005-official-vs-devbox-channels.md).
 
 SDK users typically do **not** know which release their instance runs and will
 not check the spec by hand. So the SDK reconciles a single published surface
@@ -47,7 +50,29 @@ stay consistent.
 - **Bundled spec** — an OpenAPI JSON committed to `openapi/`, keyed by its
   internal `info.x-app-version`. Bundled specs feed the type generator and serve
   as the offline / explicit-`apiVersion` capability fallback. They are **not**
-  the primary runtime capability source.
+  the primary runtime capability source. Every bundled spec belongs to a
+  **channel** (see below).
+
+- **Channel** — the provenance of a bundled spec, given by its subdirectory
+  under `openapi/`: **official** (`openapi/official/`) or **devbox**
+  (`openapi/devbox/`). Official specs are authoritative; devbox specs are
+  types-only. See [ADR-0005](docs/adr/0005-official-vs-devbox-channels.md).
+
+- **Official spec** — a bundled spec under `openapi/official/`, from a real
+  Ripple Custody release. Unique by `info.x-app-version`. Official specs drive
+  the offline capability dataset and are the only values `apiVersion` accepts;
+  on a merge conflict, official wins.
+
+- **Devbox spec** — a bundled spec under `openapi/devbox/`, from a feature-branch
+  build. May expose **preview features** ahead of any official release. Merged
+  into the superset types only (additively); **excluded** from the offline
+  capability dataset and from `apiVersion`. Real devbox instances are handled at
+  runtime by auto-detection reading the live spec.
+
+- **Preview feature** — a capability present only in a devbox spec, not yet in
+  any official release (e.g. XRPL Batch today). Typed in the superset and usable
+  against a real devbox instance via auto-detection, but blocked by any offline
+  `apiVersion` pin until an official release ships it.
 
 - **Superset types** — the single merged type universe in
   `src/models/custody-types.ts`, the union of every bundled spec's `paths`,

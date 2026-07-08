@@ -53,6 +53,13 @@ describe("buildCapabilityDataset", () => {
     expect(dataset["1.35.0"].schemas).toContain("Core_XrplOperation_Batch")
     expect(dataset["1.35.4"].endpoints).toContain("GET /v1/providers")
   })
+
+  it("throws when two specs report the same app version (collision guard)", () => {
+    const a = doc("1.35.0", { schemas: { Core_A: {} } })
+    const b = doc("1.35.0", { schemas: { Core_B: {} } })
+
+    expect(() => buildCapabilityDataset([a, b])).toThrow(/1\.35\.0/)
+  })
 })
 
 describe("renderCapabilitiesModule", () => {
