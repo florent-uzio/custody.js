@@ -1,1 +1,5 @@
 CHANGELOG.md
+
+# Server-sourced OpenAPI specs — canonical artifacts from the Ripple Custody
+# backend; never reformat them (see CLAUDE.md).
+openapi/
