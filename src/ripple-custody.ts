@@ -37,6 +37,7 @@ import {
   type XrplIntentOptions,
 } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
+import { resolveExplicitCapabilities, VersionGuard } from "./versioning/version-guard.js"
 
 export class RippleCustody {
   // Core services (eager initialization - required for all operations)
@@ -44,11 +45,14 @@ export class RippleCustody {
   private readonly authService: AuthService
   private readonly transport: TypedTransport
 
+  // Runtime version guard (pass-through unless an apiVersion is resolved)
+  private readonly guard: VersionGuard
+
   // Lazy-initialized service instances
   private _xrplService?: XrplService
 
   private get xrplService(): XrplService {
-    return (this._xrplService ??= new XrplService(createHttpPorts(this.transport)))
+    return (this._xrplService ??= new XrplService(createHttpPorts(this.transport), this.guard))
   }
 
   // Namespace objects built from factory functions
@@ -69,7 +73,11 @@ export class RippleCustody {
   public readonly requests: ReturnType<typeof createRequests>
 
   constructor(options: RippleCustodyClientOptions) {
-    const { authUrl, apiUrl, privateKey, publicKey, timeout } = options
+    const { authUrl, apiUrl, privateKey, publicKey, timeout, apiVersion } = options
+
+    // Resolve the version guard first so an unknown apiVersion fails fast,
+    // before any key parsing or service construction.
+    this.guard = new VersionGuard(apiVersion ? resolveExplicitCapabilities(apiVersion) : undefined)
 
     // Only initialize core services eagerly
     this.authService = new AuthService({ authUrl, timeout })
@@ -82,7 +90,7 @@ export class RippleCustody {
       privateKey,
       timeout,
     })
-    this.transport = new TypedTransport(this.apiService)
+    this.transport = new TypedTransport(this.apiService, this.guard)
 
     // Initialize namespaces from factories
     this.channels = createChannels(this.transport)

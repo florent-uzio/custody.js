@@ -282,3 +282,8 @@ export type {
 
 // errors types
 export type { Core_ErrorMessage, CustodyError } from "./models/index.js"
+
+// versioning (multi-version capability gating)
+export type { KnownAppVersion } from "./models/capabilities.generated.js"
+export { UnsupportedInVersionError } from "./versioning/version-guard.js"
+export type { CapabilityKind } from "./versioning/version-guard.js"

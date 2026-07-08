@@ -6,3 +6,8 @@ Multi-version support (foundation): generate the SDK's types from **all** bundle
 
 - Types now cover endpoints and schemas from every bundled backend version — both XRPL Batch (1.35.0) and the provider/deposit endpoints unique to 1.35.4 — merged by structural union so nothing any version defines is dropped.
 - `accounts.findByAddress` now returns only `AccountAddressReference` matches, discriminating against the newly-typed `DepositInstructionsReference` a 1.35.4 instance can return.
+
+New `apiVersion` client option pins the SDK to a specific backend version and enables **runtime capability gating**:
+
+- Calls the pinned version cannot serve throw `UnsupportedInVersionError` (exposing the missing capability, its kind, the version, and the SDK method). Endpoint availability is checked centrally in the transport; XRPL feature availability (e.g. Batch) is checked in the xrpl service, including operations passed through `xrpl.proposeIntent`. `xrpl.rawSign` is never gated.
+- An unrecognized `apiVersion` throws at construction, listing the known bundled versions. Omitting `apiVersion` leaves behavior unchanged (gating disabled).

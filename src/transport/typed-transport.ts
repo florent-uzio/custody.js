@@ -1,5 +1,6 @@
 import type { AxiosRequestConfig } from "axios"
 import type { ApiService } from "../services/apis/api.service.js"
+import { VersionGuard } from "../versioning/version-guard.js"
 import { splitParams } from "./split-params.js"
 import type { RequestConfig } from "./transport.types.js"
 
@@ -10,7 +11,10 @@ import type { RequestConfig } from "./transport.types.js"
  * Namespace factory functions use this instead of calling ApiService directly.
  */
 export class TypedTransport {
-  constructor(private readonly api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    private readonly guard: VersionGuard = new VersionGuard(undefined),
+  ) {}
 
   /**
    * Makes a typed GET request.
@@ -22,6 +26,7 @@ export class TypedTransport {
     query?: unknown,
     _config?: RequestConfig,
   ): Promise<T> {
+    this.guard.assertEndpoint("GET", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -44,6 +49,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
+    this.guard.assertEndpoint("POST", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -62,6 +68,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
+    this.guard.assertEndpoint("PUT", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -80,6 +87,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
+    this.guard.assertEndpoint("PATCH", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -97,6 +105,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
+    this.guard.assertEndpoint("DELETE", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)

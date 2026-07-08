@@ -1,4 +1,16 @@
+import type { KnownAppVersion } from "./models/capabilities.generated.js"
+
 export type RippleCustodyClientOptions = {
+  /**
+   * Pin the SDK to a specific Ripple Custody backend app version. When set,
+   * calls that the version cannot serve throw `UnsupportedInVersionError`,
+   * gated against the bundled capability data (no network). Known bundled
+   * versions autocomplete; any other string throws at construction.
+   *
+   * When omitted, capability gating is disabled until a later release adds
+   * live auto-detection (issue #136).
+   */
+  apiVersion?: KnownAppVersion | (string & {})
   /**
    * API URL for the API endpoints
    *

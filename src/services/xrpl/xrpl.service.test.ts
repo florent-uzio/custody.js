@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import type { SubmittableTransaction } from "xrpl"
 import { CustodyError } from "../../models/index.js"
+import {
+  resolveExplicitCapabilities,
+  UnsupportedInVersionError,
+  VersionGuard,
+} from "../../versioning/version-guard.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 import { XrplService } from "./xrpl.service.js"
 import type {
@@ -1269,5 +1274,92 @@ describe("XrplService", () => {
       ).rejects.toThrow(/Mixed configurations are not allowed/)
       expect(submitIntent).not.toHaveBeenCalled()
     })
+  })
+})
+
+describe("XrplService version gating", () => {
+  const guardFor = (version: string) => new VersionGuard(resolveExplicitCapabilities(version))
+
+  const batchPayload: BatchPayloadInput = {
+    Account: mockAddress,
+    executionMode: "AllOrNothing",
+    entries: [
+      {
+        type: "SubmitterOperation",
+        sequencing: { type: "PlatformManaged" },
+        operation: {
+          type: "Payment",
+          destination: { type: "Address", address: "rDestination" },
+          amount: "1000",
+        },
+      },
+    ],
+  }
+
+  it("blocks proposeBatch on a version without the Batch feature (1.35.4)", async () => {
+    const submitIntent = vi.fn(async () => ({ requestId: "r" }) as any)
+    const service = new XrplService(createTestPorts({ submitIntent }), guardFor("1.35.4"))
+
+    await expect(service.proposeBatch(batchPayload, [])).rejects.toBeInstanceOf(
+      UnsupportedInVersionError,
+    )
+    expect(submitIntent).not.toHaveBeenCalled()
+  })
+
+  it("allows proposeBatch on a version with the Batch feature (1.35.0)", async () => {
+    const submitIntent = vi.fn(async () => ({ requestId: "r" }) as any)
+    const service = new XrplService(createTestPorts({ submitIntent }), guardFor("1.35.0"))
+
+    await expect(service.proposeBatch(batchPayload, [])).resolves.toBeDefined()
+    expect(submitIntent).toHaveBeenCalled()
+  })
+
+  it("blocks dryRunBatch on 1.35.4 before hitting the dry-run port", async () => {
+    const dryRunIntent = vi.fn(async () => mockDryRunResponse)
+    const service = new XrplService(createTestPorts({ dryRunIntent }), guardFor("1.35.4"))
+
+    await expect(service.dryRunBatch(batchPayload)).rejects.toBeInstanceOf(
+      UnsupportedInVersionError,
+    )
+    expect(dryRunIntent).not.toHaveBeenCalled()
+  })
+
+  it("blocks proposeIntent carrying a Batch operation on 1.35.4", async () => {
+    const submitIntent = vi.fn(async () => ({ requestId: "r" }) as any)
+    const service = new XrplService(createTestPorts({ submitIntent }), guardFor("1.35.4"))
+
+    await expect(
+      service.proposeIntent({ Account: mockAddress, operation: { type: "Batch" } as any }),
+    ).rejects.toBeInstanceOf(UnsupportedInVersionError)
+    expect(submitIntent).not.toHaveBeenCalled()
+  })
+
+  it("allows proposeIntent with a Payment operation on 1.35.4", async () => {
+    const service = new XrplService(createTestPorts(), guardFor("1.35.4"))
+
+    await expect(
+      service.proposeIntent({
+        Account: mockAddress,
+        operation: {
+          type: "Payment",
+          amount: "1000000",
+          destination: { type: "Address", address: mockAddress },
+          destinationTag: 0,
+        },
+      }),
+    ).resolves.toBeDefined()
+  })
+
+  it("never gates rawSign", async () => {
+    const service = new XrplService(createTestPorts(), guardFor("1.35.4"))
+
+    await expect(
+      service.rawSign({
+        TransactionType: "Payment",
+        Account: mockAddress,
+        Amount: "1000",
+        Destination: mockAddress,
+      } as SubmittableTransaction),
+    ).resolves.toBeDefined()
   })
 })
