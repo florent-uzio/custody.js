@@ -119,6 +119,56 @@ describe("VersionGuard deferred (lazy) resolution", () => {
   })
 })
 
+describe("VersionGuard fail-open (unresolved version)", () => {
+  it("fails open — checks pass through, no UnsupportedInVersionError — when detection fails", async () => {
+    const onFailOpen = vi.fn()
+    const g = VersionGuard.deferred(async () => {
+      throw new Error("detection failed")
+    }, onFailOpen)
+
+    await expect(
+      g.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch"),
+    ).resolves.toBeUndefined()
+    await expect(g.checkEndpoint("GET", "/v1/providers")).resolves.toBeUndefined()
+    expect(onFailOpen).toHaveBeenCalledOnce()
+  })
+
+  it("fails open and fires onFailOpen once when explicitly disabled (no resolved version)", async () => {
+    const onFailOpen = vi.fn()
+    const g = new VersionGuard(undefined, undefined, onFailOpen)
+
+    await g.checkFeature("Core_XrplOperation_Batch", "x")
+    await g.checkFeature("Core_XrplOperation_Batch", "x")
+
+    expect(onFailOpen).toHaveBeenCalledOnce()
+  })
+
+  it("does not re-run detection after failing open", async () => {
+    const resolver = vi.fn(async () => {
+      throw new Error("boom")
+    })
+    const g = VersionGuard.deferred(resolver, () => {})
+
+    await g.checkFeature("Core_XrplOperation_Batch", "x")
+    await g.checkFeature("Core_XrplOperation_Batch", "x")
+    await g.checkEndpoint("GET", "/x")
+
+    expect(resolver).toHaveBeenCalledOnce()
+  })
+
+  it("never fires onFailOpen when a version resolves, and still gates", async () => {
+    const onFailOpen = vi.fn()
+    const g = VersionGuard.deferred(async () => resolveExplicitCapabilities("1.35.0"), onFailOpen)
+
+    await g.checkEndpoint("GET", "/v1/domains")
+    await expect(g.checkFeature("Core_XrplOperation_Batch", "x")).resolves.toBeUndefined()
+    await expect(g.checkEndpoint("GET", "/v1/providers")).rejects.toBeInstanceOf(
+      UnsupportedInVersionError,
+    )
+    expect(onFailOpen).not.toHaveBeenCalled()
+  })
+})
+
 describe("resolveExplicitCapabilities", () => {
   it("throws listing the known versions for an unrecognized apiVersion", () => {
     let caught: unknown

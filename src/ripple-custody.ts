@@ -86,6 +86,15 @@ export class RippleCustody {
       specSource,
     } = options
 
+    // Fires once if the guard ever passes calls through because no backend
+    // version could be resolved (detection failed, or gating is disabled).
+    const warnGatingDisabled = () =>
+      console.warn(
+        "[ripple-custody] Could not resolve the backend version; capability gating is " +
+          "disabled. Calls pass through and the backend enforces what it supports. " +
+          "Set `apiVersion`, or ensure the instance's OpenAPI endpoint is reachable.",
+      )
+
     // Resolve the version guard first so an unknown apiVersion fails fast,
     // before any key parsing or service construction.
     if (apiVersion) {
@@ -95,10 +104,10 @@ export class RippleCustody {
       // Auto-detect: lazily fetch the live instance spec on first use.
       const source =
         specSource ?? createHttpSpecSource(openApiUrl ?? buildOpenApiUrl(apiUrl), timeout)
-      this.guard = VersionGuard.deferred(() => detectCapabilities(source))
+      this.guard = VersionGuard.deferred(() => detectCapabilities(source), warnGatingDisabled)
     } else {
       // Detection disabled and no explicit version: gating off (pass-through).
-      this.guard = new VersionGuard(undefined)
+      this.guard = new VersionGuard(undefined, undefined, warnGatingDisabled)
     }
 
     // Only initialize core services eagerly

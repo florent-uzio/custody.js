@@ -1,6 +1,6 @@
 # ADR-0001 — Multi-version support via runtime capability gating
 
-- Status: Accepted (design; not yet implemented)
+- Status: Accepted (implemented in #135–#137)
 - Date: 2026-07-07
 - Related: ADR-0002 (capability model), ADR-0003 (version resolution),
   ADR-0004 (type generation)

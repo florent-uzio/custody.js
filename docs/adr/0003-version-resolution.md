@@ -1,6 +1,6 @@
 # ADR-0003 — Version resolution: auto-detect live, lazy, fail-open
 
-- Status: Accepted (design; not yet implemented)
+- Status: Accepted (implemented in #136, #137)
 - Date: 2026-07-07
 - Related: ADR-0001 (runtime gating), ADR-0002 (capability model)
 

@@ -1,6 +1,6 @@
 # ADR-0002 — Capability model: endpoint + feature, resolved from the live spec
 
-- Status: Accepted (design; not yet implemented)
+- Status: Accepted (implemented in #135, #136)
 - Date: 2026-07-07
 - Related: ADR-0001 (runtime gating), ADR-0003 (version resolution)
 

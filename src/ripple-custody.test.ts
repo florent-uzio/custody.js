@@ -104,3 +104,54 @@ describe("RippleCustody live-spec auto-detection", () => {
     expect(specSource.fetchSpec).not.toHaveBeenCalled()
   })
 })
+
+describe("RippleCustody fail-open (unresolved version)", () => {
+  // Mixed sequencing makes proposeBatch throw a validation error *after* the
+  // version guard runs but *before* any network — so we observe guard behavior
+  // without a real backend.
+  const mixedSequencingPayload = {
+    Account: "rSubmitter",
+    executionMode: "AllOrNothing",
+    entries: [
+      {
+        type: "SubmitterOperation",
+        sequencing: { type: "PlatformManaged" },
+        operation: {
+          type: "Payment",
+          destination: { type: "Address", address: "rD" },
+          amount: "1",
+        },
+      },
+    ],
+    sequencing: { type: "AccountSequence", value: 1 },
+  } as any
+
+  it("fails open with a single warning when detection fails (no UnsupportedInVersionError)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const client = new RippleCustody({
+      ...creds,
+      specSource: {
+        fetchSpec: async () => {
+          throw new Error("spec endpoint unreachable")
+        },
+      },
+    })
+
+    const error = await client.xrpl.proposeBatch(mixedSequencingPayload, []).catch((e) => e)
+
+    expect(error).not.toBeInstanceOf(UnsupportedInVersionError)
+    expect(warn).toHaveBeenCalledOnce()
+    warn.mockRestore()
+  })
+
+  it("warns once when auto-detect is disabled and no apiVersion is set", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const client = new RippleCustody({ ...creds, autoDetectVersion: false })
+
+    await client.xrpl.proposeBatch(mixedSequencingPayload, []).catch(() => {})
+    await client.xrpl.proposeBatch(mixedSequencingPayload, []).catch(() => {})
+
+    expect(warn).toHaveBeenCalledOnce()
+    warn.mockRestore()
+  })
+})

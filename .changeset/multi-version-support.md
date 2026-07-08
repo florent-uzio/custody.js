@@ -16,3 +16,5 @@ By default (no `apiVersion`), the SDK now **auto-detects** the backend's capabil
 
 - On the first API call it fetches `<apiUrl>/api/OpenAPI?scope=&layout=` once (cached for the client's lifetime; concurrent first calls dedupe to a single fetch) and gates against the instance's actual capabilities — accurate even for backend versions the SDK has never bundled.
 - The constructor stays synchronous. `await client.ready()` front-loads detection and surfaces its errors. `autoDetectVersion: false` disables it; `openApiUrl` overrides the fetch URL; `specSource` fully overrides the fetch (advanced).
+
+Gating **fails open**: whenever no backend version can be resolved — the live-spec fetch fails, or auto-detection is disabled with no `apiVersion` — calls pass through unchanged (the backend stays the authority) and the SDK emits a single warning per client. It never invents an `UnsupportedInVersionError` it cannot justify.

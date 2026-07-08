@@ -85,19 +85,25 @@ export class VersionGuard {
   private resolved: ResolvedCapabilities | undefined
   private settled: boolean
   private pending?: Promise<void>
+  private failedOpen = false
+  private warned = false
   private readonly resolver?: () => Promise<ResolvedCapabilities | undefined>
+  private readonly onFailOpen?: () => void
 
   /**
    * Construct a guard with capabilities already resolved (or `undefined` for a
    * pass-through guard). Pass a `resolver` for lazy resolution, or use
-   * {@link VersionGuard.deferred}.
+   * {@link VersionGuard.deferred}. `onFailOpen` runs once the first time the
+   * guard passes a call through because no version could be resolved.
    */
   constructor(
     resolved: ResolvedCapabilities | undefined,
     resolver?: () => Promise<ResolvedCapabilities | undefined>,
+    onFailOpen?: () => void,
   ) {
     this.resolved = resolved
     this.resolver = resolver
+    this.onFailOpen = onFailOpen
     this.settled = resolver === undefined
   }
 
@@ -106,8 +112,11 @@ export class VersionGuard {
    * by fetching the live instance spec). The resolver runs at most once per
    * successful resolution; concurrent triggers share a single invocation.
    */
-  static deferred(resolver: () => Promise<ResolvedCapabilities | undefined>): VersionGuard {
-    return new VersionGuard(undefined, resolver)
+  static deferred(
+    resolver: () => Promise<ResolvedCapabilities | undefined>,
+    onFailOpen?: () => void,
+  ): VersionGuard {
+    return new VersionGuard(undefined, resolver, onFailOpen)
   }
 
   /** Whether the guard has a resolved version and is actively gating. */
@@ -140,14 +149,44 @@ export class VersionGuard {
 
   /** Resolves (detecting if needed) then asserts the endpoint capability. */
   async checkEndpoint(httpMethod: string, pathTemplate: string, sdkMethod?: string): Promise<void> {
-    await this.ensureResolved()
-    this.assertEndpoint(httpMethod, pathTemplate, sdkMethod)
+    if (await this.gatingActive()) {
+      this.assertEndpoint(httpMethod, pathTemplate, sdkMethod)
+    }
   }
 
   /** Resolves (detecting if needed) then asserts the feature capability. */
   async checkFeature(schemaName: string, sdkMethod: string): Promise<void> {
-    await this.ensureResolved()
-    this.assertFeature(schemaName, sdkMethod)
+    if (await this.gatingActive()) {
+      this.assertFeature(schemaName, sdkMethod)
+    }
+  }
+
+  /**
+   * Whether gating is active for the call path. Resolves the version on first
+   * use; if no version can be resolved — detection failed, or the guard is a
+   * pass-through — it **fails open**: returns `false` (call passes through) and
+   * fires `onFailOpen` once. The unresolved state is cached, so detection is
+   * not re-attempted on every call. `ensureResolved`/`ready()` keep surfacing
+   * detection errors independently.
+   */
+  private async gatingActive(): Promise<boolean> {
+    if (this.failedOpen) return false
+    try {
+      await this.ensureResolved()
+    } catch {
+      return this.enterFailOpen()
+    }
+    if (!this.resolved) return this.enterFailOpen()
+    return true
+  }
+
+  private enterFailOpen(): false {
+    this.failedOpen = true
+    if (!this.warned) {
+      this.warned = true
+      this.onFailOpen?.()
+    }
+    return false
   }
 
   /**
