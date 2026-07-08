@@ -37,6 +37,7 @@ import {
   type XrplIntentOptions,
 } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
+import { buildOpenApiUrl, createHttpSpecSource, detectCapabilities } from "./versioning/detect.js"
 import { resolveExplicitCapabilities, VersionGuard } from "./versioning/version-guard.js"
 
 export class RippleCustody {
@@ -73,11 +74,32 @@ export class RippleCustody {
   public readonly requests: ReturnType<typeof createRequests>
 
   constructor(options: RippleCustodyClientOptions) {
-    const { authUrl, apiUrl, privateKey, publicKey, timeout, apiVersion } = options
+    const {
+      authUrl,
+      apiUrl,
+      privateKey,
+      publicKey,
+      timeout,
+      apiVersion,
+      autoDetectVersion = true,
+      openApiUrl,
+      specSource,
+    } = options
 
     // Resolve the version guard first so an unknown apiVersion fails fast,
     // before any key parsing or service construction.
-    this.guard = new VersionGuard(apiVersion ? resolveExplicitCapabilities(apiVersion) : undefined)
+    if (apiVersion) {
+      // Explicit version: validate now and gate against bundled capability data.
+      this.guard = new VersionGuard(resolveExplicitCapabilities(apiVersion))
+    } else if (autoDetectVersion) {
+      // Auto-detect: lazily fetch the live instance spec on first use.
+      const source =
+        specSource ?? createHttpSpecSource(openApiUrl ?? buildOpenApiUrl(apiUrl), timeout)
+      this.guard = VersionGuard.deferred(() => detectCapabilities(source))
+    } else {
+      // Detection disabled and no explicit version: gating off (pass-through).
+      this.guard = new VersionGuard(undefined)
+    }
 
     // Only initialize core services eagerly
     this.authService = new AuthService({ authUrl, timeout })
@@ -108,6 +130,17 @@ export class RippleCustody {
     this.policies = createPolicies(this.transport)
     this.vaults = createVaults(this.transport)
     this.requests = createRequests(this.transport)
+  }
+
+  /**
+   * Resolves the backend version/capabilities up front. Optional: when
+   * auto-detection is enabled, this otherwise happens lazily on the first API
+   * call. Await it to front-load the live-spec fetch and surface any detection
+   * error explicitly. Resolves immediately when an explicit `apiVersion` was
+   * given or auto-detection is disabled.
+   */
+  public ready(): Promise<void> {
+    return this.guard.ensureResolved()
   }
 
   // Auth namespace

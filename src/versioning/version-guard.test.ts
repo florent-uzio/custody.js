@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../models/index.js"
 import {
   resolveExplicitCapabilities,
@@ -68,6 +68,54 @@ describe("UnsupportedInVersionError", () => {
     expect(err.kind).toBe("feature")
     expect(err.appVersion).toBe("1.35.4")
     expect(err.sdkMethod).toBe("xrpl.proposeBatch")
+  })
+})
+
+describe("VersionGuard deferred (lazy) resolution", () => {
+  it("resolves once and dedupes concurrent ensureResolved calls to a single resolver invocation", async () => {
+    const resolver = vi.fn(async () => resolveExplicitCapabilities("1.35.4"))
+    const g = VersionGuard.deferred(resolver)
+
+    await Promise.all([g.ensureResolved(), g.ensureResolved(), g.ensureResolved()])
+    await g.ensureResolved()
+
+    expect(resolver).toHaveBeenCalledTimes(1)
+  })
+
+  it("checkFeature resolves then gates against the detected capabilities", async () => {
+    const g = VersionGuard.deferred(async () => resolveExplicitCapabilities("1.35.4"))
+
+    await expect(
+      g.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch"),
+    ).rejects.toBeInstanceOf(UnsupportedInVersionError)
+  })
+
+  it("checkFeature passes when the detected version has the feature", async () => {
+    const g = VersionGuard.deferred(async () => resolveExplicitCapabilities("1.35.0"))
+
+    await expect(
+      g.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch"),
+    ).resolves.toBeUndefined()
+  })
+
+  it("checkEndpoint resolves then gates against the detected capabilities", async () => {
+    const g = VersionGuard.deferred(async () => resolveExplicitCapabilities("1.35.0"))
+
+    await expect(g.checkEndpoint("GET", "/v1/providers")).rejects.toBeInstanceOf(
+      UnsupportedInVersionError,
+    )
+  })
+
+  it("surfaces resolver (detection) errors through ensureResolved, and retries afterward", async () => {
+    const resolver = vi
+      .fn<() => Promise<ReturnType<typeof resolveExplicitCapabilities>>>()
+      .mockRejectedValueOnce(new Error("spec fetch failed"))
+      .mockResolvedValueOnce(resolveExplicitCapabilities("1.35.0"))
+    const g = VersionGuard.deferred(resolver)
+
+    await expect(g.ensureResolved()).rejects.toThrow("spec fetch failed")
+    await expect(g.ensureResolved()).resolves.toBeUndefined()
+    expect(resolver).toHaveBeenCalledTimes(2)
   })
 })
 

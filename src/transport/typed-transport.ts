@@ -26,7 +26,7 @@ export class TypedTransport {
     query?: unknown,
     _config?: RequestConfig,
   ): Promise<T> {
-    this.guard.assertEndpoint("GET", url)
+    await this.guard.checkEndpoint("GET", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -49,7 +49,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
-    this.guard.assertEndpoint("POST", url)
+    await this.guard.checkEndpoint("POST", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -68,7 +68,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
-    this.guard.assertEndpoint("PUT", url)
+    await this.guard.checkEndpoint("PUT", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -87,7 +87,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
-    this.guard.assertEndpoint("PATCH", url)
+    await this.guard.checkEndpoint("PATCH", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -105,7 +105,7 @@ export class TypedTransport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
-    this.guard.assertEndpoint("DELETE", url)
+    await this.guard.checkEndpoint("DELETE", url)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)

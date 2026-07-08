@@ -56,7 +56,7 @@ export class XrplService {
     params: { Account: string; operation: Core_XrplOperation },
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
-    this.guard.assertFeature(xrplOperationSchema(params.operation.type), "xrpl.proposeIntent")
+    await this.guard.checkFeature(xrplOperationSchema(params.operation.type), "xrpl.proposeIntent")
 
     const context = await this.ports.resolveContext(params.Account, {
       domainId: options.domainId,
@@ -201,7 +201,7 @@ export class XrplService {
     payload: BatchPayloadInput,
     options: XrplIntentOptions = {},
   ): Promise<Core_ApiBatchSigningData> {
-    this.guard.assertFeature("Core_XrplOperation_Batch", "xrpl.dryRunBatch")
+    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.dryRunBatch")
     validateBatchSequencing(payload)
 
     const context = await this.ports.resolveContext(payload.Account, {
@@ -364,7 +364,7 @@ export class XrplService {
     batchSigners: Core_BatchSigner[],
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
-    this.guard.assertFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch")
+    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch")
     validateBatchSequencing(payload)
 
     const context = await this.ports.resolveContext(payload.Account, {

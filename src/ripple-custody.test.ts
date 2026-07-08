@@ -1,7 +1,9 @@
 import { generateKeyPairSync } from "node:crypto"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { CustodyError } from "./models/index.js"
 import { RippleCustody } from "./ripple-custody.js"
+import type { SpecSource } from "./versioning/detect.js"
+import { UnsupportedInVersionError } from "./versioning/version-guard.js"
 
 const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
   privateKeyEncoding: { type: "pkcs8", format: "pem" },
@@ -34,7 +36,71 @@ describe("RippleCustody apiVersion option", () => {
     expect(() => new RippleCustody({ ...creds, apiVersion: "1.35.0" })).not.toThrow()
   })
 
-  it("constructs with no apiVersion (gating disabled, pass-through)", () => {
+  it("constructs with no apiVersion (auto-detect enabled by default)", () => {
     expect(() => new RippleCustody({ ...creds })).not.toThrow()
+  })
+})
+
+describe("RippleCustody live-spec auto-detection", () => {
+  // A live spec that lacks the XRPL Batch operation type (like 1.35.4).
+  const noBatchSpec = {
+    info: { "x-app-version": "1.99.0" },
+    paths: { "/v1/intents": { post: {} } },
+    components: { schemas: { Core_XrplOperation_Payment: {} } },
+  }
+
+  const fakeSource = (spec: unknown): SpecSource => ({ fetchSpec: vi.fn(async () => spec) })
+
+  const batchPayload = { Account: "rSubmitter", executionMode: "AllOrNothing", entries: [] } as any
+
+  it("auto-detects on first call and gates xrpl.proposeBatch against the live spec", async () => {
+    const specSource = fakeSource(noBatchSpec)
+    const client = new RippleCustody({ ...creds, specSource })
+
+    await expect(client.xrpl.proposeBatch(batchPayload, [])).rejects.toBeInstanceOf(
+      UnsupportedInVersionError,
+    )
+    expect(specSource.fetchSpec).toHaveBeenCalledOnce()
+  })
+
+  it("caches detection: concurrent triggers dedupe to a single fetch", async () => {
+    const specSource = fakeSource(noBatchSpec)
+    const client = new RippleCustody({ ...creds, specSource })
+
+    await Promise.all([client.ready(), client.ready(), client.ready()])
+    await client.ready()
+
+    expect(specSource.fetchSpec).toHaveBeenCalledOnce()
+  })
+
+  it("ready() surfaces detection errors", async () => {
+    const client = new RippleCustody({
+      ...creds,
+      specSource: {
+        fetchSpec: async () => {
+          throw new Error("spec endpoint unreachable")
+        },
+      },
+    })
+
+    await expect(client.ready()).rejects.toThrow("spec endpoint unreachable")
+  })
+
+  it("autoDetectVersion: false disables detection (no fetch)", async () => {
+    const specSource = fakeSource(noBatchSpec)
+    const client = new RippleCustody({ ...creds, specSource, autoDetectVersion: false })
+
+    await client.ready()
+
+    expect(specSource.fetchSpec).not.toHaveBeenCalled()
+  })
+
+  it("an explicit apiVersion skips detection entirely", async () => {
+    const specSource = fakeSource(noBatchSpec)
+    const client = new RippleCustody({ ...creds, specSource, apiVersion: "1.35.0" })
+
+    await client.ready()
+
+    expect(specSource.fetchSpec).not.toHaveBeenCalled()
   })
 })

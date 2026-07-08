@@ -82,11 +82,72 @@ export function resolveExplicitCapabilities(apiVersion: string): ResolvedCapabil
  * check is a no-op (fail-open). The backend remains the ultimate authority.
  */
 export class VersionGuard {
-  constructor(private readonly resolved: ResolvedCapabilities | undefined) {}
+  private resolved: ResolvedCapabilities | undefined
+  private settled: boolean
+  private pending?: Promise<void>
+  private readonly resolver?: () => Promise<ResolvedCapabilities | undefined>
+
+  /**
+   * Construct a guard with capabilities already resolved (or `undefined` for a
+   * pass-through guard). Pass a `resolver` for lazy resolution, or use
+   * {@link VersionGuard.deferred}.
+   */
+  constructor(
+    resolved: ResolvedCapabilities | undefined,
+    resolver?: () => Promise<ResolvedCapabilities | undefined>,
+  ) {
+    this.resolved = resolved
+    this.resolver = resolver
+    this.settled = resolver === undefined
+  }
+
+  /**
+   * Construct a guard whose capabilities are resolved lazily on first use (e.g.
+   * by fetching the live instance spec). The resolver runs at most once per
+   * successful resolution; concurrent triggers share a single invocation.
+   */
+  static deferred(resolver: () => Promise<ResolvedCapabilities | undefined>): VersionGuard {
+    return new VersionGuard(undefined, resolver)
+  }
 
   /** Whether the guard has a resolved version and is actively gating. */
   get isActive(): boolean {
     return this.resolved !== undefined
+  }
+
+  /**
+   * Resolve the capability set if not already resolved. Idempotent and
+   * concurrency-safe: parallel calls share one in-flight resolution. On failure
+   * the error propagates and a later call retries.
+   */
+  async ensureResolved(): Promise<void> {
+    if (this.settled) return
+    if (!this.pending) {
+      const resolver = this.resolver!
+      this.pending = resolver().then(
+        (caps) => {
+          this.resolved = caps
+          this.settled = true
+        },
+        (error: unknown) => {
+          this.pending = undefined
+          throw error
+        },
+      )
+    }
+    return this.pending
+  }
+
+  /** Resolves (detecting if needed) then asserts the endpoint capability. */
+  async checkEndpoint(httpMethod: string, pathTemplate: string, sdkMethod?: string): Promise<void> {
+    await this.ensureResolved()
+    this.assertEndpoint(httpMethod, pathTemplate, sdkMethod)
+  }
+
+  /** Resolves (detecting if needed) then asserts the feature capability. */
+  async checkFeature(schemaName: string, sdkMethod: string): Promise<void> {
+    await this.ensureResolved()
+    this.assertFeature(schemaName, sdkMethod)
   }
 
   /**
