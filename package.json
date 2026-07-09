@@ -65,8 +65,8 @@
     "@vitest/ui": "^3.1.4",
     "dotenv": "^16.4.7",
     "openapi-typescript": "^7.9.1",
-    "prettier": "^3.5.3",
-    "prettier-plugin-organize-imports": "^4.1.0",
+    "prettier": "^3.9.5",
+    "prettier-plugin-organize-imports": "^4.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
     "vitest": "^3.1.4"
