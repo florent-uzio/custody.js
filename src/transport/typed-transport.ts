@@ -98,11 +98,12 @@ export class TypedTransport {
 
   /**
    * Makes a typed DELETE request.
-   * Resolves path params from the URL template before sending.
+   * Splits flat params into path and query params based on the URL template.
    */
   async delete<T>(
     url: string,
     pathParams?: Record<string, unknown>,
+    query?: unknown,
     config?: RequestConfig,
   ): Promise<T> {
     await this.guard.checkEndpoint("DELETE", url)
@@ -110,7 +111,13 @@ export class TypedTransport {
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
       resolvedUrl = result.url
+      if (result.query) {
+        query = { ...((query as Record<string, unknown>) ?? {}), ...result.query }
+      }
     }
-    return this.api.delete<T>(resolvedUrl, config as AxiosRequestConfig)
+    return this.api.delete<T>(resolvedUrl, {
+      ...(config as AxiosRequestConfig),
+      params: query as AxiosRequestConfig["params"],
+    })
   }
 }
