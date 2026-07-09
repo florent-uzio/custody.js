@@ -2668,6 +2668,474 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/domain/{domainId}/account/{accountId}/sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get sponsor configuration for an account */
+    get: operations["SponsorController_getSponsor"]
+    /** Update a sponsor configuration */
+    put: operations["SponsorController_updateSponsor"]
+    /** Create a sponsor configuration */
+    post: operations["SponsorController_createSponsor"]
+    /** Delete a sponsor configuration */
+    delete: operations["SponsorController_deleteSponsor"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List all sponsor (gas station) accounts in a domain */
+    get: operations["SponsorsController_listSponsors"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/account/{accountId}/sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Find which gas station sponsors a specific account
+     * @description Returns the sponsorship status for the given account, following the sponsorship hierarchy: 1) Domain-level sponsor for the account domain, 2) Parent domain sponsors (if includeSubDomains=true), 3) Account-level sponsor. Returns isSponsored=false if no sponsor is found.
+     */
+    get: operations["SponsorsController_getAccountSponsor"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/domain-sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Resolve domain-wide sponsorship for a domain
+     * @description Returns whether the domain is sponsored domain-wide, without requiring an account ID. Resolution follows the sponsorship hierarchy: 1) Domain-level sponsor for the domain itself, 2) Parent domain sponsors that have includeSubDomains=true. Account-level sponsorships are NOT considered. Returns isSponsored=false if no domain-wide sponsor is found.
+     */
+    get: operations["SponsorsController_getDomainSponsor"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/sponsored-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List accounts in a domain with their sponsorship status
+     * @description Returns all accounts within the domain along with whether each account is currently sponsored by a Gas Station.
+     */
+    get: operations["SponsorsController_listSponsoredAccounts"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/sponsored-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List sub-domains in a domain with their sponsorship status
+     * @description Returns all sub-domains within the domain along with whether each sub-domain is currently sponsored by a Gas Station.
+     */
+    get: operations["SponsorsController_listSponsoredDomains"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsorable-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List sponsorable domains */
+    get: operations["SponsorListController_getSponsorableDomains"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsored-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Add sponsored domains */
+    post: operations["SponsorListController_addSponsoredDomains"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsorable-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List sponsorable accounts */
+    get: operations["SponsorListController_getSponsorableAccounts"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Add sponsored accounts */
+    post: operations["SponsorListController_addSponsoredAccounts"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsor/events": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get audit events for sponsorship configuration changes */
+    get: operations["EventController_getEvents"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/health": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Liveness check */
+    get: operations["HealthController_liveness"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/ready": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readiness check */
+    get: operations["HealthController_readiness"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get the omnibus structure for a domain */
+    get: operations["getOmnibus"]
+    /** Update an omnibus structure */
+    put: operations["updateOmnibus"]
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get a tenant by ID */
+    get: operations["getTenant"]
+    /** Update a tenant */
+    put: operations["updateTenant"]
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get the omnibus structure for a domain */
+    get: operations["getOmnibusByDomain"]
+    put?: never
+    /** Create a new omnibus structure within a domain */
+    post: operations["createOmnibus"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/unlock": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Unlock an omnibus structure */
+    post: operations["unlockOmnibus"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List all tenants within an omnibus structure */
+    get: operations["listTenants"]
+    put?: never
+    /** Create a new tenant within an omnibus structure */
+    post: operations["createTenant"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/withdrawals": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Initiate a withdrawal from a tenant to an external destination address
+     * @description Validates balance, reserves funds, dry-runs a CreateTransactionOrder intent on Custody, and returns an unsigned intent payload. The frontend signs the payload and submits it directly to Custody POST /v1/intents. The backend tracks confirmation asynchronously via a Temporal workflow keyed by the generated transactionOrderId.
+     */
+    post: operations["createWithdrawal"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/unlock": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Unlock a tenant */
+    post: operations["unlockTenant"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/lock": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Lock a tenant */
+    post: operations["lockTenant"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/internal-transfers": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Transfer funds between two tenants within the same omnibus
+     * @description Moves an amount from a source tenant to a destination tenant within the same omnibus by recording a cross-account entry in the Accounting service. Synchronous: blocks on a Temporal workflow (~25s timeout) that validates, reserves, posts to Accounting, and finalizes. See `InternalTransferStatus` for the meaning of each terminal status.
+     */
+    post: operations["createInternalTransfer"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/deposit-wallet": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get deposit wallet status and addresses for a tenant */
+    get: operations["getDepositWallet"]
+    put?: never
+    /** Create a deposit wallet for a tenant on first request */
+    post: operations["createDepositWallet"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/lock": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Lock an omnibus structure */
+    post: operations["lockOmnibus"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List internal transfers for an omnibus (paginated) */
+    get: operations["getInternalTransfers"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/deposit-wallets": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List deposit wallets for an omnibus (paginated) */
+    get: operations["listDepositWallets"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -10531,6 +10999,728 @@ export interface components {
        */
       type: "v0_RegisterTrustedPublicKey"
     }
+    GasStation_AlertLimitDto: {
+      /** @description Ticker/token UUID */
+      tickerId: string
+      /** @description Alert threshold amount */
+      amount: string
+    }
+    GasStation_BalanceStatusDto: {
+      /** @description Ticker UUID */
+      tickerId: string
+      /** @description Ticker symbol for display (e.g., SOL, ETH, XRP) */
+      tickerSymbol: string
+      /** @description Configured alert threshold amount */
+      threshold: string
+      /** @description Current balance from Core */
+      currentBalance: string
+      /**
+       * @description Balance status: critical if currentBalance <= threshold
+       * @enum {string}
+       */
+      status: "healthy" | "critical"
+    }
+    GasStation_SponsorResponseDto: {
+      type: string
+      accountIds: string[]
+      includeSubDomains: boolean
+      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description Balance status per configured alert. Omitted if balance fetch fails. */
+      balanceStatus?: components["schemas"]["GasStation_BalanceStatusDto"][]
+      /** @description Number of tickers in critical status. Omitted if balance fetch fails. */
+      criticalCount?: number
+    }
+    GasStation_CreateSponsorDto: {
+      /**
+       * @description Type of sponsorship
+       * @enum {string}
+       */
+      type: "domain" | "account" | "none"
+      /** @description Array of account UUIDs to sponsor */
+      accountIds?: string[]
+      /**
+       * @description Include subdomains in sponsorship
+       * @default false
+       */
+      includeSubDomains: boolean
+      /** @description Alert thresholds per ticker */
+      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description UUID of the user performing the action; recorded on the audit trail. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_SponsorCreatedResponseDto: {
+      id: string
+      status: string
+      createdAt: string
+    }
+    GasStation_UpdateSponsorDto: {
+      /**
+       * @description Type of sponsorship
+       * @enum {string}
+       */
+      type: "domain" | "account" | "none"
+      /** @description Array of account UUIDs to sponsor */
+      accountIds?: string[]
+      /**
+       * @description Include subdomains in sponsorship
+       * @default false
+       */
+      includeSubDomains: boolean
+      /** @description Alert thresholds per ticker */
+      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description UUID of the user performing the action; recorded on the audit trail. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_SponsorsListResponseDto: {
+      /** @description List of gas station account IDs in the domain */
+      items: string[]
+    }
+    GasStation_AccountSponsorResponseDto: {
+      /** @description Whether the account is sponsored by a gas station */
+      isSponsored: boolean
+      /** @description Gas station account ID that is sponsoring */
+      sponsorAccountId?: string
+      /** @enum {string} */
+      type?: "domain" | "account" | "none"
+      accountIds?: string[]
+      includeSubDomains?: boolean
+      alertLimit?: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description Balance status per configured alert. Omitted if balance fetch fails. */
+      balanceStatus?: components["schemas"]["GasStation_BalanceStatusDto"][]
+      /** @description Number of tickers in critical status. Omitted if balance fetch fails. */
+      criticalCount?: number
+    }
+    GasStation_DomainSponsorResponseDto: {
+      /** @description Whether the domain is sponsored domain-wide by a gas station */
+      isSponsored: boolean
+      /** @description Gas station account ID that is sponsoring */
+      sponsorAccountId?: string
+      /** @enum {string} */
+      type?: "domain"
+      /** @description Whether the resolving sponsor extends to sub-domains */
+      includeSubDomains?: boolean
+    }
+    GasStation_SponsoredEntityDto: {
+      /**
+       * Format: uuid
+       * @description Entity ID (Account or Domain UUID)
+       */
+      id: string
+      /** @description Entity display name/alias */
+      alias: string
+      /** @description Whether the entity is sponsored by a Gas Station */
+      isSponsored: boolean
+      /** @description Domain hierarchy from root to entity (for Lineage column) */
+      path: string[]
+    }
+    GasStation_SponsoredEntitiesResponseDto: {
+      /** @description List of sponsored entities */
+      items: components["schemas"]["GasStation_SponsoredEntityDto"][]
+      /** @description Total count of items in current page */
+      count: number
+      /** @description Current pagination cursor */
+      currentStartingAfter?: string
+      /** @description Next pagination cursor for fetching more items */
+      nextStartingAfter?: string
+    }
+    GasStation_LedgerDto: {
+      id: string
+      alias: string
+    }
+    GasStation_SponsorshipDetailsDto: {
+      /** @description The sponsoring gas station account ID */
+      sponsorAccountId: string
+      /** @description The sponsoring gas station account name */
+      sponsorAccountName: string
+      /**
+       * @description How this was sponsored
+       * @enum {string}
+       */
+      sponsorType: "account" | "domain"
+      /** @description If sponsored via domain, the domain ID */
+      sponsoredDomainId?: string
+      /** @description If sponsored via domain, the domain name */
+      sponsoredDomainName?: string
+    }
+    GasStation_SponsorableDomainDto: {
+      /** @description Domain UUID */
+      domainId: string
+      /** @description Domain name */
+      name: string
+      ledgers: components["schemas"]["GasStation_LedgerDto"][]
+      /** @enum {string} */
+      sponsorshipStatus: "sponsored" | "not_sponsored" | "sponsored_by_other"
+      /** @description Only present if sponsored by another gas station */
+      sponsorshipDetails?: components["schemas"]["GasStation_SponsorshipDetailsDto"]
+      /** @description Account IDs within this domain */
+      accountIds: string[]
+      /** @description Parent domain UUID, null only for absolute root (typically filtered out) */
+      parentId?: Record<string, never>
+      /** @description Nesting depth relative to sponsor domain (0 = direct child of sponsor domain) */
+      depth: number
+      /** @description Whether any accounts in this domain are individually sponsored by another gas station */
+      hasAccountsSponsoredByOther: boolean
+      /** @description Nested subdomains (hierarchical) */
+      children: components["schemas"]["GasStation_SponsorableDomainDto"][]
+    }
+    GasStation_SponsorableDomainsResponseDto: {
+      items: components["schemas"]["GasStation_SponsorableDomainDto"][]
+      total: number
+      /** @description Current page number (0-indexed) */
+      page: number
+      /** @description Page size */
+      pageSize: number
+      /** @description All available ledgers for filter dropdown */
+      availableLedgers: components["schemas"]["GasStation_LedgerDto"][]
+    }
+    GasStation_DomainIdentifierDto: {
+      /** @description Domain ID to sponsor */
+      domainId: string
+    }
+    GasStation_AddSponsoredDomainsDto: {
+      domains: components["schemas"]["GasStation_DomainIdentifierDto"][]
+      /** @description UUID of the user performing the action. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_ConflictEntityDto: {
+      /** @description Account ID that conflicted (for account conflicts) */
+      accountId?: string
+      /** @description Domain ID of the conflicting entity */
+      domainId: string
+      /**
+       * @description Reason for the conflict
+       * @example ALREADY_SPONSORED
+       * @enum {string}
+       */
+      reason: "ALREADY_SPONSORED"
+      /** @description Account ID of the existing sponsor */
+      existingSponsorAccountId: string
+    }
+    GasStation_SponsoredModificationResponseDto: {
+      /** @description Whether the operation completed (true even for partial success) */
+      success: boolean
+      /** @description Number of entities successfully added */
+      count: number
+      /** @description Entities that could not be added due to conflicts */
+      conflicts?: components["schemas"]["GasStation_ConflictEntityDto"][]
+    }
+    GasStation_LineageDto: {
+      /** @description Parent domain ID */
+      domainId: string
+      /** @description Parent domain name */
+      domain: string
+      /** @description Subdomain ID */
+      subdomainId: string
+      /** @description Subdomain name */
+      subdomain: string
+    }
+    GasStation_SponsorableAccountDto: {
+      /** @description Account UUID */
+      accountId: string
+      /** @description Account name */
+      name: string
+      /** @description Domain lineage (parent domain and subdomain) */
+      lineage: components["schemas"]["GasStation_LineageDto"]
+      ledgers: components["schemas"]["GasStation_LedgerDto"][]
+      /** @enum {string} */
+      sponsorshipStatus: "sponsored" | "not_sponsored" | "sponsored_by_other"
+      /** @description Only present if sponsored by another gas station */
+      sponsorshipDetails?: components["schemas"]["GasStation_SponsorshipDetailsDto"]
+    }
+    GasStation_SponsorableAccountsResponseDto: {
+      items: components["schemas"]["GasStation_SponsorableAccountDto"][]
+      total: number
+      /** @description Current page number (0-indexed) */
+      page: number
+      /** @description Page size */
+      pageSize: number
+      /** @description All available ledgers for filter dropdown */
+      availableLedgers: components["schemas"]["GasStation_LedgerDto"][]
+    }
+    GasStation_AccountIdentifierDto: {
+      /** @description Account ID to sponsor */
+      accountId: string
+      /** @description Domain ID of the account */
+      domainId: string
+    }
+    GasStation_AddSponsoredAccountsDto: {
+      accounts: components["schemas"]["GasStation_AccountIdentifierDto"][]
+      /** @description UUID of the user performing the action. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_AuditEventDto: {
+      id: string
+      /** @enum {string} */
+      eventType: "CREATE" | "UPDATE" | "DELETE"
+      accountId: string
+      domainId: string
+      /** @description Sponsor configuration snapshot at the time of the event */
+      payload: Record<string, never>
+      timestamp: string
+    }
+    GasStation_EventsResponseDto: {
+      items: components["schemas"]["GasStation_AuditEventDto"][]
+      count: number
+      currentStartingAfter?: string
+      nextStartingAfter?: string
+    }
+    Omnibus_OmnibusResponse: {
+      /**
+       * Format: uuid
+       * @description Unique identifier of the omnibus structure
+       */
+      id: string
+      /**
+       * Format: uuid
+       * @description Identifier of the domain this omnibus structure belongs to
+       */
+      domainId: string
+      /**
+       * Format: uuid
+       * @description Identifier of the custody account backing this omnibus structure
+       */
+      custodyAccountId: string
+      /** @description Alias of the omnibus structure */
+      alias: string
+      /** @enum {string} */
+      status: "CREATING" | "PENDING_SPONSORSHIP" | "UNLOCKED" | "LOCKED" | "FAILED"
+      /** @description List of custody account IDs to ignore during event processing */
+      ignoredAccountIds: string[]
+      /**
+       * Format: date-time
+       * @description Timestamp when the omnibus structure was created
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Timestamp when the omnibus structure was last updated
+       */
+      updatedAt: string
+      /**
+       * Format: uuid
+       * @description Entity ID of the Gas Station account that sponsors fees for this omnibus account
+       */
+      sponsoringGasStationId?: string
+      /** @description Balances of the host tenant per ticker/ledger combination */
+      balances?: components["schemas"]["Omnibus_TenantBalanceEntry"][]
+    }
+    Omnibus_TenantBalanceEntry: {
+      /**
+       * Format: uuid
+       * @description Ticker identifier
+       */
+      tickerId: string
+      /** @description Ledger identifier */
+      ledgerId: string
+      /** @description Reserved amount */
+      reserved: string
+      /** @description Quarantined amount */
+      quarantined: string
+      /** @description Available balance from accounting service; absent if the accounting service is unavailable */
+      availableBalance?: string
+    }
+    Omnibus_UpdateOmnibusRequest: {
+      /**
+       * Format: uuid
+       * @description Entity ID of the Gas Station account that will sponsor fees for this omnibus account
+       */
+      sponsoringGasStationId: string
+    }
+    Omnibus_TenantCustomProperty: {
+      /** @description Property key */
+      key: string
+      /** @description Property value */
+      value: string
+    }
+    Omnibus_TenantResponse: {
+      /**
+       * Format: uuid
+       * @description Unique identifier of the tenant
+       */
+      id: string
+      /**
+       * Format: uuid
+       * @description Identifier of the omnibus structure this tenant belongs to
+       */
+      omnibusId: string
+      /** @description Alias of the tenant */
+      alias: string
+      /** @description Whether this tenant is the host tenant of the omnibus structure. This field is immutable and set at creation time. */
+      isHost: boolean
+      /** @enum {string} */
+      status: "LOCKED" | "UNLOCKED"
+      /**
+       * Format: date-time
+       * @description Timestamp when the tenant was created
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Timestamp when the tenant was last updated
+       */
+      updatedAt: string
+      /** @description Balances per ticker/ledger combination */
+      balances?: components["schemas"]["Omnibus_TenantBalanceEntry"][]
+      /** @description Description of the tenant */
+      description?: string
+      /** @description Custom key-value properties */
+      customProperties?: components["schemas"]["Omnibus_TenantCustomProperty"][]
+    }
+    Omnibus_CreateOrUpdateTenantRequest: {
+      /** @description Alias for the tenant within the omnibus structure */
+      alias: string
+      /** @description Optional description for the tenant (max 250 characters) */
+      description?: string
+      /** @enum {string} */
+      status?: "LOCKED" | "UNLOCKED"
+      customProperties?: components["schemas"]["Omnibus_JsonNullableListTenantCustomProperty"]
+    }
+    Omnibus_JsonNullableListTenantCustomProperty: {
+      present?: boolean
+    }
+    Omnibus_CreateOmnibusResponse: {
+      omnibus: components["schemas"]["Omnibus_OmnibusResponse"]
+      unsignedIntent: components["schemas"]["Omnibus_UnsignedIntentPayload"]
+    }
+    /** @description Complete Propose object ready to be signed and submitted to Custody via POST /v1/intents. The frontend signs this object and sends it as the "request" field in ProposeIntentBody.  */
+    Omnibus_UnsignedIntentPayload: {
+      /**
+       * @description Intent type, always "Propose"
+       * @enum {string}
+       */
+      type: "Propose"
+      /**
+       * Format: uuid
+       * @description Unique identifier for the intent
+       */
+      id: string
+      author: components["schemas"]["Omnibus_UnsignedIntentPayload_author"]
+      /**
+       * Format: date-time
+       * @description Expiry time for the intent
+       */
+      expiryAt: string
+      /**
+       * Format: uuid
+       * @description Domain where the intent will be executed
+       */
+      targetDomainId: string
+      /** @description The intent payload */
+      payload: unknown
+      /** @description Description of the intent */
+      description?: string
+      /** @description Intent-level custom properties */
+      customProperties: {
+        [key: string]: string
+      }
+    }
+    /** @description The user proposing the intent */
+    Omnibus_UnsignedIntentPayload_author: {
+      /** Format: uuid */
+      domainId: string
+      /** Format: uuid */
+      id: string
+    }
+    Omnibus_CreateOmnibusRequest: {
+      /** @description Alias for the omnibus account */
+      alias: string
+      /**
+       * Format: uuid
+       * @description Identifier of the vault where the omnibus account keys will be stored
+       */
+      vaultId: string
+      /** @enum {string} */
+      keyStrategy: "VaultHard" | "VaultSoft" | "Random"
+      /** @enum {string} */
+      lockStatus?: "Unlocked" | "Locked"
+      /** @description List of ledger IDs to activate on the omnibus account. If omitted, all enabled ledgers compatible with the vault and key strategy are activated automatically. */
+      ledgerIds?: string[]
+      /** @description Optional description for the omnibus account */
+      description?: string
+      /** @description Custom key-value properties for the omnibus account */
+      customProperties?: {
+        [key: string]: string
+      }
+      /** @description List of custody account IDs to ignore during event processing (e.g., Gas Station account) */
+      ignoredAccountIds?: string[]
+      /**
+       * Format: uuid
+       * @description Entity ID of the Gas Station account that will sponsor fees for this omnibus account.
+       */
+      sponsoringGasStationId?: string
+    }
+    Omnibus_CreateWithdrawalResponse: {
+      withdrawal: components["schemas"]["Omnibus_WithdrawalResponse"]
+      unsignedIntent: components["schemas"]["Omnibus_UnsignedIntentPayload"]
+    }
+    Omnibus_WithdrawalResponse: {
+      /**
+       * Format: uuid
+       * @description Operation ID for the withdrawal
+       */
+      operationId: string
+      /**
+       * Format: uuid
+       * @description Transfer ID for the on-chain movement
+       */
+      transferId: string
+      /** @enum {string} */
+      status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED"
+      /** @description Positive integer in the ticker's smallest unit */
+      amount: string
+      /** Format: uuid */
+      tickerId: string
+      ledgerId: string
+      /** @description External destination address */
+      destAddress: string
+      /** @description Estimated on-chain fee captured at dry-run time */
+      estimatedFee?: string
+      /**
+       * Format: uuid
+       * @description Custody TransactionOrder ID generated for this withdrawal
+       */
+      custodyTransactionOrderId?: string
+      /**
+       * Format: date-time
+       * @description Timestamp of the underlying operation row creation
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Timestamp of the last status change on the underlying operation
+       */
+      updatedAt: string
+    }
+    Omnibus_CreateWithdrawalRequest: {
+      /** @description Positive integer in the ticker's smallest unit (e.g., wei for ETH, satoshis for BTC, drops for XRP). No leading zeros; zero is not allowed.  */
+      amount: string
+      /**
+       * Format: uuid
+       * @description Identifier of the ticker to withdraw
+       */
+      tickerId: string
+      /** @description Identifier of the blockchain ledger to broadcast on */
+      ledgerId: string
+      /** @description External destination address. Must be outside this omnibus. */
+      destAddress: string
+    }
+    Omnibus_InternalTransferResponse: {
+      /**
+       * Format: uuid
+       * @description Operation ID for this internal transfer
+       */
+      operationId: string
+      /**
+       * Format: uuid
+       * @description Transfer ID for this movement
+       */
+      transferId: string
+      /** @enum {string} */
+      status: "COMPLETED" | "FAILED" | "PENDING_VERIFICATION"
+      /**
+       * Format: uuid
+       * @description Source tenant (debited)
+       */
+      sourceTenantId: string
+      /**
+       * Format: uuid
+       * @description Destination tenant (credited)
+       */
+      destTenantId: string
+      /** @description Positive integer in the ticker's smallest unit */
+      amount: string
+      /** Format: uuid */
+      tickerId: string
+      ledgerId: string
+    }
+    Omnibus_CreateInternalTransferRequest: {
+      /**
+       * Format: uuid
+       * @description Destination tenant ID (funds are credited to this tenant)
+       */
+      destTenantId: string
+      /** @description Positive integer in the ticker's smallest unit (e.g., wei for ETH, satoshis for BTC, drops for XRP). No leading zeros; zero is not allowed.  */
+      amount: string
+      /**
+       * Format: uuid
+       * @description Identifier of the ticker to transfer
+       */
+      tickerId: string
+      /** @description Identifier of the blockchain ledger; must match on both source and destination */
+      ledgerId: string
+    }
+    Omnibus_DepositAddress: {
+      /** @description Identifier of the blockchain ledger */
+      ledgerId: string
+      /** @description Blockchain address for receiving deposits */
+      address: string
+    }
+    Omnibus_DepositWalletResponse: {
+      /**
+       * Format: uuid
+       * @description Unique identifier of the deposit wallet
+       */
+      depositWalletId: string
+      /**
+       * Format: uuid
+       * @description Identifier of the custody account backing this deposit wallet
+       */
+      custodyAccountId: string
+      /** @enum {string} */
+      status: "CREATING" | "ACTIVE" | "INACTIVE"
+      /** @description List of deposit addresses, one per ledger. Empty when status is CREATING. */
+      addresses: components["schemas"]["Omnibus_DepositAddress"][]
+    }
+    /** @description Pagination metadata for tenant listings. Unlike the shared PageMetadata, totalElements/totalPages are optional: the alias-search path uses a cursor-style (Slice) query that does not compute totals, while the full-list path still populates them. */
+    Omnibus_TenantPageMetadata: {
+      /**
+       * Format: int32
+       * @description Current page number (0-indexed)
+       */
+      number: number
+      /**
+       * Format: int32
+       * @description Number of elements per page
+       */
+      size: number
+      /**
+       * Format: int32
+       * @description Total number of elements across all pages. Absent for cursor-style (Slice) responses such as alias search, where totals are not computed.
+       */
+      totalElements?: number
+      /**
+       * Format: int32
+       * @description Total number of pages. Absent for cursor-style (Slice) responses such as alias search, where totals are not computed.
+       */
+      totalPages?: number
+      /** @description Whether this is the first page */
+      first: boolean
+      /** @description Whether this is the last page */
+      last: boolean
+    }
+    Omnibus_TenantPageResponse: {
+      content: components["schemas"]["Omnibus_TenantResponse"][]
+      page: components["schemas"]["Omnibus_TenantPageMetadata"]
+    }
+    Omnibus_InternalTransferPageResponse: {
+      content: components["schemas"]["Omnibus_InternalTransferSummary"][]
+      page: components["schemas"]["Omnibus_PageMetadata"]
+    }
+    Omnibus_InternalTransferSummary: {
+      /**
+       * Format: uuid
+       * @description Operation ID for this internal transfer
+       */
+      operationId: string
+      /**
+       * Format: uuid
+       * @description Transfer ID for this movement
+       */
+      transferId: string
+      /** @enum {string} */
+      status:
+        | "PENDING"
+        | "IN_PROGRESS"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "PENDING_VERIFICATION"
+      sourceTenant: components["schemas"]["Omnibus_TenantRef"]
+      destTenant: components["schemas"]["Omnibus_TenantRef"]
+      /** @description Transfer amount in the ticker's smallest unit (positive integer string) */
+      amount: string
+      /**
+       * Format: uuid
+       * @description Ticker identifier
+       */
+      tickerId: string
+      /** @description Blockchain ledger identifier */
+      ledgerId: string
+      /** @description Always "0" for internal transfers */
+      feeAmount: string
+      /**
+       * Format: date-time
+       * @description Timestamp when the transfer was confirmed on-chain; absent until COMPLETED
+       */
+      confirmedAt?: string
+      /**
+       * Format: date-time
+       * @description Timestamp when the operation was created
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Timestamp of the last status change on the underlying operation
+       */
+      updatedAt: string
+    }
+    Omnibus_PageMetadata: {
+      /**
+       * Format: int32
+       * @description Current page number (0-indexed)
+       */
+      number: number
+      /**
+       * Format: int32
+       * @description Number of elements per page
+       */
+      size: number
+      /**
+       * Format: int32
+       * @description Total number of elements across all pages
+       */
+      totalElements: number
+      /**
+       * Format: int32
+       * @description Total number of pages
+       */
+      totalPages: number
+      /** @description Whether this is the first page */
+      first: boolean
+      /** @description Whether this is the last page */
+      last: boolean
+    }
+    Omnibus_TenantRef: {
+      /** Format: uuid */
+      id: string
+      alias: string
+      isHost: boolean
+    }
+    Omnibus_DepositWalletSummary: {
+      /**
+       * Format: uuid
+       * @description Internal deposit wallet identifier
+       */
+      id: string
+      /**
+       * Format: uuid
+       * @description Custody account backing this deposit wallet
+       */
+      custodyAccountId: string
+      /**
+       * Format: uuid
+       * @description Tenant that owns this deposit wallet
+       */
+      tenantId: string
+      /** @description Owning tenant's alias (for display/search) */
+      alias: string
+      /** @enum {string} */
+      status: "CREATING" | "ACTIVE" | "INACTIVE"
+      /**
+       * Format: uuid
+       * @description Omnibus structure this deposit wallet belongs to
+       */
+      omnibusId: string
+    }
+    Omnibus_DepositWalletSummaryPageResponse: {
+      /** @description Deposit wallet summaries in this page */
+      content: components["schemas"]["Omnibus_DepositWalletSummary"][]
+      page: components["schemas"]["Omnibus_PageMetadata"]
+    }
+    Omnibus_HelloWorldResponse: {
+      /** @description Dummy response */
+      message: string
+    }
     Core_ApiBatchSigningData: {
       /** @description Hex encoded string. */
       signingPayload: string
@@ -17172,6 +18362,1413 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+    }
+  }
+  SponsorController_getSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsor configuration */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_updateSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_UpdateSponsorDto"]
+      }
+    }
+    responses: {
+      /** @description Sponsor updated */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
+        }
+      }
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_createSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_CreateSponsorDto"]
+      }
+    }
+    responses: {
+      /** @description Sponsor created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorCreatedResponseDto"]
+        }
+      }
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor already exists */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_deleteSponsor: {
+    parameters: {
+      query: {
+        userId: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsor deleted */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorsController_listSponsors: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsors for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of sponsor account IDs */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorsListResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_getAccountSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID of the account to check */
+        domainId: string
+        /** @description Account ID to find the sponsor for */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsorship status returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_AccountSponsorResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_getDomainSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID to resolve domain-wide sponsorship for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Domain-wide sponsorship status returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_DomainSponsorResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_listSponsoredAccounts: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items per page */
+        limit?: number
+        /** @description Cursor for pagination - returns items after this ID */
+        startingAfter?: string
+        /** @description Field to sort by */
+        sortBy?: string
+        /** @description Sort direction */
+        sortOrder?: "asc" | "desc"
+        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
+        sponsorAccountId?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsored accounts for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of accounts with sponsorship status */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
+        }
+      }
+      /** @description Database error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description External service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorsController_listSponsoredDomains: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items per page */
+        limit?: number
+        /** @description Cursor for pagination - returns items after this ID */
+        startingAfter?: string
+        /** @description Field to sort by */
+        sortBy?: string
+        /** @description Sort direction */
+        sortOrder?: "asc" | "desc"
+        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
+        sponsorAccountId?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsored sub-domains for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of sub-domains with sponsorship status */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
+        }
+      }
+      /** @description Database error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description External service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_getSponsorableDomains: {
+    parameters: {
+      query?: {
+        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
+        search?: string
+        limit?: number
+        /** @description Page number (0-indexed) */
+        page?: number
+      }
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorableDomainsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorListController_addSponsoredDomains: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_AddSponsoredDomainsDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_getSponsorableAccounts: {
+    parameters: {
+      query?: {
+        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
+        search?: string
+        limit?: number
+        /** @description Page number (0-indexed) */
+        page?: number
+      }
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorableAccountsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorListController_addSponsoredAccounts: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_AddSponsoredAccountsDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  EventController_getEvents: {
+    parameters: {
+      query?: {
+        /** @description Filter by account ID */
+        accountId?: string
+        /** @description Filter by start date (ISO 8601) */
+        startDate?: string
+        /** @description Filter by end date (ISO 8601) */
+        endDate?: string
+        /** @description Filter by event type */
+        eventType?: "CREATE" | "UPDATE" | "DELETE"
+        limit?: number
+        /** @description Cursor for pagination */
+        startingAfter?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Audit events */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_EventsResponseDto"]
+        }
+      }
+      /** @description Invalid query parameters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  HealthController_liveness: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The Health Check is successful */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example ok */
+            status?: string
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     } */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     } */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+      /** @description The Health Check is not successful */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example error */
+            status?: string
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     } */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /** @example {
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     } */
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       },
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     } */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  HealthController_readiness: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The Health Check is successful */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example ok */
+            status?: string
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     } */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     } */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+      /** @description The Health Check is not successful */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example error */
+            status?: string
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     } */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /** @example {
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     } */
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /** @example {
+             *       "database": {
+             *         "status": "up"
+             *       },
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     } */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  getOmnibus: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+      /** @description Omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+    }
+  }
+  updateOmnibus: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Omnibus_UpdateOmnibusRequest"]
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+      /** @description Omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+    }
+  }
+  getTenant: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+      /** @description Tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+    }
+  }
+  updateTenant: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Omnibus_CreateOrUpdateTenantRequest"]
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+      /** @description Tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+    }
+  }
+  getOmnibusByDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+      /** @description Omnibus structure not found for this domain */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+    }
+  }
+  createOmnibus: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Omnibus_CreateOmnibusRequest"]
+      }
+    }
+    responses: {
+      /** @description Omnibus structure created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_CreateOmnibusResponse"]
+        }
+      }
+      /** @description Intent dry-run validation failed */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_CreateOmnibusResponse"]
+        }
+      }
+      /** @description An omnibus structure already exists for this domain */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_CreateOmnibusResponse"]
+        }
+      }
+    }
+  }
+  unlockOmnibus: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+      /** @description Omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+    }
+  }
+  listTenants: {
+    parameters: {
+      query?: {
+        page?: number
+        size?: number
+        /** @description Case-insensitive substring match on tenant alias. Terms shorter than 3 characters return an empty page (the trigram index cannot serve them). */
+        search?: string
+        /** @description Filter tenants by status. Absent means no status filtering. */
+        status?: "LOCKED" | "UNLOCKED"
+      }
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantPageResponse"]
+        }
+      }
+      /** @description Domain or omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantPageResponse"]
+        }
+      }
+    }
+  }
+  createTenant: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Omnibus_CreateOrUpdateTenantRequest"]
+      }
+    }
+    responses: {
+      /** @description Tenant created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+      /** @description Domain or omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+      /** @description Omnibus structure is not in UNLOCKED status */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+    }
+  }
+  createWithdrawal: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Omnibus_CreateWithdrawalRequest"]
+      }
+    }
+    responses: {
+      /** @description Withdrawal initiated; reservation taken; unsigned intent returned */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_CreateWithdrawalResponse"]
+        }
+      }
+      /** @description Intent dry-run validation failed or invalid request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_CreateWithdrawalResponse"]
+        }
+      }
+      /** @description Domain, omnibus, or tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_CreateWithdrawalResponse"]
+        }
+      }
+      /** @description Omnibus or tenant is not UNLOCKED, or insufficient available balance */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_CreateWithdrawalResponse"]
+        }
+      }
+    }
+  }
+  unlockTenant: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+      /** @description Tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+    }
+  }
+  lockTenant: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+      /** @description Tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_TenantResponse"]
+        }
+      }
+    }
+  }
+  createInternalTransfer: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Omnibus_CreateInternalTransferRequest"]
+      }
+    }
+    responses: {
+      /** @description Internal transfer processed; status in response body (COMPLETED, FAILED, or PENDING_VERIFICATION) */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+      /** @description Invalid request (e.g. source equals destination, malformed body) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+      /** @description Omnibus, source tenant, or destination tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+      /** @description Omnibus or a tenant is not UNLOCKED, insufficient available balance, or concurrent reservation conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+      /** @description Unexpected server error (e.g. database failure, unrecognised workflow failure) */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+    }
+  }
+  getDepositWallet: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_DepositWalletResponse"]
+        }
+      }
+      /** @description Tenant or deposit wallet not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_DepositWalletResponse"]
+        }
+      }
+    }
+  }
+  createDepositWallet: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        tenantId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Deposit wallet already exists */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_DepositWalletResponse"]
+        }
+      }
+      /** @description Deposit wallet created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_DepositWalletResponse"]
+        }
+      }
+      /** @description Tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_DepositWalletResponse"]
+        }
+      }
+    }
+  }
+  lockOmnibus: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+      /** @description Omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusResponse"]
+        }
+      }
+    }
+  }
+  getInternalTransfers: {
+    parameters: {
+      query?: {
+        page?: number
+        size?: number
+        tenantId?: string
+        /** @description Restrict tenantId filter to SOURCE or DEST role; requires tenantId */
+        role?: "SOURCE" | "DEST"
+        status?: (
+          | "PENDING"
+          | "IN_PROGRESS"
+          | "COMPLETED"
+          | "FAILED"
+          | "CANCELLED"
+          | "PENDING_VERIFICATION"
+        )[]
+        tickerId?: string
+        /** @description Filter by one or more ledgers (OR semantics). */
+        ledgerIds?: string[]
+        createdAfter?: string
+        createdBefore?: string
+        sort?: string
+      }
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferPageResponse"]
+        }
+      }
+      /** @description Invalid request parameters (e.g. role supplied without tenantId) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferPageResponse"]
+        }
+      }
+      /** @description Omnibus not found, or tenantId supplied and tenant not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferPageResponse"]
+        }
+      }
+    }
+  }
+  listDepositWallets: {
+    parameters: {
+      query?: {
+        page?: number
+        size?: number
+        /** @description Case-insensitive substring match on the owning tenant's alias. Terms shorter than 3 characters return an empty page (the trigram index cannot serve them). */
+        search?: string
+        /** @description Restricts results to wallets whose custodyAccountId is in this list. Combines with other filters (AND semantics). An empty list is treated as absent. */
+        custodyAccountIds?: string[]
+      }
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_DepositWalletSummaryPageResponse"]
+        }
+      }
+      /** @description Omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_DepositWalletSummaryPageResponse"]
         }
       }
     }

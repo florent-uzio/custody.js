@@ -4,7 +4,7 @@
 
 Multi-version support (foundation): generate the SDK's types from **all** bundled OpenAPI specs in `openapi/` as one superset type universe, and emit per-version capability data for an upcoming runtime version guard.
 
-- Types now cover endpoints and schemas from every bundled backend version — XRPL Batch (1.35.0), the provider/deposit endpoints unique to 1.35.4, and system-signed intents (`Core_IntentBody`, `Core_IntentAuthor`, `GET /v1/system-signing/info`) introduced in 1.36.0 — merged by structural union so nothing any version defines is dropped.
+- Types now cover endpoints and schemas from every bundled backend version — XRPL Batch (1.35.0), the provider/deposit endpoints unique to 1.35.4, system-signed intents (`Core_IntentBody`, `Core_IntentAuthor`, `GET /v1/system-signing/info`) introduced in 1.36.0, gas-station sponsorship (`/v1/domain/{domainId}/sponsors/*`, sponsor/sponsorable/sponsored account and domain endpoints) introduced in 1.36.1, and omnibus accounts (`/v1/domains/{domainId}/omnibus/*`, tenants, deposit wallets, internal transfers, lock/unlock) introduced in 1.36.2 — merged by structural union so nothing any version defines is dropped.
 - `accounts.findByAddress` now returns only `AccountAddressReference` matches, discriminating against the newly-typed `DepositInstructionsReference` a 1.35.4 instance can return.
 
 New `apiVersion` client option pins the SDK to a specific backend version and enables **runtime capability gating**:
