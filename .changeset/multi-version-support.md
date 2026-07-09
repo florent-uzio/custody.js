@@ -8,6 +8,13 @@ Multi-version support (foundation): generate the SDK's types from **all** bundle
 - `accounts.findByAddress` now returns only `AccountAddressReference` matches, discriminating against the newly-typed `DepositInstructionsReference` a 1.35.4 instance can return.
 - `apiVersion`/`KnownAppVersion` now also accepts 1.34.8 and 1.35.1–1.35.3/1.35.5, backfilling official version history between the already-bundled releases. None of these introduce new endpoints or schemas beyond what newer bundled versions already cover, so the type superset itself is unchanged — only the set of versions `apiVersion` can pin to grows.
 
+`client.domains` gains callable methods for the sponsor and omnibus endpoints introduced in 1.36.1/1.36.2, alongside the existing `list`/`get`:
+
+- **Gas-station sponsorship**: `getSponsor`, `createSponsor`, `updateSponsor`, `deleteSponsor`, `listSponsors`, `getAccountSponsor`, `getDomainSponsor`, `listSponsoredAccounts`, `listSponsoredDomains`, `getSponsorableDomains`, `addSponsoredDomains`, `getSponsorableAccounts`, `addSponsoredAccounts`, `listSponsorEvents`.
+- **Omnibus accounts**: `getOmnibus`, `createOmnibus`, `getOmnibusById`, `updateOmnibus`, `lockOmnibus`, `unlockOmnibus`, `listOmnibusInternalTransfers`, `listOmnibusDepositWallets`, `listOmnibusTenants`, `createOmnibusTenant`, `getOmnibusTenant`, `updateOmnibusTenant`, `getOmnibusTenantDepositWallet`, `createOmnibusTenantDepositWallet`, `createOmnibusInternalTransfer`, `lockOmnibusTenant`, `unlockOmnibusTenant`, `createOmnibusWithdrawal`.
+- Both are gated automatically like every other endpoint — pinning `apiVersion` to a version that predates 1.36.1/1.36.2 throws `UnsupportedInVersionError` for these calls with no extra guard code required. Their request/response types (`GasStation_*`, `Omnibus_*`, plus path/query param types) are exported from the package root alongside every other resource's types.
+- `/v1/health` and `/v1/ready` (also new in 1.36.1) are intentionally not exposed here — they're global, domain-less system health checks, out of scope for the `domains` namespace.
+
 New `apiVersion` client option pins the SDK to a specific backend version and enables **runtime capability gating**:
 
 - Calls the pinned version cannot serve throw `UnsupportedInVersionError` (exposing the missing capability, its kind, the version, and the SDK method). Endpoint availability is checked centrally in the transport; XRPL feature availability (e.g. Batch) is checked in the xrpl service, including operations passed through `xrpl.proposeIntent`. `xrpl.rawSign` is never gated.
