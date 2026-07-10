@@ -42,6 +42,83 @@ export type {
   GetDomainsQueryParams,
 } from "./services/domains/index.js"
 
+// sponsors (gas station) types
+export type {
+  AddSponsoredAccountsPathParams,
+  AddSponsoredDomainsPathParams,
+  CreateSponsorPathParams,
+  DeleteSponsorPathParams,
+  DeleteSponsorQueryParams,
+  GasStation_AccountSponsorResponseDto,
+  GasStation_AddSponsoredAccountsDto,
+  GasStation_AddSponsoredDomainsDto,
+  GasStation_CreateSponsorDto,
+  GasStation_DomainSponsorResponseDto,
+  GasStation_EventsResponseDto,
+  GasStation_SponsorCreatedResponseDto,
+  GasStation_SponsorResponseDto,
+  GasStation_SponsorableAccountsResponseDto,
+  GasStation_SponsorableDomainsResponseDto,
+  GasStation_SponsoredEntitiesResponseDto,
+  GasStation_SponsoredModificationResponseDto,
+  GasStation_SponsorsListResponseDto,
+  GasStation_UpdateSponsorDto,
+  GetAccountSponsorPathParams,
+  GetDomainSponsorPathParams,
+  GetSponsorPathParams,
+  GetSponsorableAccountsPathParams,
+  GetSponsorableAccountsQueryParams,
+  GetSponsorableDomainsPathParams,
+  GetSponsorableDomainsQueryParams,
+  ListSponsorEventsPathParams,
+  ListSponsorEventsQueryParams,
+  ListSponsoredAccountsPathParams,
+  ListSponsoredAccountsQueryParams,
+  ListSponsoredDomainsPathParams,
+  ListSponsoredDomainsQueryParams,
+  ListSponsorsPathParams,
+  UpdateSponsorPathParams,
+} from "./services/sponsors/index.js"
+
+// omnibus types
+export type {
+  CreateOmnibusInternalTransferPathParams,
+  CreateOmnibusPathParams,
+  CreateOmnibusTenantDepositWalletPathParams,
+  CreateOmnibusTenantPathParams,
+  CreateOmnibusWithdrawalPathParams,
+  GetOmnibusByIdPathParams,
+  GetOmnibusPathParams,
+  GetOmnibusTenantDepositWalletPathParams,
+  GetOmnibusTenantPathParams,
+  ListOmnibusDepositWalletsPathParams,
+  ListOmnibusDepositWalletsQueryParams,
+  ListOmnibusInternalTransfersPathParams,
+  ListOmnibusInternalTransfersQueryParams,
+  ListOmnibusTenantsPathParams,
+  ListOmnibusTenantsQueryParams,
+  LockOmnibusPathParams,
+  LockOmnibusTenantPathParams,
+  Omnibus_CreateInternalTransferRequest,
+  Omnibus_CreateOmnibusRequest,
+  Omnibus_CreateOmnibusResponse,
+  Omnibus_CreateOrUpdateTenantRequest,
+  Omnibus_CreateWithdrawalRequest,
+  Omnibus_CreateWithdrawalResponse,
+  Omnibus_DepositWalletResponse,
+  Omnibus_DepositWalletSummaryPageResponse,
+  Omnibus_InternalTransferPageResponse,
+  Omnibus_InternalTransferResponse,
+  Omnibus_OmnibusResponse,
+  Omnibus_TenantPageResponse,
+  Omnibus_TenantResponse,
+  Omnibus_UpdateOmnibusRequest,
+  UnlockOmnibusPathParams,
+  UnlockOmnibusTenantPathParams,
+  UpdateOmnibusPathParams,
+  UpdateOmnibusTenantPathParams,
+} from "./services/omnibus/index.js"
+
 // endpoints types
 export type {
   Core_TrustedEndpoint,
@@ -282,3 +359,9 @@ export type {
 
 // errors types
 export type { Core_ErrorMessage, CustodyError } from "./models/index.js"
+
+// versioning (multi-version capability gating)
+export type { KnownAppVersion } from "./models/capabilities.generated.js"
+export type { SpecSource } from "./versioning/detect.js"
+export { UnsupportedInVersionError } from "./versioning/version-guard.js"
+export type { CapabilityKind } from "./versioning/version-guard.js"

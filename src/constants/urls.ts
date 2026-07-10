@@ -133,6 +133,37 @@ export const URLs = createURLs({
 
   // Genesis
   genesis: "/v1/genesis",
+
+  // Gas Station Sponsorship
+  sponsor: "/v1/domain/{domainId}/account/{accountId}/sponsor",
+  sponsors: "/v1/domain/{domainId}/sponsors",
+  accountSponsor: "/v1/domain/{domainId}/sponsors/account/{accountId}/sponsor",
+  domainSponsor: "/v1/domain/{domainId}/sponsors/domain-sponsor",
+  sponsoredAccounts: "/v1/domain/{domainId}/sponsors/sponsored-accounts",
+  sponsoredDomains: "/v1/domain/{domainId}/sponsors/sponsored-domains",
+  entitySponsorableDomains: "/v1/domain/{domainId}/account/{entityId}/sponsorable-domains",
+  entitySponsoredDomains: "/v1/domain/{domainId}/account/{entityId}/sponsored-domains",
+  entitySponsorableAccounts: "/v1/domain/{domainId}/account/{entityId}/sponsorable-accounts",
+  entitySponsoredAccounts: "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts",
+  sponsorEvents: "/v1/domain/{domainId}/sponsor/events",
+
+  // Omnibus Accounts
+  omnibus: "/v1/domains/{domainId}/omnibus",
+  omnibusItem: "/v1/domains/{domainId}/omnibus/{omnibusId}",
+  omnibusLock: "/v1/domains/{domainId}/omnibus/{omnibusId}/lock",
+  omnibusUnlock: "/v1/domains/{domainId}/omnibus/{omnibusId}/unlock",
+  omnibusInternalTransfers: "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers",
+  omnibusDepositWallets: "/v1/domains/{domainId}/omnibus/{omnibusId}/deposit-wallets",
+  omnibusTenants: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants",
+  omnibusTenant: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}",
+  omnibusTenantDepositWallet:
+    "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/deposit-wallet",
+  omnibusTenantInternalTransfers:
+    "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/internal-transfers",
+  omnibusTenantLock: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/lock",
+  omnibusTenantUnlock: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/unlock",
+  omnibusTenantWithdrawals:
+    "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/withdrawals",
 } as const)
 
 // Type for the URLs object that ensures all values are valid paths

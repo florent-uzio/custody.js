@@ -170,12 +170,7 @@ const account = await custody.accounts.findByAddressOrThrow("rAddress...", {
 // Transaction Operations
 const orders = await custody.transactions.orders({ domainId: "domain-id" }, { limit: 10 })
 const transfers = await custody.transactions.transfers({ domainId: "domain-id" })
-const dryRun = await custody.transactions.dryRun(
-  { domainId: "domain-id" },
-  {
-    /* params */
-  },
-)
+const dryRun = await custody.transactions.dryRun({ domainId: "domain-id" }, {/* params */})
 
 // User Operations
 const me = await custody.users.me()

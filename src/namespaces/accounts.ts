@@ -58,7 +58,8 @@ export async function findByAddress(
   )
 
   const matches = addressAcrossDomains.items.filter(
-    (item) =>
+    (item): item is Core_AccountAddressReference =>
+      item.type === "AccountAddressReference" &&
       item.address === address &&
       (isUndefined(ledgerId) || item.ledgerId === ledgerId) &&
       (isUndefined(domainId) || item.domainId === domainId),

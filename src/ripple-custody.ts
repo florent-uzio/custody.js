@@ -37,6 +37,8 @@ import {
   type XrplIntentOptions,
 } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
+import { buildOpenApiUrl, createHttpSpecSource, detectCapabilities } from "./versioning/detect.js"
+import { resolveExplicitCapabilities, VersionGuard } from "./versioning/version-guard.js"
 
 export class RippleCustody {
   // Core services (eager initialization - required for all operations)
@@ -44,11 +46,14 @@ export class RippleCustody {
   private readonly authService: AuthService
   private readonly transport: TypedTransport
 
+  // Runtime version guard (pass-through unless an apiVersion is resolved)
+  private readonly guard: VersionGuard
+
   // Lazy-initialized service instances
   private _xrplService?: XrplService
 
   private get xrplService(): XrplService {
-    return (this._xrplService ??= new XrplService(createHttpPorts(this.transport)))
+    return (this._xrplService ??= new XrplService(createHttpPorts(this.transport), this.guard))
   }
 
   // Namespace objects built from factory functions
@@ -69,7 +74,41 @@ export class RippleCustody {
   public readonly requests: ReturnType<typeof createRequests>
 
   constructor(options: RippleCustodyClientOptions) {
-    const { authUrl, apiUrl, privateKey, publicKey, timeout } = options
+    const {
+      authUrl,
+      apiUrl,
+      privateKey,
+      publicKey,
+      timeout,
+      apiVersion,
+      autoDetectVersion = true,
+      openApiUrl,
+      specSource,
+    } = options
+
+    // Fires once if the guard ever passes calls through because no backend
+    // version could be resolved (detection failed, or gating is disabled).
+    const warnGatingDisabled = () =>
+      console.warn(
+        "[ripple-custody] Could not resolve the backend version; capability gating is " +
+          "disabled. Calls pass through and the backend enforces what it supports. " +
+          "Set `apiVersion`, or ensure the instance's OpenAPI endpoint is reachable.",
+      )
+
+    // Resolve the version guard first so an unknown apiVersion fails fast,
+    // before any key parsing or service construction.
+    if (apiVersion) {
+      // Explicit version: validate now and gate against bundled capability data.
+      this.guard = new VersionGuard(resolveExplicitCapabilities(apiVersion))
+    } else if (autoDetectVersion) {
+      // Auto-detect: lazily fetch the live instance spec on first use.
+      const source =
+        specSource ?? createHttpSpecSource(openApiUrl ?? buildOpenApiUrl(apiUrl), timeout)
+      this.guard = VersionGuard.deferred(() => detectCapabilities(source), warnGatingDisabled)
+    } else {
+      // Detection disabled and no explicit version: gating off (pass-through).
+      this.guard = new VersionGuard(undefined, undefined, warnGatingDisabled)
+    }
 
     // Only initialize core services eagerly
     this.authService = new AuthService({ authUrl, timeout })
@@ -82,7 +121,7 @@ export class RippleCustody {
       privateKey,
       timeout,
     })
-    this.transport = new TypedTransport(this.apiService)
+    this.transport = new TypedTransport(this.apiService, this.guard)
 
     // Initialize namespaces from factories
     this.channels = createChannels(this.transport)
@@ -100,6 +139,17 @@ export class RippleCustody {
     this.policies = createPolicies(this.transport)
     this.vaults = createVaults(this.transport)
     this.requests = createRequests(this.transport)
+  }
+
+  /**
+   * Resolves the backend version/capabilities up front. Optional: when
+   * auto-detection is enabled, this otherwise happens lazily on the first API
+   * call. Await it to front-load the live-spec fetch and surface any detection
+   * error explicitly. Resolves immediately when an explicit `apiVersion` was
+   * given or auto-detection is disabled.
+   */
+  public ready(): Promise<void> {
+    return this.guard.ensureResolved()
   }
 
   // Auth namespace

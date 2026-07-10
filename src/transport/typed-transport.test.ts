@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { UnsupportedInVersionError, VersionGuard } from "../versioning/version-guard.js"
 import { TypedTransport } from "./typed-transport.js"
 
 const mockApiService = {
@@ -201,7 +202,9 @@ describe("TypedTransport", () => {
         channelId: "ch-1",
       })
 
-      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/domains/d-1/channels/ch-1", undefined)
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/domains/d-1/channels/ch-1", {
+        params: undefined,
+      })
     })
 
     it("should call api.delete with plain URL when no path params", async () => {
@@ -209,16 +212,46 @@ describe("TypedTransport", () => {
 
       await transport.delete("/v1/some/path")
 
-      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/some/path", undefined)
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/some/path", { params: undefined })
+    })
+
+    it("should resolve path params and pass query separately", async () => {
+      mockApiService.delete.mockResolvedValue(undefined)
+
+      await transport.delete(
+        "/v1/domain/{domainId}/account/{accountId}/sponsor",
+        { domainId: "d-1", accountId: "a-1" },
+        { userId: "u-1" },
+      )
+
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/domain/d-1/account/a-1/sponsor", {
+        params: { userId: "u-1" },
+      })
+    })
+
+    it("should merge extra pathParams keys into query", async () => {
+      mockApiService.delete.mockResolvedValue(undefined)
+
+      await transport.delete("/v1/domains/{domainId}/accounts", {
+        domainId: "d-123",
+        limit: 5,
+      })
+
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/domains/d-123/accounts", {
+        params: { limit: 5 },
+      })
     })
 
     it("should forward config to api.delete", async () => {
       mockApiService.delete.mockResolvedValue(undefined)
       const config = { headers: { "X-Custom": "x" } }
 
-      await transport.delete("/v1/some/path", undefined, config)
+      await transport.delete("/v1/some/path", undefined, undefined, config)
 
-      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/some/path", config)
+      expect(mockApiService.delete).toHaveBeenCalledWith("/v1/some/path", {
+        ...config,
+        params: undefined,
+      })
     })
 
     it("should return the data from api.delete", async () => {
@@ -228,6 +261,40 @@ describe("TypedTransport", () => {
       const result = await transport.delete("/v1/some/path")
 
       expect(result).toEqual(mockResponse)
+    })
+  })
+
+  describe("endpoint version gating", () => {
+    const guard = new VersionGuard({
+      appVersion: "test",
+      endpoints: new Set(["GET /v1/allowed", "GET /v1/domains/{domainId}"]),
+      schemas: new Set(),
+    })
+
+    beforeEach(() => {
+      vi.clearAllMocks()
+      transport = new TypedTransport(mockApiService as any, guard)
+    })
+
+    it("dispatches a call whose endpoint the resolved version serves", async () => {
+      mockApiService.get.mockResolvedValue({ data: [] })
+
+      await transport.get("/v1/allowed")
+
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/allowed", undefined)
+    })
+
+    it("gates on the path template, not the resolved URL", async () => {
+      mockApiService.get.mockResolvedValue({ data: {} })
+
+      await transport.get("/v1/domains/{domainId}", { domainId: "d-1" })
+
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-1", undefined)
+    })
+
+    it("throws UnsupportedInVersionError and never dispatches an endpoint the version lacks", async () => {
+      await expect(transport.get("/v1/forbidden")).rejects.toBeInstanceOf(UnsupportedInVersionError)
+      expect(mockApiService.get).not.toHaveBeenCalled()
     })
   })
 })

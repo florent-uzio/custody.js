@@ -4,6 +4,7 @@ import { encodeForSigning, isValidAddress, type SubmittableTransaction } from "x
 import { sleep } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
+import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
 import {
   buildBatchOperation,
@@ -31,7 +32,10 @@ import type {
 import { validateBatchSequencing } from "./xrpl.validators.js"
 
 export class XrplService {
-  constructor(private readonly ports: XrplPorts) {}
+  constructor(
+    private readonly ports: XrplPorts,
+    private readonly guard: VersionGuard = new VersionGuard(undefined),
+  ) {}
 
   /**
    * Proposes any XRPL transaction intent.
@@ -52,6 +56,8 @@ export class XrplService {
     params: { Account: string; operation: Core_XrplOperation },
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
+    await this.guard.checkFeature(xrplOperationSchema(params.operation.type), "xrpl.proposeIntent")
+
     const context = await this.ports.resolveContext(params.Account, {
       domainId: options.domainId,
       ledgerId: options.ledgerId,
@@ -195,6 +201,7 @@ export class XrplService {
     payload: BatchPayloadInput,
     options: XrplIntentOptions = {},
   ): Promise<Core_ApiBatchSigningData> {
+    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.dryRunBatch")
     validateBatchSequencing(payload)
 
     const context = await this.ports.resolveContext(payload.Account, {
@@ -357,6 +364,7 @@ export class XrplService {
     batchSigners: Core_BatchSigner[],
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
+    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch")
     validateBatchSequencing(payload)
 
     const context = await this.ports.resolveContext(payload.Account, {
