@@ -1,17 +1,22 @@
 import type { SubmittableTransaction } from "xrpl"
 import {
   createAccounts,
+  createBackups,
   createChannels,
   createDomains,
   createEndpoints,
   createEvents,
   createGenesis,
+  createHealth,
   createIntents,
   createLedgers,
   createPolicies,
+  createProviders,
   createRequests,
+  createSystemProperties,
   createTickers,
   createTransactions,
+  createTrustedPublicKeys,
   createUserInvitations,
   createUsers,
   createVaults,
@@ -62,6 +67,7 @@ export class RippleCustody {
   public readonly endpoints: ReturnType<typeof createEndpoints>
   public readonly events: ReturnType<typeof createEvents>
   public readonly genesis: ReturnType<typeof createGenesis>
+  public readonly health: ReturnType<typeof createHealth>
   public readonly intents: ReturnType<typeof createIntents>
   public readonly transactions: ReturnType<typeof createTransactions>
   public readonly accounts: ReturnType<typeof createAccounts>
@@ -72,6 +78,10 @@ export class RippleCustody {
   public readonly policies: ReturnType<typeof createPolicies>
   public readonly vaults: ReturnType<typeof createVaults>
   public readonly requests: ReturnType<typeof createRequests>
+  public readonly systemProperties: ReturnType<typeof createSystemProperties>
+  public readonly backups: ReturnType<typeof createBackups>
+  public readonly providers: ReturnType<typeof createProviders>
+  public readonly trustedPublicKeys: ReturnType<typeof createTrustedPublicKeys>
 
   constructor(options: RippleCustodyClientOptions) {
     const {
@@ -129,6 +139,7 @@ export class RippleCustody {
     this.endpoints = createEndpoints(this.transport)
     this.events = createEvents(this.transport)
     this.genesis = createGenesis(this.transport)
+    this.health = createHealth(this.transport)
     this.intents = createIntents(this.transport)
     this.transactions = createTransactions(this.transport)
     this.accounts = createAccounts(this.transport)
@@ -139,6 +150,10 @@ export class RippleCustody {
     this.policies = createPolicies(this.transport)
     this.vaults = createVaults(this.transport)
     this.requests = createRequests(this.transport)
+    this.systemProperties = createSystemProperties(this.transport)
+    this.backups = createBackups(this.transport)
+    this.providers = createProviders(this.transport)
+    this.trustedPublicKeys = createTrustedPublicKeys(this.transport)
   }
 
   /**
