@@ -138,6 +138,9 @@ export type {
   GetEventsQueryParams,
 } from "./services/events/index.js"
 
+// compliance types (all Compliance*-prefixed aliases across the 5 sub-domains)
+export type * from "./services/compliance/index.js"
+
 // health types
 export type { LivenessResponse, ReadinessResponse } from "./services/health/index.js"
 

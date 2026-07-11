@@ -56,6 +56,39 @@ export const URLs = createURLs({
     "/v1/domains/{domainId}/accounts/{accountId}/compliance-configuration",
   complianceConfigurations: "/v1/domains/{domainId}/compliance-configurations",
 
+  // Compliance
+  complianceProviders: "/v1/domains/{domainId}/compliance/providers",
+  complianceProvider: "/v1/domains/{domainId}/compliance/providers/{provider}",
+  complianceProviderScreeningRules:
+    "/v1/domains/{domainId}/compliance/providers/{provider}/screening-rules",
+  complianceProviderTogglePreviewScreening:
+    "/v1/domains/{domainId}/compliance/providers/{provider}/toggle-preview-screening",
+  complianceProviderPauseConnection:
+    "/v1/domains/{domainId}/compliance/providers/{provider}/pause-connection",
+  complianceProviderConnections: "/v1/domains/{domainId}/compliance/provider-connection",
+  compliancePolicy: "/v1/domains/{domainId}/compliance/policy",
+  compliancePolicyByType:
+    "/v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType}",
+  complianceExceptionRole:
+    "/v1/domains/{domainId}/compliance/transactionType/{transactionType}/exception-role",
+  complianceDomain: "/v1/domains/{domainId}/compliance/domain",
+  complianceDomainValidation: "/v1/domains/{domainId}/compliance/domain/validation",
+  complianceAnalysis: "/v1/domains/{domainId}/compliance/analysis",
+  complianceAnalysisPreview: "/v1/domains/{domainId}/compliance/analysis/preview",
+  complianceTravelRuleMessages:
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages",
+  complianceTravelRuleMessage:
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}",
+  complianceTravelRulePii:
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}/pii",
+  complianceTravelRuleEncryptedPii:
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}/encrypted-pii",
+  complianceTravelRuleEncryptedPiiForPolicy:
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}/policies/{travelRulePolicyId}/encrypted-pii",
+  complianceTravelRuleDetails: "/v1/domains/{domainId}/compliance/travel-rule/details",
+  complianceTravelRuleRelationships:
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/relationships",
+
   // Addresses
   addresses: "/v1/addresses",
 

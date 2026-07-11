@@ -5,6 +5,7 @@ import { TypedTransport } from "./typed-transport.js"
 const mockApiService = {
   get: vi.fn(),
   post: vi.fn(),
+  put: vi.fn(),
   patch: vi.fn(),
   delete: vi.fn(),
 }
@@ -145,6 +146,57 @@ describe("TypedTransport", () => {
       expect(mockApiService.post).toHaveBeenCalledWith("/v1/domains/d-1/channels", body, {
         sign: false,
       })
+    })
+
+    it("should merge non-path pathParams keys into query params (alongside sign)", async () => {
+      mockApiService.post.mockResolvedValue({})
+
+      await transport.post(
+        "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}/encrypted-pii",
+        { ivms101: {} },
+        { domainId: "d-1", provider: "p-1", travelRuleId: "t-1", skipValidation: true },
+        { sign: false },
+      )
+
+      expect(mockApiService.post).toHaveBeenCalledWith(
+        "/v1/domains/d-1/compliance/travel-rule/providers/p-1/messages/t-1/encrypted-pii",
+        { ivms101: {} },
+        { sign: false, params: { skipValidation: true } },
+      )
+    })
+  })
+
+  describe("put", () => {
+    it("should resolve path params before putting", async () => {
+      mockApiService.put.mockResolvedValue({})
+
+      await transport.put(
+        "/v1/domains/{domainId}/accounts/{accountId}/compliance-configuration",
+        { enabled: true },
+        { domainId: "d-1", accountId: "a-1" },
+      )
+
+      expect(mockApiService.put).toHaveBeenCalledWith(
+        "/v1/domains/d-1/accounts/a-1/compliance-configuration",
+        { enabled: true },
+        undefined,
+      )
+    })
+
+    it("should merge non-path pathParams keys into query params", async () => {
+      mockApiService.put.mockResolvedValue({})
+
+      await transport.put(
+        "/v1/domains/{domainId}/compliance/providers/{provider}/toggle-preview-screening",
+        undefined,
+        { domainId: "d-1", provider: "p-1", enabled: true },
+      )
+
+      expect(mockApiService.put).toHaveBeenCalledWith(
+        "/v1/domains/d-1/compliance/providers/p-1/toggle-preview-screening",
+        undefined,
+        { params: { enabled: true } },
+      )
     })
   })
 
