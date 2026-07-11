@@ -2,6 +2,7 @@ import type { SubmittableTransaction } from "xrpl"
 import {
   createAccounts,
   createChannels,
+  createCompliance,
   createDomains,
   createEndpoints,
   createEvents,
@@ -58,6 +59,7 @@ export class RippleCustody {
 
   // Namespace objects built from factory functions
   public readonly channels: ReturnType<typeof createChannels>
+  public readonly compliance: ReturnType<typeof createCompliance>
   public readonly domains: ReturnType<typeof createDomains>
   public readonly endpoints: ReturnType<typeof createEndpoints>
   public readonly events: ReturnType<typeof createEvents>
@@ -125,6 +127,7 @@ export class RippleCustody {
 
     // Initialize namespaces from factories
     this.channels = createChannels(this.transport)
+    this.compliance = createCompliance(this.transport)
     this.domains = createDomains(this.transport)
     this.endpoints = createEndpoints(this.transport)
     this.events = createEvents(this.transport)

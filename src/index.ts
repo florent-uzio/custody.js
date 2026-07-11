@@ -138,6 +138,9 @@ export type {
   GetEventsQueryParams,
 } from "./services/events/index.js"
 
+// compliance types (all Compliance*-prefixed aliases across the 5 sub-domains)
+export type * from "./services/compliance/index.js"
+
 // channels (EDS) types and helpers
 export { parseEventPayload } from "./services/channels/index.js"
 export type {
