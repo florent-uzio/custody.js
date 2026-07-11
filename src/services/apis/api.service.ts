@@ -166,7 +166,6 @@ export class ApiService {
       // Sign the request (default) unless the caller opted out
       if (sign !== false && body && (!body.signature || body.signature === "")) {
         // Canonicalize the request body
-        // @ts-expect-error canonicalize works fine but has complex types
         const canonicalizedRequest = canonicalize(body.request)
 
         if (!canonicalizedRequest) {

@@ -38,9 +38,9 @@ vi.mock("../keypairs/index.js", () => {
   const mockDetectKeyType = vi.fn((_privateKey: string | Buffer) => "ed25519" as const)
   return {
     KeypairService: Object.assign(
-      vi.fn().mockImplementation(() => ({
-        sign: vi.fn(() => "mock-signature"),
-      })),
+      vi.fn().mockImplementation(function () {
+        return { sign: vi.fn(() => "mock-signature") }
+      }),
       { detectKeyType: mockDetectKeyType },
     ),
   }

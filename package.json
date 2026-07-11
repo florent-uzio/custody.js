@@ -50,25 +50,24 @@
     "test:coverage:ui": "vitest --coverage --ui"
   },
   "dependencies": {
-    "axios": "^1.8.4",
-    "canonicalize": "^2.1.0",
-    "dayjs": "^1.11.19",
-    "qs": "^6.14.1",
-    "uuid": "^11.1.0",
-    "xrpl": "^4.6.0"
+    "axios": "^1.18.1",
+    "canonicalize": "^3.0.0",
+    "dayjs": "^1.11.21",
+    "qs": "^6.15.3",
+    "uuid": "^14.0.1",
+    "xrpl": "^5.0.0"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.2",
-    "@changesets/cli": "^2.29.6",
-    "@types/qs": "^6.14.0",
-    "@vitest/coverage-v8": "^3.1.4",
-    "@vitest/ui": "^3.1.4",
-    "dotenv": "^16.4.7",
-    "openapi-typescript": "^7.9.1",
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@changesets/cli": "^2.31.0",
+    "@types/qs": "^6.15.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/ui": "^4.1.10",
+    "dotenv": "^17.4.2",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.5",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.2",
-    "vitest": "^3.1.4"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }
