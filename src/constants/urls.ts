@@ -132,6 +132,20 @@ export const URLs = createURLs({
   // Properties
   properties: "/v1/properties",
 
+  // Health
+  health: "/v1/health",
+  ready: "/v1/ready",
+
+  // Backups
+  backups: "/v1/backups",
+  backup: "/v1/backups/{backupId}",
+  backupTrustedEntity: "/v1/backups/{backupId}/trusted-entity",
+
+  // Providers
+  providers: "/v1/providers",
+  provider: "/v1/providers/{providerId}",
+  providerLocations: "/v1/providers/{providerId}/locations",
+
   // User Invitations
   userInvitations: "/v1/domains/{domainId}/users/invitations",
   userInvitation: "/v1/domains/{domainId}/users/invitations/{id}",

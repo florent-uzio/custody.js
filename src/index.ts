@@ -141,6 +141,36 @@ export type {
 // compliance types (all Compliance*-prefixed aliases across the 5 sub-domains)
 export type * from "./services/compliance/index.js"
 
+// health types
+export type { LivenessResponse, ReadinessResponse } from "./services/health/index.js"
+
+// backups types
+export type {
+  Core_ApiBackup,
+  Core_ApiTrustedBackup,
+  Core_BackupsCollection,
+  GetBackupPathParams,
+  GetBackupTrustedEntityPathParams,
+  GetBackupsQueryParams,
+} from "./services/backups/index.js"
+
+// providers types
+export type {
+  Core_ApiProvider,
+  Core_LocationsCollection,
+  Core_ProvidersCollection,
+  GetProviderLocationsPathParams,
+  GetProviderLocationsQueryParams,
+  GetProviderPathParams,
+  GetProvidersQueryParams,
+} from "./services/providers/index.js"
+
+// trusted public keys types
+export type {
+  Core_TrustedTrustedPublicKeysCollection,
+  GetTrustedPublicKeysQueryParams,
+} from "./services/trusted-public-keys/index.js"
+
 // channels (EDS) types and helpers
 export { parseEventPayload } from "./services/channels/index.js"
 export type {
@@ -243,6 +273,15 @@ export type {
   GetRequestStatePathParams,
   GetRequestStateQueryParams,
 } from "./services/requests/index.js"
+
+// system properties types
+export type {
+  Core_SystemProperty,
+  Core_SystemPropertyId,
+  Core_TrustedSystemPropertiesCollection,
+  Core_TrustedSystemProperty,
+  GetSystemPropertiesQueryParams,
+} from "./services/system-properties/index.js"
 
 // user invitations types
 export type {
