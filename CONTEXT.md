@@ -108,3 +108,20 @@ stay consistent.
 - **Fail-open** — the guard's policy when no version is resolved: allow all
   calls, warn once, let the backend reject unsupported operations itself. The
   guard never _invents_ a block it cannot justify.
+
+- **Liveness probe** — the `GET /v1/health` check (`client.health.liveness()`).
+  Reports whether the instance process is up. Returns `200` with a status body
+  when healthy, `503` when not (which the SDK surfaces as a thrown
+  `CustodyError`). Available on app versions ≥ 1.36.1.
+
+- **Readiness probe** — the `GET /v1/ready` check
+  (`client.health.readiness()`). Reports whether the instance is ready to serve
+  traffic (dependencies up). Same `200`/`503` semantics as the liveness probe.
+  Exposed under `client.health.*`, not top-level, so it does not collide with
+  `RippleCustody.ready()` (which resolves the version guard, an unrelated
+  concept). Available on app versions ≥ 1.36.1.
+
+- **System property** — an instance-wide configuration value listed by
+  `GET /v1/properties` (`client.systemProperties.list()`), identified by a
+  `Core_SystemPropertyId` (e.g. `NOTARY_API_KEY`, `STATE_REVIEW_AUTHORITY`).
+  Returned as trusted (signed) entries in a `Core_TrustedSystemProperty`.
