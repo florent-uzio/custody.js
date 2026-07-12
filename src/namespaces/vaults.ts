@@ -25,6 +25,7 @@ export function createVaults(t: TypedTransport) {
     importPreparedOperations: (body: ImportPreparedOperationsRequestBody): Promise<void> =>
       t.post(URLs.vaultOperationsSigned, body.files, undefined, {
         headers: { "Content-Type": "multipart/form-data" },
+        sign: false,
       }),
   } as const
 }

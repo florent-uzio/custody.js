@@ -60,6 +60,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@changesets/cli": "^2.31.0",
+    "@types/node": "^26.1.1",
     "@types/qs": "^6.15.1",
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "^4.1.10",

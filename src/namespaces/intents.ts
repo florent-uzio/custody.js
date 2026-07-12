@@ -105,7 +105,7 @@ export function createIntents(t: TypedTransport) {
     ): Promise<Core_IntentResponse> => t.get(URLs.domainIntents, params, query),
 
     dryRun: (params: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> =>
-      t.post(URLs.intentsDryRun, params),
+      t.post(URLs.intentsDryRun, params, undefined, { sign: false }),
 
     remainingUsers: (
       params: Core_RemainingUsersIntentPathParams,

@@ -52,6 +52,7 @@ export function createTransactions(t: TypedTransport) {
     dryRun: (
       params: DryRunTransactionPathParams,
       body: Core_DryRunTransactionParameters,
-    ): Promise<Core_TransactionDryRun> => t.post(URLs.transactionsDryRun, body, params),
+    ): Promise<Core_TransactionDryRun> =>
+      t.post(URLs.transactionsDryRun, body, params, { sign: false }),
   } as const
 }
