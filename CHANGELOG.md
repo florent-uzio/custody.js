@@ -1,5 +1,11 @@
 # custody
 
+## 2.6.5
+
+### Patch Changes
+
+- 72be927: The automatic 401 retry now always fetches a fresh token instead of re-sending the cached one, recovering from server-side revocation and key rotation.
+
 ## 2.6.4
 
 ### Patch Changes
