@@ -1,5 +1,11 @@
 # custody
 
+## 2.6.3
+
+### Patch Changes
+
+- c293ca4: Path parameters are now percent-encoded during URL template interpolation, preventing IDs containing reserved characters from rewriting the request path.
+
 ## 2.6.2
 
 ### Patch Changes
