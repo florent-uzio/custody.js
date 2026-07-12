@@ -1,6 +1,6 @@
 {
   "name": "@florent-uzio/custody",
-  "version": "2.6.6",
+  "version": "2.6.7",
   "description": "An SDK to interact with the Ripple Custody API",
   "keywords": [
     "Ripple Custody",
