@@ -34,11 +34,12 @@
     "build": "tsc",
     "check-exports": "attw --pack . --ignore-rules=cjs-resolves-to-esm",
     "check-format": "prettier --check .",
-    "ci": "npm run build && npm run check-format && npm run test",
+    "ci": "npm run build && npm run check-format && npm run lint && npm run test",
     "dev": "vitest",
     "fetch:openapi-spec": "node ./scripts/fetch-openapi-release.mjs",
     "format": "prettier --write .",
     "generate:custody-types": "node ./scripts/generate-custody-types/generate.mjs && prettier --write ./src/models/custody-types.ts ./src/models/capabilities.generated.ts",
+    "lint": "eslint src",
     "local-release": "changeset version && changeset publish",
     "prepare": "npm run build",
     "release": "changeset publish",
@@ -65,10 +66,12 @@
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "^4.1.10",
     "dotenv": "^17.4.2",
+    "eslint": "^10.7.0",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.5",
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.63.0",
     "vitest": "^4.1.10"
   }
 }
