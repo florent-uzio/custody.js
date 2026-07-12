@@ -16,13 +16,13 @@
 
 import { RippleCustody } from "@florent-uzio/custody"
 import {
-  AccountSet,
+  type AccountSet,
   AccountSetAsfFlags,
   Client,
   encodeMPTokenMetadata,
-  MPTokenIssuanceCreate,
+  type MPTokenIssuanceCreate,
   MPTokenIssuanceCreateFlags,
-  SubmittableTransaction,
+  type SubmittableTransaction,
 } from "xrpl"
 // @ts-expect-error use your own way of importing the keys and URLs
 import { API_URL, AUTH_URL, PRIVATE_KEY, PUBLIC_KEY, XRPL_URL } from "./config"

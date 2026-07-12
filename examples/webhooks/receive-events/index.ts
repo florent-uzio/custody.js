@@ -1,8 +1,8 @@
+import type { EDS_WebhookEvent } from "@florent-uzio/custody"
 // @ts-expect-error - hono is not a dependency of the SDK; install it in your project to run this example
 import { serve } from "@hono/node-server"
 // @ts-expect-error - hono is not a dependency of the SDK; install it in your project to run this example
 import { Hono } from "hono"
-import type { EDS_WebhookEvent } from "../../../src/services/channels/channels.types"
 
 /**
  * Example: Receive webhook events from Ripple Custody with Hono

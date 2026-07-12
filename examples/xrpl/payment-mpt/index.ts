@@ -1,4 +1,4 @@
-import { RippleCustody } from "../../../src/index"
+import { RippleCustody } from "@florent-uzio/custody"
 
 /**
  * Example: Send an MPT payment using Ripple Custody
@@ -21,7 +21,9 @@ const sendMptPayment = async () => {
 
     // Retrieve the domain ID associated with your user
     const me = await custody.users.me()
-    const domainId = me.domains[0].id
+    const domain = me.domains[0]
+    if (!domain) throw new Error("No domain found for this user")
+    const domainId = domain.id
 
     // Generate or use a unique identifier to track this specific payment intent
     // This allows you to retrieve the transaction status later

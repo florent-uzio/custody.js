@@ -1,5 +1,5 @@
-import { RippleCustody } from "../../../src/index"
-import type { EDS_ChannelCreate } from "../../../src/services/channels/channels.types"
+import type { EDS_ChannelCreate } from "@florent-uzio/custody"
+import { RippleCustody } from "@florent-uzio/custody"
 
 /**
  * Example: Create a webhook channel on Ripple Custody
@@ -27,6 +27,7 @@ const createWebhookChannel = async () => {
     // user that exists in the domain
     const me = await custody.users.me()
     const domain = me.domains[0]
+    if (!domain) throw new Error("No domain found for this user")
     const domainId = domain.id
     const createdBy = domain.userReference.id
 
