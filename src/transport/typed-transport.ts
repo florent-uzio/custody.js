@@ -105,11 +105,19 @@ export class TypedTransport {
   ): Promise<T> {
     await this.guard.checkEndpoint("PATCH", url)
     let resolvedUrl = url
+    let mergedConfig = config as AxiosRequestConfig | undefined
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
       resolvedUrl = result.url
+      // Non-path keys become query params, mirroring get()/delete().
+      if (result.query) {
+        mergedConfig = {
+          ...(mergedConfig ?? {}),
+          params: { ...((mergedConfig?.params as Record<string, unknown>) ?? {}), ...result.query },
+        }
+      }
     }
-    return this.api.patch<T>(resolvedUrl, body, config as AxiosRequestConfig)
+    return this.api.patch<T>(resolvedUrl, body, mergedConfig)
   }
 
   /**
