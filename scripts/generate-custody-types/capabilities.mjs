@@ -20,7 +20,7 @@ const HTTP_METHODS = ["get", "put", "post", "delete", "options", "head", "patch"
  * @returns {{ version: string, endpoints: string[], schemas: string[] }}
  */
 export function extractCapabilities(doc) {
-  const version = doc?.info?.["x-app-version"] ?? "0"
+  const version = doc?.info?.["x-app-version"] ?? "unknown"
 
   const endpoints = []
   for (const [path, item] of Object.entries(doc?.paths ?? {})) {
