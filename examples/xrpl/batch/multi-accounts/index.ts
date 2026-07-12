@@ -1,5 +1,5 @@
+import { batchToCustodyBatchPayload, RippleCustody } from "@florent-uzio/custody"
 import { type Batch, BatchFlags, Client, GlobalFlags, type Payment, xrpToDrops } from "xrpl"
-import { batchToCustodyBatchPayload, RippleCustody } from "../../../../src/index"
 
 /**
  * Example: Submit a Batch transaction with multiple inner accounts using Ripple Custody
@@ -164,7 +164,9 @@ const submitMultiAccountBatch = async () => {
 
     // Retrieve the domain ID to poll for the intent result
     const me = await custody.users.me()
-    const domainId = me.domains[0].id
+    const domain = me.domains[0]
+    if (!domain) throw new Error("No domain found for this user")
+    const domainId = domain.id
 
     // Wait for the intent to be processed and retrieve the final result
     const intent = await custody.intents.getAndWait({ domainId, intentId })

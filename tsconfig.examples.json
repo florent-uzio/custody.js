@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": { "@florent-uzio/custody": ["./src/index.ts"] }
+  },
+  "include": ["examples/**/*", "src/**/*"]
+}
