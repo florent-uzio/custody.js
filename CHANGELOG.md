@@ -1,5 +1,11 @@
 # custody
 
+## 2.6.7
+
+### Patch Changes
+
+- fdd4a82: Fix `rawSignAndWait` to no longer mutate the transaction object passed in; `signedTransaction` is now a copy carrying the signature.
+
 ## 2.6.6
 
 ### Patch Changes
