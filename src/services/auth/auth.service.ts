@@ -83,9 +83,9 @@ export class AuthService {
    * refresh request is made at a time. If multiple callers need a token refresh
    * simultaneously, they will all await the same promise.
    */
-  async getToken(authData: AuthFormData): Promise<string> {
-    // Return existing valid token
-    if (this.accessToken && !this.isTokenExpired()) {
+  async getToken(authData: AuthFormData, forceRefresh = false): Promise<string> {
+    // Return existing valid token (unless the caller demands a fresh one)
+    if (!forceRefresh && this.accessToken && !this.isTokenExpired()) {
       return this.accessToken
     }
 

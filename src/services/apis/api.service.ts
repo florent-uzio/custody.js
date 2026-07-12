@@ -107,7 +107,7 @@ export class ApiService {
         challenge: this.challenge,
         publicKey: this.authFormData.publicKey,
       }
-      return await this.authService.getToken(authData)
+      return await this.authService.getToken(authData, forceRefresh)
     }
     return this.authService.getCurrentToken() || ""
   }

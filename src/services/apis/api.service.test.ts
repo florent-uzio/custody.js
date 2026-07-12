@@ -665,6 +665,35 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       expect(result).toEqual({ data: retryData })
     })
 
+    it("should force a fresh token on 401 retry even when the cached token still looks valid", async () => {
+      // Cached token looks valid (not expired) — this is the scenario the retry exists for:
+      // server-side revocation/key rotation despite an unexpired cache.
+      mockAuthService.isTokenExpired.mockReturnValue(false)
+      mockAuthService.getCurrentToken.mockReturnValue("cached-token-A")
+      mockAuthService.getToken.mockResolvedValue("fresh-token-B")
+
+      const retryData = { id: "123", retried: true }
+      ;(mockAxiosInstance as any as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: retryData,
+      })
+
+      const originalConfig = {
+        headers: { Authorization: "Bearer cached-token-A" },
+        _retried: false,
+      }
+      const error401 = {
+        isAxiosError: true,
+        response: { status: 401, data: { reason: "Unauthorized" } },
+        config: originalConfig,
+      }
+
+      await responseErrorInterceptor(error401)
+
+      // getToken must be called with forceRefresh=true so it bypasses the cached-token early return
+      expect(mockAuthService.getToken).toHaveBeenCalledWith(expect.anything(), true)
+      expect(originalConfig.headers.Authorization).toBe("Bearer fresh-token-B")
+    })
+
     it("should not retry on non-401 errors", async () => {
       const error500 = {
         isAxiosError: true,
@@ -739,6 +768,7 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       // getToken should have been called with the user-provided challenge
       expect(mockAuthService.getToken).toHaveBeenCalledWith(
         expect.objectContaining({ challenge: customChallenge }),
+        false,
       )
     })
   })

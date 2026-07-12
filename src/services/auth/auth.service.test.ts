@@ -178,6 +178,54 @@ describe("AuthService", () => {
       expect(mockAxiosInstance.post).toHaveBeenCalledTimes(2)
     })
 
+    it("should bypass a valid cache when forceRefresh is true", async () => {
+      // First call - fetches and caches the token
+      const firstToken = await authService.getToken(mockAuthData)
+      expect(firstToken).toBe(mockAccessToken)
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1)
+
+      // Token is still unexpired, but a forced refresh should still hit the network
+      const newAccessToken = "new-access-token-456"
+      mockAxiosInstance.post.mockResolvedValueOnce({
+        data: { access_token: newAccessToken },
+      })
+
+      const forcedToken = await authService.getToken(mockAuthData, true)
+      expect(forcedToken).toBe(newAccessToken)
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(2)
+    })
+
+    it("should use the cache when forceRefresh is not passed", async () => {
+      await authService.getToken(mockAuthData)
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1)
+
+      const token = await authService.getToken(mockAuthData)
+      expect(token).toBe(mockAccessToken)
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1)
+    })
+
+    it("should join an in-flight refresh even when forceRefresh is true", async () => {
+      let resolveToken: (value: { data: { access_token: string } }) => void
+      mockAxiosInstance.post.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveToken = resolve
+          }),
+      )
+
+      // Start an in-flight refresh, then join it with a forced call before it settles
+      const promise1 = authService.getToken(mockAuthData)
+      const promise2 = authService.getToken(mockAuthData, true)
+
+      resolveToken!({ data: { access_token: mockAccessToken } })
+
+      const [token1, token2] = await Promise.all([promise1, promise2])
+
+      expect(token1).toBe(mockAccessToken)
+      expect(token2).toBe(mockAccessToken)
+      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(1)
+    })
+
     it("should handle concurrent token requests with single fetch (race condition prevention)", async () => {
       // Simulate slow token fetch
       let resolveToken: (value: { data: { access_token: string } }) => void
