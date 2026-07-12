@@ -1,5 +1,11 @@
 # custody
 
+## 2.6.4
+
+### Patch Changes
+
+- bc876c1: Commit package-lock.json and install with npm ci in CI/release, pinning the published dependency tree; refresh transitive dependencies to the manifest ranges.
+
 ## 2.6.3
 
 ### Patch Changes
