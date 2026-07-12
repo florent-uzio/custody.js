@@ -1,5 +1,11 @@
 # custody
 
+## 2.6.6
+
+### Patch Changes
+
+- c5bd223: PATCH requests now forward non-path params as query params, matching GET/POST/PUT/DELETE.
+
 ## 2.6.5
 
 ### Patch Changes
