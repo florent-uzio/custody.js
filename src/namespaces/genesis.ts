@@ -4,6 +4,7 @@ import type { TypedTransport } from "../transport/index.js"
 
 export function createGenesis(t: TypedTransport) {
   return {
-    run: (body: RunGenesisBody): Promise<void> => t.post(URLs.genesis, body),
+    run: (body: RunGenesisBody): Promise<void> =>
+      t.post(URLs.genesis, body, undefined, { sign: false }),
   } as const
 }

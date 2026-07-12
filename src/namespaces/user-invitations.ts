@@ -29,12 +29,13 @@ export function createUserInvitations(t: TypedTransport) {
     create: (
       pathParams: CreateUserInvitationPathParams,
       body: CoreExtensions_InvitationIn,
-    ): Promise<CoreExtensions_InvitationOut> => t.post(URLs.userInvitations, body, pathParams),
+    ): Promise<CoreExtensions_InvitationOut> =>
+      t.post(URLs.userInvitations, body, pathParams, { sign: false }),
 
     fill: (
       pathParams: FillUserInvitationPathParams,
       body: CoreExtensions_InvitationAnswerIn,
-    ): Promise<void> => t.post(URLs.publicUserInvitation, body, pathParams),
+    ): Promise<void> => t.post(URLs.publicUserInvitation, body, pathParams, { sign: false }),
 
     cancel: (pathParams: CancelUserInvitationPathParams): Promise<CoreExtensions_InvitationOut> =>
       t.post(URLs.userInvitationCancel, undefined, pathParams),

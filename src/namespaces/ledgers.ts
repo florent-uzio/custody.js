@@ -27,7 +27,8 @@ export function createLedgers(t: TypedTransport) {
     processEthereumContractCall: (
       params: ProcessEthereumContractCallPathParams,
       body: ProcessEthereumContractCallBody,
-    ): Promise<Core_EthereumCallResponse> => t.post(URLs.ledgerEthereumCall, body, params),
+    ): Promise<Core_EthereumCallResponse> =>
+      t.post(URLs.ledgerEthereumCall, body, params, { sign: false }),
 
     trusted: (params: GetTrustedLedgerPathParams): Promise<Core_TrustedLedger> =>
       t.get(URLs.trustedLedger, params),
