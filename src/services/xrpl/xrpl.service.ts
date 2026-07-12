@@ -154,15 +154,17 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
-    if (!xrplTransaction.SigningPubKey) {
+    const transaction = { ...xrplTransaction }
+
+    if (!transaction.SigningPubKey) {
       const pubKey = await this.getPublicKey({
         domainId: context.domainId,
         accountId: context.accountId,
       })
-      xrplTransaction.SigningPubKey = pubKey
+      transaction.SigningPubKey = pubKey
     }
 
-    const encoded = encodeForSigning(xrplTransaction)
+    const encoded = encodeForSigning(transaction)
     const base64Encoded = Buffer.from(encoded, "hex").toString("base64")
 
     const { payloadId } = await this.proposeRawSignIntent(base64Encoded, context, options)
@@ -174,12 +176,12 @@ export class XrplService {
       options.polling,
     )
 
-    xrplTransaction.TxnSignature = signature
+    transaction.TxnSignature = signature
 
     return {
       signature,
-      signingPubKey: xrplTransaction.SigningPubKey,
-      signedTransaction: xrplTransaction,
+      signingPubKey: transaction.SigningPubKey,
+      signedTransaction: transaction,
     }
   }
 

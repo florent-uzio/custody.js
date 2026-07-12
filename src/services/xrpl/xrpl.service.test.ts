@@ -715,9 +715,23 @@ describe("XrplService", () => {
 
       expect(result.signature).toBe("AABBCCDD")
       expect(result.signingPubKey).toBe(expectedCompressedKey)
-      expect(tx.SigningPubKey).toBe(expectedCompressedKey)
+      expect(tx.SigningPubKey).toBeUndefined()
       expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
       expect(result.signedTransaction.SigningPubKey).toBe(expectedCompressedKey)
+    })
+
+    it("should not mutate the input transaction object", async () => {
+      const tx = { ...mockXrplTransaction }
+      const before = JSON.stringify(tx)
+
+      const result = await service.rawSignAndWait(tx, {
+        polling: { maxRetries: 1, intervalMs: 0 },
+      })
+
+      expect(JSON.stringify(tx)).toBe(before)
+      expect(result.signedTransaction.TxnSignature).toBe("AABBCCDD")
+      expect(result.signedTransaction.SigningPubKey).toBe(expectedCompressedKey)
+      expect(result.signedTransaction).not.toBe(tx)
     })
 
     it("should not override SigningPubKey if already set", async () => {
