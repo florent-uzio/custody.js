@@ -125,7 +125,8 @@ export function createAccounts(t: TypedTransport) {
     generateNewExternalAddressDeprecated: (
       params: GenerateNewAccountExternalAddressDeprecatedPathParams,
       query: GenerateNewAccountExternalAddressDeprecatedQueryParams,
-    ): Promise<Core_AccountAddress> => t.post(URLs.accountAddresses, query, params),
+    ): Promise<Core_AccountAddress> =>
+      t.post(URLs.accountAddresses, undefined, { ...params, ...query }),
 
     generateNewExternalAddress: (
       params: GenerateNewExternalAddressPathParams,
@@ -142,7 +143,7 @@ export function createAccounts(t: TypedTransport) {
     forceUpdateAccountBalances: (
       params: ForceUpdateAccountBalancesPathParams,
       query?: ForceUpdateAccountBalancesQueryParams,
-    ): Promise<void> => t.post(URLs.accountBalances, query, params),
+    ): Promise<void> => t.post(URLs.accountBalancesRefresh, undefined, { ...params, ...query }),
 
     getManifests: (
       params: GetManifestsPathParams,

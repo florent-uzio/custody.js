@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../../models/index.js"
 import type { Core_AccountAddressReference } from "../../services/accounts/accounts.types.js"
-import { findByAddress, findByAddressOrThrow } from "../accounts.js"
+import { createAccounts, findByAddress, findByAddressOrThrow } from "../accounts.js"
 
 const mockTransport = {
   get: vi.fn(),
@@ -264,5 +264,59 @@ describe("findByAddress", () => {
     })
 
     expect(result).toBeUndefined()
+  })
+})
+
+describe("forceUpdateAccountBalances", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("should POST to the balances/refresh URL with an undefined body and merged path+query params", async () => {
+    const accounts = createAccounts(mockTransport as any)
+
+    await accounts.forceUpdateAccountBalances(
+      { domainId: "d", accountId: "a" },
+      { ledgerId: "xrpl" },
+    )
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      "/v1/domains/{domainId}/accounts/{accountId}/balances/refresh",
+      undefined,
+      { domainId: "d", accountId: "a", ledgerId: "xrpl" },
+    )
+  })
+
+  it("should merge only path params into pathParams when no query is given", async () => {
+    const accounts = createAccounts(mockTransport as any)
+
+    await accounts.forceUpdateAccountBalances({ domainId: "d", accountId: "a" })
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      "/v1/domains/{domainId}/accounts/{accountId}/balances/refresh",
+      undefined,
+      { domainId: "d", accountId: "a" },
+    )
+  })
+})
+
+describe("generateNewExternalAddressDeprecated", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("should POST to the addresses URL with an undefined body and merged path+query params", async () => {
+    const accounts = createAccounts(mockTransport as any)
+
+    await accounts.generateNewExternalAddressDeprecated(
+      { domainId: "d", accountId: "a" },
+      { ledgerId: "xrpl" },
+    )
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      "/v1/domains/{domainId}/accounts/{accountId}/addresses",
+      undefined,
+      { domainId: "d", accountId: "a", ledgerId: "xrpl" },
+    )
   })
 })
