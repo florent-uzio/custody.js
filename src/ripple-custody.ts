@@ -11,9 +11,11 @@ import {
   createHealth,
   createIntents,
   createLedgers,
+  createOmnibus,
   createPolicies,
   createProviders,
   createRequests,
+  createSponsors,
   createSystemProperties,
   createTickers,
   createTransactions,
@@ -84,6 +86,8 @@ export class RippleCustody {
   public readonly backups: ReturnType<typeof createBackups>
   public readonly providers: ReturnType<typeof createProviders>
   public readonly trustedPublicKeys: ReturnType<typeof createTrustedPublicKeys>
+  public readonly sponsors: ReturnType<typeof createSponsors>
+  public readonly omnibus: ReturnType<typeof createOmnibus>
 
   constructor(options: RippleCustodyClientOptions) {
     const {
@@ -157,6 +161,8 @@ export class RippleCustody {
     this.backups = createBackups(this.transport)
     this.providers = createProviders(this.transport)
     this.trustedPublicKeys = createTrustedPublicKeys(this.transport)
+    this.sponsors = createSponsors(this.transport)
+    this.omnibus = createOmnibus(this.transport)
   }
 
   /**
