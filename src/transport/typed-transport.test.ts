@@ -243,6 +243,41 @@ describe("TypedTransport", () => {
 
       expect(result).toEqual(mockResponse)
     })
+
+    it("should merge non-path pathParams keys into query params", async () => {
+      mockApiService.patch.mockResolvedValue({})
+
+      await transport.patch(
+        "/v1/domains/{domainId}/channels/{channelId}",
+        { name: "renamed" },
+        { domainId: "d-1", channelId: "ch-1", skipValidation: true },
+      )
+
+      expect(mockApiService.patch).toHaveBeenCalledWith(
+        "/v1/domains/d-1/channels/ch-1",
+        { name: "renamed" },
+        { params: { skipValidation: true } },
+      )
+    })
+
+    it("should leave config untouched when pathParams contains only path keys", async () => {
+      const body = { name: "renamed" }
+      mockApiService.patch.mockResolvedValue({})
+      const config = { headers: { "X-Custom": "x" } }
+
+      await transport.patch(
+        "/v1/domains/{domainId}/channels/{channelId}",
+        body,
+        { domainId: "d-1", channelId: "ch-1" },
+        config,
+      )
+
+      expect(mockApiService.patch).toHaveBeenCalledWith(
+        "/v1/domains/d-1/channels/ch-1",
+        body,
+        config,
+      )
+    })
   })
 
   describe("delete", () => {
