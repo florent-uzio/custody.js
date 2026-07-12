@@ -160,12 +160,6 @@ describe("createHttpPorts", () => {
       ).rejects.toThrow("Domain with ID domain-missing not found for user")
     })
 
-    // Note: the plan's branch "provided domain has id: undefined -> Domain X has no ID"
-    // (xrpl.http-adapters.ts:92-94) is unreachable through resolveContext: the domain is
-    // selected via `me.domains.find((d) => d.id === providedDomainId)`, so by the time
-    // that guard runs, domain.id is already known to equal the truthy providedDomainId.
-    // Reported as a suspected dead branch rather than characterized here.
-
     it("throws when the domain matched by the provided domainId has no user reference", async () => {
       const me = makeMe({
         domains: [{ id: "domain-1", alias: "a1", userReference: undefined as any }],
