@@ -20,7 +20,7 @@ describe("sleep", () => {
 
     // Promise should not resolve immediately
     let resolved = false
-    promise.then(() => {
+    void promise.then(() => {
       resolved = true
     })
 
@@ -60,7 +60,7 @@ describe("sleep", () => {
     const promise = sleep(60000)
 
     let resolved = false
-    promise.then(() => {
+    void promise.then(() => {
       resolved = true
     })
 
@@ -84,13 +84,13 @@ describe("sleep", () => {
     let resolved2 = false
     let resolved3 = false
 
-    sleep1.then(() => {
+    void sleep1.then(() => {
       resolved1 = true
     })
-    sleep2.then(() => {
+    void sleep2.then(() => {
       resolved2 = true
     })
-    sleep3.then(() => {
+    void sleep3.then(() => {
       resolved3 = true
     })
 
@@ -123,13 +123,13 @@ describe("sleep", () => {
     await sleepPromise
 
     // Verify it completed
-    expect(sleepPromise).resolves.toBeUndefined()
+    await expect(sleepPromise).resolves.toBeUndefined()
   })
 
   it("should properly chain with other promises", async () => {
     const results: string[] = []
 
-    Promise.resolve()
+    void Promise.resolve()
       .then(() => {
         results.push("start")
         return sleep(100)

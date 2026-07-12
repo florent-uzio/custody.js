@@ -748,7 +748,7 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       vi.clearAllMocks()
 
       const customChallenge = "user-provided-challenge"
-      const serviceWithChallenge = new ApiService({
+      new ApiService({
         apiUrl: mockApiUrl,
         authFormData: { publicKey: mockPublicKey, challenge: customChallenge },
         authService: mockAuthService as any,

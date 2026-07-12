@@ -207,6 +207,7 @@ describe("AuthService", () => {
     it("should join an in-flight refresh even when forceRefresh is true", async () => {
       let resolveToken: (value: { data: { access_token: string } }) => void
       mockAxiosInstance.post.mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- mockImplementation must return the pending Promise; ReturnType<typeof vi.fn> widens to include a void-returning constructor overload
         () =>
           new Promise((resolve) => {
             resolveToken = resolve
@@ -230,6 +231,7 @@ describe("AuthService", () => {
       // Simulate slow token fetch
       let resolveToken: (value: { data: { access_token: string } }) => void
       mockAxiosInstance.post.mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- mockImplementation must return the pending Promise; ReturnType<typeof vi.fn> widens to include a void-returning constructor overload
         () =>
           new Promise((resolve) => {
             resolveToken = resolve
