@@ -118,7 +118,30 @@ describe("replacePathParams", () => {
       domainId: "domain.123",
       userId: "user+456",
     })
-    expect(result).toBe("/v1/domains/domain.123/users/user+456")
+    expect(result).toBe("/v1/domains/domain.123/users/user%2B456")
+  })
+
+  it("should percent-encode a slash in a parameter value", () => {
+    const result = replacePathParams("/v1/domains/{domainId}", { domainId: "a/b" })
+    expect(result).toBe("/v1/domains/a%2Fb")
+  })
+
+  it("should percent-encode a path traversal sequence in a parameter value", () => {
+    const result = replacePathParams("/v1/domains/{domainId}", { domainId: "../admin" })
+    expect(result).toBe("/v1/domains/..%2Fadmin")
+  })
+
+  it("should percent-encode query and fragment characters in a parameter value", () => {
+    const result = replacePathParams("/v1/domains/{domainId}", { domainId: "x?y=1#z" })
+    expect(result).toBe("/v1/domains/x%3Fy%3D1%23z")
+  })
+
+  it("should leave a plain UUID and numeric value unchanged", () => {
+    const result = replacePathParams("/v1/domains/{domainId}/accounts/{accountId}", {
+      domainId: "550e8400-e29b-41d4-a716-446655440000",
+      accountId: 123,
+    })
+    expect(result).toBe("/v1/domains/550e8400-e29b-41d4-a716-446655440000/accounts/123")
   })
 })
 

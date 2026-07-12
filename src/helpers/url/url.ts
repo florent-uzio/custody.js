@@ -11,10 +11,11 @@ export const getHostname = (input: string) => {
 
 /**
  * Replace path parameters in a URL template with actual values.
+ * Values are percent-encoded before substitution.
  *
  * @param urlTemplate - URL template with placeholders like "{domainId}", "{intentId}"
  * @param params - Object containing parameter values to replace
- * @returns URL with all placeholders replaced with actual values
+ * @returns URL with all placeholders replaced with percent-encoded values
  *
  * @example
  * ```typescript
@@ -37,7 +38,7 @@ export const replacePathParams = <T extends Record<string, string | number>>(
     if (result.includes(placeholder)) {
       result = result.replace(
         new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-        String(value),
+        encodeURIComponent(String(value)),
       )
     }
   }
