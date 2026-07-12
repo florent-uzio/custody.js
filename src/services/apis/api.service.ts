@@ -113,6 +113,29 @@ export class ApiService {
   }
 
   /**
+   * Maps a failed request error into a CustodyError and throws it.
+   * Shared by all HTTP verb methods.
+   */
+  private handleRequestError(error: unknown, verb: string): never {
+    if (axios.isAxiosError<Core_ErrorMessage>(error)) {
+      const errorData = error.response?.data
+      if (isObject(errorData)) {
+        throw new CustodyError(errorData, error.response?.status, error)
+      }
+      throw new CustodyError(
+        { reason: `${verb} API request failed: ${error.message}` },
+        error.response?.status,
+        error,
+      )
+    }
+    throw new CustodyError(
+      { reason: error instanceof Error ? error.message : "Unknown error occurred" },
+      undefined,
+      error instanceof Error ? error : undefined,
+    )
+  }
+
+  /**
    * Makes a GET request to the API.
    * @param url - The endpoint URL.
    * @returns {Promise<T>} The response data.
@@ -123,26 +146,7 @@ export class ApiService {
       const response = await this.apiClient.get<T>(url, { params })
       return response.data
     } catch (error) {
-      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
-        // Check if the error response contains the expected error structure
-        const errorData = error.response?.data
-        if (isObject(errorData)) {
-          throw new CustodyError(errorData, error.response?.status, error)
-        }
-        // Fallback for unexpected error formats
-        throw new CustodyError(
-          { reason: `GET API request failed: ${error.message}` },
-          error.response?.status,
-          error,
-        )
-      } else {
-        // Re-throw non-Axios errors as CustodyError
-        throw new CustodyError(
-          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
-          undefined,
-          error instanceof Error ? error : undefined,
-        )
-      }
+      this.handleRequestError(error, "GET")
     }
   }
 
@@ -181,26 +185,7 @@ export class ApiService {
       const response = await this.apiClient.post<T>(url, body, axiosConfig)
       return response.data
     } catch (error) {
-      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
-        // Check if the error response contains the expected error structure
-        const errorData = error.response?.data
-        if (isObject(errorData)) {
-          throw new CustodyError(errorData, error.response?.status, error)
-        }
-        // Fallback for unexpected error formats
-        throw new CustodyError(
-          { reason: `POST API request failed: ${error.message}` },
-          error.response?.status,
-          error,
-        )
-      } else {
-        // Re-throw non-Axios errors as CustodyError
-        throw new CustodyError(
-          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
-          undefined,
-          error instanceof Error ? error : undefined,
-        )
-      }
+      this.handleRequestError(error, "POST")
     }
   }
 
@@ -216,23 +201,7 @@ export class ApiService {
       const response = await this.apiClient.put<T>(url, body, config)
       return response.data
     } catch (error) {
-      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
-        const errorData = error.response?.data
-        if (isObject(errorData)) {
-          throw new CustodyError(errorData, error.response?.status, error)
-        }
-        throw new CustodyError(
-          { reason: `PUT API request failed: ${error.message}` },
-          error.response?.status,
-          error,
-        )
-      } else {
-        throw new CustodyError(
-          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
-          undefined,
-          error instanceof Error ? error : undefined,
-        )
-      }
+      this.handleRequestError(error, "PUT")
     }
   }
 
@@ -248,23 +217,7 @@ export class ApiService {
       const response = await this.apiClient.patch<T>(url, body, config)
       return response.data
     } catch (error) {
-      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
-        const errorData = error.response?.data
-        if (isObject(errorData)) {
-          throw new CustodyError(errorData, error.response?.status, error)
-        }
-        throw new CustodyError(
-          { reason: `PATCH API request failed: ${error.message}` },
-          error.response?.status,
-          error,
-        )
-      } else {
-        throw new CustodyError(
-          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
-          undefined,
-          error instanceof Error ? error : undefined,
-        )
-      }
+      this.handleRequestError(error, "PATCH")
     }
   }
 
@@ -279,23 +232,7 @@ export class ApiService {
       const response = await this.apiClient.delete<T>(url, config)
       return response.data
     } catch (error) {
-      if (axios.isAxiosError<Core_ErrorMessage>(error)) {
-        const errorData = error.response?.data
-        if (isObject(errorData)) {
-          throw new CustodyError(errorData, error.response?.status, error)
-        }
-        throw new CustodyError(
-          { reason: `DELETE API request failed: ${error.message}` },
-          error.response?.status,
-          error,
-        )
-      } else {
-        throw new CustodyError(
-          { reason: error instanceof Error ? error.message : "Unknown error occurred" },
-          undefined,
-          error instanceof Error ? error : undefined,
-        )
-      }
+      this.handleRequestError(error, "DELETE")
     }
   }
 }
