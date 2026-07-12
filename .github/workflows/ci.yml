@@ -1,4 +1,4 @@
-name: Build, Formatting, Lint, Exports and Tests
+name: Build, Formatting, Lint and Tests
 
 on:
   pull_request:
