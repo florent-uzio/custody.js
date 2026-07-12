@@ -89,13 +89,10 @@ function resolveDomainAndUser(
         reason: `Domain with ID ${providedDomainId} not found for user`,
       })
     }
-    if (!domain.id) {
-      throw new CustodyError({ reason: `Domain ${providedDomainId} has no ID` })
-    }
     if (!domain.userReference?.id) {
       throw new CustodyError({ reason: `Domain ${providedDomainId} has no user reference` })
     }
-    return { domainId: domain.id, userId: domain.userReference.id }
+    return { domainId: providedDomainId, userId: domain.userReference.id }
   }
 
   if (me.domains.length > 1) {
