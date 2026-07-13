@@ -297,7 +297,7 @@ export const batchSignersToCustodyBatchSigners = (
 }
 
 /**
- * Maps an xrpl.js Batch `Flags` field to the {% PUBLIC_VAR_CUS %} `executionMode`.
+ * Maps an xrpl.js Batch `Flags` field to the Ripple Custody `executionMode`.
  * Accepts a numeric bitmask or a pre-decoded object form (`{ tfAllOrNothing: true }`).
  * Throws if no execution-mode flag is set or multiple are set.
  */
