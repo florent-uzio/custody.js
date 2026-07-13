@@ -1088,9 +1088,12 @@ describe("XrplService", () => {
   describe("signBatchPayload", () => {
     it("proposes the sign intent and returns a handle without waiting", async () => {
       let capturedBody: any
-      const getManifest = vi.fn(async () => ({
-        data: { value: { type: "Unsafe" as const, signature: mockBase64Signature } },
-      }))
+      const getManifest = vi.fn(
+        async () =>
+          ({
+            data: { value: { type: "Unsafe" as const, signature: mockBase64Signature } },
+          }) as any,
+      )
       ports = createTestPorts({
         submitIntent: async (body) => {
           capturedBody = body

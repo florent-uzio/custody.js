@@ -279,7 +279,7 @@ export type SignBatchPayloadOptions = XrplIntentOptions & {
  * Result of `signBatchPayloadAndWait`.
  *
  * `signature` and `signingPubKey` are uppercase hex. `batchSigner` is the
- * xrpl.js `BatchSigner` shape; `custodyBatchSigner` is the {% PUBLIC_VAR_CUS %}
+ * xrpl.js `BatchSigner` shape; `custodyBatchSigner` is the Ripple Custody
  * shape — pick whichever the next step needs.
  */
 export type SignBatchPayloadResult = {

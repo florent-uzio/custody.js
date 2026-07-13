@@ -132,10 +132,13 @@ describe("createHttpPorts", () => {
     })
   })
 
+  // resolveContext runs the /v1/me and address lookups concurrently via
+  // Promise.all, so the address call must resolve for the domain-resolution
+  // error (not an "address not found" rejection) to be the one that surfaces.
   describe("resolveContext — resolveDomainAndUser error branches", () => {
     it("throws when loginId is missing", async () => {
       const me = makeMe({ loginId: undefined })
-      mockMeAndAddresses(me, [])
+      mockMeAndAddresses(me, [makeAddressRef()])
       const ports = createHttpPorts(mockTransport as any)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(CustodyError)
@@ -144,7 +147,7 @@ describe("createHttpPorts", () => {
 
     it("throws when the user has no domains", async () => {
       const me = makeMe({ domains: [] })
-      mockMeAndAddresses(me, [])
+      mockMeAndAddresses(me, [makeAddressRef()])
       const ports = createHttpPorts(mockTransport as any)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow("User has no domains")
@@ -152,7 +155,10 @@ describe("createHttpPorts", () => {
 
     it("throws when the provided domainId is not found among the user's domains", async () => {
       const me = makeMe()
-      mockMeAndAddresses(me, [])
+      // resolveContext now fires the address lookup in parallel with /v1/me, so
+      // the address must resolve for the domain-resolution error to surface. The
+      // ref carries the queried domainId so findByAddressOrThrow matches it.
+      mockMeAndAddresses(me, [makeAddressRef({ domainId: "domain-missing" })])
       const ports = createHttpPorts(mockTransport as any)
 
       await expect(
@@ -164,7 +170,7 @@ describe("createHttpPorts", () => {
       const me = makeMe({
         domains: [{ id: "domain-1", alias: "a1", userReference: undefined as any }],
       })
-      mockMeAndAddresses(me, [])
+      mockMeAndAddresses(me, [makeAddressRef()])
       const ports = createHttpPorts(mockTransport as any)
 
       await expect(ports.resolveContext("rAddress123", { domainId: "domain-1" })).rejects.toThrow(
@@ -187,7 +193,7 @@ describe("createHttpPorts", () => {
           },
         ],
       })
-      mockMeAndAddresses(me, [])
+      mockMeAndAddresses(me, [makeAddressRef()])
       const ports = createHttpPorts(mockTransport as any)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(
@@ -205,7 +211,7 @@ describe("createHttpPorts", () => {
           },
         ],
       })
-      mockMeAndAddresses(me, [])
+      mockMeAndAddresses(me, [makeAddressRef()])
       const ports = createHttpPorts(mockTransport as any)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(
@@ -217,7 +223,7 @@ describe("createHttpPorts", () => {
       const me = makeMe({
         domains: [{ id: "domain-1", alias: "a1", userReference: undefined as any }],
       })
-      mockMeAndAddresses(me, [])
+      mockMeAndAddresses(me, [makeAddressRef()])
       const ports = createHttpPorts(mockTransport as any)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(

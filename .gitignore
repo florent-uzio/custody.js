@@ -61,7 +61,8 @@ temp/
 .env.test.local
 .env.production.local
 
-# Local testing files
+# Local testing files (personal scratch harness, run via `npm run sandbox`)
+sandbox/
 main.ts
 main.helpers.ts
 
