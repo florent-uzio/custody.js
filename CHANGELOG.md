@@ -1,5 +1,11 @@
 # custody
 
+## 2.7.1
+
+### Patch Changes
+
+- 5ed7812: Parallelize the two lookups in XRPL context resolution; fix leaked doc placeholders in Batch-related JSDoc.
+
 ## 2.7.0
 
 ### Minor Changes
