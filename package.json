@@ -45,7 +45,6 @@
     "release": "changeset publish",
     "prepublishOnly": "npm run build && npm run check-format && npm run test",
     "sort-package": "npx sort-package-json",
-    "start": "npm run build && node dist/main.js",
     "test": "vitest run --reporter verbose",
     "test:coverage": "vitest run --coverage",
     "test:coverage:ui": "vitest --coverage --ui",
