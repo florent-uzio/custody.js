@@ -1,14 +1,15 @@
-import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
 import { encodeForSigning, isValidAddress, type SubmittableTransaction } from "xrpl"
 import { sleep } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
+import type { components } from "../../models/custody-types.js"
 import { CustodyError } from "../../models/index.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
 import {
   buildBatchOperation,
   buildDryRunBody,
+  buildRequestEnvelope,
   buildSignBatchPayloadResult,
   buildTransactionIntent,
 } from "./xrpl.builders.js"
@@ -414,33 +415,23 @@ export class XrplService {
     context: IntentContext,
     options: XrplIntentOptions,
   ): Promise<{ intentResponse: Core_IntentResponse; payloadId: string }> {
-    const requestId = options.requestId ?? uuidv7()
     const payloadId = options.payloadId ?? uuidv7()
+
+    const payload = {
+      id: payloadId,
+      accountId: context.accountId,
+      ledgerId: context.ledgerId,
+      customProperties: options.payloadCustomProperties ?? {},
+      content: {
+        value: base64Bytes,
+        type: "Unsafe",
+      },
+      type: "v0_SignManifest",
+    } satisfies components["schemas"]["Core_v0_SignManifest"]
 
     const intent: Core_ProposeIntentBody = {
       request: {
-        author: {
-          id: context.userId,
-          domainId: context.domainId,
-        },
-        expiryAt: dayjs()
-          .add(options.expiryDays ?? 1, "day")
-          .toISOString(),
-        targetDomainId: context.domainId,
-        id: requestId,
-        ...(!isUndefined(options.description) && { description: options.description }),
-        customProperties: options.requestCustomProperties ?? {},
-        payload: {
-          id: payloadId,
-          accountId: context.accountId,
-          ledgerId: context.ledgerId,
-          customProperties: options.payloadCustomProperties ?? {},
-          content: {
-            value: base64Bytes,
-            type: "Unsafe",
-          },
-          type: "v0_SignManifest",
-        },
+        ...buildRequestEnvelope(context, options, payload),
         type: "Propose",
       },
     }
