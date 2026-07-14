@@ -6,14 +6,18 @@ import type {
   Core_AccountAddress,
   Core_AccountAddressReference,
   Core_AccountsCollection,
-  Core_AddressReferenceCollection,
   Core_AddressesCollection,
+  Core_AddressReferenceCollection,
   Core_ApiAccount,
   Core_ApiManifest,
   Core_BalancesCollection,
+  Core_BalanceWithConfirmedAmount,
   Core_ComplianceConfiguration,
   Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
+  Core_TransferabilityResponse,
+  Core_TrustedDepositInstructions,
+  Core_TrustedDepositInstructionsCollection,
   FindByAddressOptions,
   ForceUpdateAccountBalancesPathParams,
   ForceUpdateAccountBalancesQueryParams,
@@ -23,6 +27,7 @@ import type {
   GetAccountAddressPathParams,
   GetAccountBalancesPathParams,
   GetAccountBalancesQueryParams,
+  GetAccountConfirmedBalancePathParams,
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,
@@ -31,11 +36,18 @@ import type {
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
   GetComplianceConfigurationPathParams,
+  GetDepositInstructionPathParams,
+  GetLatestAddressPathParams,
+  GetLatestAddressQueryParams,
   GetManifestPathParams,
   GetManifestsPathParams,
   GetManifestsQueryParams,
+  GetTransferabilityPathParams,
+  GetTransferabilityQueryParams,
   ListComplianceConfigurationsPathParams,
   ListComplianceConfigurationsQueryParams,
+  ListDepositInstructionsPathParams,
+  ListDepositInstructionsQueryParams,
   UpsertComplianceConfigurationBody,
   UpsertComplianceConfigurationPathParams,
 } from "./accounts.types.js"
@@ -178,5 +190,31 @@ export function createAccounts(t: Transport) {
       address: string,
       opts?: FindByAddressOptions,
     ): Promise<Core_AccountAddressReference> => findByAddressOrThrow(t, address, opts),
+
+    /** @deprecated Use {@link getAccountAddress} instead. */
+    getLatestAddress: (
+      params: GetLatestAddressPathParams,
+      query?: GetLatestAddressQueryParams,
+    ): Promise<Core_AccountAddress> => t.get(URLs.accountAddressesLatest, params, query),
+
+    /** @deprecated Use {@link getAccountBalances} instead. */
+    getConfirmedBalance: (
+      params: GetAccountConfirmedBalancePathParams,
+    ): Promise<Core_BalanceWithConfirmedAmount> => t.get(URLs.accountConfirmedBalance, params),
+
+    getTransferability: (
+      params: GetTransferabilityPathParams,
+      query?: GetTransferabilityQueryParams,
+    ): Promise<Core_TransferabilityResponse> => t.get(URLs.accountsTransferability, params, query),
+
+    listDepositInstructions: (
+      params: ListDepositInstructionsPathParams,
+      query?: ListDepositInstructionsQueryParams,
+    ): Promise<Core_TrustedDepositInstructionsCollection> =>
+      t.get(URLs.accountDepositInstructions, params, query),
+
+    getDepositInstruction: (
+      params: GetDepositInstructionPathParams,
+    ): Promise<Core_TrustedDepositInstructions> => t.get(URLs.accountDepositInstruction, params),
   } as const
 }

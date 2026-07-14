@@ -17,12 +17,14 @@ import {
   createRequests,
   createSponsors,
   createSystemProperties,
+  createSystemSigning,
   createTickers,
   createTransactions,
   createTrustedPublicKeys,
   createUserInvitations,
   createUsers,
   createVaults,
+  createVirtualLedgers,
 } from "./namespaces/index.js"
 import type { Core_IntentResponse } from "./namespaces/intents.types.js"
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
@@ -83,11 +85,13 @@ export class RippleCustody {
   public readonly vaults: ReturnType<typeof createVaults>
   public readonly requests: ReturnType<typeof createRequests>
   public readonly systemProperties: ReturnType<typeof createSystemProperties>
+  public readonly systemSigning: ReturnType<typeof createSystemSigning>
   public readonly backups: ReturnType<typeof createBackups>
   public readonly providers: ReturnType<typeof createProviders>
   public readonly trustedPublicKeys: ReturnType<typeof createTrustedPublicKeys>
   public readonly sponsors: ReturnType<typeof createSponsors>
   public readonly omnibus: ReturnType<typeof createOmnibus>
+  public readonly virtualLedgers: ReturnType<typeof createVirtualLedgers>
 
   constructor(options: RippleCustodyClientOptions) {
     const {
@@ -158,11 +162,13 @@ export class RippleCustody {
     this.vaults = createVaults(this.transport)
     this.requests = createRequests(this.transport)
     this.systemProperties = createSystemProperties(this.transport)
+    this.systemSigning = createSystemSigning(this.transport)
     this.backups = createBackups(this.transport)
     this.providers = createProviders(this.transport)
     this.trustedPublicKeys = createTrustedPublicKeys(this.transport)
     this.sponsors = createSponsors(this.transport)
     this.omnibus = createOmnibus(this.transport)
+    this.virtualLedgers = createVirtualLedgers(this.transport)
   }
 
   /**
