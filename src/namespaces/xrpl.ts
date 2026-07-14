@@ -130,7 +130,8 @@ export function createXrpl(getService: () => XrplService) {
     getBatchSignature: async (
       params: GetBatchSignatureParams,
       options?: WaitForSignatureOptions,
-    ): Promise<SignBatchPayloadResult | undefined> => getService().getBatchSignature(params, options),
+    ): Promise<SignBatchPayloadResult | undefined> =>
+      getService().getBatchSignature(params, options),
 
     /**
      * Step 3 of the XLS-56 Batch flow — submits the Batch with collected
