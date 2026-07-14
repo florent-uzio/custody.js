@@ -1,9 +1,9 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_TrustedSystemPropertiesCollection,
   GetSystemPropertiesQueryParams,
-} from "../services/system-properties/system-properties.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./system-properties.types.js"
 
 export function createSystemProperties(t: TypedTransport) {
   return {

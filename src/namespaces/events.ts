@@ -1,10 +1,10 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_EventsCollection,
   GetEventsPathParams,
   GetEventsQueryParams,
-} from "../services/events/events.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./events.types.js"
 
 export function createEvents(t: TypedTransport) {
   return {

@@ -1,4 +1,5 @@
 import { URLs } from "../../constants/urls.js"
+import type { TypedTransport } from "../../transport/index.js"
 import type {
   Compliance_ExceptionRoleResponse,
   Compliance_PolicyResponse,
@@ -6,8 +7,7 @@ import type {
   ComplianceExceptionRolePathParams,
   ComplianceGetPolicyPathParams,
   CompliancePolicyPathParams,
-} from "../../services/compliance/policy.types.js"
-import type { TypedTransport } from "../../transport/index.js"
+} from "./policy.types.js"
 
 /** `client.compliance.policy.*` — compliance policy configuration. */
 export function createCompliancePolicy(t: TypedTransport) {

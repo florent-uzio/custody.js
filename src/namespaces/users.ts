@@ -1,4 +1,5 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_ApiRoles,
   Core_MeReference,
@@ -8,8 +9,7 @@ import type {
   GetUserPathParams,
   GetUsersPathParams,
   GetUsersQueryParams,
-} from "../services/users/users.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./users.types.js"
 
 export function createUsers(t: TypedTransport) {
   return {

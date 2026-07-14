@@ -15,10 +15,10 @@ import type {
   TrustSet,
 } from "xrpl"
 import type { components } from "../../models/custody-types.js"
+import type { DomainUserReference } from "../../models/domain-resolver.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
+import type { Core_IntentResponse } from "../../namespaces/intents.types.js"
 import type { Prettify } from "../../type-utils/index.js"
-import type { DomainUserReference } from "../domain-resolver/index.js"
-import type { Core_IntentResponse } from "../intents/intents.types.js"
 
 /**
  * Minimum set of account fields required to build an XRPL intent.

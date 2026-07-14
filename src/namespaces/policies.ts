@@ -1,12 +1,12 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_TrustedPoliciesCollection,
   Core_TrustedPolicy,
   GetPoliciesPathParams,
   GetPoliciesQueryParams,
   GetPolicyPathParams,
-} from "../services/policies/index.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./policies.types.js"
 
 export function createPolicies(t: TypedTransport) {
   return {

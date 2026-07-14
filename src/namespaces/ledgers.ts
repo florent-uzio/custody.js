@@ -1,4 +1,5 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_CurrentFees,
   Core_EthereumCallResponse,
@@ -11,8 +12,7 @@ import type {
   GetTrustedLedgersQueryParams,
   ProcessEthereumContractCallBody,
   ProcessEthereumContractCallPathParams,
-} from "../services/ledgers/ledgers.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./ledgers.types.js"
 
 export function createLedgers(t: TypedTransport) {
   return {

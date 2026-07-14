@@ -1,6 +1,6 @@
 import { URLs } from "../constants/urls.js"
-import type { LivenessResponse, ReadinessResponse } from "../services/health/health.types.js"
 import type { TypedTransport } from "../transport/index.js"
+import type { LivenessResponse, ReadinessResponse } from "./health.types.js"
 
 /**
  * Health-check namespace (`GET /v1/health`, `GET /v1/ready`).

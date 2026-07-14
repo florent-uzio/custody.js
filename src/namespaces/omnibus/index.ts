@@ -1,4 +1,5 @@
 import { URLs } from "../../constants/urls.js"
+import type { TypedTransport } from "../../transport/index.js"
 import type {
   CreateOmnibusPathParams,
   GetOmnibusByIdPathParams,
@@ -16,8 +17,7 @@ import type {
   Omnibus_UpdateOmnibusRequest,
   UnlockOmnibusPathParams,
   UpdateOmnibusPathParams,
-} from "../../services/omnibus/omnibus.types.js"
-import type { TypedTransport } from "../../transport/index.js"
+} from "./omnibus.types.js"
 import { createOmnibusTenants } from "./tenants.js"
 
 /**

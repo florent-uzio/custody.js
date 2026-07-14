@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../../models/index.js"
-import type { Core_AccountAddressReference } from "../../services/accounts/accounts.types.js"
 import { createAccounts, findByAddress, findByAddressOrThrow } from "../accounts.js"
+import type { Core_AccountAddressReference } from "../accounts.types.js"
 
 const mockTransport = {
   get: vi.fn(),

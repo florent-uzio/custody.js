@@ -1,4 +1,5 @@
 import { URLs } from "../../constants/urls.js"
+import type { TypedTransport } from "../../transport/index.js"
 import type {
   Compliance_ConfigurationDetailResponse,
   Compliance_GetScreeningRulesResponse,
@@ -10,8 +11,7 @@ import type {
   ComplianceProviderPathParams,
   ComplianceProvidersPathParams,
   ComplianceTogglePreviewScreeningQueryParams,
-} from "../../services/compliance/providers.types.js"
-import type { TypedTransport } from "../../transport/index.js"
+} from "./providers.types.js"
 
 /**
  * `client.compliance.providers.*` — compliance provider connections and

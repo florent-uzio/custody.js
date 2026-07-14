@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { URLs } from "../../constants/urls.js"
 import { CustodyError } from "../../models/index.js"
-import type { Core_AccountAddressReference } from "../accounts/accounts.types.js"
-import type { Core_IntentDryRunRequest, Core_ProposeIntentBody } from "../intents/intents.types.js"
-import type { Core_MeReference } from "../users/users.types.js"
+import type { Core_AccountAddressReference } from "../../namespaces/accounts.types.js"
+import type {
+  Core_IntentDryRunRequest,
+  Core_ProposeIntentBody,
+} from "../../namespaces/intents.types.js"
+import type { Core_MeReference } from "../../namespaces/users.types.js"
 import { createHttpPorts } from "./xrpl.http-adapters.js"
 
 const mockTransport = {

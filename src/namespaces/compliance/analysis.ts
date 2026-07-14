@@ -1,12 +1,12 @@
 import { URLs } from "../../constants/urls.js"
+import type { TypedTransport } from "../../transport/index.js"
 import type {
   Compliance_ComplianceAnalysisResponse,
   Compliance_WalletAnalysisResponse,
   ComplianceAnalysisPathParams,
   ComplianceAnalyzeBody,
   CompliancePreviewAnalysisBody,
-} from "../../services/compliance/analysis.types.js"
-import type { TypedTransport } from "../../transport/index.js"
+} from "./analysis.types.js"
 
 /** `client.compliance.analysis.*` — transaction/wallet compliance analysis. */
 export function createComplianceAnalysis(t: TypedTransport) {

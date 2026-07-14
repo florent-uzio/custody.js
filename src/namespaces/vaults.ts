@@ -1,4 +1,5 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_ApiVault,
   Core_ExportPreparedOperationsResponse,
@@ -7,8 +8,7 @@ import type {
   GetVaultPathParams,
   GetVaultsQueryParams,
   ImportPreparedOperationsRequestBody,
-} from "../services/vaults/vaults.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./vaults.types.js"
 
 export function createVaults(t: TypedTransport) {
   return {

@@ -1,6 +1,7 @@
 import { URLs } from "../constants/urls.js"
 import { sleep } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
+import type { TypedTransport } from "../transport/index.js"
 import {
   TERMINAL_STATUSES,
   type Core_ApproveIntentBody,
@@ -18,8 +19,7 @@ import {
   type Core_TrustedIntent,
   type WaitForExecutionOptions,
   type WaitForExecutionResult,
-} from "../services/intents/intents.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./intents.types.js"
 
 /**
  * Wait for an intent to reach a terminal status (Executed, Failed, Expired, or Rejected).

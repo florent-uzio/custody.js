@@ -1,4 +1,5 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_ApiBackup,
   Core_ApiTrustedBackup,
@@ -6,8 +7,7 @@ import type {
   GetBackupPathParams,
   GetBackupsQueryParams,
   GetBackupTrustedEntityPathParams,
-} from "../services/backups/backups.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./backups.types.js"
 
 export function createBackups(t: TypedTransport) {
   return {

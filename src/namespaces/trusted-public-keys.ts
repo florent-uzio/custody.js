@@ -1,9 +1,9 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_TrustedTrustedPublicKeysCollection,
   GetTrustedPublicKeysQueryParams,
-} from "../services/trusted-public-keys/trusted-public-keys.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./trusted-public-keys.types.js"
 
 export function createTrustedPublicKeys(t: TypedTransport) {
   return {

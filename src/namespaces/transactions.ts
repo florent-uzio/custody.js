@@ -1,4 +1,5 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_DryRunTransactionParameters,
   Core_TransactionDetails,
@@ -18,8 +19,7 @@ import type {
   GetTransferDetailsPathParams,
   TransferTransactionOrderPathParams,
   TransferTransactionOrderQueryParams,
-} from "../services/transactions/transactions.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./transactions.types.js"
 
 export function createTransactions(t: TypedTransport) {
   return {

@@ -1,4 +1,5 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   AddSponsoredAccountsPathParams,
   AddSponsoredDomainsPathParams,
@@ -34,8 +35,7 @@ import type {
   ListSponsorEventsQueryParams,
   ListSponsorsPathParams,
   UpdateSponsorPathParams,
-} from "../services/sponsors/sponsors.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./sponsors.types.js"
 
 /**
  * Gas Station sponsorship namespace (`client.sponsors.*`).

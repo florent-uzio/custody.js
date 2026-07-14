@@ -1,4 +1,5 @@
 import { URLs } from "../../constants/urls.js"
+import type { TypedTransport } from "../../transport/index.js"
 import type {
   Compliance_AppendPIITravelRuleResponse,
   Compliance_GetTravelRuleTransferResponse,
@@ -18,8 +19,7 @@ import type {
   ComplianceTravelRuleMessagePathParams,
   ComplianceTravelRulePolicyPathParams,
   ComplianceTravelRuleProviderPathParams,
-} from "../../services/compliance/travel-rule.types.js"
-import type { TypedTransport } from "../../transport/index.js"
+} from "./travel-rule.types.js"
 
 /**
  * `client.compliance.travelRule.*` — travel-rule messaging (IVMS-101 PII
