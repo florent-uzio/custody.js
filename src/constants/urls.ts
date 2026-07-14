@@ -55,6 +55,10 @@ export const URLs = createURLs({
   accountComplianceConfiguration:
     "/v1/domains/{domainId}/accounts/{accountId}/compliance-configuration",
   complianceConfigurations: "/v1/domains/{domainId}/compliance-configurations",
+  accountsTransferability: "/v1/domains/{domainId}/accounts/transferability",
+  accountDepositInstructions: "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions",
+  accountDepositInstruction:
+    "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions/{instructions-id}",
 
   // Compliance
   complianceProviders: "/v1/domains/{domainId}/compliance/providers",
@@ -131,6 +135,9 @@ export const URLs = createURLs({
 
   // Properties
   properties: "/v1/properties",
+
+  // System Signing
+  systemSigningInfo: "/v1/system-signing/info",
 
   // Health
   health: "/v1/health",
@@ -215,3 +222,22 @@ export const URLs = createURLs({
 
 // Type for the URLs object that ensures all values are valid paths
 // export type URLs = typeof URLs
+
+/**
+ * Paths from the generated OpenAPI types that intentionally have no friendly
+ * name in `URLs` (e.g. deprecated or not-yet-supported endpoints). Add a path
+ * here only when it should stay unreachable through `URLs` - otherwise give it
+ * a friendly name in `URLs` above.
+ */
+type IntentionallyUnmapped = never
+
+/**
+ * Compile-time completeness check: every path in the generated spec must be
+ * reachable through `URLs`, or explicitly listed in `IntentionallyUnmapped`.
+ * A new endpoint landing in a bundled spec that isn't mapped either way makes
+ * `UnmappedPaths` non-`never`, which fails the typecheck below and reports the
+ * unmapped path(s) as the offending type.
+ */
+type UnmappedPaths = Exclude<PathKeys, (typeof URLs)[keyof typeof URLs] | IntentionallyUnmapped>
+type AssertNever<T extends never> = T
+export type AssertAllPathsMapped = AssertNever<UnmappedPaths>
