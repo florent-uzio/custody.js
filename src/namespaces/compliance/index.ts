@@ -1,4 +1,4 @@
-import type { TypedTransport } from "../../transport/index.js"
+import type { Transport } from "../../transport/index.js"
 import { createComplianceAnalysis } from "./analysis.js"
 import { createComplianceDomain } from "./domain.js"
 import { createCompliancePolicy } from "./policy.js"
@@ -10,7 +10,7 @@ import { createComplianceTravelRule } from "./travel-rule.js"
  * mirror the `/v1/domains/{domainId}/compliance/*` URL structure:
  * `providers`, `policy`, `domain`, `analysis`, and `travelRule`.
  */
-export function createCompliance(t: TypedTransport) {
+export function createCompliance(t: Transport) {
   return {
     providers: createComplianceProviders(t),
     policy: createCompliancePolicy(t),

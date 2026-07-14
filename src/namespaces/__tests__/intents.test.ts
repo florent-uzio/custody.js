@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../../models/index.js"
+import { createFakeTransport } from "../../testing/fake-transport.js"
 import { createIntents } from "../intents.js"
 
 vi.mock("../../helpers/index.js", async () => {
@@ -10,17 +11,14 @@ vi.mock("../../helpers/index.js", async () => {
   }
 })
 
-const mockTransport = {
-  get: vi.fn(),
-  post: vi.fn(),
-}
+const mockTransport = createFakeTransport()
 
 describe("createIntents", () => {
   let intents: ReturnType<typeof createIntents>
 
   beforeEach(() => {
     vi.clearAllMocks()
-    intents = createIntents(mockTransport as any)
+    intents = createIntents(mockTransport)
   })
 
   describe("getAndWait (waitForExecution)", () => {

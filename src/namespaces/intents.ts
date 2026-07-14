@@ -1,7 +1,7 @@
 import { URLs } from "../constants/urls.js"
 import { sleep } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import {
   TERMINAL_STATUSES,
   type Core_ApproveIntentBody,
@@ -29,7 +29,7 @@ import {
  * and is retried within the same polling loop rather than aborting the wait.
  */
 async function waitForExecution(
-  t: TypedTransport,
+  t: Transport,
   params: Core_GetIntentPathParams,
   options: WaitForExecutionOptions = {},
 ): Promise<WaitForExecutionResult> {
@@ -83,7 +83,7 @@ async function waitForExecution(
   }
 }
 
-export function createIntents(t: TypedTransport) {
+export function createIntents(t: Transport) {
   return {
     propose: (params: Core_ProposeIntentBody): Promise<Core_IntentResponse> =>
       t.post(URLs.intents, params),

@@ -9,7 +9,7 @@ import type {
   Core_ProposeIntentBody,
 } from "../../namespaces/intents.types.js"
 import type { Core_MeReference } from "../../namespaces/users.types.js"
-import type { TypedTransport } from "../../transport/index.js"
+import type { Transport } from "../../transport/index.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 
 /**
@@ -22,7 +22,7 @@ import type { XrplPorts } from "./xrpl.ports.js"
  * - manifest retrieval (GET /v1/domains/.../manifests/...)
  * - account details (GET /v1/domains/.../accounts/...)
  */
-export function createHttpPorts(transport: TypedTransport): XrplPorts {
+export function createHttpPorts(transport: Transport): XrplPorts {
   return {
     async resolveContext(address, opts = {}) {
       const [me, account] = await Promise.all([

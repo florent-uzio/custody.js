@@ -239,6 +239,17 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       expect(mockAxiosInstance.get).toHaveBeenCalledWith("/test-endpoint", { params })
     })
 
+    it("should forward config to GET request alongside params", async () => {
+      const mockResponse = { data: { items: [] } }
+      mockAxiosInstance.get.mockResolvedValue(mockResponse)
+
+      const params = { limit: 10 }
+      const config = { headers: { "X-Custom": "x" } }
+      await apiService.get("/test-endpoint", params, config)
+
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith("/test-endpoint", { ...config, params })
+    })
+
     it("should throw CustodyError on API error with error structure", async () => {
       const axiosError = {
         isAxiosError: true,

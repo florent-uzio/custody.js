@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   CancelUserInvitationPathParams,
   CompleteUserInvitationPathParams,
@@ -16,7 +16,7 @@ import type {
   RenewUserInvitationPathParams,
 } from "./user-invitations.types.js"
 
-export function createUserInvitations(t: TypedTransport) {
+export function createUserInvitations(t: Transport) {
   return {
     list: (
       pathParams: GetUserInvitationsPathParams,

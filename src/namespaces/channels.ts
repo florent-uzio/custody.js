@@ -14,9 +14,9 @@ import type {
   TestChannelPathParams,
   UpdateChannelPathParams,
 } from "../services/channels/channels.types.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 
-export function createChannels(t: TypedTransport) {
+export function createChannels(t: Transport) {
   return {
     list: (params: GetChannelsPathParams): Promise<EDS_Channel[]> => t.get(URLs.channels, params),
 

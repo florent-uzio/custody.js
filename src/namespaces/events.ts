@@ -1,12 +1,12 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_EventsCollection,
   GetEventsPathParams,
   GetEventsQueryParams,
 } from "./events.types.js"
 
-export function createEvents(t: TypedTransport) {
+export function createEvents(t: Transport) {
   return {
     list: (
       params: GetEventsPathParams,

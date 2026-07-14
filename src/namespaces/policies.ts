@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_TrustedPoliciesCollection,
   Core_TrustedPolicy,
@@ -8,7 +8,7 @@ import type {
   GetPolicyPathParams,
 } from "./policies.types.js"
 
-export function createPolicies(t: TypedTransport) {
+export function createPolicies(t: Transport) {
   return {
     list: (
       params: GetPoliciesPathParams,

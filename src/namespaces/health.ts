@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type { LivenessResponse, ReadinessResponse } from "./health.types.js"
 
 /**
@@ -14,7 +14,7 @@ import type { LivenessResponse, ReadinessResponse } from "./health.types.js"
  * than resolving with the unhealthy body — callers detect an unhealthy backend
  * via the thrown error.
  */
-export function createHealth(t: TypedTransport) {
+export function createHealth(t: Transport) {
   return {
     /** Liveness check — `GET /v1/health`. */
     liveness: (): Promise<LivenessResponse> => t.get(URLs.health),

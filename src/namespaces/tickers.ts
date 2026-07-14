@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_ApiTicker,
   Core_TickersCollection,
@@ -7,7 +7,7 @@ import type {
   GetTickersQueryParams,
 } from "./tickers.types.js"
 
-export function createTickers(t: TypedTransport) {
+export function createTickers(t: Transport) {
   return {
     list: (queryParams?: GetTickersQueryParams): Promise<Core_TickersCollection> =>
       t.get(URLs.tickers, undefined, queryParams),

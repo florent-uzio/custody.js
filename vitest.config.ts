@@ -23,6 +23,7 @@ export default defineConfig({
         "src/main.ts",
         "src/main.helpers.ts",
         "src/models/custody-types.ts", // Auto-generated from OpenAPI
+        "src/testing/**",
       ],
 
       // Coverage thresholds (optional - uncomment to enforce)

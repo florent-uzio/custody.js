@@ -24,7 +24,7 @@ describe("TypedTransport", () => {
 
       await transport.get("/v1/tickers")
 
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/tickers", undefined)
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/tickers", undefined, undefined)
     })
 
     it("should call api.get with query params when no path params", async () => {
@@ -32,7 +32,7 @@ describe("TypedTransport", () => {
 
       await transport.get("/v1/tickers", undefined, { limit: 10 })
 
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/tickers", { limit: 10 })
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/tickers", { limit: 10 }, undefined)
     })
 
     it("should resolve path params from URL template", async () => {
@@ -40,7 +40,7 @@ describe("TypedTransport", () => {
 
       await transport.get("/v1/domains/{domainId}", { domainId: "d-123" })
 
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-123", undefined)
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-123", undefined, undefined)
     })
 
     it("should resolve path params and pass query separately", async () => {
@@ -48,7 +48,11 @@ describe("TypedTransport", () => {
 
       await transport.get("/v1/domains/{domainId}/accounts", { domainId: "d-123" }, { limit: 5 })
 
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-123/accounts", { limit: 5 })
+      expect(mockApiService.get).toHaveBeenCalledWith(
+        "/v1/domains/d-123/accounts",
+        { limit: 5 },
+        undefined,
+      )
     })
 
     it("should resolve multiple path params", async () => {
@@ -59,7 +63,11 @@ describe("TypedTransport", () => {
         intentId: "i-456",
       })
 
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-123/intents/i-456", undefined)
+      expect(mockApiService.get).toHaveBeenCalledWith(
+        "/v1/domains/d-123/intents/i-456",
+        undefined,
+        undefined,
+      )
     })
 
     it("should separate mixed path and non-path params in pathParams", async () => {
@@ -72,7 +80,11 @@ describe("TypedTransport", () => {
       })
 
       // The extra 'limit' from pathParams should be merged into query
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-123/accounts", { limit: 5 })
+      expect(mockApiService.get).toHaveBeenCalledWith(
+        "/v1/domains/d-123/accounts",
+        { limit: 5 },
+        undefined,
+      )
     })
 
     it("should return the data from api.get", async () => {
@@ -82,6 +94,15 @@ describe("TypedTransport", () => {
       const result = await transport.get("/v1/tickers")
 
       expect(result).toEqual(mockData)
+    })
+
+    it("should forward config to api.get", async () => {
+      mockApiService.get.mockResolvedValue({ data: [] })
+      const config = { headers: { "X-Custom": "x" } }
+
+      await transport.get("/v1/tickers", undefined, { limit: 10 }, config)
+
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/tickers", { limit: 10 }, config)
     })
   })
 
@@ -368,7 +389,7 @@ describe("TypedTransport", () => {
 
       await transport.get("/v1/allowed")
 
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/allowed", undefined)
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/allowed", undefined, undefined)
     })
 
     it("gates on the path template, not the resolved URL", async () => {
@@ -376,7 +397,7 @@ describe("TypedTransport", () => {
 
       await transport.get("/v1/domains/{domainId}", { domainId: "d-1" })
 
-      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-1", undefined)
+      expect(mockApiService.get).toHaveBeenCalledWith("/v1/domains/d-1", undefined, undefined)
     })
 
     it("throws UnsupportedInVersionError and never dispatches an endpoint the version lacks", async () => {

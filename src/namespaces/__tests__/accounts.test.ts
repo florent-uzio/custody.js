@@ -1,12 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../../models/index.js"
+import { createFakeTransport } from "../../testing/fake-transport.js"
 import { createAccounts, findByAddress, findByAddressOrThrow } from "../accounts.js"
 import type { Core_AccountAddressReference } from "../accounts.types.js"
 
-const mockTransport = {
-  get: vi.fn(),
-  post: vi.fn(),
-}
+const mockTransport = createFakeTransport()
 
 function makeRef(
   overrides: Partial<Core_AccountAddressReference> = {},
@@ -33,7 +31,7 @@ describe("findByAddressOrThrow", () => {
     const ref = makeRef()
     mockTransport.get.mockResolvedValue({ items: [ref] })
 
-    const result = await findByAddressOrThrow(mockTransport as any, "rAddress123")
+    const result = await findByAddressOrThrow(mockTransport, "rAddress123")
 
     expect(result).toEqual(ref)
     expect(mockTransport.get).toHaveBeenCalledWith("/v1/addresses", undefined, {
@@ -46,10 +44,8 @@ describe("findByAddressOrThrow", () => {
       items: [makeRef({ address: "rOtherAddress", accountId: "acc-2" })],
     })
 
-    await expect(findByAddressOrThrow(mockTransport as any, "rAddress123")).rejects.toThrow(
-      CustodyError,
-    )
-    await expect(findByAddressOrThrow(mockTransport as any, "rAddress123")).rejects.toThrow(
+    await expect(findByAddressOrThrow(mockTransport, "rAddress123")).rejects.toThrow(CustodyError)
+    await expect(findByAddressOrThrow(mockTransport, "rAddress123")).rejects.toThrow(
       "Account not found for address rAddress123",
     )
   })
@@ -57,9 +53,7 @@ describe("findByAddressOrThrow", () => {
   it("should throw CustodyError when items array is empty", async () => {
     mockTransport.get.mockResolvedValue({ items: [] })
 
-    await expect(findByAddressOrThrow(mockTransport as any, "rAddress123")).rejects.toThrow(
-      CustodyError,
-    )
+    await expect(findByAddressOrThrow(mockTransport, "rAddress123")).rejects.toThrow(CustodyError)
   })
 
   it("should find exact match among multiple addresses", async () => {
@@ -71,7 +65,7 @@ describe("findByAddressOrThrow", () => {
       ],
     })
 
-    const result = await findByAddressOrThrow(mockTransport as any, "rAddress123")
+    const result = await findByAddressOrThrow(mockTransport, "rAddress123")
 
     expect(result.accountId).toBe("acc-2")
     expect(result.ledgerId).toBe("l-2")
@@ -85,10 +79,8 @@ describe("findByAddressOrThrow", () => {
       ],
     })
 
-    await expect(findByAddressOrThrow(mockTransport as any, "rAddress123")).rejects.toThrow(
-      CustodyError,
-    )
-    await expect(findByAddressOrThrow(mockTransport as any, "rAddress123")).rejects.toThrow(
+    await expect(findByAddressOrThrow(mockTransport, "rAddress123")).rejects.toThrow(CustodyError)
+    await expect(findByAddressOrThrow(mockTransport, "rAddress123")).rejects.toThrow(
       "Multiple accounts found for address rAddress123. Please specify ledgerId and/or domainId to disambiguate.",
     )
   })
@@ -99,7 +91,7 @@ describe("findByAddressOrThrow", () => {
       items: [makeRef({ accountId: "acc-mainnet", ledgerId: "xrpl-mainnet" }), testnetRef],
     })
 
-    const result = await findByAddressOrThrow(mockTransport as any, "rAddress123", {
+    const result = await findByAddressOrThrow(mockTransport, "rAddress123", {
       ledgerId: "xrpl-testnet",
     })
 
@@ -112,7 +104,7 @@ describe("findByAddressOrThrow", () => {
       items: [makeRef({ accountId: "acc-a", domainId: "domain-a" }), domainBRef],
     })
 
-    const result = await findByAddressOrThrow(mockTransport as any, "rAddress123", {
+    const result = await findByAddressOrThrow(mockTransport, "rAddress123", {
       domainId: "domain-b",
     })
 
@@ -134,7 +126,7 @@ describe("findByAddressOrThrow", () => {
       ],
     })
 
-    const result = await findByAddressOrThrow(mockTransport as any, "rAddress123", {
+    const result = await findByAddressOrThrow(mockTransport, "rAddress123", {
       ledgerId: "xrpl-testnet",
       domainId: "domain-b",
     })
@@ -146,7 +138,7 @@ describe("findByAddressOrThrow", () => {
     mockTransport.get.mockResolvedValue({ items: [makeRef({ ledgerId: "xrpl-mainnet" })] })
 
     await expect(
-      findByAddressOrThrow(mockTransport as any, "rAddress123", { ledgerId: "xrpl-testnet" }),
+      findByAddressOrThrow(mockTransport, "rAddress123", { ledgerId: "xrpl-testnet" }),
     ).rejects.toThrow("Account not found for address rAddress123 on ledger xrpl-testnet")
   })
 
@@ -154,7 +146,7 @@ describe("findByAddressOrThrow", () => {
     mockTransport.get.mockResolvedValue({ items: [makeRef({ domainId: "domain-a" })] })
 
     await expect(
-      findByAddressOrThrow(mockTransport as any, "rAddress123", { domainId: "domain-b" }),
+      findByAddressOrThrow(mockTransport, "rAddress123", { domainId: "domain-b" }),
     ).rejects.toThrow("Account not found for address rAddress123 in domain domain-b")
   })
 
@@ -164,7 +156,7 @@ describe("findByAddressOrThrow", () => {
     })
 
     await expect(
-      findByAddressOrThrow(mockTransport as any, "rAddress123", {
+      findByAddressOrThrow(mockTransport, "rAddress123", {
         ledgerId: "xrpl-testnet",
         domainId: "domain-b",
       }),
@@ -183,7 +175,7 @@ describe("findByAddress", () => {
     const ref = makeRef()
     mockTransport.get.mockResolvedValue({ items: [ref] })
 
-    const result = await findByAddress(mockTransport as any, "rAddress123")
+    const result = await findByAddress(mockTransport, "rAddress123")
 
     expect(result).toEqual(ref)
   })
@@ -191,7 +183,7 @@ describe("findByAddress", () => {
   it("should return undefined when items array is empty", async () => {
     mockTransport.get.mockResolvedValue({ items: [] })
 
-    const result = await findByAddress(mockTransport as any, "rAddress123")
+    const result = await findByAddress(mockTransport, "rAddress123")
 
     expect(result).toBeUndefined()
   })
@@ -201,7 +193,7 @@ describe("findByAddress", () => {
       items: [makeRef({ address: "rOtherAddress", accountId: "acc-2" })],
     })
 
-    const result = await findByAddress(mockTransport as any, "rAddress123")
+    const result = await findByAddress(mockTransport, "rAddress123")
 
     expect(result).toBeUndefined()
   })
@@ -214,8 +206,8 @@ describe("findByAddress", () => {
       ],
     })
 
-    await expect(findByAddress(mockTransport as any, "rAddress123")).rejects.toThrow(CustodyError)
-    await expect(findByAddress(mockTransport as any, "rAddress123")).rejects.toThrow(
+    await expect(findByAddress(mockTransport, "rAddress123")).rejects.toThrow(CustodyError)
+    await expect(findByAddress(mockTransport, "rAddress123")).rejects.toThrow(
       "Multiple accounts found for address rAddress123. Please specify ledgerId and/or domainId to disambiguate.",
     )
   })
@@ -226,7 +218,7 @@ describe("findByAddress", () => {
       items: [makeRef({ accountId: "acc-mainnet", ledgerId: "xrpl-mainnet" }), testnetRef],
     })
 
-    const result = await findByAddress(mockTransport as any, "rAddress123", {
+    const result = await findByAddress(mockTransport, "rAddress123", {
       ledgerId: "xrpl-testnet",
     })
 
@@ -239,7 +231,7 @@ describe("findByAddress", () => {
       items: [makeRef({ accountId: "acc-a", domainId: "domain-a" }), domainBRef],
     })
 
-    const result = await findByAddress(mockTransport as any, "rAddress123", {
+    const result = await findByAddress(mockTransport, "rAddress123", {
       domainId: "domain-b",
     })
 
@@ -249,7 +241,7 @@ describe("findByAddress", () => {
   it("should return undefined when ledgerId is given but no entry matches that ledger", async () => {
     mockTransport.get.mockResolvedValue({ items: [makeRef({ ledgerId: "xrpl-mainnet" })] })
 
-    const result = await findByAddress(mockTransport as any, "rAddress123", {
+    const result = await findByAddress(mockTransport, "rAddress123", {
       ledgerId: "xrpl-testnet",
     })
 
@@ -259,7 +251,7 @@ describe("findByAddress", () => {
   it("should return undefined when domainId is given but no entry matches that domain", async () => {
     mockTransport.get.mockResolvedValue({ items: [makeRef({ domainId: "domain-a" })] })
 
-    const result = await findByAddress(mockTransport as any, "rAddress123", {
+    const result = await findByAddress(mockTransport, "rAddress123", {
       domainId: "domain-b",
     })
 
@@ -273,7 +265,7 @@ describe("forceUpdateAccountBalances", () => {
   })
 
   it("should POST to the balances/refresh URL with an undefined body and merged path+query params", async () => {
-    const accounts = createAccounts(mockTransport as any)
+    const accounts = createAccounts(mockTransport)
 
     await accounts.forceUpdateAccountBalances(
       { domainId: "d", accountId: "a" },
@@ -288,7 +280,7 @@ describe("forceUpdateAccountBalances", () => {
   })
 
   it("should merge only path params into pathParams when no query is given", async () => {
-    const accounts = createAccounts(mockTransport as any)
+    const accounts = createAccounts(mockTransport)
 
     await accounts.forceUpdateAccountBalances({ domainId: "d", accountId: "a" })
 
@@ -306,7 +298,7 @@ describe("generateNewExternalAddressDeprecated", () => {
   })
 
   it("should POST to the addresses URL with an undefined body and merged path+query params", async () => {
-    const accounts = createAccounts(mockTransport as any)
+    const accounts = createAccounts(mockTransport)
 
     await accounts.generateNewExternalAddressDeprecated(
       { domainId: "d", accountId: "a" },

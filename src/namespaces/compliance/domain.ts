@@ -1,5 +1,5 @@
 import { URLs } from "../../constants/urls.js"
-import type { TypedTransport } from "../../transport/index.js"
+import type { Transport } from "../../transport/index.js"
 import type {
   ComplianceCreateDomainBody,
   ComplianceDomainPathParams,
@@ -7,7 +7,7 @@ import type {
 } from "./domain.types.js"
 
 /** `client.compliance.domain.*` — compliance domain lifecycle. */
-export function createComplianceDomain(t: TypedTransport) {
+export function createComplianceDomain(t: Transport) {
   return {
     create: (params: ComplianceDomainPathParams, body: ComplianceCreateDomainBody): Promise<void> =>
       t.post(URLs.complianceDomain, body, params, { sign: false }),

@@ -7,12 +7,10 @@ import type {
   Core_ProposeIntentBody,
 } from "../../namespaces/intents.types.js"
 import type { Core_MeReference } from "../../namespaces/users.types.js"
+import { createFakeTransport } from "../../testing/fake-transport.js"
 import { createHttpPorts } from "./xrpl.http-adapters.js"
 
-const mockTransport = {
-  get: vi.fn(),
-  post: vi.fn(),
-}
+const mockTransport = createFakeTransport()
 
 function makeMe(overrides: Partial<Core_MeReference> = {}): Core_MeReference {
   return {
@@ -63,7 +61,7 @@ describe("createHttpPorts", () => {
       const me = makeMe()
       const ref = makeAddressRef()
       mockMeAndAddresses(me, [ref])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       const result = await ports.resolveContext("rAddress123")
 
@@ -97,7 +95,7 @@ describe("createHttpPorts", () => {
       })
       const ref = makeAddressRef({ domainId: "domain-2" })
       mockMeAndAddresses(me, [ref])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       const result = await ports.resolveContext("rAddress123", { domainId: "domain-2" })
 
@@ -110,7 +108,7 @@ describe("createHttpPorts", () => {
       const mainnetRef = makeAddressRef({ ledgerId: "xrpl-mainnet", accountId: "acc-mainnet" })
       const testnetRef = makeAddressRef({ ledgerId: "xrpl-testnet", accountId: "acc-testnet" })
       mockMeAndAddresses(me, [mainnetRef, testnetRef])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       const result = await ports.resolveContext("rAddress123", { ledgerId: "xrpl-testnet" })
 
@@ -125,7 +123,7 @@ describe("createHttpPorts", () => {
       const me = makeMe()
       const ref = makeAddressRef()
       mockMeAndAddresses(me, [ref])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await ports.resolveContext("rAddress123", { domainId: "domain-1", ledgerId: "xrpl-mainnet" })
 
@@ -142,7 +140,7 @@ describe("createHttpPorts", () => {
     it("throws when loginId is missing", async () => {
       const me = makeMe({ loginId: undefined })
       mockMeAndAddresses(me, [makeAddressRef()])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(CustodyError)
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow("User has no login ID")
@@ -151,7 +149,7 @@ describe("createHttpPorts", () => {
     it("throws when the user has no domains", async () => {
       const me = makeMe({ domains: [] })
       mockMeAndAddresses(me, [makeAddressRef()])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow("User has no domains")
     })
@@ -162,7 +160,7 @@ describe("createHttpPorts", () => {
       // the address must resolve for the domain-resolution error to surface. The
       // ref carries the queried domainId so findByAddressOrThrow matches it.
       mockMeAndAddresses(me, [makeAddressRef({ domainId: "domain-missing" })])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await expect(
         ports.resolveContext("rAddress123", { domainId: "domain-missing" }),
@@ -174,7 +172,7 @@ describe("createHttpPorts", () => {
         domains: [{ id: "domain-1", alias: "a1", userReference: undefined as any }],
       })
       mockMeAndAddresses(me, [makeAddressRef()])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await expect(ports.resolveContext("rAddress123", { domainId: "domain-1" })).rejects.toThrow(
         "Domain domain-1 has no user reference",
@@ -197,7 +195,7 @@ describe("createHttpPorts", () => {
         ],
       })
       mockMeAndAddresses(me, [makeAddressRef()])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(
         "User has multiple domains. Please specify domainId in the options parameter.",
@@ -215,7 +213,7 @@ describe("createHttpPorts", () => {
         ],
       })
       mockMeAndAddresses(me, [makeAddressRef()])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(
         "User has no primary domain",
@@ -227,7 +225,7 @@ describe("createHttpPorts", () => {
         domains: [{ id: "domain-1", alias: "a1", userReference: undefined as any }],
       })
       mockMeAndAddresses(me, [makeAddressRef()])
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       await expect(ports.resolveContext("rAddress123")).rejects.toThrow(
         "Primary domain has no user reference",
@@ -239,7 +237,7 @@ describe("createHttpPorts", () => {
     it("posts the body to URLs.intents with no path params or config", async () => {
       const body = { id: "intent-1" } as any as Core_ProposeIntentBody
       mockTransport.post.mockResolvedValue({ requestId: "req-1" })
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       const result = await ports.submitIntent(body)
 
@@ -252,7 +250,7 @@ describe("createHttpPorts", () => {
     it("posts the body to URLs.intentsDryRun with sign: false and no path params", async () => {
       const body = { id: "intent-1" } as any as Core_IntentDryRunRequest
       mockTransport.post.mockResolvedValue({ type: "Successful" })
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       const result = await ports.dryRunIntent(body)
 
@@ -266,7 +264,7 @@ describe("createHttpPorts", () => {
   describe("getManifest", () => {
     it("gets URLs.accountManifest with domainId/accountId/manifestId", async () => {
       mockTransport.get.mockResolvedValue({ id: "manifest-1" })
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       const result = await ports.getManifest("domain-1", "acc-1", "manifest-1")
 
@@ -282,7 +280,7 @@ describe("createHttpPorts", () => {
   describe("getAccount", () => {
     it("gets URLs.account with domainId/accountId", async () => {
       mockTransport.get.mockResolvedValue({ id: "account-1" })
-      const ports = createHttpPorts(mockTransport as any)
+      const ports = createHttpPorts(mockTransport)
 
       const result = await ports.getAccount("domain-1", "acc-1")
 
