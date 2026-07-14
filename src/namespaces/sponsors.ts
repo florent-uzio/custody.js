@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   AddSponsoredAccountsPathParams,
   AddSponsoredDomainsPathParams,
@@ -40,7 +40,7 @@ import type {
 /**
  * Gas Station sponsorship namespace (`client.sponsors.*`).
  */
-export function createSponsors(t: TypedTransport) {
+export function createSponsors(t: Transport) {
   return {
     get: (params: GetSponsorPathParams): Promise<GasStation_SponsorResponseDto> =>
       t.get(URLs.sponsor, params),

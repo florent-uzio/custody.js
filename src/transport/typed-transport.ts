@@ -2,7 +2,7 @@ import type { AxiosRequestConfig } from "axios"
 import type { ApiService } from "../services/apis/api.service.js"
 import { VersionGuard } from "../versioning/version-guard.js"
 import { splitParams } from "./split-params.js"
-import type { RequestConfig } from "./transport.types.js"
+import type { RequestConfig, Transport } from "./transport.types.js"
 
 /**
  * A typed transport layer that wraps ApiService, handling URL template
@@ -10,7 +10,7 @@ import type { RequestConfig } from "./transport.types.js"
  *
  * Namespace factory functions use this instead of calling ApiService directly.
  */
-export class TypedTransport {
+export class TypedTransport implements Transport {
   constructor(
     private readonly api: ApiService,
     private readonly guard: VersionGuard = new VersionGuard(undefined),
@@ -24,7 +24,7 @@ export class TypedTransport {
     url: string,
     pathParams?: Record<string, unknown>,
     query?: unknown,
-    _config?: RequestConfig,
+    config?: RequestConfig,
   ): Promise<T> {
     await this.guard.checkEndpoint("GET", url)
     let resolvedUrl = url
@@ -36,7 +36,11 @@ export class TypedTransport {
         query = { ...((query as Record<string, unknown>) ?? {}), ...result.query }
       }
     }
-    return this.api.get<T>(resolvedUrl, query as AxiosRequestConfig["params"])
+    return this.api.get<T>(
+      resolvedUrl,
+      query as AxiosRequestConfig["params"],
+      config as AxiosRequestConfig,
+    )
   }
 
   /**

@@ -1,5 +1,5 @@
 import { URLs } from "../../constants/urls.js"
-import type { TypedTransport } from "../../transport/index.js"
+import type { Transport } from "../../transport/index.js"
 import type {
   CreateOmnibusPathParams,
   GetOmnibusByIdPathParams,
@@ -25,7 +25,7 @@ import { createOmnibusTenants } from "./tenants.js"
  * `/v1/domains/{domainId}/omnibus/*` URL structure. Tenant, deposit-wallet,
  * internal-transfer, and withdrawal operations are nested under `tenants`.
  */
-export function createOmnibus(t: TypedTransport) {
+export function createOmnibus(t: Transport) {
   return {
     get: (params: GetOmnibusPathParams): Promise<Omnibus_OmnibusResponse> =>
       t.get(URLs.omnibus, params),

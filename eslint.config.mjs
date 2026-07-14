@@ -19,7 +19,12 @@ export default tseslint.config(
       parser: tseslint.parser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["src/*.test.ts", "src/*/*.test.ts", "src/*/*/*.test.ts"],
+          allowDefaultProject: [
+            "src/*.test.ts",
+            "src/*/*.test.ts",
+            "src/*/*/*.test.ts",
+            "src/testing/*.ts",
+          ],
           maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 30,
         },
         tsconfigRootDir: import.meta.dirname,

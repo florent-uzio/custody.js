@@ -1,5 +1,5 @@
 import { URLs } from "../../constants/urls.js"
-import type { TypedTransport } from "../../transport/index.js"
+import type { Transport } from "../../transport/index.js"
 import type {
   Compliance_ConfigurationDetailResponse,
   Compliance_GetScreeningRulesResponse,
@@ -18,7 +18,7 @@ import type {
  * screening rules. All mutations are administrative calls sent unsigned
  * (`sign: false`), consistent with the other administrative POST endpoints.
  */
-export function createComplianceProviders(t: TypedTransport) {
+export function createComplianceProviders(t: Transport) {
   return {
     list: (
       params: ComplianceProvidersPathParams,

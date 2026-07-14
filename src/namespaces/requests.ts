@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_RequestState,
   GetAllUserRequestsStateInDomainPathParams,
@@ -9,7 +9,7 @@ import type {
   GetRequestStateQueryParams,
 } from "./requests.types.js"
 
-export function createRequests(t: TypedTransport) {
+export function createRequests(t: Transport) {
   return {
     state: (
       params: GetRequestStatePathParams,

@@ -141,9 +141,13 @@ export class ApiService {
    * @returns {Promise<T>} The response data.
    * @throws {CustodyError} If the request fails with a typed error response.
    */
-  public async get<T>(url: string, params?: AxiosRequestConfig["params"]): Promise<T> {
+  public async get<T>(
+    url: string,
+    params?: AxiosRequestConfig["params"],
+    config?: AxiosRequestConfig,
+  ): Promise<T> {
     try {
-      const response = await this.apiClient.get<T>(url, { params })
+      const response = await this.apiClient.get<T>(url, { ...config, params })
       return response.data
     } catch (error) {
       this.handleRequestError(error, "GET")

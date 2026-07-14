@@ -1,5 +1,5 @@
 import { URLs } from "../../constants/urls.js"
-import type { TypedTransport } from "../../transport/index.js"
+import type { Transport } from "../../transport/index.js"
 import type {
   CreateOmnibusInternalTransferPathParams,
   CreateOmnibusTenantDepositWalletPathParams,
@@ -26,7 +26,7 @@ import type {
  * Omnibus tenant sub-namespace (`client.omnibus.tenants.*`), with the
  * tenant's deposit-wallet operations nested under `depositWallet`.
  */
-export function createOmnibusTenants(t: TypedTransport) {
+export function createOmnibusTenants(t: Transport) {
   return {
     list: (
       params: ListOmnibusTenantsPathParams,

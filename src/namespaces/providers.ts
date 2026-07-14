@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_ApiProvider,
   Core_LocationsCollection,
@@ -10,7 +10,7 @@ import type {
   GetProvidersQueryParams,
 } from "./providers.types.js"
 
-export function createProviders(t: TypedTransport) {
+export function createProviders(t: Transport) {
   return {
     list: (queryParams?: GetProvidersQueryParams): Promise<Core_ProvidersCollection> =>
       t.get(URLs.providers, undefined, queryParams),

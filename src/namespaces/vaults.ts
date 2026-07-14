@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_ApiVault,
   Core_ExportPreparedOperationsResponse,
@@ -10,7 +10,7 @@ import type {
   ImportPreparedOperationsRequestBody,
 } from "./vaults.types.js"
 
-export function createVaults(t: TypedTransport) {
+export function createVaults(t: Transport) {
   return {
     list: (queryParams?: GetVaultsQueryParams): Promise<Core_VaultsCollection> =>
       t.get(URLs.vaults, undefined, queryParams ?? {}),

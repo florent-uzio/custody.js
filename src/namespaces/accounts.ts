@@ -1,7 +1,7 @@
 import { URLs } from "../constants/urls.js"
 import { isUndefined } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_AccountAddress,
   Core_AccountAddressReference,
@@ -46,7 +46,7 @@ import type {
  * ambiguous (multiple results without a `ledgerId` / `domainId` to disambiguate).
  */
 export async function findByAddress(
-  t: TypedTransport,
+  t: Transport,
   address: string,
   opts: FindByAddressOptions = {},
 ): Promise<Core_AccountAddressReference | undefined> {
@@ -83,7 +83,7 @@ export async function findByAddress(
  * found. Use this when the caller treats absence as a programmer error.
  */
 export async function findByAddressOrThrow(
-  t: TypedTransport,
+  t: Transport,
   address: string,
   opts: FindByAddressOptions = {},
 ): Promise<Core_AccountAddressReference> {
@@ -103,7 +103,7 @@ function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
   return parts.length > 0 ? ` ${parts.join(" ")}` : ""
 }
 
-export function createAccounts(t: TypedTransport) {
+export function createAccounts(t: Transport) {
   return {
     list: (
       params: GetAccountsPathParams,

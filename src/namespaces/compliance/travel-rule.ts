@@ -1,5 +1,5 @@
 import { URLs } from "../../constants/urls.js"
-import type { TypedTransport } from "../../transport/index.js"
+import type { Transport } from "../../transport/index.js"
 import type {
   Compliance_AppendPIITravelRuleResponse,
   Compliance_GetTravelRuleTransferResponse,
@@ -26,7 +26,7 @@ import type {
  * transfers and counterparty relationships). PII payloads are caller-supplied
  * and passed through untouched; the SDK performs no client-side encryption.
  */
-export function createComplianceTravelRule(t: TypedTransport) {
+export function createComplianceTravelRule(t: Transport) {
   return {
     createTransfer: (
       params: ComplianceTravelRuleProviderPathParams,

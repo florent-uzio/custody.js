@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import type { TypedTransport } from "../transport/index.js"
+import type { Transport } from "../transport/index.js"
 import type {
   Core_ApiBackup,
   Core_ApiTrustedBackup,
@@ -9,7 +9,7 @@ import type {
   GetBackupTrustedEntityPathParams,
 } from "./backups.types.js"
 
-export function createBackups(t: TypedTransport) {
+export function createBackups(t: Transport) {
   return {
     list: (queryParams?: GetBackupsQueryParams): Promise<Core_BackupsCollection> =>
       t.get(URLs.backups, undefined, queryParams),
