@@ -1,10 +1,10 @@
 import { URLs } from "../../constants/urls.js"
+import type { TypedTransport } from "../../transport/index.js"
 import type {
   ComplianceCreateDomainBody,
   ComplianceDomainPathParams,
   ComplianceValidateDomainBody,
-} from "../../services/compliance/domain.types.js"
-import type { TypedTransport } from "../../transport/index.js"
+} from "./domain.types.js"
 
 /** `client.compliance.domain.*` — compliance domain lifecycle. */
 export function createComplianceDomain(t: TypedTransport) {

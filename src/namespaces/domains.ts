@@ -1,11 +1,11 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_TrustedDomain,
   Core_TrustedDomainsCollection,
   GetDomainPathParams,
   GetDomainsQueryParams,
-} from "../services/domains/domain.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./domains.types.js"
 
 export function createDomains(t: TypedTransport) {
   return {

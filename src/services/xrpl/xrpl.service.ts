@@ -4,8 +4,8 @@ import { sleep } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
 import { CustodyError } from "../../models/index.js"
+import type { Core_IntentResponse, Core_ProposeIntentBody } from "../../namespaces/intents.types.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
-import type { Core_IntentResponse, Core_ProposeIntentBody } from "../intents/intents.types.js"
 import {
   buildBatchOperation,
   buildDryRunBody,

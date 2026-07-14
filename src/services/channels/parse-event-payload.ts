@@ -1,5 +1,5 @@
 import { CustodyError } from "../../models/custody-error.js"
-import type { Core_HarmonizeEvent } from "../events/events.types.js"
+import type { Core_HarmonizeEvent } from "../../namespaces/events.types.js"
 import type { EDS_Event } from "./channels.types.js"
 
 /**

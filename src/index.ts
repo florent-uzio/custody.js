@@ -14,162 +14,42 @@ export type {
 } from "./services/keypairs/keypairs.types.js"
 
 // intents types
-export { PENDING_STATUSES, TERMINAL_STATUSES } from "./services/intents/index.js"
-export type {
-  Core_ApproveIntentBody,
-  Core_GetIntentPathParams,
-  Core_GetIntentsPathParams,
-  Core_GetIntentsQueryParams,
-  Core_IntentDryRunRequest,
-  Core_IntentDryRunResponse,
-  Core_IntentResponse,
-  Core_IntentStatus,
-  Core_ProposeIntentBody,
-  Core_RejectIntentBody,
-  Core_RemainingDomainUsers,
-  Core_RemainingUsersIntentPathParams,
-  Core_RemainingUsersIntentQueryParams,
-  Core_TrustedIntent,
-  WaitForExecutionOptions,
-  WaitForExecutionResult,
-} from "./services/intents/index.js"
+export type * from "./namespaces/intents.types.js"
+export { PENDING_STATUSES, TERMINAL_STATUSES } from "./namespaces/intents.types.js"
 
 // domains types
-export type {
-  Core_TrustedDomain,
-  Core_TrustedDomainsCollection,
-  GetDomainPathParams,
-  GetDomainsQueryParams,
-} from "./services/domains/index.js"
+export type * from "./namespaces/domains.types.js"
 
 // sponsors (gas station) types
-export type {
-  AddSponsoredAccountsPathParams,
-  AddSponsoredDomainsPathParams,
-  CreateSponsorPathParams,
-  DeleteSponsorPathParams,
-  DeleteSponsorQueryParams,
-  GasStation_AccountSponsorResponseDto,
-  GasStation_AddSponsoredAccountsDto,
-  GasStation_AddSponsoredDomainsDto,
-  GasStation_CreateSponsorDto,
-  GasStation_DomainSponsorResponseDto,
-  GasStation_EventsResponseDto,
-  GasStation_SponsorCreatedResponseDto,
-  GasStation_SponsorResponseDto,
-  GasStation_SponsorableAccountsResponseDto,
-  GasStation_SponsorableDomainsResponseDto,
-  GasStation_SponsoredEntitiesResponseDto,
-  GasStation_SponsoredModificationResponseDto,
-  GasStation_SponsorsListResponseDto,
-  GasStation_UpdateSponsorDto,
-  GetAccountSponsorPathParams,
-  GetDomainSponsorPathParams,
-  GetSponsorPathParams,
-  GetSponsorableAccountsPathParams,
-  GetSponsorableAccountsQueryParams,
-  GetSponsorableDomainsPathParams,
-  GetSponsorableDomainsQueryParams,
-  ListSponsorEventsPathParams,
-  ListSponsorEventsQueryParams,
-  ListSponsoredAccountsPathParams,
-  ListSponsoredAccountsQueryParams,
-  ListSponsoredDomainsPathParams,
-  ListSponsoredDomainsQueryParams,
-  ListSponsorsPathParams,
-  UpdateSponsorPathParams,
-} from "./services/sponsors/index.js"
+export type * from "./namespaces/sponsors.types.js"
 
 // omnibus types
-export type {
-  CreateOmnibusInternalTransferPathParams,
-  CreateOmnibusPathParams,
-  CreateOmnibusTenantDepositWalletPathParams,
-  CreateOmnibusTenantPathParams,
-  CreateOmnibusWithdrawalPathParams,
-  GetOmnibusByIdPathParams,
-  GetOmnibusPathParams,
-  GetOmnibusTenantDepositWalletPathParams,
-  GetOmnibusTenantPathParams,
-  ListOmnibusDepositWalletsPathParams,
-  ListOmnibusDepositWalletsQueryParams,
-  ListOmnibusInternalTransfersPathParams,
-  ListOmnibusInternalTransfersQueryParams,
-  ListOmnibusTenantsPathParams,
-  ListOmnibusTenantsQueryParams,
-  LockOmnibusPathParams,
-  LockOmnibusTenantPathParams,
-  Omnibus_CreateInternalTransferRequest,
-  Omnibus_CreateOmnibusRequest,
-  Omnibus_CreateOmnibusResponse,
-  Omnibus_CreateOrUpdateTenantRequest,
-  Omnibus_CreateWithdrawalRequest,
-  Omnibus_CreateWithdrawalResponse,
-  Omnibus_DepositWalletResponse,
-  Omnibus_DepositWalletSummaryPageResponse,
-  Omnibus_InternalTransferPageResponse,
-  Omnibus_InternalTransferResponse,
-  Omnibus_OmnibusResponse,
-  Omnibus_TenantPageResponse,
-  Omnibus_TenantResponse,
-  Omnibus_UpdateOmnibusRequest,
-  UnlockOmnibusPathParams,
-  UnlockOmnibusTenantPathParams,
-  UpdateOmnibusPathParams,
-  UpdateOmnibusTenantPathParams,
-} from "./services/omnibus/index.js"
+export type * from "./namespaces/omnibus/omnibus.types.js"
 
 // endpoints types
-export type {
-  Core_TrustedEndpoint,
-  Core_TrustedEndpointsCollection,
-  GetEndpointPathParams,
-  GetEndpointsPathParams,
-  GetEndpointsQueryParams,
-} from "./services/endpoints/index.js"
+export type * from "./namespaces/endpoints.types.js"
 
 // events types
-export type {
-  Core_EventScope,
-  Core_EventsCollection,
-  Core_HarmonizeEvent,
-  Core_HarmonizeEventPayload,
-  GetEventsPathParams,
-  GetEventsQueryParams,
-} from "./services/events/index.js"
+export type * from "./namespaces/events.types.js"
 
 // compliance types (all Compliance*-prefixed aliases across the 5 sub-domains)
-export type * from "./services/compliance/index.js"
+export type * from "./namespaces/compliance/analysis.types.js"
+export type * from "./namespaces/compliance/domain.types.js"
+export type * from "./namespaces/compliance/policy.types.js"
+export type * from "./namespaces/compliance/providers.types.js"
+export type * from "./namespaces/compliance/travel-rule.types.js"
 
 // health types
-export type { LivenessResponse, ReadinessResponse } from "./services/health/index.js"
+export type * from "./namespaces/health.types.js"
 
 // backups types
-export type {
-  Core_ApiBackup,
-  Core_ApiTrustedBackup,
-  Core_BackupsCollection,
-  GetBackupPathParams,
-  GetBackupTrustedEntityPathParams,
-  GetBackupsQueryParams,
-} from "./services/backups/index.js"
+export type * from "./namespaces/backups.types.js"
 
 // providers types
-export type {
-  Core_ApiProvider,
-  Core_LocationsCollection,
-  Core_ProvidersCollection,
-  GetProviderLocationsPathParams,
-  GetProviderLocationsQueryParams,
-  GetProviderPathParams,
-  GetProvidersQueryParams,
-} from "./services/providers/index.js"
+export type * from "./namespaces/providers.types.js"
 
 // trusted public keys types
-export type {
-  Core_TrustedTrustedPublicKeysCollection,
-  GetTrustedPublicKeysQueryParams,
-} from "./services/trusted-public-keys/index.js"
+export type * from "./namespaces/trusted-public-keys.types.js"
 
 // channels (EDS) types and helpers
 export { parseEventPayload } from "./services/channels/index.js"
@@ -192,165 +72,37 @@ export type {
 } from "./services/channels/index.js"
 
 // accounts types
-export type {
-  Core_AccountAddress,
-  Core_AccountAddressReference,
-  Core_AccountsCollection,
-  Core_AddressReferenceCollection,
-  Core_AddressesCollection,
-  Core_ApiAccount,
-  Core_ApiManifest,
-  Core_BalancesCollection,
-  Core_ComplianceConfiguration,
-  Core_ComplianceConfigurationsCollection,
-  Core_ManifestsCollection,
-  FindByAddressOptions,
-  ForceUpdateAccountBalancesPathParams,
-  ForceUpdateAccountBalancesQueryParams,
-  GenerateNewAccountExternalAddressDeprecatedPathParams,
-  GenerateNewAccountExternalAddressDeprecatedQueryParams,
-  GenerateNewExternalAddressPathParams,
-  GetAccountAddressPathParams,
-  GetAccountBalancesPathParams,
-  GetAccountBalancesQueryParams,
-  GetAccountPathParams,
-  GetAccountQueryParams,
-  GetAccountsPathParams,
-  GetAccountsQueryParams,
-  GetAddressesPathParams,
-  GetAddressesQueryParams,
-  GetAllDomainsAddressesQueryParams,
-  GetComplianceConfigurationPathParams,
-  GetManifestPathParams,
-  GetManifestsPathParams,
-  GetManifestsQueryParams,
-  ListComplianceConfigurationsPathParams,
-  ListComplianceConfigurationsQueryParams,
-  UpsertComplianceConfigurationBody,
-  UpsertComplianceConfigurationPathParams,
-} from "./services/accounts/index.js"
+export type * from "./namespaces/accounts.types.js"
 
 // transactions types
-export type {
-  Core_DryRunTransactionParameters,
-  Core_TransactionDetails,
-  Core_TransactionDryRun,
-  Core_TransactionsCollection,
-  Core_TransferDetails,
-  Core_TransfersCollection,
-  Core_TrustedTransactionOrderDetails,
-  Core_TrustedTransactionOrdersCollection,
-  DryRunTransactionPathParams,
-  GetTransactionDetailsPathParams,
-  GetTransactionOrderDetailsPathParams,
-  GetTransactionOrdersPathParams,
-  GetTransactionOrdersQueryParams,
-  GetTransactionsPathParams,
-  GetTransactionsQueryParams,
-  GetTransferDetailsPathParams,
-  TransferTransactionOrderPathParams,
-  TransferTransactionOrderQueryParams,
-} from "./services/transactions/index.js"
+export type * from "./namespaces/transactions.types.js"
 
 // users types
-export type {
-  Core_ApiRoles,
-  Core_MeReference,
-  Core_TrustedUser,
-  Core_TrustedUsersCollection,
-  GetKnownUserRolesPathParams,
-  GetUserPathParams,
-  GetUsersPathParams,
-  GetUsersQueryParams,
-} from "./services/users/index.js"
+export type * from "./namespaces/users.types.js"
 
 // requests types
-export type {
-  Core_RequestState,
-  GetAllUserRequestsStateInDomainPathParams,
-  GetAllUserRequestsStateInDomainQueryParams,
-  GetAllUserRequestsStateQueryParams,
-  GetRequestStatePathParams,
-  GetRequestStateQueryParams,
-} from "./services/requests/index.js"
+export type * from "./namespaces/requests.types.js"
 
 // system properties types
-export type {
-  Core_SystemProperty,
-  Core_SystemPropertyId,
-  Core_TrustedSystemPropertiesCollection,
-  Core_TrustedSystemProperty,
-  GetSystemPropertiesQueryParams,
-} from "./services/system-properties/index.js"
+export type * from "./namespaces/system-properties.types.js"
 
 // user invitations types
-export type {
-  CancelUserInvitationPathParams,
-  CompleteUserInvitationPathParams,
-  CoreExtensions_InvitationAnswerIn,
-  CoreExtensions_InvitationIn,
-  CoreExtensions_InvitationOut,
-  CoreExtensions_PublicInvitationOut,
-  CreateUserInvitationPathParams,
-  FillUserInvitationPathParams,
-  GetPublicUserInvitationPathParams,
-  GetUserInvitationPathParams,
-  GetUserInvitationsPathParams,
-  GetUserInvitationsQueryParams,
-  RenewUserInvitationPathParams,
-} from "./services/user-invitations/index.js"
+export type * from "./namespaces/user-invitations.types.js"
 
 // domain resolver types (DomainUserReference kept for callers who need it)
-export type { DomainUserReference } from "./services/domain-resolver/index.js"
+export type { DomainUserReference } from "./models/domain-resolver.js"
 
 // tickers types
-export type {
-  Core_ApiTicker,
-  Core_TickersCollection,
-  GetTickerPathParams,
-  GetTickersQueryParams,
-} from "./services/tickers/index.js"
+export type * from "./namespaces/tickers.types.js"
 
 // ledgers types
-export type {
-  Core_CurrentFees,
-  Core_EthereumCallResponse,
-  Core_TrustedLedger,
-  Core_TrustedLedgersCollection,
-  GetLedgerFeePathParams,
-  GetLedgerPathParams,
-  GetLedgersQueryParams,
-  GetTrustedLedgerPathParams,
-  GetTrustedLedgersQueryParams,
-  ProcessEthereumContractCallBody,
-  ProcessEthereumContractCallPathParams,
-} from "./services/ledgers/index.js"
+export type * from "./namespaces/ledgers.types.js"
 
 // policies types
-export type {
-  Core_Policy,
-  Core_PolicyCondition,
-  Core_PolicyCondition_And,
-  Core_PolicyCondition_Expression,
-  Core_PolicyCondition_Or,
-  Core_PolicyScope,
-  Core_TrustedPoliciesCollection,
-  Core_TrustedPolicy,
-  GetPoliciesPathParams,
-  GetPoliciesQueryParams,
-  GetPolicyPathParams,
-} from "./services/policies/index.js"
+export type * from "./namespaces/policies.types.js"
 
 // vaults types
-export type {
-  Core_ApiVault,
-  Core_ExportPreparedOperationsResponse,
-  Core_VaultsCollection,
-  ExportPreparedOperationsPathParams,
-  GetVaultPathParams,
-  GetVaultsQueryParams,
-  ImportPreparedOperationsRequestBody,
-} from "./services/vaults/index.js"
+export type * from "./namespaces/vaults.types.js"
 
 // xrpl types and functions
 export {
@@ -391,13 +143,7 @@ export type {
 } from "./services/xrpl/index.js"
 
 // genesis types
-export type {
-  Core_CreateLedgerGenesis,
-  Core_GenesisCryptoSetup,
-  Core_GenesisRequest,
-  Core_RootDomainSetup,
-  RunGenesisBody,
-} from "./services/genesis/index.js"
+export type * from "./namespaces/genesis.types.js"
 
 // errors types
 export type { Core_ErrorMessage, CustodyError } from "./models/index.js"

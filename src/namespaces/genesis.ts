@@ -1,6 +1,6 @@
 import { URLs } from "../constants/urls.js"
-import type { RunGenesisBody } from "../services/genesis/genesis.types.js"
 import type { TypedTransport } from "../transport/index.js"
+import type { RunGenesisBody } from "./genesis.types.js"
 
 export function createGenesis(t: TypedTransport) {
   return {

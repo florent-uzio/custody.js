@@ -1,11 +1,11 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_ApiTicker,
   Core_TickersCollection,
   GetTickerPathParams,
   GetTickersQueryParams,
-} from "../services/tickers/tickers.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./tickers.types.js"
 
 export function createTickers(t: TypedTransport) {
   return {

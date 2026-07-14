@@ -1,6 +1,9 @@
 import type { components, operations } from "../../models/custody-types.js"
+import type {
+  Core_HarmonizeEvent,
+  Core_HarmonizeEventPayload,
+} from "../../namespaces/events.types.js"
 import type { Prettify } from "../../type-utils/index.js"
-import type { Core_HarmonizeEvent, Core_HarmonizeEventPayload } from "../events/index.js"
 
 // Path-param types
 export type GetChannelsPathParams = operations["getAllChannels"]["parameters"]["path"]

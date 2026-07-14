@@ -1,12 +1,12 @@
 import { URLs } from "../constants/urls.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_TrustedEndpoint,
   Core_TrustedEndpointsCollection,
   GetEndpointPathParams,
   GetEndpointsPathParams,
   GetEndpointsQueryParams,
-} from "../services/endpoints/endpoints.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./endpoints.types.js"
 
 export function createEndpoints(t: TypedTransport) {
   return {

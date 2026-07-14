@@ -19,15 +19,20 @@ Reference the generated types via the two top-level exports:
   response shapes (when not already a named component)
 - `components["schemas"]["<SchemaName>"]` — reusable response and body schemas
 
-Example (from `src/services/events/events.types.ts`):
+Example (from `src/namespaces/events.types.ts`):
 
 ```ts
-import type { components, operations } from "../../models/custody-types.js"
+import type { components, operations } from "../models/custody-types.js"
 
 export type GetEventsPathParams = operations["getEvents"]["parameters"]["path"]
 export type GetEventsQueryParams = operations["getEvents"]["parameters"]["query"]
 export type Core_EventsCollection = components["schemas"]["Core_EventsCollection"]
 ```
+
+Type aliases live beside the namespace that uses them (`src/namespaces/<name>.types.ts`
+next to `src/namespaces/<name>.ts`), not under `src/services/`. `src/services/` is
+reserved for the modules with real implementation logic (`apis`, `auth`, `channels`,
+`keypairs`, `xrpl`) — everything else is a namespace, and its types co-locate with it.
 
 ## Do not hand-author types that duplicate or conflict with the generated file
 

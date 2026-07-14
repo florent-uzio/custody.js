@@ -1,6 +1,7 @@
 import { URLs } from "../constants/urls.js"
 import { isUndefined } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
+import type { TypedTransport } from "../transport/index.js"
 import type {
   Core_AccountAddress,
   Core_AccountAddressReference,
@@ -37,8 +38,7 @@ import type {
   ListComplianceConfigurationsQueryParams,
   UpsertComplianceConfigurationBody,
   UpsertComplianceConfigurationPathParams,
-} from "../services/accounts/accounts.types.js"
-import type { TypedTransport } from "../transport/index.js"
+} from "./accounts.types.js"
 
 /**
  * Finds an account by its blockchain address across all domains.

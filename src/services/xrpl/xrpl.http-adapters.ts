@@ -1,15 +1,15 @@
 import { URLs } from "../../constants/urls.js"
 import { CustodyError } from "../../models/index.js"
 import { findByAddressOrThrow } from "../../namespaces/accounts.js"
-import type { TypedTransport } from "../../transport/index.js"
-import type { Core_ApiAccount, Core_ApiManifest } from "../accounts/accounts.types.js"
+import type { Core_ApiAccount, Core_ApiManifest } from "../../namespaces/accounts.types.js"
 import type {
   Core_IntentDryRunRequest,
   Core_IntentDryRunResponse,
   Core_IntentResponse,
   Core_ProposeIntentBody,
-} from "../intents/intents.types.js"
-import type { Core_MeReference } from "../users/users.types.js"
+} from "../../namespaces/intents.types.js"
+import type { Core_MeReference } from "../../namespaces/users.types.js"
+import type { TypedTransport } from "../../transport/index.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 
 /**
