@@ -29,6 +29,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  },
   "scripts": {
     "add-changeset": "changeset",
     "build": "tsc",

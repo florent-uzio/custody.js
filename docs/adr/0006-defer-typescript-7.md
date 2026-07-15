@@ -127,11 +127,17 @@ relative to the tsconfig file itself without needing `baseUrl`, so it was
 simply removed instead — no resolution behavior changed.
 
 ² `openapi-typescript@7.13.0`'s peer range is still declared as `typescript@^5.x`
-(unchanged from the ADR-0006 TS 7.0 spike), so `npm install` prints an ERESOLVE
-peer warning on 6.0.x too. It is a metadata mismatch only: both
-`prettier-plugin-organize-imports` and `openapi-typescript` call the legacy
-language-service API that 6.0 still ships, so both work correctly in practice
-(verified, not just exit-code-checked).
+(unchanged from the ADR-0006 TS 7.0 spike). Both `prettier-plugin-organize-imports`
+and `openapi-typescript` call the legacy language-service API that 6.0 still
+ships, so both work correctly in practice (verified, not just exit-code-checked)
+— it's a metadata mismatch, not a functional one. But `npm install` and `npm ci`
+disagree on how loud that mismatch is: `npm install` resolves around it with an
+ERESOLVE warning, while `npm ci` (what CI runs) treats it as a hard
+`ERESOLVE could not resolve` error and exits non-zero — caught only after this
+upgrade first shipped, because the local verification above used `npm install`.
+Fixed with a root `overrides` entry (`"openapi-typescript": { "typescript":
+"$typescript" }`) that pins the nested peer resolution to the root's declared
+`typescript` version, which `npm ci` accepts cleanly.
 
 ³ Ran for real this time (unlike the TS 7.0 spike, which didn't exercise it).
 The output was functionally correct; the diff was pure comment/whitespace
