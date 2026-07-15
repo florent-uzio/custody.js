@@ -1,4 +1,5 @@
 import type { EDS_WebhookEvent } from "@florent-uzio/custody"
+import { verifyWebhookSecret } from "@florent-uzio/custody"
 // @ts-expect-error - hono is not a dependency of the SDK; install it in your project to run this example
 import { serve } from "@hono/node-server"
 // @ts-expect-error - hono is not a dependency of the SDK; install it in your project to run this example
@@ -13,6 +14,12 @@ import { Hono } from "hono"
  *     msg: Core_HarmonizeEvent    // payload is already a parsed object
  *   }
  *
+ * Custody does not sign or otherwise authenticate webhook deliveries — the
+ * only authenticity check available is the secret you embedded in the
+ * channel's registered URL yourself (see `../create-channel/index.ts`).
+ * `verifyWebhookSecret` checks it; without this check, any request to this
+ * route is treated as a genuine Custody event.
+ *
  * NOTE: The URL registered on the channel must be reachable from the Custody
  * service. For local testing, run `ngrok http 3030` and register the
  * forwarded HTTPS URL (with the `/webhook` path) when calling
@@ -25,6 +32,15 @@ const app = new Hono()
 
 // @ts-expect-error - hono types are unavailable here; `c` is implicitly any
 app.post("/webhook", async (c) => {
+  const isAuthentic = verifyWebhookSecret({
+    url: c.req.url,
+    expectedSecret: process.env.WEBHOOK_SECRET ?? "",
+  })
+
+  if (!isAuthentic) {
+    return c.json({ received: false }, 401)
+  }
+
   // @ts-expect-error - generic argument lands on an untyped `c.req.json` call without hono's types
   const event = await c.req.json<EDS_WebhookEvent>()
 

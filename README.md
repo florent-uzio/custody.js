@@ -270,6 +270,13 @@ See the [`examples/`](./examples/) directory for working code.
 - [Create a channel](./examples/webhooks/create-channel/) — register a webhook channel for event delivery
 - [Receive events](./examples/webhooks/receive-events/) — a Hono server that receives delivered webhook events
 
+Ripple Custody does not sign or otherwise authenticate webhook deliveries — a
+channel's `url` is the only delivery target, with no secret, key, or signature
+field. To authenticate inbound requests, embed a secret of your own in the
+registered URL (e.g. `?token=...`) and verify it with `verifyWebhookSecret` on
+receipt, as the examples above do. Without this check, any request to your
+webhook route is treated as a genuine Custody event.
+
 ### Options
 
 `proposeIntent()` and the raw-sign methods accept an optional second parameter with these options:
