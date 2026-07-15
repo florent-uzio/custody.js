@@ -52,7 +52,7 @@ export type * from "./namespaces/providers.types.js"
 export type * from "./namespaces/trusted-public-keys.types.js"
 
 // channels (EDS) types and helpers
-export { parseEventPayload } from "./services/channels/index.js"
+export { parseEventPayload, verifyWebhookSecret } from "./services/channels/index.js"
 export type {
   CreateChannelPathParams,
   DeleteChannelPathParams,
@@ -69,6 +69,7 @@ export type {
   GetChannelsPathParams,
   TestChannelPathParams,
   UpdateChannelPathParams,
+  VerifyWebhookSecretOptions,
 } from "./services/channels/index.js"
 
 // accounts types

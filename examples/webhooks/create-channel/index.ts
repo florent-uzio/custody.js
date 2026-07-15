@@ -9,6 +9,11 @@ import { RippleCustody } from "@florent-uzio/custody"
  * service — for local development, expose your local server with a tunnel
  * (e.g. `ngrok http 3030`) and use the forwarded HTTPS URL below.
  *
+ * Custody does not sign or otherwise authenticate webhook deliveries, so the
+ * `token` query param below is a secret you choose yourself; the paired
+ * `../receive-events/index.ts` example verifies it on receipt with
+ * `verifyWebhookSecret`.
+ *
  * Pair this example with `../receive-events/index.ts`, which runs a Hono
  * server on port 3030 and prints each delivered event.
  */
@@ -37,8 +42,9 @@ const createWebhookChannel = async () => {
       name: "My webhook channel",
       type: "WEBHOOK",
       // Replace with your publicly reachable HTTPS URL (e.g. an ngrok forward)
-      // pointing at the `/webhook` route exposed by `../receive-events`
-      url: "https://<your-ngrok-subdomain>.ngrok-free.app/webhook",
+      // pointing at the `/webhook` route exposed by `../receive-events`, with
+      // a secret `token` of your own choosing appended as a query param
+      url: `https://<your-ngrok-subdomain>.ngrok-free.app/webhook?token=${process.env.WEBHOOK_SECRET ?? ""}`,
       // Subscribe to the event variants you care about. `Core_HarmonizeEventPayload["type"]`
       // is auto-completed by TypeScript — narrow it to just the events your
       // webhook handler is built to process.
