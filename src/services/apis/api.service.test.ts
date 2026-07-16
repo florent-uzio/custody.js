@@ -47,6 +47,7 @@ vi.mock("../keypairs/index.js", () => {
 })
 
 import axios from "axios"
+import type { CustodySigner } from "../../ripple-custody.types.js"
 import { KeypairService } from "../keypairs/index.js"
 
 describe("ApiService", () => {
@@ -182,6 +183,153 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       const { v4 } = await import("uuid")
       // v4 should not be called when challenge is provided
       expect(vi.mocked(v4)).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("external signer", () => {
+    const buildWithSigner = (signer: CustodySigner) => {
+      vi.clearAllMocks()
+      const service = new ApiService({
+        apiUrl: mockApiUrl,
+        authFormData: { publicKey: mockPublicKey },
+        authService: mockAuthService as any,
+        signer,
+      })
+      const call = mockAxiosInstance.interceptors.request.use.mock.calls.at(-1)
+      return { service, requestInterceptor: call?.[0] as typeof requestInterceptor }
+    }
+
+    // secp256k1 keeps the encode step to plain base64, so assertions stay simple.
+    const secpSigner = (sign: CustodySigner["sign"]): CustodySigner => ({
+      algorithm: "secp256k1",
+      sign,
+    })
+    const b64 = (s: string) => Buffer.from(s).toString("base64")
+
+    it("signs the auth challenge with 'auth-challenge' context and encodes the result", async () => {
+      mockAuthService.isTokenExpired.mockReturnValue(true)
+      const sign = vi.fn(() => Buffer.from("chal-sig"))
+      const { requestInterceptor: interceptor } = buildWithSigner(secpSigner(sign))
+
+      await interceptor({ headers: {} } as InternalAxiosRequestConfig)
+
+      expect(sign).toHaveBeenCalledWith({
+        data: Buffer.from("mock-uuid-challenge"),
+        context: "auth-challenge",
+      })
+      expect(mockAuthService.getToken).toHaveBeenCalledWith(
+        expect.objectContaining({ signature: b64("chal-sig") }),
+        false,
+      )
+    })
+
+    it("signs the canonicalized body with 'request-body' context and encodes the result", async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: {} })
+      const sign = vi.fn(() => Buffer.from("body-sig"))
+      const { service } = buildWithSigner(secpSigner(sign))
+
+      const body = { request: { type: "test", data: "value" }, signature: "" }
+      await service.post("/test-endpoint", body)
+
+      // canonicalize is mocked to JSON.stringify
+      expect(sign).toHaveBeenCalledWith({
+        data: Buffer.from(JSON.stringify(body.request)),
+        context: "request-body",
+      })
+      expect(body.signature).toBe(b64("body-sig"))
+    })
+
+    it("awaits an async signer", async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: {} })
+      const { service } = buildWithSigner(
+        secpSigner(() => Promise.resolve(Buffer.from("async-sig"))),
+      )
+
+      const body = { request: { type: "test" }, signature: "" }
+      await service.post("/test-endpoint", body)
+
+      expect(body.signature).toBe(b64("async-sig"))
+    })
+
+    it("does not detect a key algorithm when using a signer", () => {
+      buildWithSigner(secpSigner(() => Buffer.from("x")))
+      expect(vi.mocked(KeypairService.detectKeyType)).not.toHaveBeenCalled()
+    })
+
+    it("wraps a throwing signer in a CustodyError on the POST body path", async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: {} })
+      const { service } = buildWithSigner(
+        secpSigner(() => {
+          throw new Error("hsm offline")
+        }),
+      )
+
+      const body = { request: { type: "test" }, signature: "" }
+      await expect(service.post("/test-endpoint", body)).rejects.toThrow(
+        /External signer failed: hsm offline/,
+      )
+    })
+
+    it("wraps a rejecting async signer in a CustodyError on the auth-challenge path", async () => {
+      mockAuthService.isTokenExpired.mockReturnValue(true)
+      const { requestInterceptor: interceptor } = buildWithSigner(
+        secpSigner(() => Promise.reject(new Error("kms denied"))),
+      )
+
+      await expect(interceptor({ headers: {} } as InternalAxiosRequestConfig)).rejects.toThrow(
+        /External signer failed: kms denied/,
+      )
+    })
+
+    it("throws when the signer returns a non-Uint8Array signature", async () => {
+      mockAxiosInstance.post.mockResolvedValue({ data: {} })
+      const { service } = buildWithSigner(secpSigner(() => "not-bytes" as any))
+
+      const body = { request: { type: "test" }, signature: "" }
+      await expect(service.post("/test-endpoint", body)).rejects.toThrow(CustodyError)
+    })
+
+    it("collapses concurrent expired-token refreshes into a single signer call", async () => {
+      mockAuthService.isTokenExpired.mockReturnValue(true)
+      let resolveToken: (token: string) => void = () => {}
+      mockAuthService.getToken.mockReturnValue(
+        new Promise((resolve) => {
+          resolveToken = resolve
+        }),
+      )
+      const sign = vi.fn(() => Buffer.from("sig"))
+      const { requestInterceptor: interceptor } = buildWithSigner(secpSigner(sign))
+
+      const p1 = interceptor({ headers: {} } as InternalAxiosRequestConfig)
+      const p2 = interceptor({ headers: {} } as InternalAxiosRequestConfig)
+      resolveToken("token")
+      await Promise.all([p1, p2])
+
+      expect(sign).toHaveBeenCalledTimes(1)
+    })
+
+    it("throws when neither privateKey nor signer is provided", () => {
+      expect(
+        () =>
+          new ApiService({
+            apiUrl: mockApiUrl,
+            authFormData: { publicKey: mockPublicKey },
+            authService: mockAuthService as any,
+          } as any),
+      ).toThrow(CustodyError)
+    })
+
+    it("throws when both privateKey and signer are provided", () => {
+      expect(
+        () =>
+          new ApiService({
+            apiUrl: mockApiUrl,
+            authFormData: { publicKey: mockPublicKey },
+            authService: mockAuthService as any,
+            privateKey: mockPrivateKey,
+            signer: secpSigner(() => Buffer.from("sig")),
+          } as any),
+      ).toThrow(CustodyError)
     })
   })
 

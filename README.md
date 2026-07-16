@@ -100,13 +100,57 @@ const custody = new RippleCustody({
 | ------------------- | ----------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apiUrl`            | `string`          | Yes      | -       | API URL for the API endpoints (e.g. `"https://api.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                                  |
 | `authUrl`           | `string`          | Yes      | -       | Authentication URL for the API endpoints (e.g. `"https://auth.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                      |
-| `privateKey`        | `string`          | Yes      | -       | Private key for signing requests                                                                                                                                                                                                                                    |
-| `publicKey`         | `string`          | Yes      | -       | Public key for authentication                                                                                                                                                                                                                                       |
+| `privateKey`        | `string`          | Yes\*    | -       | Private key (PEM) the SDK signs with internally. Provide exactly one of `privateKey` or `signer`                                                                                                                                                                     |
+| `signer`            | `CustodySigner`   | Yes\*    | -       | External signer `{ algorithm, sign }` that runs only the raw signing primitive, keeping the private key outside the SDK (e.g. HSM/KMS). Provide exactly one of `privateKey` or `signer`. See [External signer](#external-signer-hsmkms) below                          |
+| `publicKey`         | `string`          | Yes      | -       | Public key for authentication. Required in both signing modes                                                                                                                                                                                                       |
 | `timeout`           | `number`          | No       | `30000` | Request timeout in milliseconds                                                                                                                                                                                                                                     |
 | `apiVersion`        | `KnownAppVersion` | No       | -       | Pin the SDK to a specific Ripple Custody backend app version. Calls that version cannot serve throw `UnsupportedInVersionError`, gated against bundled capability data (no network). Only bundled versions are accepted, and setting this skips live auto-detection |
 | `autoDetectVersion` | `boolean`         | No       | `true`  | Auto-detect the backend's capabilities from its live OpenAPI spec on the first API call (cached thereafter). Ignored when `apiVersion` is set                                                                                                                       |
 | `openApiUrl`        | `string`          | No       | -       | Override the URL the live spec is fetched from during auto-detection. Defaults to `<apiUrl>/api/OpenAPI?scope=&layout=`. Useful for non-standard instances (e.g. devboxes)                                                                                          |
 | `specSource`        | `SpecSource`      | No       | -       | Advanced: fully override how the live spec is fetched during auto-detection (e.g. custom transport/proxy, or in tests). Takes precedence over `openApiUrl`                                                                                                          |
+
+\* Provide **exactly one** of `privateKey` or `signer`.
+
+#### External signer (HSM/KMS)
+
+Instead of handing the SDK a raw `privateKey`, provide a `signer` so the private
+key never enters the SDK. The SDK owns canonicalization, hashing, and signature
+encoding; your signer runs **only the raw cryptographic primitive** for its
+`algorithm` over the `data` bytes the SDK provides, and returns the raw signature
+bytes. It may be async, and receives a `context` so HSM/KMS policy engines can
+gate per-operation.
+
+Raw-signature contract by algorithm (must match your registered `publicKey`):
+
+| `algorithm`             | What `data` is                                                   | Return                                    |
+| ----------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
+| `ed25519`               | already SHA-256 hashed for request bodies; raw for the challenge | the **64-byte raw** Ed25519 signature     |
+| `secp256k1`/`secp256r1` | the UTF-8 message bytes (ECDSA applies SHA-256 itself)           | the **DER-encoded** ECDSA-SHA256 signature |
+
+```typescript
+import { type CustodySigner, RippleCustody } from "@florent-uzio/custody"
+
+const signer: CustodySigner = {
+  algorithm: "secp256k1",
+  // `data` is the exact bytes to sign; `context` is "auth-challenge" | "request-body".
+  sign: async ({ data, context }) => {
+    // Delegate the raw primitive to your HSM/KMS; return the raw signature bytes.
+    return await myHsm.signEcdsaSha256Der(data)
+  },
+}
+
+const custody = new RippleCustody({
+  apiUrl: "https://api.ripple.com",
+  authUrl: "https://auth.api.ripple.com/token",
+  publicKey: myPublicKey, // base64 DER
+  signer,
+})
+```
+
+`toSignablePayload(request)` is exported for inspecting the canonical JSON the SDK
+signs for a request body. Note it returns the **pre-hash input**, not the final
+signed bytes — reproducing a server-valid signature also requires the per-algorithm
+prep above. See `examples/external-signer/` for a runnable example.
 
 ### 3. Use the SDK
 

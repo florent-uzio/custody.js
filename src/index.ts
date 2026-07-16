@@ -1,6 +1,15 @@
 export { DEFAULT_TIMEOUT_MS } from "./constants/index.js"
 export { RippleCustody } from "./ripple-custody.js"
-export type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
+export type {
+  CustodySignContext,
+  CustodySignRequest,
+  CustodySigner,
+  RippleCustodyClientOptions,
+} from "./ripple-custody.types.js"
+
+// canonicalization helper (produce the exact bytes Custody signs, e.g. for
+// out-of-band / external signers)
+export { toSignablePayload } from "./helpers/canonicalize/index.js"
 
 // shared SDK-only types
 export type { LedgerId, NonXrplLedgerId, XrplLedgerId } from "./models/ledger-ids.js"
