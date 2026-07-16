@@ -33,7 +33,13 @@ import crypto from "crypto"
  */
 const buildSigner = (): CustodySigner => ({
   algorithm: "secp256k1",
-  sign: async ({ data }) => {
+  sign: async ({ data, context }) => {
+    // `context` ("auth-challenge" | "request-body") tells you WHAT is being
+    // signed. It can't select a key (Custody verifies both against the single
+    // registered `publicKey`), but it's useful for auditing and for gating
+    // per-operation policy in an HSM/KMS. Here we just log it.
+    console.log(`External signer: signing ${context} (${data.length} bytes)`)
+
     // Raw primitive: ECDSA-SHA256 over `data`, DER-encoded.
     return crypto.sign(null, data, {
       key: process.env.PRIVATE_KEY ?? "",
