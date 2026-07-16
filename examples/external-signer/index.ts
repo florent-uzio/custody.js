@@ -1,4 +1,4 @@
-import { type CustodySigner, RippleCustody, toSignablePayload } from "@florent-uzio/custody"
+import { type CustodySigner, RippleCustody } from "@florent-uzio/custody"
 import crypto from "crypto"
 
 /**
@@ -81,11 +81,6 @@ const useExternalSigner = async () => {
 
     const intent = await custody.intents.getAndWait({ domainId, intentId })
     console.dir(intent, { depth: null })
-
-    // Optional: inspect the canonical JSON the SDK signs for a request body.
-    // (This is the pre-hash input, not the final signed bytes — see the docs.)
-    const payload = toSignablePayload({ example: "request-body" })
-    console.log("Canonical signable payload:", payload)
   } catch (error) {
     console.log(error)
   }
