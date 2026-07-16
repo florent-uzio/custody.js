@@ -49,6 +49,11 @@ vi.mock("../keypairs/index.js", () => {
 import axios from "axios"
 import type { CustodySigner } from "../../ripple-custody.types.js"
 import { KeypairService } from "../keypairs/index.js"
+import {
+  encodeSignature,
+  prepareSigningInput,
+  signRawWithPrivateKey,
+} from "../keypairs/signing-scheme.js"
 
 describe("ApiService", () => {
   const mockApiUrl = "https://api.example.com"
@@ -56,6 +61,19 @@ describe("ApiService", () => {
 MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
 -----END PRIVATE KEY-----`
   const mockPublicKey = "mock-public-key"
+
+  // The privateKey path signs via the real signing scheme (canonicalize is mocked
+  // to JSON.stringify), so the expected request-body signature is deterministic
+  // for the ed25519 mockPrivateKey.
+  const expectedPrivateKeySignature = (request: unknown) =>
+    encodeSignature(
+      "ed25519",
+      signRawWithPrivateKey(
+        "ed25519",
+        mockPrivateKey,
+        prepareSigningInput("ed25519", JSON.stringify(request), "request-body"),
+      ),
+    )
 
   // Mock AuthService
   const mockAuthService = {
@@ -168,6 +186,20 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       vi.mocked(KeypairService.detectKeyType).mockReturnValue("ed25519")
     })
 
+    it("should throw CustodyError for a private key that passes detectKeyType but fails to parse", () => {
+      // The mocked detectKeyType accepts anything, mimicking a corrupt PEM whose
+      // base64 body still contains a recognizable algorithm OID.
+      expect(
+        () =>
+          new ApiService({
+            apiUrl: mockApiUrl,
+            authFormData: { publicKey: mockPublicKey },
+            authService: mockAuthService as any,
+            privateKey: "-----BEGIN PRIVATE KEY-----\ngarbage\n-----END PRIVATE KEY-----",
+          }),
+      ).toThrow(CustodyError)
+    })
+
     it("should use provided challenge if available", async () => {
       const customChallenge = "custom-challenge"
       vi.clearAllMocks()
@@ -258,16 +290,21 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
 
     it("wraps a throwing signer in a CustodyError on the POST body path", async () => {
       mockAxiosInstance.post.mockResolvedValue({ data: {} })
+      const hsmError = new Error("hsm offline")
       const { service } = buildWithSigner(
         secpSigner(() => {
-          throw new Error("hsm offline")
+          throw hsmError
         }),
       )
 
       const body = { request: { type: "test" }, signature: "" }
-      await expect(service.post("/test-endpoint", body)).rejects.toThrow(
-        /External signer failed: hsm offline/,
-      )
+      const error = await service.post("/test-endpoint", body).catch((e) => e)
+
+      expect(error).toBeInstanceOf(CustodyError)
+      expect(error.message).toMatch(/External signer failed: hsm offline/)
+      // Not double-wrapped: handleRequestError rethrows an existing CustodyError
+      // as-is, so the cause is the original signer error, not a nested CustodyError.
+      expect(error.cause).toBe(hsmError)
     })
 
     it("wraps a rejecting async signer in a CustodyError on the auth-challenge path", async () => {
@@ -306,6 +343,53 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       await Promise.all([p1, p2])
 
       expect(sign).toHaveBeenCalledTimes(1)
+    })
+
+    it("does not let an overtaken refresh clobber a newer forced refresh", async () => {
+      // A non-forced refresh (A) is in flight when a 401 forces a new refresh (B)
+      // that overtakes it. When A settles, its `.finally` must not null out B's
+      // registration — otherwise a later caller starts a redundant third refresh.
+      const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+      const sign = vi.fn(() => Buffer.from("sig"))
+      const { requestInterceptor: interceptor } = buildWithSigner(secpSigner(sign))
+      const responseInterceptor = mockAxiosInstance.interceptors.response.use.mock.calls.at(
+        -1,
+      )?.[1] as typeof responseErrorInterceptor
+
+      mockAuthService.isTokenExpired.mockReturnValue(true)
+      const resolvers: Array<(token: string) => void> = []
+      mockAuthService.getToken.mockImplementation(
+        () => new Promise<string>((resolve) => resolvers.push(resolve)),
+      )
+
+      // Refresh A: non-forced (challenge signed once, getToken #1).
+      const pA = interceptor({ headers: {} } as InternalAxiosRequestConfig)
+
+      // Refresh B: forced by a 401, overtaking A (getToken #2).
+      ;(mockAxiosInstance as any as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: {} })
+      const originalRequest = { headers: {}, _retried: false }
+      const pB = responseInterceptor({
+        isAxiosError: true,
+        response: { status: 401 },
+        config: originalRequest,
+      })
+
+      await flush()
+      expect(mockAuthService.getToken).toHaveBeenCalledTimes(2)
+
+      // A settles first; its `.finally` must leave B's registration intact.
+      resolvers[0]("token-A")
+      await pA
+      await flush()
+
+      // A later caller reuses B rather than starting a third refresh.
+      const pC = interceptor({ headers: {} } as InternalAxiosRequestConfig)
+      await flush()
+      expect(mockAuthService.getToken).toHaveBeenCalledTimes(2)
+      expect(sign).toHaveBeenCalledTimes(2)
+
+      resolvers[1]("token-B")
+      await Promise.all([pB, pC])
     })
 
     it("throws when neither privateKey nor signer is provided", () => {
@@ -482,13 +566,14 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       mockAxiosInstance.post.mockResolvedValue(mockResponse)
 
       const body = { request: { type: "test", data: "value" }, signature: "" }
+      const expected = expectedPrivateKeySignature(body.request)
       await apiService.post("/test-endpoint", body)
 
       // Body should have been mutated with signature
-      expect(body.signature).toBe("mock-signature")
+      expect(body.signature).toBe(expected)
       expect(mockAxiosInstance.post).toHaveBeenCalledWith(
         "/test-endpoint",
-        expect.objectContaining({ signature: "mock-signature" }),
+        expect.objectContaining({ signature: expected }),
         undefined,
       )
     })
@@ -498,9 +583,10 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       mockAxiosInstance.post.mockResolvedValue(mockResponse)
 
       const body = { request: { type: "test" } } as any
+      const expected = expectedPrivateKeySignature(body.request)
       await apiService.post("/test-endpoint", body)
 
-      expect(body.signature).toBe("mock-signature")
+      expect(body.signature).toBe(expected)
     })
 
     it("should preserve existing signature", async () => {
@@ -626,9 +712,10 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       mockAxiosInstance.post.mockResolvedValue(mockResponse)
 
       const body = { request: { type: "test" }, signature: "" }
+      const expected = expectedPrivateKeySignature(body.request)
       await apiService.post("/test-endpoint", body, { sign: true })
 
-      expect(body.signature).toBe("mock-signature")
+      expect(body.signature).toBe(expected)
     })
   })
 

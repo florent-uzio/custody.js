@@ -18,7 +18,11 @@ primitive for its `algorithm` and returns the raw signature bytes:
 The `context` (`"auth-challenge"` | `"request-body"`) is passed through for
 HSM/KMS policy engines. A throwing/rejecting signer, or one that returns an
 invalid signature, surfaces a clear `CustodyError`, and concurrent token
-refreshes collapse into a single signer call.
+refreshes collapse into a single signer call. Signer failures are no longer
+double-wrapped: the `CustodyError` is rethrown as-is, so `error.cause` is the
+original signer error. The internal `privateKey` path now signs through the
+same shared signing scheme (context-driven prep → raw primitive → encode) as
+the external signer path, instead of content-sniffing the message.
 
 Also export `toSignablePayload(request)`, which returns the canonical JSON string
 the SDK signs for a request body (the pre-hash input), plus the `CustodySigner`,

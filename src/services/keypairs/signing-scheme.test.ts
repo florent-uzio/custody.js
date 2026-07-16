@@ -1,4 +1,4 @@
-import crypto, { sign as nodeSign } from "crypto"
+import crypto from "crypto"
 import { describe, expect, it } from "vitest"
 import { CustodyError } from "../../models/custody-error.js"
 import { KeypairService } from "./keypair.service.js"
@@ -7,24 +7,19 @@ import {
   assertValidRawSignature,
   encodeSignature,
   prepareSigningInput,
+  signRawWithPrivateKey,
   type CustodySignContext,
 } from "./signing-scheme.js"
-
-/**
- * Runs the raw signing primitive for `algorithm` over `data` — i.e. what an
- * external signer / HSM would do. ed25519 returns the 64-byte raw signature;
- * ECDSA returns the DER-encoded signature.
- */
-const rawPrimitive = (algorithm: KeypairAlgorithm, privateKeyPem: string, data: Buffer): Buffer =>
-  algorithm === "ed25519"
-    ? crypto.sign(null, data, privateKeyPem)
-    : nodeSign(null, data, { key: privateKeyPem, dsaEncoding: "der" })
 
 describe("signing-scheme", () => {
   const algorithms: KeypairAlgorithm[] = ["ed25519", "secp256k1", "secp256r1"]
   const requestBody = JSON.stringify({ b: 1, a: 2, nested: { z: true } })
   const challenge = "e004adfe-667c-415e-be33-ce3d9684e76b"
 
+  // This oracle guards both signing paths against drift: ApiService signs via
+  // this scheme (prepare → signRawWithPrivateKey / external signer → encode),
+  // while KeypairService.sign is the content-sniffing public API. Both must
+  // keep producing the same signatures.
   describe("parity with KeypairService (correctness oracle)", () => {
     for (const algorithm of algorithms) {
       // ed25519 is deterministic → exact equality. ECDSA is randomized → verify
@@ -40,7 +35,7 @@ describe("signing-scheme", () => {
 
         for (const { message, context } of cases) {
           const data = prepareSigningInput(algorithm, message, context)
-          const raw = rawPrimitive(algorithm, privateKey, data)
+          const raw = signRawWithPrivateKey(algorithm, privateKey, data)
           assertValidRawSignature(algorithm, raw)
           const encoded = encodeSignature(algorithm, raw)
 

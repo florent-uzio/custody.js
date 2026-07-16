@@ -10,7 +10,9 @@ export type CustodySignRequest = {
   /**
    * The exact bytes to sign with the raw primitive. The SDK has already applied
    * all keyless prep (canonicalization, and for ed25519 request bodies the
-   * SHA-256 pre-hash) — do **not** hash these bytes again.
+   * SHA-256 pre-hash). For **ed25519**, sign these bytes as-is — do **not** hash
+   * them again. For **secp256k1/secp256r1**, `data` is not pre-hashed: run
+   * standard ECDSA-with-SHA-256, which hashes `data` as part of the operation.
    */
   data: Uint8Array
   /** What is being signed, for HSM/KMS policy engines and auditing. */

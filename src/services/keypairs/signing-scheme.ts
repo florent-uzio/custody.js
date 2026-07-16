@@ -37,6 +37,27 @@ export function prepareSigningInput(
 }
 
 /**
+ * Runs the raw signing primitive for `algorithm` over `data` with a PEM-encoded
+ * private key — the SDK-internal counterpart to an external signer's `sign`.
+ * Isolated here so the internal `privateKey` path and the external `signer` path
+ * share one scheme (prepare → raw primitive → encode) and produce identical
+ * signatures for the same message and context.
+ *
+ * - ed25519: returns the 64-byte raw signature.
+ * - secp256k1/secp256r1: returns the DER-encoded ECDSA-SHA256 signature.
+ */
+export function signRawWithPrivateKey(
+  algorithm: KeypairAlgorithm,
+  privateKeyPem: string,
+  data: Buffer,
+): Buffer {
+  if (algorithm === "ed25519") {
+    return crypto.sign(null, data, privateKeyPem)
+  }
+  return crypto.sign(null, data, { key: privateKeyPem, dsaEncoding: "der" })
+}
+
+/**
  * Encodes a raw signature into the base64 form the server expects.
  *
  * - ed25519: the 64-byte raw signature is wrapped in Custody's DER-shaped

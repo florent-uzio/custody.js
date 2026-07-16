@@ -37,6 +37,10 @@ export class KeypairService {
 
   /**
    * Signs a message using the defined algorithm and provided private key.
+   *
+   * Note: `ApiService` now signs via `signing-scheme.ts` instead of this method;
+   * parity between the two is guarded by the oracle test in
+   * `signing-scheme.test.ts`. Kept as public API for external callers.
    * @param privateKeyPem - The private key in PEM format.
    * @param message - The message to sign.
    * @returns {string} The base64-encoded signature.

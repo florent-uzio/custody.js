@@ -147,6 +147,13 @@ const custody = new RippleCustody({
 })
 ```
 
+> **AWS KMS note:** `Sign` caps `RAW` messages at 4096 bytes. For an ECDSA
+> (`secp256k1`/`secp256r1`) signer, a large canonical request body can exceed
+> that limit, so hash `data` locally and call KMS with `MessageType: DIGEST`,
+> passing `sha256(data)` with `ECDSA_SHA_256` (this yields the same signature as
+> a `RAW` sign over `data`). Do **not** send an ed25519 `request-body` `data` as
+> `DIGEST` — it is already the SHA-256 hash and ed25519 signs it as-is.
+
 `toSignablePayload(request)` is exported for inspecting the canonical JSON the SDK
 signs for a request body. Note it returns the **pre-hash input**, not the final
 signed bytes — reproducing a server-valid signature also requires the per-algorithm

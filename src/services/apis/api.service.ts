@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
+import crypto from "crypto"
 import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
@@ -11,6 +12,7 @@ import {
   assertValidRawSignature,
   encodeSignature,
   prepareSigningInput,
+  signRawWithPrivateKey,
 } from "../keypairs/signing-scheme.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
 
@@ -25,8 +27,9 @@ export class ApiService {
   private challenge: string
   /**
    * Signs a message for the given context and returns the base64 signature the
-   * server expects. Built once from either the provided `privateKey` (via
-   * {@link KeypairService}) or the external `signer` (via the signing scheme).
+   * server expects. Built once from either the provided `privateKey` or the
+   * external `signer`; both run through the same signing scheme (prepare → raw
+   * primitive → encode), differing only in where the raw primitive executes.
    */
   private readonly sign: (message: string, context: CustodySignContext) => Promise<string>
   /**
@@ -111,9 +114,29 @@ export class ApiService {
         throw new Error("Unsupported private key algorithm. Please provide a valid private key.")
       }
 
-      // Initialize keypair service for signing
-      const keypairService = new KeypairService(privateKeyAlgorithm)
-      this.sign = async (message) => keypairService.sign(privateKey, message)
+      // detectKeyType only inspects OIDs in the base64 body, so a corrupt PEM can
+      // still pass it. Parse the key once here to fail fast at construction
+      // instead of with a raw Node crypto error on the first request.
+      try {
+        crypto.createPrivateKey(privateKey)
+      } catch (error) {
+        throw new CustodyError(
+          {
+            reason: `Invalid private key: failed to parse PEM. ${error instanceof Error ? error.message : String(error)}`,
+          },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
+      }
+
+      // Sign via the shared signing scheme (same prep + encode as the external
+      // signer path), so both paths produce identical signatures for a given
+      // message and context — the `context` drives hashing, not content-sniffing.
+      this.sign = async (message, context) => {
+        const data = prepareSigningInput(privateKeyAlgorithm, message, context)
+        const rawSignature = signRawWithPrivateKey(privateKeyAlgorithm, privateKey, data)
+        return encodeSignature(privateKeyAlgorithm, rawSignature)
+      }
     } else {
       // External signer: the SDK owns prep + encode; the signer runs only the
       // raw primitive so the key never enters the SDK.
@@ -169,10 +192,15 @@ export class ApiService {
       return this.authService.getToken(authData, forceRefresh)
     })()
 
-    this.tokenRefresh = refresh.finally(() => {
-      this.tokenRefresh = null
+    // Only clear the registration if it's still the one we set — a forced
+    // refresh (401 retry) can overtake an older in-flight refresh, and the older
+    // one's `.finally` must not clobber the newer registration (which would let a
+    // later caller start a redundant third refresh).
+    const tracked = refresh.finally(() => {
+      if (this.tokenRefresh === tracked) this.tokenRefresh = null
     })
-    return this.tokenRefresh
+    this.tokenRefresh = tracked
+    return tracked
   }
 
   /**
@@ -180,6 +208,9 @@ export class ApiService {
    * Shared by all HTTP verb methods.
    */
   private handleRequestError(error: unknown, verb: string): never {
+    // Already a CustodyError (e.g. a signer failure thrown inside post()) — don't
+    // re-wrap it in another CustodyError.
+    if (error instanceof CustodyError) throw error
     if (axios.isAxiosError<Core_ErrorMessage>(error)) {
       const errorData = error.response?.data
       if (isObject(errorData)) {
