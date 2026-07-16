@@ -100,8 +100,8 @@ const custody = new RippleCustody({
 | ------------------- | ----------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apiUrl`            | `string`          | Yes      | -       | API URL for the API endpoints (e.g. `"https://api.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                                  |
 | `authUrl`           | `string`          | Yes      | -       | Authentication URL for the API endpoints (e.g. `"https://auth.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                      |
-| `privateKey`        | `string`          | Yes\*    | -       | Private key (PEM) the SDK signs with internally. Provide exactly one of `privateKey` or `signer`                                                                                                                                                                     |
-| `signer`            | `CustodySigner`   | Yes\*    | -       | External signer `{ algorithm, sign }` that runs only the raw signing primitive, keeping the private key outside the SDK (e.g. HSM/KMS). Provide exactly one of `privateKey` or `signer`. See [External signer](#external-signer-hsmkms) below                          |
+| `privateKey`        | `string`          | Yes\*    | -       | Private key (PEM) the SDK signs with internally. Provide exactly one of `privateKey` or `signer`                                                                                                                                                                    |
+| `signer`            | `CustodySigner`   | Yes\*    | -       | External signer `{ algorithm, sign }` that runs only the raw signing primitive, keeping the private key outside the SDK (e.g. HSM/KMS). Provide exactly one of `privateKey` or `signer`. See [External signer](#external-signer-hsmkms) below                       |
 | `publicKey`         | `string`          | Yes      | -       | Public key for authentication. Required in both signing modes                                                                                                                                                                                                       |
 | `timeout`           | `number`          | No       | `30000` | Request timeout in milliseconds                                                                                                                                                                                                                                     |
 | `apiVersion`        | `KnownAppVersion` | No       | -       | Pin the SDK to a specific Ripple Custody backend app version. Calls that version cannot serve throw `UnsupportedInVersionError`, gated against bundled capability data (no network). Only bundled versions are accepted, and setting this skips live auto-detection |
@@ -122,9 +122,9 @@ gate per-operation.
 
 Raw-signature contract by algorithm (must match your registered `publicKey`):
 
-| `algorithm`             | What `data` is                                                   | Return                                    |
-| ----------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
-| `ed25519`               | already SHA-256 hashed for request bodies; raw for the challenge | the **64-byte raw** Ed25519 signature     |
+| `algorithm`             | What `data` is                                                   | Return                                     |
+| ----------------------- | ---------------------------------------------------------------- | ------------------------------------------ |
+| `ed25519`               | already SHA-256 hashed for request bodies; raw for the challenge | the **64-byte raw** Ed25519 signature      |
 | `secp256k1`/`secp256r1` | the UTF-8 message bytes (ECDSA applies SHA-256 itself)           | the **DER-encoded** ECDSA-SHA256 signature |
 
 ```typescript

@@ -149,7 +149,9 @@ export class ApiService {
           rawSignature = await sign({ data, context })
         } catch (error) {
           throw new CustodyError(
-            { reason: `External signer failed: ${error instanceof Error ? error.message : String(error)}` },
+            {
+              reason: `External signer failed: ${error instanceof Error ? error.message : String(error)}`,
+            },
             undefined,
             error instanceof Error ? error : undefined,
           )
