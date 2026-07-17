@@ -24,6 +24,8 @@ original signer error. The internal `privateKey` path now signs through the
 same shared signing scheme (context-driven prep → raw primitive → encode) as
 the external signer path, instead of content-sniffing the message.
 
-Also export `toSignablePayload(request)`, which returns the canonical JSON string
-the SDK signs for a request body (the pre-hash input), plus the `CustodySigner`,
-`CustodySignRequest`, and `CustodySignContext` types.
+Also export `canonicalizeRequest(request)`, which returns the canonical JSON
+string the SDK signs for a request body (the pre-hash input), and
+`prepareSigningInput(algorithm, message, context)`, which turns it into the exact
+bytes the raw signing primitive runs over (for fully out-of-band signing), plus
+the `CustodySigner`, `CustodySignRequest`, and `CustodySignContext` types.

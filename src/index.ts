@@ -7,9 +7,11 @@ export type {
   RippleCustodyClientOptions,
 } from "./ripple-custody.types.js"
 
-// canonicalization helper (produce the canonical JSON pre-hash input Custody
-// signs for a request body, e.g. for out-of-band / external signers)
-export { toSignablePayload } from "./helpers/canonicalize/index.js"
+// out-of-band signing helpers: canonicalizeRequest produces the canonical JSON
+// pre-hash input for a request body; prepareSigningInput turns it into the exact
+// bytes the raw signing primitive runs over for a given algorithm and context
+export { canonicalizeRequest } from "./helpers/canonicalize/index.js"
+export { prepareSigningInput } from "./services/keypairs/signing-scheme.js"
 
 // shared SDK-only types
 export type { LedgerId, NonXrplLedgerId, XrplLedgerId } from "./models/ledger-ids.js"

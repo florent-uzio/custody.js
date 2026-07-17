@@ -154,10 +154,11 @@ const custody = new RippleCustody({
 > a `RAW` sign over `data`). Do **not** send an ed25519 `request-body` `data` as
 > `DIGEST` — it is already the SHA-256 hash and ed25519 signs it as-is.
 
-`toSignablePayload(request)` is exported for inspecting the canonical JSON the SDK
-signs for a request body. Note it returns the **pre-hash input**, not the final
-signed bytes — reproducing a server-valid signature also requires the per-algorithm
-prep above. See `examples/external-signer/` for a runnable example.
+`canonicalizeRequest(request)` is exported for inspecting the canonical JSON the
+SDK signs for a request body. Note it returns the **pre-hash input**, not the final
+signed bytes — pass it to the also-exported `prepareSigningInput(algorithm, message, context)`
+to get the exact bytes the raw signing primitive runs over (e.g. for fully
+out-of-band signing). See `examples/external-signer/` for a runnable example.
 
 ### 3. Use the SDK
 

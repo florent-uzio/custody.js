@@ -3,7 +3,7 @@ import crypto from "crypto"
 import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
-import { isObject, toSignablePayload } from "../../helpers/index.js"
+import { canonicalizeRequest, isObject } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
 import type { CustodySignContext } from "../../ripple-custody.types.js"
 import { AuthService } from "../auth/auth.service.js"
@@ -270,7 +270,7 @@ export class ApiService {
       // Sign the request (default) unless the caller opted out
       if (sign !== false && body && (!body.signature || body.signature === "")) {
         // Canonicalize the request body
-        const canonicalizedRequest = toSignablePayload(body.request)
+        const canonicalizedRequest = canonicalizeRequest(body.request)
 
         // Sign the canonicalized request
         body.signature = await this.sign(canonicalizedRequest, "request-body")
