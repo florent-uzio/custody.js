@@ -158,7 +158,9 @@ const custody = new RippleCustody({
 SDK signs for a request body. Note it returns the **pre-hash input**, not the final
 signed bytes — pass it to the also-exported `prepareSigningInput(algorithm, message, context)`
 to get the exact bytes the raw signing primitive runs over (e.g. for fully
-out-of-band signing). See `examples/external-signer/` for a runnable example.
+out-of-band signing). See `examples/external-signer/index.ts` for a runnable
+signer example, and `examples/external-signer/inspect-signing-input.ts` for a
+standalone example of inspecting the signing input without making a network call.
 
 ### 3. Use the SDK
 
