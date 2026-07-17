@@ -1,0 +1,51 @@
+name: Promote Beta to Stable
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  promote-beta-to-stable:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Exit prerelease mode
+        run: |
+          if [ ! -f .changeset/pre.json ]; then
+            echo "Not in prerelease mode, nothing to exit." >&2
+            exit 1
+          fi
+          npx changeset pre exit
+
+      - name: Finalize stable version
+        run: npx changeset version
+
+      - name: Commit finalized version
+        run: |
+          git add .
+          git diff --cached --quiet && { echo "Nothing to commit."; exit 0; }
+          git commit -m "chore: finalize stable version"
+          git push origin HEAD:${{ github.ref_name }}
