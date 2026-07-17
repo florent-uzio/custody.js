@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,6 +12,7 @@ concurrency:
 
 jobs:
   release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     permissions:
@@ -41,4 +43,54 @@ jobs:
           publish: npm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+
+  beta-release:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Enter prerelease mode if needed
+        run: |
+          if [ ! -f .changeset/pre.json ]; then
+            npx changeset pre enter beta
+          fi
+
+      - name: Version beta release
+        run: npx changeset version
+
+      - name: Commit version bump
+        run: |
+          git add .
+          git diff --cached --quiet || git commit -m "chore: version beta release"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Publish beta to npm
+        run: npm run release
+        env:
           NPM_CONFIG_PROVENANCE: "true"
