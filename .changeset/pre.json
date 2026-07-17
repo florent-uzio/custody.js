@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@florent-uzio/custody": "2.9.0"
+  },
+  "changesets": [
+    "external-signer"
+  ]
+}
