@@ -111,7 +111,9 @@ export class ApiService {
       // Validate provided private key
       const privateKeyAlgorithm = KeypairService.detectKeyType(privateKey)
       if (privateKeyAlgorithm === "unknown") {
-        throw new Error("Unsupported private key algorithm. Please provide a valid private key.")
+        throw new CustodyError({
+          reason: "Unsupported private key algorithm. Please provide a valid private key.",
+        })
       }
 
       // detectKeyType only inspects OIDs in the base64 body, so a corrupt PEM can
