@@ -43,9 +43,8 @@ jobs:
       - name: Finalize stable version
         run: npx changeset version
 
-      - name: Commit finalized version
+      - name: Commit and push finalized version
         run: |
           git add .
-          git diff --cached --quiet && { echo "Nothing to commit."; exit 0; }
-          git commit -m "chore: finalize stable version"
+          git diff --cached --quiet || git commit -m "chore: finalize stable version"
           git push origin HEAD:${{ github.ref_name }}
