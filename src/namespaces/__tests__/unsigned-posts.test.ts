@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { createFakeTransport } from "../../testing/fake-transport.js"
+import { createExports } from "../exports.js"
 import { createGenesis } from "../genesis.js"
 import { createIntents } from "../intents.js"
 import { createLedgers } from "../ledgers.js"
@@ -89,6 +90,30 @@ describe("non-intent POST methods pass sign: false", () => {
   it("vaults.importPreparedOperations", async () => {
     const vaults = createVaults(mockTransport)
     await vaults.importPreparedOperations({ files: {} } as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("exports.generateMovementReport", async () => {
+    const exports = createExports(mockTransport)
+    await exports.generateMovementReport({} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("exports.generatePositionReport", async () => {
+    const exports = createExports(mockTransport)
+    await exports.generatePositionReport({} as any)
 
     expect(mockTransport.post).toHaveBeenCalledWith(
       expect.anything(),

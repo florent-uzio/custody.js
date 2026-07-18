@@ -7,6 +7,7 @@ import {
   createDomains,
   createEndpoints,
   createEvents,
+  createExports,
   createGenesis,
   createHealth,
   createIntents,
@@ -57,6 +58,7 @@ export class RippleCustody {
   public readonly domains: ReturnType<typeof createDomains>
   public readonly endpoints: ReturnType<typeof createEndpoints>
   public readonly events: ReturnType<typeof createEvents>
+  public readonly exports: ReturnType<typeof createExports>
   public readonly genesis: ReturnType<typeof createGenesis>
   public readonly health: ReturnType<typeof createHealth>
   public readonly intents: ReturnType<typeof createIntents>
@@ -138,6 +140,7 @@ export class RippleCustody {
     this.domains = createDomains(this.transport)
     this.endpoints = createEndpoints(this.transport)
     this.events = createEvents(this.transport)
+    this.exports = createExports(this.transport)
     this.genesis = createGenesis(this.transport)
     this.health = createHealth(this.transport)
     this.intents = createIntents(this.transport)

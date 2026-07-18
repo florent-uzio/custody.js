@@ -43,6 +43,9 @@ export type * from "./namespaces/endpoints.types.js"
 // events types
 export type * from "./namespaces/events.types.js"
 
+// exports (reports) types
+export type * from "./namespaces/exports.types.js"
+
 // compliance types (all Compliance*-prefixed aliases across the 5 sub-domains)
 export type * from "./namespaces/compliance/analysis.types.js"
 export type * from "./namespaces/compliance/domain.types.js"

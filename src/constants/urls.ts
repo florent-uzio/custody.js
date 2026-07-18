@@ -218,6 +218,10 @@ export const URLs = createURLs({
   omnibusTenantUnlock: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/unlock",
   omnibusTenantWithdrawals:
     "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}/withdrawals",
+
+  // Exports
+  exportsMovement: "/v1/exports/movement",
+  exportsPosition: "/v1/exports/position",
 } as const)
 
 // Type for the URLs object that ensures all values are valid paths
