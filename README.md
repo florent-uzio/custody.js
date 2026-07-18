@@ -368,6 +368,34 @@ try {
 
 `console.log(error)` outputs a clean, readable format. Access `error.cause` for full debugging details.
 
+### Version-gated calls
+
+When `apiVersion` is set (or `autoDetectVersion` resolves a live version), the
+SDK gates calls against that version's bundled/detected capabilities. Calling a
+method the resolved backend version does not support throws
+`UnsupportedInVersionError` instead of making a network request:
+
+```typescript
+import { UnsupportedInVersionError } from "@florent-uzio/custody"
+
+try {
+  await custody.health.liveness()
+} catch (error) {
+  if (error instanceof UnsupportedInVersionError) {
+    console.log(error.capability) // e.g. "GET /health/liveness" or a schema name
+    console.log(error.kind) // "endpoint" | "feature"
+    console.log(error.appVersion) // the resolved backend version
+    console.log(error.sdkMethod) // the SDK method that was called
+  }
+}
+```
+
+`UnsupportedInVersionError` extends `CustodyError`, so existing
+`catch (error instanceof CustodyError)` handlers still catch it. If no version
+can be resolved (detection fails, or neither `apiVersion` nor
+`autoDetectVersion` produced a resolved version), the SDK fails open — calls
+pass through and the backend remains the ultimate authority.
+
 ## License
 
 MIT License - see [LICENSE](./LICENSE) file for details.
