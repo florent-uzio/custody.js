@@ -1,12 +1,19 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
-import canonicalize from "canonicalize"
+import crypto from "crypto"
 import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
-import { isObject } from "../../helpers/index.js"
+import { canonicalizeRequest, isObject } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
+import type { CustodySignContext } from "../../ripple-custody.types.js"
 import { AuthService } from "../auth/auth.service.js"
 import { KeypairService } from "../keypairs/index.js"
+import {
+  assertValidRawSignature,
+  encodeSignature,
+  prepareSigningInput,
+  signRawWithPrivateKey,
+} from "../keypairs/signing-scheme.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
 
 /**
@@ -18,14 +25,36 @@ export class ApiService {
   private readonly authService: AuthService
   private readonly apiUrl: string
   private challenge: string
-  private readonly keypairService: KeypairService
-  private readonly privateKey: string
+  /**
+   * Signs a message for the given context and returns the base64 signature the
+   * server expects. Built once from either the provided `privateKey` or the
+   * external `signer`; both run through the same signing scheme (prepare → raw
+   * primitive → encode), differing only in where the raw primitive executes.
+   */
+  private readonly sign: (message: string, context: CustodySignContext) => Promise<string>
+  /**
+   * In-flight token refresh, shared across concurrent callers so an expired
+   * token triggers a single sign + token request (matters for metered signers).
+   */
+  private tokenRefresh: Promise<string> | null = null
 
   constructor(options: ApiServiceOptions) {
     this.authService = options.authService
     this.apiUrl = options.apiUrl
     this.authFormData = options.authFormData
-    this.privateKey = options.privateKey
+
+    const { privateKey, signer } = options
+
+    if (privateKey && signer) {
+      throw new CustodyError({
+        reason: "Provide either `privateKey` or `signer`, not both.",
+      })
+    }
+    if (!privateKey && !signer) {
+      throw new CustodyError({
+        reason: "Provide either a `privateKey` or a `signer` to sign requests.",
+      })
+    }
 
     const timeout = options.timeout ?? DEFAULT_TIMEOUT_MS
 
@@ -45,7 +74,7 @@ export class ApiService {
     // Add request interceptor to inject JWT token into headers
     this.apiClient.interceptors.request.use(
       async (config) => {
-        const token = await this.getValidToken(this.privateKey)
+        const token = await this.getValidToken()
         config.headers.Authorization = `Bearer ${token}`
         return config
       },
@@ -68,7 +97,7 @@ export class ApiService {
           originalRequest._retried = true
 
           // Generate a fresh challenge and force-refresh the token
-          const token = await this.getValidToken(this.privateKey, true)
+          const token = await this.getValidToken(true)
           originalRequest.headers.Authorization = `Bearer ${token}`
 
           return this.apiClient(originalRequest)
@@ -78,14 +107,62 @@ export class ApiService {
       },
     )
 
-    // Validate provided private key
-    const privateKeyAlgorithm = KeypairService.detectKeyType(this.privateKey)
-    if (privateKeyAlgorithm === "unknown") {
-      throw new Error("Unsupported private key algorithm. Please provide a valid private key.")
-    }
+    if (privateKey) {
+      // Validate provided private key
+      const privateKeyAlgorithm = KeypairService.detectKeyType(privateKey)
+      if (privateKeyAlgorithm === "unknown") {
+        throw new CustodyError({
+          reason: "Unsupported private key algorithm. Please provide a valid private key.",
+        })
+      }
 
-    // Initialize keypair service for signing
-    this.keypairService = new KeypairService(privateKeyAlgorithm)
+      // detectKeyType only inspects OIDs in the base64 body, so a corrupt PEM can
+      // still pass it. Parse the key once here to fail fast at construction
+      // instead of with a raw Node crypto error on the first request.
+      try {
+        crypto.createPrivateKey(privateKey)
+      } catch (error) {
+        throw new CustodyError(
+          {
+            reason: `Invalid private key: failed to parse PEM. ${error instanceof Error ? error.message : String(error)}`,
+          },
+          undefined,
+          error instanceof Error ? error : undefined,
+        )
+      }
+
+      // Sign via the shared signing scheme (same prep + encode as the external
+      // signer path), so both paths produce identical signatures for a given
+      // message and context — the `context` drives hashing, not content-sniffing.
+      this.sign = async (message, context) => {
+        const data = prepareSigningInput(privateKeyAlgorithm, message, context)
+        const rawSignature = signRawWithPrivateKey(privateKeyAlgorithm, privateKey, data)
+        return encodeSignature(privateKeyAlgorithm, rawSignature)
+      }
+    } else {
+      // External signer: the SDK owns prep + encode; the signer runs only the
+      // raw primitive so the key never enters the SDK.
+      const { algorithm, sign } = signer!
+      this.sign = async (message, context) => {
+        const data = prepareSigningInput(algorithm, message, context)
+
+        let rawSignature: Uint8Array
+        try {
+          rawSignature = await sign({ data, context })
+        } catch (error) {
+          throw new CustodyError(
+            {
+              reason: `External signer failed: ${error instanceof Error ? error.message : String(error)}`,
+            },
+            undefined,
+            error instanceof Error ? error : undefined,
+          )
+        }
+
+        assertValidRawSignature(algorithm, rawSignature)
+        return encodeSignature(algorithm, rawSignature)
+      }
+    }
 
     // Use provided challenge or generate a new one
     this.challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
@@ -93,23 +170,41 @@ export class ApiService {
 
   /**
    * Retrieves a valid JWT token, refreshing if needed.
-   * @param privateKey - The private key for signing the challenge.
    * @param forceRefresh - Whether to force a token refresh.
    * @returns {Promise<string>} The valid JWT token.
    */
-  private async getValidToken(privateKey: string, forceRefresh = false): Promise<string> {
-    if (forceRefresh || this.authService.isTokenExpired()) {
+  private async getValidToken(forceRefresh = false): Promise<string> {
+    if (!forceRefresh && !this.authService.isTokenExpired()) {
+      return this.authService.getCurrentToken() || ""
+    }
+
+    // Collapse concurrent refreshes so an expired token signs once, not once
+    // per in-flight request. A forced refresh (401 retry) always signs anew.
+    if (!forceRefresh && this.tokenRefresh) {
+      return this.tokenRefresh
+    }
+
+    const refresh = (async () => {
       // Generate a fresh challenge for each token refresh to avoid stale challenge rejection
       this.challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
 
       const authData = {
-        signature: this.keypairService.sign(privateKey, this.challenge),
+        signature: await this.sign(this.challenge, "auth-challenge"),
         challenge: this.challenge,
         publicKey: this.authFormData.publicKey,
       }
-      return await this.authService.getToken(authData, forceRefresh)
-    }
-    return this.authService.getCurrentToken() || ""
+      return this.authService.getToken(authData, forceRefresh)
+    })()
+
+    // Only clear the registration if it's still the one we set — a forced
+    // refresh (401 retry) can overtake an older in-flight refresh, and the older
+    // one's `.finally` must not clobber the newer registration (which would let a
+    // later caller start a redundant third refresh).
+    const tracked = refresh.finally(() => {
+      if (this.tokenRefresh === tracked) this.tokenRefresh = null
+    })
+    this.tokenRefresh = tracked
+    return tracked
   }
 
   /**
@@ -117,6 +212,9 @@ export class ApiService {
    * Shared by all HTTP verb methods.
    */
   private handleRequestError(error: unknown, verb: string): never {
+    // Already a CustodyError (e.g. a signer failure thrown inside post()) — don't
+    // re-wrap it in another CustodyError.
+    if (error instanceof CustodyError) throw error
     if (axios.isAxiosError<Core_ErrorMessage>(error)) {
       const errorData = error.response?.data
       if (isObject(errorData)) {
@@ -174,16 +272,10 @@ export class ApiService {
       // Sign the request (default) unless the caller opted out
       if (sign !== false && body && (!body.signature || body.signature === "")) {
         // Canonicalize the request body
-        const canonicalizedRequest = canonicalize(body.request)
-
-        if (!canonicalizedRequest) {
-          throw new CustodyError({ reason: "Failed to canonicalize request body" })
-        }
+        const canonicalizedRequest = canonicalizeRequest(body.request)
 
         // Sign the canonicalized request
-        const signature = this.keypairService.sign(this.privateKey, canonicalizedRequest)
-
-        body.signature = signature
+        body.signature = await this.sign(canonicalizedRequest, "request-body")
       }
 
       const response = await this.apiClient.post<T>(url, body, axiosConfig)

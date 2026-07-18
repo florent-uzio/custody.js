@@ -1,7 +1,46 @@
 import type { KnownAppVersion } from "./models/capabilities.generated.js"
+import type { KeypairAlgorithm } from "./services/keypairs/keypairs.types.js"
+import type { CustodySignContext } from "./services/keypairs/signing-scheme.js"
 import type { SpecSource } from "./versioning/detect.js"
 
-export type RippleCustodyClientOptions = {
+export type { CustodySignContext } from "./services/keypairs/signing-scheme.js"
+
+/** Arguments handed to a {@link CustodySigner}. */
+export type CustodySignRequest = {
+  /**
+   * The exact bytes to sign with the raw primitive. The SDK has already applied
+   * all keyless prep (canonicalization, and for ed25519 request bodies the
+   * SHA-256 pre-hash). For **ed25519**, sign these bytes as-is — do **not** hash
+   * them again. For **secp256k1/secp256r1**, `data` is not pre-hashed: run
+   * standard ECDSA-with-SHA-256, which hashes `data` as part of the operation.
+   */
+  data: Uint8Array
+  /** What is being signed, for HSM/KMS policy engines and auditing. */
+  context: CustodySignContext
+}
+
+/**
+ * Signs requests without exposing the private key to the SDK (e.g. via an
+ * HSM/KMS). Provide a `signer` instead of a `privateKey`.
+ *
+ * The SDK owns canonicalization, hashing, and signature encoding; the signer
+ * runs only the **raw primitive** for its `algorithm` over `data` and returns
+ * the raw signature bytes. It may be async. The `algorithm` must match the
+ * registered `publicKey`.
+ *
+ * Raw-signature contract by algorithm:
+ * - `ed25519`: return the **64-byte raw** Ed25519 signature over `data`
+ *   (`data` is already SHA-256 hashed for request bodies). The SDK applies
+ *   Custody's DER-shaped envelope and base64 encoding.
+ * - `secp256k1` / `secp256r1`: run standard **ECDSA with SHA-256** over `data`
+ *   and return the **DER-encoded** signature. The SDK base64-encodes it.
+ */
+export type CustodySigner = {
+  algorithm: KeypairAlgorithm
+  sign: (request: CustodySignRequest) => Uint8Array | Promise<Uint8Array>
+}
+
+type BaseClientOptions = {
   /**
    * Pin the SDK to a specific Ripple Custody backend app version. When set,
    * calls that the version cannot serve throw `UnsupportedInVersionError`,
@@ -46,17 +85,36 @@ export type RippleCustodyClientOptions = {
    */
   authUrl: string
   /**
-   * Private key for signing requests
-   */
-  privateKey: string
-  /**
-   * Public key for authentication
-   */
-  publicKey: string
-  /**
    * Request timeout in milliseconds.
    *
    * @default 30000 (30 seconds)
    */
   timeout?: number
 }
+
+/**
+ * Authentication credential — exactly one of `privateKey` or `signer`.
+ *
+ * - `privateKey`: the SDK holds the key (PEM) and signs internally.
+ * - `signer`: the SDK delegates the raw signing primitive to you and never sees
+ *   the key.
+ */
+type AuthCredentials =
+  | {
+      /** Private key (PEM) the SDK uses to sign requests internally. */
+      privateKey: string
+      signer?: never
+    }
+  | {
+      /** External signer that signs on the SDK's behalf, keeping the key external. */
+      signer: CustodySigner
+      privateKey?: never
+    }
+
+export type RippleCustodyClientOptions = BaseClientOptions & {
+  /**
+   * Public key for authentication. Required in both signing modes — Custody uses
+   * it to verify the signatures produced by your `privateKey` or `signer`.
+   */
+  publicKey: string
+} & AuthCredentials

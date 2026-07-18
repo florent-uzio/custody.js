@@ -1,6 +1,17 @@
 export { DEFAULT_TIMEOUT_MS } from "./constants/index.js"
 export { RippleCustody } from "./ripple-custody.js"
-export type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
+export type {
+  CustodySignContext,
+  CustodySignRequest,
+  CustodySigner,
+  RippleCustodyClientOptions,
+} from "./ripple-custody.types.js"
+
+// out-of-band signing helpers: canonicalizeRequest produces the canonical JSON
+// pre-hash input for a request body; prepareSigningInput turns it into the exact
+// bytes the raw signing primitive runs over for a given algorithm and context
+export { canonicalizeRequest } from "./helpers/canonicalize/index.js"
+export { prepareSigningInput } from "./services/keypairs/signing-scheme.js"
 
 // shared SDK-only types
 export type { LedgerId, NonXrplLedgerId, XrplLedgerId } from "./models/ledger-ids.js"

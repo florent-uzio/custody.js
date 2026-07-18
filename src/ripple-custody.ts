@@ -85,6 +85,7 @@ export class RippleCustody {
       authUrl,
       apiUrl,
       privateKey,
+      signer,
       publicKey,
       timeout,
       apiVersion,
@@ -126,6 +127,7 @@ export class RippleCustody {
       },
       authService: this.authService,
       privateKey,
+      signer,
       timeout,
     })
     this.transport = new TypedTransport(this.apiService, this.guard)
