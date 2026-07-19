@@ -185,7 +185,7 @@ describe("RippleCustody.backendVersion()", () => {
     await expect(client.backendVersion()).resolves.toBe("1.36.4")
   })
 
-  it("returns \"unknown\" when the live spec has no x-app-version", async () => {
+  it('returns "unknown" when the live spec has no x-app-version', async () => {
     const specSource = fakeSource({ info: {} })
     const client = new RippleCustody({ ...creds, specSource })
 

@@ -1,3 +1,4 @@
+import { CustodyError } from "./models/index.js"
 import {
   createAccounts,
   createAuth,
@@ -28,7 +29,6 @@ import {
   createVirtualLedgers,
   createXrpl,
 } from "./namespaces/index.js"
-import { CustodyError } from "./models/index.js"
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
@@ -192,8 +192,7 @@ export class RippleCustody {
     } catch (error) {
       throw new CustodyError(
         {
-          reason:
-            "Could not determine the backend version: fetching the live OpenAPI spec failed.",
+          reason: "Could not determine the backend version: fetching the live OpenAPI spec failed.",
         },
         undefined,
         error as Error,
