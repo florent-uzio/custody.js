@@ -42,6 +42,14 @@ describe("RippleCustody apiVersion option", () => {
   it("constructs with no apiVersion (auto-detect enabled by default)", () => {
     expect(() => new RippleCustody({ ...creds })).not.toThrow()
   })
+
+  it("gates exports.generateMovementReport against a pre-1.37.0 apiVersion", async () => {
+    const client = new RippleCustody({ ...creds, apiVersion: "1.36.2" })
+
+    await expect(client.exports.generateMovementReport({} as any)).rejects.toBeInstanceOf(
+      UnsupportedInVersionError,
+    )
+  })
 })
 
 describe("RippleCustody live-spec auto-detection", () => {

@@ -3136,6 +3136,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/exports/position": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Generate a Position Report (balance snapshot) */
+    post: operations["PositionReportController_generatePositionReport"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/exports/movement": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Generate a Movement Report (transaction history) */
+    post: operations["MovementReportController_generateMovementReport"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -3680,6 +3714,7 @@ export interface components {
       id: string
       /** @deprecated */
       ledgerId: string
+      /** @deprecated */
       kind: components["schemas"]["Core_TickerKind"]
       /** @deprecated */
       name: string
@@ -3690,6 +3725,7 @@ export interface components {
       decimals?: number
       /** @deprecated */
       symbol?: string
+      /** @deprecated */
       ledgerDetails: components["schemas"]["Core_TickerLedgerDetails"]
       data: components["schemas"]["Core_ApiTickerData"]
       /** Format: base64 */
@@ -5850,7 +5886,8 @@ export interface components {
       metadata: components["schemas"]["Core_EntityMetadata"]
       intentOrigin?: components["schemas"]["Core_IntentOrigin"]
     }
-    /** @example {
+    /**
+     * @example {
      *       "left": {
      *         "left": {
      *           "expression": "true == true",
@@ -5873,7 +5910,8 @@ export interface components {
      *         },
      *         "type": "Or"
      *       }
-     *     } */
+     *     }
+     */
     Core_PolicyCondition:
       | components["schemas"]["Core_PolicyCondition_And"]
       | components["schemas"]["Core_PolicyCondition_Expression"]
@@ -6604,6 +6642,7 @@ export interface components {
       | components["schemas"]["Core_SubstrateStakingMethod_Unbond"]
       | components["schemas"]["Core_SubstrateStakingMethod_WithdrawUnbonded"]
     Core_SubstrateStakingMethod_Bond: {
+      /** @deprecated */
       controller?: components["schemas"]["Core_TransactionDestination"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       value: string
@@ -6648,6 +6687,7 @@ export interface components {
       type: "Rebond"
     }
     Core_SubstrateStakingMethod_SetController: {
+      /** @deprecated */
       controller?: components["schemas"]["Core_TransactionDestination"]
       /**
        * @description discriminator enum property added by openapi-typescript
@@ -7419,6 +7459,7 @@ export interface components {
       type: "Tron"
     }
     Core_TransactionOrderParameters_XRPL: {
+      /** @deprecated */
       destination?: components["schemas"]["Core_TransactionDestination"]
       /**
        * @deprecated
@@ -8227,7 +8268,8 @@ export interface components {
       currentStartingAfter?: string
       nextStartingAfter?: string
     }
-    /** @example {
+    /**
+     * @example {
      *       "left": {
      *         "left": {
      *           "role": "Admin",
@@ -8254,7 +8296,8 @@ export interface components {
      *         },
      *         "type": "Or"
      *       }
-     *     } */
+     *     }
+     */
     Core_WorkflowCondition:
       | components["schemas"]["Core_WorkflowCondition_And"]
       | components["schemas"]["Core_WorkflowCondition_Or"]
@@ -11244,7 +11287,7 @@ export interface components {
       /** @description Alias of the omnibus structure */
       alias: string
       /** @enum {string} */
-      status: "CREATING" | "PENDING_SPONSORSHIP" | "UNLOCKED" | "LOCKED" | "FAILED"
+      status: "CREATING" | "PENDING_SPONSORSHIP" | "UNLOCKED" | "LOCKED" | "FAILED" | "ACTIVE"
       /** @description List of custody account IDs to ignore during event processing */
       ignoredAccountIds: string[]
       /**
@@ -11264,6 +11307,8 @@ export interface components {
       sponsoringGasStationId?: string
       /** @description Balances of the host tenant per ticker/ledger combination */
       balances?: components["schemas"]["Omnibus_TenantBalanceEntry"][]
+      /** @enum {string} */
+      lockStatus: "UNLOCKED" | "LOCKED"
     }
     Omnibus_TenantBalanceEntry: {
       /**
@@ -11343,7 +11388,7 @@ export interface components {
       omnibus: components["schemas"]["Omnibus_OmnibusResponse"]
       unsignedIntent: components["schemas"]["Omnibus_UnsignedIntentPayload"]
     }
-    /** @description Complete Propose object ready to be signed and submitted to Custody via POST /v1/intents. The frontend signs this object and sends it as the "request" field in ProposeIntentBody.  */
+    /** @description Complete Propose object ready to be signed and submitted to Custody via POST /v1/intents. The frontend signs this object and sends it as the "request" field in ProposeIntentBody. */
     Omnibus_UnsignedIntentPayload: {
       /**
        * @description Intent type, always "Propose"
@@ -11453,7 +11498,7 @@ export interface components {
       updatedAt: string
     }
     Omnibus_CreateWithdrawalRequest: {
-      /** @description Positive integer in the ticker's smallest unit (e.g., wei for ETH, satoshis for BTC, drops for XRP). No leading zeros; zero is not allowed.  */
+      /** @description Positive integer in the ticker's smallest unit (e.g., wei for ETH, satoshis for BTC, drops for XRP). No leading zeros; zero is not allowed. */
       amount: string
       /**
        * Format: uuid
@@ -11500,7 +11545,7 @@ export interface components {
        * @description Destination tenant ID (funds are credited to this tenant)
        */
       destTenantId: string
-      /** @description Positive integer in the ticker's smallest unit (e.g., wei for ETH, satoshis for BTC, drops for XRP). No leading zeros; zero is not allowed.  */
+      /** @description Positive integer in the ticker's smallest unit (e.g., wei for ETH, satoshis for BTC, drops for XRP). No leading zeros; zero is not allowed. */
       amount: string
       /**
        * Format: uuid
@@ -11676,6 +11721,75 @@ export interface components {
     Omnibus_HelloWorldResponse: {
       /** @description Dummy response */
       message: string
+    }
+    Export_PositionExportDto: {
+      /** @description Domain UUID to export position data for */
+      domainId: string
+      /** @description Point-in-time timestamp for balance snapshot (ISO-8601) */
+      asOfTimestamp: string
+      /** @description Include data from child domains */
+      includeChildDomains?: boolean
+      /** @description Filter by vault UUIDs */
+      vaultIds?: string[]
+      /** @description Filter by ticker UUIDs */
+      tickerIds?: string[]
+      /** @description Filter by account UUIDs */
+      accountIds?: string[]
+      /** @description Include accounts with zero balances */
+      includeZeroBalances?: boolean
+      /**
+       * @description Output format
+       * @enum {string}
+       */
+      format: "CSV" | "JSON"
+    }
+    Export_DateRangeDto: {
+      /** @description Start of date range (ISO-8601) */
+      start: string
+      /** @description End of date range (ISO-8601) */
+      end: string
+    }
+    Export_MovementExportDto: {
+      /** @description Domain UUID to export movement data for */
+      domainId: string
+      /** @description Date range for transaction history */
+      dateRange: components["schemas"]["Export_DateRangeDto"]
+      /** @description Include data from child domains */
+      includeChildDomains?: boolean
+      /** @description Filter by vault UUIDs */
+      vaultIds?: string[]
+      /** @description Filter by ticker UUIDs */
+      tickerIds?: string[]
+      /** @description Filter by account UUIDs */
+      accountIds?: string[]
+      /**
+       * @description Filter by custody status. Defaults to ["Completed"] (settled only) for reconciliation. Pass all values for full visibility.
+       * @default [
+       *       "Completed"
+       *     ]
+       */
+      custodyStatus: (
+        | "Broadcasting"
+        | "Completed"
+        | "Failed"
+        | "Interrupted"
+        | "Pending"
+        | "Prepared"
+        | "Preparing"
+        | "Reserved"
+      )[]
+      /**
+       * @description Filter by ledger status. Defaults to ["Confirmed"] (settled only) for reconciliation. Pass all values for full visibility.
+       * @default [
+       *       "Confirmed"
+       *     ]
+       */
+      ledgerStatus: ("Detected" | "Confirmed" | "Expired" | "Replaced")[]
+      /**
+       * @description Output format
+       * @enum {string}
+       */
+      format: "CSV" | "JSON"
     }
     Core_ApiBatchSigningData: {
       /** @description Hex encoded string. */
@@ -15065,7 +15179,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_ErrorMessage"]
         }
       }
-      /** @description  (SystemError) */
+      /** @description (SystemError) */
       500: {
         headers: {
           [name: string]: unknown
@@ -15137,7 +15251,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_ErrorMessage"]
         }
       }
-      /** @description  (SystemError) */
+      /** @description (SystemError) */
       500: {
         headers: {
           [name: string]: unknown
@@ -15194,7 +15308,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_ErrorMessage"]
         }
       }
-      /** @description  (SystemError) */
+      /** @description (SystemError) */
       500: {
         headers: {
           [name: string]: unknown
@@ -18817,11 +18931,13 @@ export interface operations {
           "application/json": {
             /** @example ok */
             status?: string
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       }
-             *     } */
+             *     }
+             */
             info?: {
               [key: string]: {
                 status: string
@@ -18832,11 +18948,13 @@ export interface operations {
                 status: string
               }
             } | null
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       }
-             *     } */
+             *     }
+             */
             details?: {
               [key: string]: {
                 status: string
@@ -18854,28 +18972,33 @@ export interface operations {
           "application/json": {
             /** @example error */
             status?: string
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       }
-             *     } */
+             *     }
+             */
             info?: {
               [key: string]: {
                 status: string
               }
             } | null
-            /** @example {
+            /**
+             * @example {
              *       "redis": {
              *         "status": "down",
              *         "message": "Could not connect"
              *       }
-             *     } */
+             *     }
+             */
             error?: {
               [key: string]: {
                 status: string
               }
             } | null
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       },
@@ -18883,7 +19006,8 @@ export interface operations {
              *         "status": "down",
              *         "message": "Could not connect"
              *       }
-             *     } */
+             *     }
+             */
             details?: {
               [key: string]: {
                 status: string
@@ -18912,11 +19036,13 @@ export interface operations {
           "application/json": {
             /** @example ok */
             status?: string
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       }
-             *     } */
+             *     }
+             */
             info?: {
               [key: string]: {
                 status: string
@@ -18927,11 +19053,13 @@ export interface operations {
                 status: string
               }
             } | null
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       }
-             *     } */
+             *     }
+             */
             details?: {
               [key: string]: {
                 status: string
@@ -18949,28 +19077,33 @@ export interface operations {
           "application/json": {
             /** @example error */
             status?: string
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       }
-             *     } */
+             *     }
+             */
             info?: {
               [key: string]: {
                 status: string
               }
             } | null
-            /** @example {
+            /**
+             * @example {
              *       "redis": {
              *         "status": "down",
              *         "message": "Could not connect"
              *       }
-             *     } */
+             *     }
+             */
             error?: {
               [key: string]: {
                 status: string
               }
             } | null
-            /** @example {
+            /**
+             * @example {
              *       "database": {
              *         "status": "up"
              *       },
@@ -18978,7 +19111,8 @@ export interface operations {
              *         "status": "down",
              *         "message": "Could not connect"
              *       }
-             *     } */
+             *     }
+             */
             details?: {
               [key: string]: {
                 status: string
@@ -19307,7 +19441,7 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_TenantResponse"]
         }
       }
-      /** @description Omnibus structure is not in UNLOCKED status */
+      /** @description Omnibus structure is not operational (must be ACTIVE and UNLOCKED) */
       409: {
         headers: {
           [name: string]: unknown
@@ -19362,7 +19496,7 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_CreateWithdrawalResponse"]
         }
       }
-      /** @description Omnibus or tenant is not UNLOCKED, or insufficient available balance */
+      /** @description Omnibus is not operational (ACTIVE and UNLOCKED) or tenant is not UNLOCKED, or insufficient available balance */
       409: {
         headers: {
           [name: string]: unknown
@@ -19483,7 +19617,7 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
         }
       }
-      /** @description Omnibus or a tenant is not UNLOCKED, insufficient available balance, or concurrent reservation conflict */
+      /** @description Omnibus is not operational (ACTIVE and UNLOCKED) or a tenant is not UNLOCKED, insufficient available balance, or concurrent reservation conflict */
       409: {
         headers: {
           [name: string]: unknown
@@ -19702,6 +19836,48 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["Omnibus_DepositWalletSummaryPageResponse"]
         }
+      }
+    }
+  }
+  PositionReportController_generatePositionReport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Export_PositionExportDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  MovementReportController_generateMovementReport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Export_MovementExportDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
