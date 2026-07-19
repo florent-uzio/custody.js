@@ -166,3 +166,50 @@ describe("RippleCustody fail-open (unresolved version)", () => {
     warn.mockRestore()
   })
 })
+
+describe("RippleCustody.backendVersion()", () => {
+  const fakeSource = (spec: unknown) => ({ fetchSpec: vi.fn(async () => spec) })
+
+  it("returns the explicit apiVersion without triggering detection", async () => {
+    const specSource = fakeSource({ info: { "x-app-version": "1.99.0" } })
+    const client = new RippleCustody({ ...creds, specSource, apiVersion: "1.35.0" })
+
+    await expect(client.backendVersion()).resolves.toBe("1.35.0")
+    expect(specSource.fetchSpec).not.toHaveBeenCalled()
+  })
+
+  it("auto-detects and returns the live spec's x-app-version", async () => {
+    const specSource = fakeSource({ info: { "x-app-version": "1.36.4" } })
+    const client = new RippleCustody({ ...creds, specSource })
+
+    await expect(client.backendVersion()).resolves.toBe("1.36.4")
+  })
+
+  it("returns \"unknown\" when the live spec has no x-app-version", async () => {
+    const specSource = fakeSource({ info: {} })
+    const client = new RippleCustody({ ...creds, specSource })
+
+    await expect(client.backendVersion()).resolves.toBe("unknown")
+  })
+
+  it("throws a CustodyError when live detection fails", async () => {
+    const client = new RippleCustody({
+      ...creds,
+      specSource: {
+        fetchSpec: async () => {
+          throw new Error("spec endpoint unreachable")
+        },
+      },
+    })
+
+    await expect(client.backendVersion()).rejects.toBeInstanceOf(CustodyError)
+    await expect(client.backendVersion()).rejects.toThrow(/live OpenAPI spec failed/)
+  })
+
+  it("throws a CustodyError when nothing can ever be resolved", async () => {
+    const client = new RippleCustody({ ...creds, autoDetectVersion: false })
+
+    await expect(client.backendVersion()).rejects.toBeInstanceOf(CustodyError)
+    await expect(client.backendVersion()).rejects.toThrow(/`autoDetectVersion` is disabled/)
+  })
+})
