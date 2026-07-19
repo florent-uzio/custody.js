@@ -95,7 +95,8 @@ stay consistent.
 
 - **Resolved version** — the app version (and its capability set) the SDK is
   currently gating against: from explicit `apiVersion`, else auto-detection,
-  else _unresolved_.
+  else _unresolved_. Read via `client.backendVersion()`, which triggers
+  auto-detection if it hasn't run yet and throws if nothing can be resolved.
 
 - **Guard** — the runtime check that a call's required capability is present in
   the resolved version's capability set. **Fail-open**: when the version is

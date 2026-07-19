@@ -1,3 +1,4 @@
+import { CustodyError } from "./models/index.js"
 import {
   createAccounts,
   createAuth,
@@ -174,5 +175,38 @@ export class RippleCustody {
    */
   public ready(): Promise<void> {
     return this.guard.ensureResolved()
+  }
+
+  /**
+   * Returns the backend app version the SDK is resolved against (e.g.
+   * `"1.36.4"`), triggering auto-detection if it hasn't run yet. Returns
+   * `"unknown"` if a live spec was reached but had no `x-app-version`.
+   *
+   * Throws `CustodyError` if no version can ever be resolved (`apiVersion`
+   * unset and `autoDetectVersion: false`), or if live detection fails (e.g.
+   * the instance's OpenAPI endpoint is unreachable).
+   */
+  public async backendVersion(): Promise<string> {
+    try {
+      await this.guard.ensureResolved()
+    } catch (error) {
+      throw new CustodyError(
+        {
+          reason: "Could not determine the backend version: fetching the live OpenAPI spec failed.",
+        },
+        undefined,
+        error as Error,
+      )
+    }
+
+    const { appVersion } = this.guard
+    if (appVersion === undefined) {
+      throw new CustodyError({
+        reason:
+          "Could not determine the backend version: no `apiVersion` was set and " +
+          "`autoDetectVersion` is disabled, so nothing was ever resolved.",
+      })
+    }
+    return appVersion
   }
 }

@@ -124,6 +124,11 @@ export class VersionGuard {
     return this.resolved !== undefined
   }
 
+  /** The resolved app version, or `undefined` if none has been resolved yet. */
+  get appVersion(): string | undefined {
+    return this.resolved?.appVersion
+  }
+
   /**
    * Resolve the capability set if not already resolved. Idempotent and
    * concurrency-safe: parallel calls share one in-flight resolution. On failure
