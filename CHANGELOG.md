@@ -1,5 +1,12 @@
 # custody
 
+## 2.11.0
+
+### Minor Changes
+
+- b13b494: Add `exports` namespace with `generateMovementReport` and `generatePositionReport`, new in the 1.37.0 OpenAPI spec. Also bundles the 1.36.4 and 1.37.0 official specs (1.36.3 shipped no OpenAPI changes), which removes `omnibus.lock`/`omnibus.unlock` from the capability set for backends on 1.36.4+ — those endpoints were dropped from the server API in that release.
+- a5cb81c: Add `client.backendVersion()` to read the resolved backend app version (from an explicit `apiVersion` or auto-detection, triggering detection if it hasn't run yet). Throws `CustodyError` if no version can ever be resolved or if live detection fails.
+
 ## 2.10.0
 
 ### Minor Changes
