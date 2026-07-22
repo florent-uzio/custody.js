@@ -140,4 +140,18 @@ describe("mergeOpenApiDocs", () => {
   it("throws when given no documents", () => {
     expect(() => mergeOpenApiDocs([])).toThrow()
   })
+
+  it("normalizes a doubled leading slash in a path key so it doesn't collide as a duplicate operationId", () => {
+    const a = official("1.34.9", {
+      paths: { "/v1/health": { get: { operationId: "HealthController_liveness" } } },
+    })
+    const b = official("1.34.10", {
+      paths: { "//v1/health": { get: { operationId: "HealthController_liveness" } } },
+    })
+
+    const { merged } = mergeOpenApiDocs([a, b])
+
+    expect(Object.keys(merged.paths)).toEqual(["/v1/health"])
+    expect(merged.paths["/v1/health"].get.operationId).toBe("HealthController_liveness")
+  })
 })

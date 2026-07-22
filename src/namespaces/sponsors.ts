@@ -1,6 +1,7 @@
 import { URLs } from "../constants/urls.js"
 import type { Transport } from "../transport/index.js"
 import type {
+  AddSponsoredAccountPathParams,
   AddSponsoredAccountsPathParams,
   AddSponsoredDomainsPathParams,
   CreateSponsorPathParams,
@@ -20,6 +21,7 @@ import type {
   GasStation_SponsorResponseDto,
   GasStation_SponsorsListResponseDto,
   GasStation_UpdateSponsorDto,
+  GasStation_ValidSponsorsResponseDto,
   GetAccountSponsorPathParams,
   GetDomainSponsorPathParams,
   GetSponsorableAccountsPathParams,
@@ -27,6 +29,8 @@ import type {
   GetSponsorableDomainsPathParams,
   GetSponsorableDomainsQueryParams,
   GetSponsorPathParams,
+  GetValidSponsorsPathParams,
+  GetValidSponsorsQueryParams,
   ListSponsoredAccountsPathParams,
   ListSponsoredAccountsQueryParams,
   ListSponsoredDomainsPathParams,
@@ -34,6 +38,7 @@ import type {
   ListSponsorEventsPathParams,
   ListSponsorEventsQueryParams,
   ListSponsorsPathParams,
+  RemoveSponsoredAccountPathParams,
   UpdateSponsorPathParams,
 } from "./sponsors.types.js"
 
@@ -70,6 +75,12 @@ export function createSponsors(t: Transport) {
       params: GetDomainSponsorPathParams,
     ): Promise<GasStation_DomainSponsorResponseDto> => t.get(URLs.domainSponsor, params),
 
+    getValidSponsors: (
+      params: GetValidSponsorsPathParams,
+      query?: GetValidSponsorsQueryParams,
+    ): Promise<GasStation_ValidSponsorsResponseDto> =>
+      t.get(URLs.accountValidSponsors, params, query),
+
     listSponsoredAccounts: (
       params: ListSponsoredAccountsPathParams,
       query?: ListSponsoredAccountsQueryParams,
@@ -105,6 +116,12 @@ export function createSponsors(t: Transport) {
       body: GasStation_AddSponsoredAccountsDto,
     ): Promise<GasStation_SponsoredModificationResponseDto> =>
       t.post(URLs.entitySponsoredAccounts, body, params, { sign: false }),
+
+    addSponsoredAccount: (params: AddSponsoredAccountPathParams): Promise<void> =>
+      t.put(URLs.entitySponsoredAccount, undefined, params, { sign: false }),
+
+    removeSponsoredAccount: (params: RemoveSponsoredAccountPathParams): Promise<void> =>
+      t.delete(URLs.entitySponsoredAccount, params),
 
     listEvents: (
       params: ListSponsorEventsPathParams,

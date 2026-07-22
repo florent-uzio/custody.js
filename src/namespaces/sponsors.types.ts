@@ -24,6 +24,11 @@ export type GetAccountSponsorPathParams =
 export type GetDomainSponsorPathParams =
   operations["SponsorsController_getDomainSponsor"]["parameters"]["path"]
 
+export type GetValidSponsorsPathParams =
+  operations["SponsorsController_getValidSponsors"]["parameters"]["path"]
+export type GetValidSponsorsQueryParams =
+  operations["SponsorsController_getValidSponsors"]["parameters"]["query"]
+
 export type ListSponsoredAccountsPathParams =
   operations["SponsorsController_listSponsoredAccounts"]["parameters"]["path"]
 export type ListSponsoredAccountsQueryParams =
@@ -49,6 +54,12 @@ export type GetSponsorableAccountsQueryParams =
 
 export type AddSponsoredAccountsPathParams =
   operations["SponsorListController_addSponsoredAccounts"]["parameters"]["path"]
+
+export type AddSponsoredAccountPathParams =
+  operations["SponsorListController_addSponsoredAccount"]["parameters"]["path"]
+
+export type RemoveSponsoredAccountPathParams =
+  operations["SponsorListController_removeSponsoredAccount"]["parameters"]["path"]
 
 export type ListSponsorEventsPathParams =
   operations["EventController_getEvents"]["parameters"]["path"]
@@ -81,3 +92,5 @@ export type GasStation_SponsorableAccountsResponseDto =
 export type GasStation_AddSponsoredAccountsDto =
   components["schemas"]["GasStation_AddSponsoredAccountsDto"]
 export type GasStation_EventsResponseDto = components["schemas"]["GasStation_EventsResponseDto"]
+export type GasStation_ValidSponsorsResponseDto =
+  components["schemas"]["GasStation_ValidSponsorsResponseDto"]

@@ -189,17 +189,20 @@ export const URLs = createURLs({
   genesis: "/v1/genesis",
 
   // Gas Station Sponsorship
-  sponsor: "/v1/domain/{domainId}/account/{accountId}/sponsor",
-  sponsors: "/v1/domain/{domainId}/sponsors",
-  accountSponsor: "/v1/domain/{domainId}/sponsors/account/{accountId}/sponsor",
-  domainSponsor: "/v1/domain/{domainId}/sponsors/domain-sponsor",
-  sponsoredAccounts: "/v1/domain/{domainId}/sponsors/sponsored-accounts",
-  sponsoredDomains: "/v1/domain/{domainId}/sponsors/sponsored-domains",
-  entitySponsorableDomains: "/v1/domain/{domainId}/account/{entityId}/sponsorable-domains",
-  entitySponsoredDomains: "/v1/domain/{domainId}/account/{entityId}/sponsored-domains",
-  entitySponsorableAccounts: "/v1/domain/{domainId}/account/{entityId}/sponsorable-accounts",
-  entitySponsoredAccounts: "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts",
-  sponsorEvents: "/v1/domain/{domainId}/sponsor/events",
+  sponsor: "/v1/domains/{domainId}/account/{accountId}/sponsor",
+  sponsors: "/v1/domains/{domainId}/sponsors",
+  accountSponsor: "/v1/domains/{domainId}/sponsors/account/{accountId}/sponsor",
+  accountValidSponsors: "/v1/domains/{domainId}/sponsors/account/{accountId}/valid-sponsors",
+  domainSponsor: "/v1/domains/{domainId}/sponsors/domain-sponsor",
+  sponsoredAccounts: "/v1/domains/{domainId}/sponsors/sponsored-accounts",
+  sponsoredDomains: "/v1/domains/{domainId}/sponsors/sponsored-domains",
+  entitySponsorableDomains: "/v1/domains/{domainId}/account/{entityId}/sponsorable-domains",
+  entitySponsoredDomains: "/v1/domains/{domainId}/account/{entityId}/sponsored-domains",
+  entitySponsorableAccounts: "/v1/domains/{domainId}/account/{entityId}/sponsorable-accounts",
+  entitySponsoredAccounts: "/v1/domains/{domainId}/account/{entityId}/sponsored-accounts",
+  entitySponsoredAccount:
+    "/v1/domains/{domainId}/account/{entityId}/sponsored-accounts/domains/{sponsoredAccountDomainId}/accounts/{sponsoredAccountId}",
+  sponsorEvents: "/v1/domains/{domainId}/sponsor/events",
 
   // Omnibus Accounts
   omnibus: "/v1/domains/{domainId}/omnibus",
@@ -207,6 +210,8 @@ export const URLs = createURLs({
   omnibusLock: "/v1/domains/{domainId}/omnibus/{omnibusId}/lock",
   omnibusUnlock: "/v1/domains/{domainId}/omnibus/{omnibusId}/unlock",
   omnibusInternalTransfers: "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers",
+  omnibusInternalTransfer:
+    "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers/{operationId}",
   omnibusDepositWallets: "/v1/domains/{domainId}/omnibus/{omnibusId}/deposit-wallets",
   omnibusTenants: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants",
   omnibusTenant: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}",
@@ -222,6 +227,9 @@ export const URLs = createURLs({
   // Exports
   exportsMovement: "/v1/exports/movement",
   exportsPosition: "/v1/exports/position",
+
+  // Sweep Thresholds
+  sweepThresholds: "/v1/domains/{domainId}/sweep-thresholds",
 } as const)
 
 // Type for the URLs object that ensures all values are valid paths
@@ -233,7 +241,23 @@ export const URLs = createURLs({
  * here only when it should stay unreachable through `URLs` - otherwise give it
  * a friendly name in `URLs` above.
  */
-type IntentionallyUnmapped = never
+type IntentionallyUnmapped =
+  // Deprecated `/v1/domain/...` (singular) sponsor routes, superseded by the
+  // `/v1/domains/...` (plural) routes mapped above since 1.34.10
+  // (`*_legacyDomain` operationIds).
+  | "/v1/domain/{domainId}/account/{accountId}/sponsor"
+  | "/v1/domain/{domainId}/sponsors"
+  | "/v1/domain/{domainId}/sponsors/account/{accountId}/sponsor"
+  | "/v1/domain/{domainId}/sponsors/account/{accountId}/valid-sponsors"
+  | "/v1/domain/{domainId}/sponsors/domain-sponsor"
+  | "/v1/domain/{domainId}/sponsors/sponsored-accounts"
+  | "/v1/domain/{domainId}/sponsors/sponsored-domains"
+  | "/v1/domain/{domainId}/account/{entityId}/sponsorable-domains"
+  | "/v1/domain/{domainId}/account/{entityId}/sponsored-domains"
+  | "/v1/domain/{domainId}/account/{entityId}/sponsorable-accounts"
+  | "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts"
+  | "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts/domains/{sponsoredAccountDomainId}/accounts/{sponsoredAccountId}"
+  | "/v1/domain/{domainId}/sponsor/events"
 
 /**
  * Compile-time completeness check: every path in the generated spec must be

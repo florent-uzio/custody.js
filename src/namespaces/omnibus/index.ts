@@ -3,6 +3,7 @@ import type { Transport } from "../../transport/index.js"
 import type {
   CreateOmnibusPathParams,
   GetOmnibusByIdPathParams,
+  GetOmnibusInternalTransferPathParams,
   GetOmnibusPathParams,
   ListOmnibusDepositWalletsPathParams,
   ListOmnibusDepositWalletsQueryParams,
@@ -13,6 +14,7 @@ import type {
   Omnibus_CreateOmnibusResponse,
   Omnibus_DepositWalletSummaryPageResponse,
   Omnibus_InternalTransferPageResponse,
+  Omnibus_InternalTransferResponse,
   Omnibus_OmnibusResponse,
   Omnibus_UpdateOmnibusRequest,
   UnlockOmnibusPathParams,
@@ -55,6 +57,10 @@ export function createOmnibus(t: Transport) {
       query?: ListOmnibusInternalTransfersQueryParams,
     ): Promise<Omnibus_InternalTransferPageResponse> =>
       t.get(URLs.omnibusInternalTransfers, params, query),
+
+    getInternalTransfer: (
+      params: GetOmnibusInternalTransferPathParams,
+    ): Promise<Omnibus_InternalTransferResponse> => t.get(URLs.omnibusInternalTransfer, params),
 
     listDepositWallets: (
       params: ListOmnibusDepositWalletsPathParams,

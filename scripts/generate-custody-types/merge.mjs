@@ -29,14 +29,14 @@ function isPlainObject(v) {
   return typeof v === "object" && v !== null && !Array.isArray(v)
 }
 
-/** Parse an `x.y.z` app version into comparable numeric parts. */
+/** Parse an `x.y.z` app version into comparable numeric parts. @param {unknown} v @returns {number[]} */
 function parseVersion(v) {
   return String(v ?? "0")
     .split(".")
     .map((n) => Number.parseInt(n, 10) || 0)
 }
 
-/** Ascending semver-ish comparator over `x-app-version` strings. */
+/** Ascending semver-ish comparator over `x-app-version` strings. @param {string} a @param {string} b @returns {number} */
 function compareVersions(a, b) {
   const pa = parseVersion(a)
   const pb = parseVersion(b)
@@ -47,11 +47,45 @@ function compareVersions(a, b) {
   return 0
 }
 
+/** @param {any} doc @returns {string} */
 function appVersion(doc) {
   return doc?.info?.["x-app-version"] ?? "0"
 }
 
-/** Union two arrays, de-duplicating by structural (JSON) identity. */
+/**
+ * Some releases emit paths with a doubled leading slash (e.g. `//v1/health`
+ * instead of `/v1/health`) — a known upstream artifact. Collapse those before
+ * merging so they don't get treated as a distinct path with a colliding
+ * `operationId`.
+ * @param {string} key
+ * @returns {string}
+ */
+function normalizePathKey(key) {
+  return key.replace(/^\/+/, "/")
+}
+
+/**
+ * Normalize a doc's `paths` keys, merging any resulting collisions.
+ * @param {Record<string, unknown>} paths
+ * @param {string[]} warnings
+ * @returns {Record<string, unknown>}
+ */
+function normalizeDocPaths(paths, warnings) {
+  /** @type {Record<string, unknown>} */
+  const out = {}
+  for (const key of Object.keys(paths)) {
+    const norm = normalizePathKey(key)
+    out[norm] = norm in out ? mergeValue(out[norm], paths[key], `paths.${norm}`, warnings, "b") : paths[key]
+  }
+  return out
+}
+
+/**
+ * Union two arrays, de-duplicating by structural (JSON) identity.
+ * @param {unknown[]} a
+ * @param {unknown[]} b
+ * @returns {unknown[]}
+ */
 function unionArrays(a, b) {
   const out = []
   const seen = new Set()
@@ -70,6 +104,12 @@ function unionArrays(a, b) {
  * — official-vs-official newest-wins; `"a"` keeps the accumulated value —
  * devbox-vs-official, official wins. `path` is a dotted trail used for warnings;
  * `warnings` collects conflict messages.
+ * @param {unknown} a
+ * @param {unknown} b
+ * @param {string} path
+ * @param {string[]} warnings
+ * @param {"a" | "b"} [prefer]
+ * @returns {any}
  */
 function mergeValue(a, b, path, warnings, prefer = "b") {
   if (a === undefined) return b
@@ -121,23 +161,27 @@ export function mergeOpenApiDocs(taggedDocs) {
   const authoritative = official.length ? official : additive
   const secondary = official.length ? additive : []
 
+  /** @param {any} x @param {any} y */
   const byVersionAsc = (x, y) => compareVersions(appVersion(x), appVersion(y))
   const authSorted = [...authoritative].sort(byVersionAsc)
   const secSorted = [...secondary].sort(byVersionAsc)
 
   const base = authSorted[authSorted.length - 1]
+  /** @type {string[]} */
   const warnings = []
 
+  /** @type {Record<string, unknown>} */
   let paths = {}
+  /** @type {Record<string, unknown>} */
   let components = {}
   // Phase 1: official specs, newest-wins on conflict.
   for (const doc of authSorted) {
-    paths = mergeValue(paths, doc.paths ?? {}, "paths", warnings, "b")
+    paths = mergeValue(paths, normalizeDocPaths(doc.paths ?? {}, warnings), "paths", warnings, "b")
     components = mergeValue(components, doc.components ?? {}, "components", warnings, "b")
   }
   // Phase 2: devbox specs, additive — official wins on conflict.
   for (const doc of secSorted) {
-    paths = mergeValue(paths, doc.paths ?? {}, "paths", warnings, "a")
+    paths = mergeValue(paths, normalizeDocPaths(doc.paths ?? {}, warnings), "paths", warnings, "a")
     components = mergeValue(components, doc.components ?? {}, "components", warnings, "a")
   }
 

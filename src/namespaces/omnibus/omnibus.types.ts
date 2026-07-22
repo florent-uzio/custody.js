@@ -19,6 +19,9 @@ export type ListOmnibusInternalTransfersPathParams =
 export type ListOmnibusInternalTransfersQueryParams =
   operations["getInternalTransfers"]["parameters"]["query"]
 
+export type GetOmnibusInternalTransferPathParams =
+  operations["getInternalTransfer"]["parameters"]["path"]
+
 export type ListOmnibusDepositWalletsPathParams =
   operations["listDepositWallets"]["parameters"]["path"]
 export type ListOmnibusDepositWalletsQueryParams =
