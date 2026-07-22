@@ -23,8 +23,7 @@ export function createDomains(t: Transport) {
     getSweepThresholds: (
       params: GetSweepThresholdsPathParams,
       query?: GetSweepThresholdsQueryParams,
-    ): Promise<Omnibus_SweepThresholdPageResponse> =>
-      t.get(URLs.sweepThresholds, params, query),
+    ): Promise<Omnibus_SweepThresholdPageResponse> => t.get(URLs.sweepThresholds, params, query),
 
     updateSweepThresholds: (
       params: UpdateSweepThresholdsPathParams,

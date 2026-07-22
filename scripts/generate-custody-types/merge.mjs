@@ -75,7 +75,8 @@ function normalizeDocPaths(paths, warnings) {
   const out = {}
   for (const key of Object.keys(paths)) {
     const norm = normalizePathKey(key)
-    out[norm] = norm in out ? mergeValue(out[norm], paths[key], `paths.${norm}`, warnings, "b") : paths[key]
+    out[norm] =
+      norm in out ? mergeValue(out[norm], paths[key], `paths.${norm}`, warnings, "b") : paths[key]
   }
   return out
 }
