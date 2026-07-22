@@ -2549,6 +2549,561 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/domain/{domainId}/account/{accountId}/sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get sponsor configuration for an account
+     * @deprecated
+     */
+    get: operations["SponsorController_getSponsor_legacyDomain"]
+    /**
+     * Update a sponsor configuration
+     * @deprecated
+     */
+    put: operations["SponsorController_updateSponsor_legacyDomain"]
+    /**
+     * Create a sponsor configuration
+     * @deprecated
+     */
+    post: operations["SponsorController_createSponsor_legacyDomain"]
+    /**
+     * Delete a sponsor configuration
+     * @deprecated
+     */
+    delete: operations["SponsorController_deleteSponsor_legacyDomain"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List all sponsor (gas station) accounts in a domain
+     * @deprecated
+     */
+    get: operations["SponsorsController_listSponsors_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/account/{accountId}/sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Find which gas station sponsors a specific account
+     * @deprecated
+     * @description Returns the sponsorship status for the given account, following the sponsorship hierarchy: 1) Domain-level sponsor for the account domain, 2) Parent domain sponsors (if includeSubDomains=true), 3) Account-level sponsor. Returns isSponsored=false if no sponsor is found.
+     */
+    get: operations["SponsorsController_getAccountSponsor_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/domain-sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Resolve domain-wide sponsorship for a domain
+     * @deprecated
+     * @description Returns whether the domain is sponsored domain-wide, without requiring an account ID. Resolution follows the sponsorship hierarchy: 1) Domain-level sponsor for the domain itself, 2) Parent domain sponsors that have includeSubDomains=true. Account-level sponsorships are NOT considered. Returns isSponsored=false if no domain-wide sponsor is found.
+     */
+    get: operations["SponsorsController_getDomainSponsor_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/sponsored-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List accounts in a domain with their sponsorship status
+     * @deprecated
+     * @description Returns all accounts within the domain along with whether each account is currently sponsored by a Gas Station.
+     */
+    get: operations["SponsorsController_listSponsoredAccounts_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/sponsored-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List sub-domains in a domain with their sponsorship status
+     * @deprecated
+     * @description Returns all sub-domains within the domain along with whether each sub-domain is currently sponsored by a Gas Station.
+     */
+    get: operations["SponsorsController_listSponsoredDomains_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsorable-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List sponsorable domains
+     * @deprecated
+     */
+    get: operations["SponsorListController_getSponsorableDomains_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsored-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add sponsored domains
+     * @deprecated
+     */
+    post: operations["SponsorListController_addSponsoredDomains_legacyDomain"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsorable-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List sponsorable accounts
+     * @deprecated
+     */
+    get: operations["SponsorListController_getSponsorableAccounts_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add sponsored accounts
+     * @deprecated
+     */
+    post: operations["SponsorListController_addSponsoredAccounts_legacyDomain"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsor/events": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get audit events for sponsorship configuration changes
+     * @deprecated
+     */
+    get: operations["EventController_getEvents_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/health": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Liveness check */
+    get: operations["HealthController_liveness"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/ready": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Readiness check */
+    get: operations["HealthController_readiness"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/account/{accountId}/sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get sponsor configuration for an account */
+    get: operations["SponsorController_getSponsor"]
+    /** Update a sponsor configuration */
+    put: operations["SponsorController_updateSponsor"]
+    /** Create a sponsor configuration */
+    post: operations["SponsorController_createSponsor"]
+    /** Delete a sponsor configuration */
+    delete: operations["SponsorController_deleteSponsor"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sponsors": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List all sponsor (gas station) accounts in a domain */
+    get: operations["SponsorsController_listSponsors"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sponsors/account/{accountId}/sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Find which gas station sponsors a specific account
+     * @description Returns the sponsorship status for the given account, following the sponsorship hierarchy: 1) Domain-level sponsor for the account domain, 2) Parent domain sponsors (if includeSubDomains=true), 3) Account-level sponsor. Returns isSponsored=false if no sponsor is found.
+     */
+    get: operations["SponsorsController_getAccountSponsor"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sponsors/account/{accountId}/valid-sponsors": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List gas stations that could sponsor a specific account
+     * @description Returns the gas stations that could be chosen as sponsor for the given account: every sponsor in the account domain or one of its ancestor domains, excluding the account itself. If the account is already effectively sponsored, returns isSponsored=true with the existing sponsor and an empty items list (an entity is only sponsored once), unless includeAll=true, in which case items still lists the lineage candidates (the current sponsor may appear among them).
+     */
+    get: operations["SponsorsController_getValidSponsors"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sponsors/domain-sponsor": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Resolve domain-wide sponsorship for a domain
+     * @description Returns whether the domain is sponsored domain-wide, without requiring an account ID. Resolution follows the sponsorship hierarchy: 1) Domain-level sponsor for the domain itself, 2) Parent domain sponsors that have includeSubDomains=true. Account-level sponsorships are NOT considered. Returns isSponsored=false if no domain-wide sponsor is found.
+     */
+    get: operations["SponsorsController_getDomainSponsor"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sponsors/sponsored-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List accounts in a domain with their sponsorship status
+     * @description Returns all accounts within the domain along with whether each account is currently sponsored by a Gas Station.
+     */
+    get: operations["SponsorsController_listSponsoredAccounts"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sponsors/sponsored-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List sub-domains in a domain with their sponsorship status
+     * @description Returns all sub-domains within the domain along with whether each sub-domain is currently sponsored by a Gas Station.
+     */
+    get: operations["SponsorsController_listSponsoredDomains"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/account/{entityId}/sponsorable-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List sponsorable domains */
+    get: operations["SponsorListController_getSponsorableDomains"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/account/{entityId}/sponsored-domains": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Add sponsored domains */
+    post: operations["SponsorListController_addSponsoredDomains"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/account/{entityId}/sponsorable-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List sponsorable accounts */
+    get: operations["SponsorListController_getSponsorableAccounts"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/account/{entityId}/sponsored-accounts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Add sponsored accounts */
+    post: operations["SponsorListController_addSponsoredAccounts"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/account/{entityId}/sponsored-accounts/domains/{sponsoredAccountDomainId}/accounts/{sponsoredAccountId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /** Add a single sponsored account (idempotent) */
+    put: operations["SponsorListController_addSponsoredAccount"]
+    post?: never
+    /** Remove a single sponsored account */
+    delete: operations["SponsorListController_removeSponsoredAccount"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sponsor/events": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get audit events for sponsorship configuration changes */
+    get: operations["EventController_getEvents"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/sponsors/account/{accountId}/valid-sponsors": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List gas stations that could sponsor a specific account
+     * @deprecated
+     * @description Returns the gas stations that could be chosen as sponsor for the given account: every sponsor in the account domain or one of its ancestor domains, excluding the account itself. If the account is already effectively sponsored, returns isSponsored=true with the existing sponsor and an empty items list (an entity is only sponsored once), unless includeAll=true, in which case items still lists the lineage candidates (the current sponsor may appear among them).
+     */
+    get: operations["SponsorsController_getValidSponsors_legacyDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts/domains/{sponsoredAccountDomainId}/accounts/{sponsoredAccountId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Add a single sponsored account (idempotent)
+     * @deprecated
+     */
+    put: operations["SponsorListController_addSponsoredAccount_legacyDomain"]
+    post?: never
+    /**
+     * Remove a single sponsored account
+     * @deprecated
+     */
+    delete: operations["SponsorListController_removeSponsoredAccount_legacyDomain"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/v1/domains/{domainId}/accounts/transferability": {
     parameters: {
       query?: never
@@ -2660,242 +3215,6 @@ export interface paths {
     }
     /** Get the system-signing info */
     get: operations["getSystemSigningInfo"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/account/{accountId}/sponsor": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get sponsor configuration for an account */
-    get: operations["SponsorController_getSponsor"]
-    /** Update a sponsor configuration */
-    put: operations["SponsorController_updateSponsor"]
-    /** Create a sponsor configuration */
-    post: operations["SponsorController_createSponsor"]
-    /** Delete a sponsor configuration */
-    delete: operations["SponsorController_deleteSponsor"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/sponsors": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List all sponsor (gas station) accounts in a domain */
-    get: operations["SponsorsController_listSponsors"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/sponsors/account/{accountId}/sponsor": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Find which gas station sponsors a specific account
-     * @description Returns the sponsorship status for the given account, following the sponsorship hierarchy: 1) Domain-level sponsor for the account domain, 2) Parent domain sponsors (if includeSubDomains=true), 3) Account-level sponsor. Returns isSponsored=false if no sponsor is found.
-     */
-    get: operations["SponsorsController_getAccountSponsor"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/sponsors/domain-sponsor": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Resolve domain-wide sponsorship for a domain
-     * @description Returns whether the domain is sponsored domain-wide, without requiring an account ID. Resolution follows the sponsorship hierarchy: 1) Domain-level sponsor for the domain itself, 2) Parent domain sponsors that have includeSubDomains=true. Account-level sponsorships are NOT considered. Returns isSponsored=false if no domain-wide sponsor is found.
-     */
-    get: operations["SponsorsController_getDomainSponsor"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/sponsors/sponsored-accounts": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List accounts in a domain with their sponsorship status
-     * @description Returns all accounts within the domain along with whether each account is currently sponsored by a Gas Station.
-     */
-    get: operations["SponsorsController_listSponsoredAccounts"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/sponsors/sponsored-domains": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List sub-domains in a domain with their sponsorship status
-     * @description Returns all sub-domains within the domain along with whether each sub-domain is currently sponsored by a Gas Station.
-     */
-    get: operations["SponsorsController_listSponsoredDomains"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/account/{entityId}/sponsorable-domains": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List sponsorable domains */
-    get: operations["SponsorListController_getSponsorableDomains"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/account/{entityId}/sponsored-domains": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Add sponsored domains */
-    post: operations["SponsorListController_addSponsoredDomains"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/account/{entityId}/sponsorable-accounts": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List sponsorable accounts */
-    get: operations["SponsorListController_getSponsorableAccounts"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/account/{entityId}/sponsored-accounts": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Add sponsored accounts */
-    post: operations["SponsorListController_addSponsoredAccounts"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/domain/{domainId}/sponsor/events": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get audit events for sponsorship configuration changes */
-    get: operations["EventController_getEvents"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/health": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Liveness check */
-    get: operations["HealthController_liveness"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/v1/ready": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Readiness check */
-    get: operations["HealthController_readiness"]
     put?: never
     post?: never
     delete?: never
@@ -3058,7 +3377,7 @@ export interface paths {
     put?: never
     /**
      * Transfer funds between two tenants within the same omnibus
-     * @description Moves an amount from a source tenant to a destination tenant within the same omnibus by recording a cross-account entry in the Accounting service. Synchronous: blocks on a Temporal workflow (~25s timeout) that validates, reserves, posts to Accounting, and finalizes. See `InternalTransferStatus` for the meaning of each terminal status.
+     * @description Moves an amount from a source tenant to a destination tenant within the same omnibus by recording a cross-account entry in the Accounting service. Asynchronous: accepts the request, durably persists the operation, starts a Temporal workflow (validate → reserve → post to Accounting → finalize), and returns 202 with status=PENDING immediately. Poll `GET .../internal-transfers/{operationId}` for the terminal status. A required, per-transfer Idempotency-Key makes retries safe — reuse the same key to retry a transfer, use a new key for a new transfer. See `InternalTransferStatus` for the meaning of each status.
      */
     post: operations["createInternalTransfer"]
     delete?: never
@@ -3164,6 +3483,50 @@ export interface paths {
     put?: never
     /** Generate a Movement Report (transaction history) */
     post: operations["MovementReportController_generateMovementReport"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/sweep-thresholds": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List sweep threshold configurations for a domain
+     * @description Returns min sweep thresholds for every asset supported by Custody, optionally filtered by ledger. The list is composed from the live Custody ticker/ledger catalog: assets without an explicitly configured threshold default to "0" (immediate sweep) and carry no id/createdAt/updatedAt.
+     */
+    get: operations["getSweepThresholds"]
+    /**
+     * Bulk update sweep threshold configurations
+     * @description Upserts multiple sweep thresholds in a single transaction: a threshold row is created on first configuration of an asset and updated thereafter. Each (tickerId, ledgerId) pair must exist in the Custody catalog. All updates are applied atomically (all-or-nothing); if any update fails, the entire request is rolled back.  Optimistic locking: send the `version` from the corresponding GET row in each update. If any submitted `version` no longer matches the stored row (or a `version` is sent for an asset that has since been configured), the whole request is rejected with 409 and nothing is written.
+     */
+    put: operations["updateSweepThresholds"]
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers/{operationId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get a single internal transfer by operation ID
+     * @description Returns the current state of an internal transfer. Clients poll this after a 202 from the create endpoint until the status is terminal (COMPLETED or FAILED) or PENDING_VERIFICATION. Reads are eventually consistent.
+     */
+    get: operations["getInternalTransfer"]
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -10443,6 +10806,289 @@ export interface components {
       retriedCount?: number
       payload?: string
     }
+    GasStation_AlertLimitDto: {
+      /** @description Ticker/token UUID */
+      tickerId: string
+      /** @description Alert threshold amount */
+      amount: string
+    }
+    GasStation_BalanceStatusDto: {
+      /** @description Ticker UUID */
+      tickerId: string
+      /** @description Ticker symbol for display (e.g., SOL, ETH, XRP) */
+      tickerSymbol: string
+      /** @description Configured alert threshold amount */
+      threshold: string
+      /** @description Current balance from Core */
+      currentBalance: string
+      /**
+       * @description Balance status: critical if currentBalance <= threshold
+       * @enum {string}
+       */
+      status: "healthy" | "critical"
+    }
+    GasStation_SponsorResponseDto: {
+      type: string
+      accountIds: string[]
+      includeSubDomains: boolean
+      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description Balance status per configured alert. Omitted if balance fetch fails. */
+      balanceStatus?: components["schemas"]["GasStation_BalanceStatusDto"][]
+      /** @description Number of tickers in critical status. Omitted if balance fetch fails. */
+      criticalCount?: number
+    }
+    GasStation_CreateSponsorDto: {
+      /**
+       * @description Type of sponsorship
+       * @enum {string}
+       */
+      type: "domain" | "account" | "none"
+      /** @description Array of account UUIDs to sponsor */
+      accountIds?: string[]
+      /**
+       * @description Include subdomains in sponsorship
+       * @default false
+       */
+      includeSubDomains: boolean
+      /** @description Alert thresholds per ticker */
+      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description UUID of the user performing the action; recorded on the audit trail. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_SponsorCreatedResponseDto: {
+      id: string
+      status: string
+      createdAt: string
+    }
+    GasStation_UpdateSponsorDto: {
+      /**
+       * @description Type of sponsorship
+       * @enum {string}
+       */
+      type: "domain" | "account" | "none"
+      /** @description Array of account UUIDs to sponsor */
+      accountIds?: string[]
+      /**
+       * @description Include subdomains in sponsorship
+       * @default false
+       */
+      includeSubDomains: boolean
+      /** @description Alert thresholds per ticker */
+      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description UUID of the user performing the action; recorded on the audit trail. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_SponsorsListResponseDto: {
+      /** @description List of gas station account IDs in the domain */
+      items: string[]
+    }
+    GasStation_AccountSponsorResponseDto: {
+      /** @description Whether the account is sponsored by a gas station */
+      isSponsored: boolean
+      /** @description Gas station account ID that is sponsoring */
+      sponsorAccountId?: string
+      /** @enum {string} */
+      type?: "domain" | "account" | "none"
+      accountIds?: string[]
+      includeSubDomains?: boolean
+      alertLimit?: components["schemas"]["GasStation_AlertLimitDto"][]
+      /** @description Balance status per configured alert. Omitted if balance fetch fails. */
+      balanceStatus?: components["schemas"]["GasStation_BalanceStatusDto"][]
+      /** @description Number of tickers in critical status. Omitted if balance fetch fails. */
+      criticalCount?: number
+    }
+    GasStation_DomainSponsorResponseDto: {
+      /** @description Whether the domain is sponsored domain-wide by a gas station */
+      isSponsored: boolean
+      /** @description Gas station account ID that is sponsoring */
+      sponsorAccountId?: string
+      /** @enum {string} */
+      type?: "domain"
+      /** @description Whether the resolving sponsor extends to sub-domains */
+      includeSubDomains?: boolean
+    }
+    GasStation_SponsoredEntityDto: {
+      /**
+       * Format: uuid
+       * @description Entity ID (Account or Domain UUID)
+       */
+      id: string
+      /** @description Entity display name/alias */
+      alias: string
+      /** @description Whether the entity is sponsored by a Gas Station */
+      isSponsored: boolean
+      /** @description Domain hierarchy from root to entity (for Lineage column) */
+      path: string[]
+    }
+    GasStation_SponsoredEntitiesResponseDto: {
+      /** @description List of sponsored entities */
+      items: components["schemas"]["GasStation_SponsoredEntityDto"][]
+      /** @description Total count of items in current page */
+      count: number
+      /** @description Current pagination cursor */
+      currentStartingAfter?: string
+      /** @description Next pagination cursor for fetching more items */
+      nextStartingAfter?: string
+    }
+    GasStation_LedgerDto: {
+      id: string
+      alias: string
+    }
+    GasStation_SponsorshipDetailsDto: {
+      /** @description The sponsoring gas station account ID */
+      sponsorAccountId: string
+      /** @description The sponsoring gas station account name */
+      sponsorAccountName: string
+      /**
+       * @description How this was sponsored
+       * @enum {string}
+       */
+      sponsorType: "account" | "domain"
+      /** @description If sponsored via domain, the domain ID */
+      sponsoredDomainId?: string
+      /** @description If sponsored via domain, the domain name */
+      sponsoredDomainName?: string
+    }
+    GasStation_SponsorableDomainDto: {
+      /** @description Domain UUID */
+      domainId: string
+      /** @description Domain name */
+      name: string
+      ledgers: components["schemas"]["GasStation_LedgerDto"][]
+      /** @enum {string} */
+      sponsorshipStatus: "sponsored" | "not_sponsored" | "sponsored_by_other"
+      /** @description Only present if sponsored by another gas station */
+      sponsorshipDetails?: components["schemas"]["GasStation_SponsorshipDetailsDto"]
+      /** @description Account IDs within this domain */
+      accountIds: string[]
+      /** @description Parent domain UUID, null only for absolute root (typically filtered out) */
+      parentId?: Record<string, never>
+      /** @description Nesting depth relative to sponsor domain (0 = direct child of sponsor domain) */
+      depth: number
+      /** @description Whether any accounts in this domain are individually sponsored by another gas station */
+      hasAccountsSponsoredByOther: boolean
+      /** @description Nested subdomains (hierarchical) */
+      children: components["schemas"]["GasStation_SponsorableDomainDto"][]
+    }
+    GasStation_SponsorableDomainsResponseDto: {
+      items: components["schemas"]["GasStation_SponsorableDomainDto"][]
+      total: number
+      /** @description Current page number (0-indexed) */
+      page: number
+      /** @description Page size */
+      pageSize: number
+      /** @description All available ledgers for filter dropdown */
+      availableLedgers: components["schemas"]["GasStation_LedgerDto"][]
+    }
+    GasStation_DomainIdentifierDto: {
+      /** @description Domain ID to sponsor */
+      domainId: string
+    }
+    GasStation_AddSponsoredDomainsDto: {
+      domains: components["schemas"]["GasStation_DomainIdentifierDto"][]
+      /** @description UUID of the user performing the action. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_ConflictEntityDto: {
+      /** @description Account ID that conflicted (for account conflicts) */
+      accountId?: string
+      /** @description Domain ID of the conflicting entity */
+      domainId: string
+      /**
+       * @description Reason for the conflict
+       * @example ALREADY_SPONSORED
+       * @enum {string}
+       */
+      reason: "ALREADY_SPONSORED"
+      /** @description Account ID of the existing sponsor */
+      existingSponsorAccountId: string
+    }
+    GasStation_SponsoredModificationResponseDto: {
+      /** @description Whether the operation completed (true even for partial success) */
+      success: boolean
+      /** @description Number of entities successfully added */
+      count: number
+      /** @description Entities that could not be added due to conflicts */
+      conflicts?: components["schemas"]["GasStation_ConflictEntityDto"][]
+    }
+    GasStation_LineageDto: {
+      /** @description Parent domain ID */
+      domainId: string
+      /** @description Parent domain name */
+      domain: string
+      /** @description Subdomain ID */
+      subdomainId: string
+      /** @description Subdomain name */
+      subdomain: string
+    }
+    GasStation_SponsorableAccountDto: {
+      /** @description Account UUID */
+      accountId: string
+      /** @description Account name */
+      name: string
+      /** @description Domain lineage (parent domain and subdomain) */
+      lineage: components["schemas"]["GasStation_LineageDto"]
+      ledgers: components["schemas"]["GasStation_LedgerDto"][]
+      /** @enum {string} */
+      sponsorshipStatus: "sponsored" | "not_sponsored" | "sponsored_by_other"
+      /** @description Only present if sponsored by another gas station */
+      sponsorshipDetails?: components["schemas"]["GasStation_SponsorshipDetailsDto"]
+    }
+    GasStation_SponsorableAccountsResponseDto: {
+      items: components["schemas"]["GasStation_SponsorableAccountDto"][]
+      total: number
+      /** @description Current page number (0-indexed) */
+      page: number
+      /** @description Page size */
+      pageSize: number
+      /** @description All available ledgers for filter dropdown */
+      availableLedgers: components["schemas"]["GasStation_LedgerDto"][]
+    }
+    GasStation_AccountIdentifierDto: {
+      /** @description Account ID to sponsor */
+      accountId: string
+      /** @description Domain ID of the account */
+      domainId: string
+    }
+    GasStation_AddSponsoredAccountsDto: {
+      accounts: components["schemas"]["GasStation_AccountIdentifierDto"][]
+      /** @description UUID of the user performing the action. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
+      userId?: string
+    }
+    GasStation_AuditEventDto: {
+      id: string
+      /** @enum {string} */
+      eventType: "CREATE" | "UPDATE" | "DELETE"
+      accountId: string
+      domainId: string
+      /** @description Sponsor configuration snapshot at the time of the event */
+      payload: Record<string, never>
+      timestamp: string
+    }
+    GasStation_EventsResponseDto: {
+      items: components["schemas"]["GasStation_AuditEventDto"][]
+      count: number
+      currentStartingAfter?: string
+      nextStartingAfter?: string
+    }
+    GasStation_ValidSponsorItemDto: {
+      /** @description Gas station account ID that can be chosen as sponsor */
+      accountId: string
+      /** @description Alias of the gas station account, if known */
+      accountAlias?: string
+      /** @description Domain ID the gas station belongs to */
+      domainId: string
+      /** @description Alias of the domain the gas station belongs to, if known */
+      domainAlias?: string
+    }
+    GasStation_ValidSponsorsResponseDto: {
+      /** @description Whether the account is already effectively sponsored */
+      isSponsored: boolean
+      /** @description The existing sponsor when the account is already sponsored */
+      sponsor?: components["schemas"]["GasStation_AccountSponsorResponseDto"]
+      /** @description Gas stations that could be chosen as sponsor. Empty when the account is already sponsored, unless includeAll=true was requested, in which case the lineage candidates are still listed (the current sponsor may appear among them). */
+      items: components["schemas"]["GasStation_ValidSponsorItemDto"][]
+    }
     Core_AccountProvider: {
       /** Format: uuid */
       id: string
@@ -11003,271 +11649,6 @@ export interface components {
        */
       type: "v0_RegisterTrustedPublicKey"
     }
-    GasStation_AlertLimitDto: {
-      /** @description Ticker/token UUID */
-      tickerId: string
-      /** @description Alert threshold amount */
-      amount: string
-    }
-    GasStation_BalanceStatusDto: {
-      /** @description Ticker UUID */
-      tickerId: string
-      /** @description Ticker symbol for display (e.g., SOL, ETH, XRP) */
-      tickerSymbol: string
-      /** @description Configured alert threshold amount */
-      threshold: string
-      /** @description Current balance from Core */
-      currentBalance: string
-      /**
-       * @description Balance status: critical if currentBalance <= threshold
-       * @enum {string}
-       */
-      status: "healthy" | "critical"
-    }
-    GasStation_SponsorResponseDto: {
-      type: string
-      accountIds: string[]
-      includeSubDomains: boolean
-      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
-      /** @description Balance status per configured alert. Omitted if balance fetch fails. */
-      balanceStatus?: components["schemas"]["GasStation_BalanceStatusDto"][]
-      /** @description Number of tickers in critical status. Omitted if balance fetch fails. */
-      criticalCount?: number
-    }
-    GasStation_CreateSponsorDto: {
-      /**
-       * @description Type of sponsorship
-       * @enum {string}
-       */
-      type: "domain" | "account" | "none"
-      /** @description Array of account UUIDs to sponsor */
-      accountIds?: string[]
-      /**
-       * @description Include subdomains in sponsorship
-       * @default false
-       */
-      includeSubDomains: boolean
-      /** @description Alert thresholds per ticker */
-      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
-      /** @description UUID of the user performing the action; recorded on the audit trail. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
-      userId?: string
-    }
-    GasStation_SponsorCreatedResponseDto: {
-      id: string
-      status: string
-      createdAt: string
-    }
-    GasStation_UpdateSponsorDto: {
-      /**
-       * @description Type of sponsorship
-       * @enum {string}
-       */
-      type: "domain" | "account" | "none"
-      /** @description Array of account UUIDs to sponsor */
-      accountIds?: string[]
-      /**
-       * @description Include subdomains in sponsorship
-       * @default false
-       */
-      includeSubDomains: boolean
-      /** @description Alert thresholds per ticker */
-      alertLimit: components["schemas"]["GasStation_AlertLimitDto"][]
-      /** @description UUID of the user performing the action; recorded on the audit trail. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
-      userId?: string
-    }
-    GasStation_SponsorsListResponseDto: {
-      /** @description List of gas station account IDs in the domain */
-      items: string[]
-    }
-    GasStation_AccountSponsorResponseDto: {
-      /** @description Whether the account is sponsored by a gas station */
-      isSponsored: boolean
-      /** @description Gas station account ID that is sponsoring */
-      sponsorAccountId?: string
-      /** @enum {string} */
-      type?: "domain" | "account" | "none"
-      accountIds?: string[]
-      includeSubDomains?: boolean
-      alertLimit?: components["schemas"]["GasStation_AlertLimitDto"][]
-      /** @description Balance status per configured alert. Omitted if balance fetch fails. */
-      balanceStatus?: components["schemas"]["GasStation_BalanceStatusDto"][]
-      /** @description Number of tickers in critical status. Omitted if balance fetch fails. */
-      criticalCount?: number
-    }
-    GasStation_DomainSponsorResponseDto: {
-      /** @description Whether the domain is sponsored domain-wide by a gas station */
-      isSponsored: boolean
-      /** @description Gas station account ID that is sponsoring */
-      sponsorAccountId?: string
-      /** @enum {string} */
-      type?: "domain"
-      /** @description Whether the resolving sponsor extends to sub-domains */
-      includeSubDomains?: boolean
-    }
-    GasStation_SponsoredEntityDto: {
-      /**
-       * Format: uuid
-       * @description Entity ID (Account or Domain UUID)
-       */
-      id: string
-      /** @description Entity display name/alias */
-      alias: string
-      /** @description Whether the entity is sponsored by a Gas Station */
-      isSponsored: boolean
-      /** @description Domain hierarchy from root to entity (for Lineage column) */
-      path: string[]
-    }
-    GasStation_SponsoredEntitiesResponseDto: {
-      /** @description List of sponsored entities */
-      items: components["schemas"]["GasStation_SponsoredEntityDto"][]
-      /** @description Total count of items in current page */
-      count: number
-      /** @description Current pagination cursor */
-      currentStartingAfter?: string
-      /** @description Next pagination cursor for fetching more items */
-      nextStartingAfter?: string
-    }
-    GasStation_LedgerDto: {
-      id: string
-      alias: string
-    }
-    GasStation_SponsorshipDetailsDto: {
-      /** @description The sponsoring gas station account ID */
-      sponsorAccountId: string
-      /** @description The sponsoring gas station account name */
-      sponsorAccountName: string
-      /**
-       * @description How this was sponsored
-       * @enum {string}
-       */
-      sponsorType: "account" | "domain"
-      /** @description If sponsored via domain, the domain ID */
-      sponsoredDomainId?: string
-      /** @description If sponsored via domain, the domain name */
-      sponsoredDomainName?: string
-    }
-    GasStation_SponsorableDomainDto: {
-      /** @description Domain UUID */
-      domainId: string
-      /** @description Domain name */
-      name: string
-      ledgers: components["schemas"]["GasStation_LedgerDto"][]
-      /** @enum {string} */
-      sponsorshipStatus: "sponsored" | "not_sponsored" | "sponsored_by_other"
-      /** @description Only present if sponsored by another gas station */
-      sponsorshipDetails?: components["schemas"]["GasStation_SponsorshipDetailsDto"]
-      /** @description Account IDs within this domain */
-      accountIds: string[]
-      /** @description Parent domain UUID, null only for absolute root (typically filtered out) */
-      parentId?: Record<string, never>
-      /** @description Nesting depth relative to sponsor domain (0 = direct child of sponsor domain) */
-      depth: number
-      /** @description Whether any accounts in this domain are individually sponsored by another gas station */
-      hasAccountsSponsoredByOther: boolean
-      /** @description Nested subdomains (hierarchical) */
-      children: components["schemas"]["GasStation_SponsorableDomainDto"][]
-    }
-    GasStation_SponsorableDomainsResponseDto: {
-      items: components["schemas"]["GasStation_SponsorableDomainDto"][]
-      total: number
-      /** @description Current page number (0-indexed) */
-      page: number
-      /** @description Page size */
-      pageSize: number
-      /** @description All available ledgers for filter dropdown */
-      availableLedgers: components["schemas"]["GasStation_LedgerDto"][]
-    }
-    GasStation_DomainIdentifierDto: {
-      /** @description Domain ID to sponsor */
-      domainId: string
-    }
-    GasStation_AddSponsoredDomainsDto: {
-      domains: components["schemas"]["GasStation_DomainIdentifierDto"][]
-      /** @description UUID of the user performing the action. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
-      userId?: string
-    }
-    GasStation_ConflictEntityDto: {
-      /** @description Account ID that conflicted (for account conflicts) */
-      accountId?: string
-      /** @description Domain ID of the conflicting entity */
-      domainId: string
-      /**
-       * @description Reason for the conflict
-       * @example ALREADY_SPONSORED
-       * @enum {string}
-       */
-      reason: "ALREADY_SPONSORED"
-      /** @description Account ID of the existing sponsor */
-      existingSponsorAccountId: string
-    }
-    GasStation_SponsoredModificationResponseDto: {
-      /** @description Whether the operation completed (true even for partial success) */
-      success: boolean
-      /** @description Number of entities successfully added */
-      count: number
-      /** @description Entities that could not be added due to conflicts */
-      conflicts?: components["schemas"]["GasStation_ConflictEntityDto"][]
-    }
-    GasStation_LineageDto: {
-      /** @description Parent domain ID */
-      domainId: string
-      /** @description Parent domain name */
-      domain: string
-      /** @description Subdomain ID */
-      subdomainId: string
-      /** @description Subdomain name */
-      subdomain: string
-    }
-    GasStation_SponsorableAccountDto: {
-      /** @description Account UUID */
-      accountId: string
-      /** @description Account name */
-      name: string
-      /** @description Domain lineage (parent domain and subdomain) */
-      lineage: components["schemas"]["GasStation_LineageDto"]
-      ledgers: components["schemas"]["GasStation_LedgerDto"][]
-      /** @enum {string} */
-      sponsorshipStatus: "sponsored" | "not_sponsored" | "sponsored_by_other"
-      /** @description Only present if sponsored by another gas station */
-      sponsorshipDetails?: components["schemas"]["GasStation_SponsorshipDetailsDto"]
-    }
-    GasStation_SponsorableAccountsResponseDto: {
-      items: components["schemas"]["GasStation_SponsorableAccountDto"][]
-      total: number
-      /** @description Current page number (0-indexed) */
-      page: number
-      /** @description Page size */
-      pageSize: number
-      /** @description All available ledgers for filter dropdown */
-      availableLedgers: components["schemas"]["GasStation_LedgerDto"][]
-    }
-    GasStation_AccountIdentifierDto: {
-      /** @description Account ID to sponsor */
-      accountId: string
-      /** @description Domain ID of the account */
-      domainId: string
-    }
-    GasStation_AddSponsoredAccountsDto: {
-      accounts: components["schemas"]["GasStation_AccountIdentifierDto"][]
-      /** @description UUID of the user performing the action. Optional — only honored when the caller is a service principal; otherwise the authenticated user from the JWT is used. */
-      userId?: string
-    }
-    GasStation_AuditEventDto: {
-      id: string
-      /** @enum {string} */
-      eventType: "CREATE" | "UPDATE" | "DELETE"
-      accountId: string
-      domainId: string
-      /** @description Sponsor configuration snapshot at the time of the event */
-      payload: Record<string, never>
-      timestamp: string
-    }
-    GasStation_EventsResponseDto: {
-      items: components["schemas"]["GasStation_AuditEventDto"][]
-      count: number
-      currentStartingAfter?: string
-      nextStartingAfter?: string
-    }
     Omnibus_OmnibusResponse: {
       /**
        * Format: uuid
@@ -11455,6 +11836,7 @@ export interface components {
        */
       sponsoringGasStationId?: string
     }
+    /** @description unsignedIntent is present on a fresh create and on an idempotent replay of a still-pending withdrawal; it is omitted when replaying a terminal (COMPLETED/FAILED/CANCELLED) withdrawal, where there is nothing left to sign. */
     Omnibus_CreateWithdrawalResponse: {
       withdrawal: components["schemas"]["Omnibus_WithdrawalResponse"]
       unsignedIntent: components["schemas"]["Omnibus_UnsignedIntentPayload"]
@@ -11522,7 +11904,7 @@ export interface components {
        */
       transferId: string
       /** @enum {string} */
-      status: "COMPLETED" | "FAILED" | "PENDING_VERIFICATION"
+      status: "COMPLETED" | "FAILED" | "PENDING_VERIFICATION" | "PENDING"
       /**
        * Format: uuid
        * @description Source tenant (debited)
@@ -11790,6 +12172,122 @@ export interface components {
        * @enum {string}
        */
       format: "CSV" | "JSON"
+    }
+    Omnibus_BulkUpdateSweepThresholdsResponse: {
+      /**
+       * Format: int32
+       * @description Number of thresholds successfully updated
+       */
+      updatedCount: number
+      /** @description Success message */
+      message?: string
+    }
+    Omnibus_SweepThresholdConflict: {
+      /**
+       * Format: uuid
+       * @description Ticker UUID of the conflicting asset
+       */
+      tickerId: string
+      /** @description Ledger ID of the conflicting asset */
+      ledgerId: string
+      /**
+       * Format: int64
+       * @description The stored row's current optimistic-lock version. Absent if the asset has no stored row yet (a version was sent for a first-time configuration).
+       */
+      currentVersion?: number
+      /** @description The stored row's current minimum sweep amount in the ticker's smallest unit. "0" if the asset has no stored row yet. */
+      currentMinSweepAmount: string
+      /** @description Human-readable formatted current amount (e.g., "0.1 BTC"), mirroring the SweepThresholdConfig field so the client can display it directly. */
+      currentMinSweepAmountFormatted?: string
+    }
+    Omnibus_SweepThresholdConflictResponse: {
+      /** @description HTTP reason phrase (e.g., "Conflict") */
+      reason?: string
+      /** @description Human-readable summary of the conflict */
+      message?: string
+      /**
+       * @description Stable machine code identifying this as a stale-version conflict. Distinguishes it from other 409s (e.g., data-integrity violations) that do not carry this code and should not trigger a refresh-and-reverify flow.
+       * @enum {string}
+       */
+      errorCode: "STALE_SWEEP_THRESHOLD_VERSION"
+      /** @description The rows that conflicted, with their current stored values. Present and non-empty only for stale-version 409s. */
+      conflicts: components["schemas"]["Omnibus_SweepThresholdConflict"][]
+    }
+    Omnibus_BulkUpdateSweepThresholdsRequest: {
+      /** @description List of threshold updates to apply atomically */
+      updates: components["schemas"]["Omnibus_SweepThresholdUpdate"][]
+    }
+    Omnibus_SweepThresholdUpdate: {
+      /**
+       * Format: uuid
+       * @description Ticker UUID to update
+       */
+      tickerId: string
+      /** @description Ledger ID to update */
+      ledgerId: string
+      /** @description New minimum sweep amount in smallest unit. Must be a non-negative integer string (e.g., "10000000000000000" for 0.01 ETH). */
+      minSweepAmount: string
+      /**
+       * Format: int64
+       * @description Optimistic-lock version from the GET row being edited. Required to update an already-configured asset. Omit (or null) only when configuring an asset for the first time (no stored row yet); sending a version for such an asset is treated as a conflict.
+       */
+      version?: number
+    }
+    Omnibus_SweepThresholdConfig: {
+      /**
+       * Format: uuid
+       * @description Unique identifier of this threshold configuration. Absent for assets that have never been explicitly configured (implicit "0" default).
+       */
+      id?: string
+      /**
+       * Format: uuid
+       * @description Domain ID (1:1 with omnibus)
+       */
+      domainId: string
+      /**
+       * Format: uuid
+       * @description Custody ticker UUID
+       */
+      tickerId: string
+      /** @description Ticker symbol (e.g., "BTC", "ETH", "USDC") */
+      tickerSymbol: string
+      /** @description Full ticker name (e.g., "Bitcoin", "Ethereum") */
+      tickerName?: string
+      /**
+       * Format: int32
+       * @description Number of decimal places for this ticker
+       */
+      tickerDecimals?: number
+      /** @description Custody ledger ID (e.g., "ethereum-mainnet", "polygon-mainnet") */
+      ledgerId: string
+      /** @description Human-readable ledger name (e.g., "Ethereum", "Polygon") */
+      ledgerName: string
+      /** @description Smart contract address for token tickers (e.g., ERC-20 USDC address). Null for native assets like BTC, ETH, XRP. */
+      contractAddress?: string
+      /** @description Minimum sweep amount in the ticker's smallest unit (e.g., satoshis for BTC, wei for ETH). Set to "0" for immediate sweep (no threshold). */
+      minSweepAmount: string
+      /** @description Human-readable formatted amount (e.g., "0.1 BTC", "25 USDC"). Calculated from minSweepAmount using tickerDecimals. */
+      minSweepAmountFormatted?: string
+      /**
+       * Format: date-time
+       * @description Timestamp when this configuration was created. Absent for assets that have never been explicitly configured.
+       */
+      createdAt?: string
+      /**
+       * Format: date-time
+       * @description Timestamp when this configuration was last updated. Absent for assets that have never been explicitly configured.
+       */
+      updatedAt?: string
+      /**
+       * Format: int64
+       * @description Optimistic-lock version of the stored row. Absent for assets that have never been explicitly configured (implicit "0" default, no row). Echo this value back in the matching SweepThresholdUpdate on save.
+       */
+      version?: number
+    }
+    Omnibus_SweepThresholdPageResponse: {
+      /** @description Sweep threshold configurations in this page */
+      content: components["schemas"]["Omnibus_SweepThresholdConfig"][]
+      page: components["schemas"]["Omnibus_PageMetadata"]
     }
     Core_ApiBatchSigningData: {
       /** @description Hex encoded string. */
@@ -18001,6 +18499,1428 @@ export interface operations {
       }
     }
   }
+  SponsorController_getSponsor_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsor configuration */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_updateSponsor_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_UpdateSponsorDto"]
+      }
+    }
+    responses: {
+      /** @description Sponsor updated */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
+        }
+      }
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_createSponsor_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_CreateSponsorDto"]
+      }
+    }
+    responses: {
+      /** @description Sponsor created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorCreatedResponseDto"]
+        }
+      }
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor already exists */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_deleteSponsor_legacyDomain: {
+    parameters: {
+      query: {
+        userId: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsor deleted */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorsController_listSponsors_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsors for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of sponsor account IDs */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorsListResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_getAccountSponsor_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID of the account to check */
+        domainId: string
+        /** @description Account ID to find the sponsor for */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsorship status returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_AccountSponsorResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_getDomainSponsor_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID to resolve domain-wide sponsorship for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Domain-wide sponsorship status returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_DomainSponsorResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_listSponsoredAccounts_legacyDomain: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items per page */
+        limit?: number
+        /** @description Cursor for pagination - returns items after this ID */
+        startingAfter?: string
+        /** @description Field to sort by */
+        sortBy?: string
+        /** @description Sort direction */
+        sortOrder?: "asc" | "desc"
+        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
+        sponsorAccountId?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsored accounts for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of accounts with sponsorship status */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
+        }
+      }
+      /** @description Database error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description External service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorsController_listSponsoredDomains_legacyDomain: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items per page */
+        limit?: number
+        /** @description Cursor for pagination - returns items after this ID */
+        startingAfter?: string
+        /** @description Field to sort by */
+        sortBy?: string
+        /** @description Sort direction */
+        sortOrder?: "asc" | "desc"
+        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
+        sponsorAccountId?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsored sub-domains for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of sub-domains with sponsorship status */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
+        }
+      }
+      /** @description Database error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description External service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_getSponsorableDomains_legacyDomain: {
+    parameters: {
+      query?: {
+        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
+        search?: string
+        limit?: number
+        /** @description Page number (0-indexed) */
+        page?: number
+      }
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorableDomainsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorListController_addSponsoredDomains_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_AddSponsoredDomainsDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_getSponsorableAccounts_legacyDomain: {
+    parameters: {
+      query?: {
+        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
+        search?: string
+        limit?: number
+        /** @description Page number (0-indexed) */
+        page?: number
+      }
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorableAccountsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorListController_addSponsoredAccounts_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_AddSponsoredAccountsDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  EventController_getEvents_legacyDomain: {
+    parameters: {
+      query?: {
+        /** @description Filter by account ID */
+        accountId?: string
+        /** @description Filter by start date (ISO 8601) */
+        startDate?: string
+        /** @description Filter by end date (ISO 8601) */
+        endDate?: string
+        /** @description Filter by event type */
+        eventType?: "CREATE" | "UPDATE" | "DELETE"
+        limit?: number
+        /** @description Cursor for pagination */
+        startingAfter?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Audit events */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_EventsResponseDto"]
+        }
+      }
+      /** @description Invalid query parameters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  HealthController_liveness: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The Health Check is successful */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example ok */
+            status?: string
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+      /** @description The Health Check is not successful */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example error */
+            status?: string
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /**
+             * @example {
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       },
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  HealthController_readiness: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The Health Check is successful */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example ok */
+            status?: string
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+      /** @description The Health Check is not successful */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            /** @example error */
+            status?: string
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       }
+             *     }
+             */
+            info?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /**
+             * @example {
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            error?: {
+              [key: string]: {
+                status: string
+              }
+            } | null
+            /**
+             * @example {
+             *       "database": {
+             *         "status": "up"
+             *       },
+             *       "redis": {
+             *         "status": "down",
+             *         "message": "Could not connect"
+             *       }
+             *     }
+             */
+            details?: {
+              [key: string]: {
+                status: string
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  SponsorController_getSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsor configuration */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_updateSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_UpdateSponsorDto"]
+      }
+    }
+    responses: {
+      /** @description Sponsor updated */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
+        }
+      }
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_createSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_CreateSponsorDto"]
+      }
+    }
+    responses: {
+      /** @description Sponsor created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorCreatedResponseDto"]
+        }
+      }
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor already exists */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorController_deleteSponsor: {
+    parameters: {
+      query: {
+        userId: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+        /** @description Account ID */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsor deleted */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorsController_listSponsors: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsors for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of sponsor account IDs */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorsListResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_getAccountSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID of the account to check */
+        domainId: string
+        /** @description Account ID to find the sponsor for */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Sponsorship status returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_AccountSponsorResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_getValidSponsors: {
+    parameters: {
+      query?: {
+        /** @description When true, items lists the lineage candidates even if the account is already sponsored (the current sponsor may appear among them). Defaults to false. */
+        includeAll?: boolean
+      }
+      header?: never
+      path: {
+        /** @description Domain ID of the account to list valid sponsors for */
+        domainId: string
+        /** @description Account ID to list valid sponsors for */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Valid sponsor candidates returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_ValidSponsorsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_getDomainSponsor: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Domain ID to resolve domain-wide sponsorship for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Domain-wide sponsorship status returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_DomainSponsorResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorsController_listSponsoredAccounts: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items per page */
+        limit?: number
+        /** @description Cursor for pagination - returns items after this ID */
+        startingAfter?: string
+        /** @description Field to sort by */
+        sortBy?: string
+        /** @description Sort direction */
+        sortOrder?: "asc" | "desc"
+        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
+        sponsorAccountId?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsored accounts for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of accounts with sponsorship status */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
+        }
+      }
+      /** @description Database error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description External service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorsController_listSponsoredDomains: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of items per page */
+        limit?: number
+        /** @description Cursor for pagination - returns items after this ID */
+        startingAfter?: string
+        /** @description Field to sort by */
+        sortBy?: string
+        /** @description Sort direction */
+        sortOrder?: "asc" | "desc"
+        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
+        sponsorAccountId?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID to list sponsored sub-domains for */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of sub-domains with sponsorship status */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
+        }
+      }
+      /** @description Database error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description External service unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_getSponsorableDomains: {
+    parameters: {
+      query?: {
+        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
+        search?: string
+        limit?: number
+        /** @description Page number (0-indexed) */
+        page?: number
+      }
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorableDomainsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorListController_addSponsoredDomains: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_AddSponsoredDomainsDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_getSponsorableAccounts: {
+    parameters: {
+      query?: {
+        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
+        search?: string
+        limit?: number
+        /** @description Page number (0-indexed) */
+        page?: number
+      }
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsorableAccountsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorListController_addSponsoredAccounts: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GasStation_AddSponsoredAccountsDto"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
+        }
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_addSponsoredAccount: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+        /** @description Domain of the target sponsored account */
+        sponsoredAccountDomainId: string
+        /** @description Target sponsored account ID */
+        sponsoredAccountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description No Content (unchanged) */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Already sponsored by another sponsor */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_removeSponsoredAccount: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+        /** @description Domain of the target sponsored account */
+        sponsoredAccountDomainId: string
+        /** @description Target sponsored account ID */
+        sponsoredAccountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Not found or owned by another sponsor */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  EventController_getEvents: {
+    parameters: {
+      query?: {
+        /** @description Filter by account ID */
+        accountId?: string
+        /** @description Filter by start date (ISO 8601) */
+        startDate?: string
+        /** @description Filter by end date (ISO 8601) */
+        endDate?: string
+        /** @description Filter by event type */
+        eventType?: "CREATE" | "UPDATE" | "DELETE"
+        limit?: number
+        /** @description Cursor for pagination */
+        startingAfter?: string
+      }
+      header?: never
+      path: {
+        /** @description Domain ID */
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Audit events */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_EventsResponseDto"]
+        }
+      }
+      /** @description Invalid query parameters */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorsController_getValidSponsors_legacyDomain: {
+    parameters: {
+      query?: {
+        /** @description When true, items lists the lineage candidates even if the account is already sponsored (the current sponsor may appear among them). Defaults to false. */
+        includeAll?: boolean
+      }
+      header?: never
+      path: {
+        /** @description Domain ID of the account to list valid sponsors for */
+        domainId: string
+        /** @description Account ID to list valid sponsors for */
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Valid sponsor candidates returned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["GasStation_ValidSponsorsResponseDto"]
+        }
+      }
+    }
+  }
+  SponsorListController_addSponsoredAccount_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+        /** @description Domain of the target sponsored account */
+        sponsoredAccountDomainId: string
+        /** @description Target sponsored account ID */
+        sponsoredAccountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description No Content (unchanged) */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Sponsor not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Already sponsored by another sponsor */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  SponsorListController_removeSponsoredAccount_legacyDomain: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Sponsor domain ID */
+        domainId: string
+        /** @description Sponsor account ID */
+        entityId: string
+        /** @description Domain of the target sponsored account */
+        sponsoredAccountDomainId: string
+        /** @description Target sponsored account ID */
+        sponsoredAccountId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Removed */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Not found or owned by another sponsor */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   transferability: {
     parameters: {
       query?: {
@@ -18417,712 +20337,6 @@ export interface operations {
       }
     }
   }
-  SponsorController_getSponsor: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Domain ID */
-        domainId: string
-        /** @description Account ID */
-        accountId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Sponsor configuration */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
-        }
-      }
-      /** @description Sponsor not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  SponsorController_updateSponsor: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Domain ID */
-        domainId: string
-        /** @description Account ID */
-        accountId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GasStation_UpdateSponsorDto"]
-      }
-    }
-    responses: {
-      /** @description Sponsor updated */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsorResponseDto"]
-        }
-      }
-      /** @description Bad request */
-      400: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Sponsor not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  SponsorController_createSponsor: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Domain ID */
-        domainId: string
-        /** @description Account ID */
-        accountId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GasStation_CreateSponsorDto"]
-      }
-    }
-    responses: {
-      /** @description Sponsor created */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsorCreatedResponseDto"]
-        }
-      }
-      /** @description Bad request */
-      400: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Sponsor already exists */
-      409: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  SponsorController_deleteSponsor: {
-    parameters: {
-      query: {
-        userId: string
-      }
-      header?: never
-      path: {
-        /** @description Domain ID */
-        domainId: string
-        /** @description Account ID */
-        accountId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Sponsor deleted */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Sponsor not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  SponsorsController_listSponsors: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Domain ID to list sponsors for */
-        domainId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description List of sponsor account IDs */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsorsListResponseDto"]
-        }
-      }
-    }
-  }
-  SponsorsController_getAccountSponsor: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Domain ID of the account to check */
-        domainId: string
-        /** @description Account ID to find the sponsor for */
-        accountId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Sponsorship status returned */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_AccountSponsorResponseDto"]
-        }
-      }
-    }
-  }
-  SponsorsController_getDomainSponsor: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Domain ID to resolve domain-wide sponsorship for */
-        domainId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Domain-wide sponsorship status returned */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_DomainSponsorResponseDto"]
-        }
-      }
-    }
-  }
-  SponsorsController_listSponsoredAccounts: {
-    parameters: {
-      query?: {
-        /** @description Maximum number of items per page */
-        limit?: number
-        /** @description Cursor for pagination - returns items after this ID */
-        startingAfter?: string
-        /** @description Field to sort by */
-        sortBy?: string
-        /** @description Sort direction */
-        sortOrder?: "asc" | "desc"
-        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
-        sponsorAccountId?: string
-      }
-      header?: never
-      path: {
-        /** @description Domain ID to list sponsored accounts for */
-        domainId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description List of accounts with sponsorship status */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
-        }
-      }
-      /** @description Database error */
-      500: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description External service unavailable */
-      503: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  SponsorsController_listSponsoredDomains: {
-    parameters: {
-      query?: {
-        /** @description Maximum number of items per page */
-        limit?: number
-        /** @description Cursor for pagination - returns items after this ID */
-        startingAfter?: string
-        /** @description Field to sort by */
-        sortBy?: string
-        /** @description Sort direction */
-        sortOrder?: "asc" | "desc"
-        /** @description Filter by a specific sponsor account ID. When provided, only entities sponsored by this sponsor are marked as sponsored. */
-        sponsorAccountId?: string
-      }
-      header?: never
-      path: {
-        /** @description Domain ID to list sponsored sub-domains for */
-        domainId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description List of sub-domains with sponsorship status */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsoredEntitiesResponseDto"]
-        }
-      }
-      /** @description Database error */
-      500: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description External service unavailable */
-      503: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  SponsorListController_getSponsorableDomains: {
-    parameters: {
-      query?: {
-        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
-        search?: string
-        limit?: number
-        /** @description Page number (0-indexed) */
-        page?: number
-      }
-      header?: never
-      path: {
-        /** @description Sponsor domain ID */
-        domainId: string
-        /** @description Sponsor account ID */
-        entityId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsorableDomainsResponseDto"]
-        }
-      }
-    }
-  }
-  SponsorListController_addSponsoredDomains: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Sponsor domain ID */
-        domainId: string
-        /** @description Sponsor account ID */
-        entityId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GasStation_AddSponsoredDomainsDto"]
-      }
-    }
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
-        }
-      }
-      /** @description Sponsor not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  SponsorListController_getSponsorableAccounts: {
-    parameters: {
-      query?: {
-        status?: "sponsored" | "not_sponsored" | "sponsored_by_other"
-        search?: string
-        limit?: number
-        /** @description Page number (0-indexed) */
-        page?: number
-      }
-      header?: never
-      path: {
-        /** @description Sponsor domain ID */
-        domainId: string
-        /** @description Sponsor account ID */
-        entityId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsorableAccountsResponseDto"]
-        }
-      }
-    }
-  }
-  SponsorListController_addSponsoredAccounts: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Sponsor domain ID */
-        domainId: string
-        /** @description Sponsor account ID */
-        entityId: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["GasStation_AddSponsoredAccountsDto"]
-      }
-    }
-    responses: {
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_SponsoredModificationResponseDto"]
-        }
-      }
-      /** @description Sponsor not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  EventController_getEvents: {
-    parameters: {
-      query?: {
-        /** @description Filter by account ID */
-        accountId?: string
-        /** @description Filter by start date (ISO 8601) */
-        startDate?: string
-        /** @description Filter by end date (ISO 8601) */
-        endDate?: string
-        /** @description Filter by event type */
-        eventType?: "CREATE" | "UPDATE" | "DELETE"
-        limit?: number
-        /** @description Cursor for pagination */
-        startingAfter?: string
-      }
-      header?: never
-      path: {
-        /** @description Domain ID */
-        domainId: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Audit events */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["GasStation_EventsResponseDto"]
-        }
-      }
-      /** @description Invalid query parameters */
-      400: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      /** @description Internal server error */
-      500: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  HealthController_liveness: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The Health Check is successful */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            /** @example ok */
-            status?: string
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       }
-             *     }
-             */
-            info?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            error?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       }
-             *     }
-             */
-            details?: {
-              [key: string]: {
-                status: string
-              }
-            }
-          }
-        }
-      }
-      /** @description The Health Check is not successful */
-      503: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            /** @example error */
-            status?: string
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       }
-             *     }
-             */
-            info?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            /**
-             * @example {
-             *       "redis": {
-             *         "status": "down",
-             *         "message": "Could not connect"
-             *       }
-             *     }
-             */
-            error?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       },
-             *       "redis": {
-             *         "status": "down",
-             *         "message": "Could not connect"
-             *       }
-             *     }
-             */
-            details?: {
-              [key: string]: {
-                status: string
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  HealthController_readiness: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description The Health Check is successful */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            /** @example ok */
-            status?: string
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       }
-             *     }
-             */
-            info?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            error?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       }
-             *     }
-             */
-            details?: {
-              [key: string]: {
-                status: string
-              }
-            }
-          }
-        }
-      }
-      /** @description The Health Check is not successful */
-      503: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            /** @example error */
-            status?: string
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       }
-             *     }
-             */
-            info?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            /**
-             * @example {
-             *       "redis": {
-             *         "status": "down",
-             *         "message": "Could not connect"
-             *       }
-             *     }
-             */
-            error?: {
-              [key: string]: {
-                status: string
-              }
-            } | null
-            /**
-             * @example {
-             *       "database": {
-             *         "status": "up"
-             *       },
-             *       "redis": {
-             *         "status": "down",
-             *         "message": "Could not connect"
-             *       }
-             *     }
-             */
-            details?: {
-              [key: string]: {
-                status: string
-              }
-            }
-          }
-        }
-      }
-    }
-  }
   getOmnibus: {
     parameters: {
       query?: never
@@ -19455,7 +20669,10 @@ export interface operations {
   createWithdrawal: {
     parameters: {
       query?: never
-      header?: never
+      header: {
+        /** @description Required. A client-chosen key that makes this withdrawal idempotent; reuse the exact same value on every retry of the same withdrawal. A missing header is rejected with 400, as is a blank value. The operationId is derived deterministically from (domainId, omnibusId, tenantId, key), so reusing the key for a different payload (amount/ticker/ledger/destAddress) returns 409, and different source tenants may reuse the same key without collision. A retry with the same key returns the original operation and its unsigned intent (or status only once terminal) instead of reserving funds and starting a second workflow. */
+        "Idempotency-Key": string
+      }
       path: {
         domainId: string
         omnibusId: string
@@ -19469,7 +20686,7 @@ export interface operations {
       }
     }
     responses: {
-      /** @description Withdrawal initiated; reservation taken; unsigned intent returned */
+      /** @description Withdrawal initiated or idempotent replay. Fresh create: reservation taken and unsigned intent returned. Pending replay (same key, still in progress): original operation and its unsigned intent returned, no new reservation. Terminal replay (operation already COMPLETED/FAILED/CANCELLED): operation status only, no unsigned intent and no reservation. */
       201: {
         headers: {
           [name: string]: unknown
@@ -19478,7 +20695,7 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_CreateWithdrawalResponse"]
         }
       }
-      /** @description Intent dry-run validation failed or invalid request */
+      /** @description Missing or blank Idempotency-Key, intent dry-run validation failed, or invalid request */
       400: {
         headers: {
           [name: string]: unknown
@@ -19576,7 +20793,10 @@ export interface operations {
   createInternalTransfer: {
     parameters: {
       query?: never
-      header?: never
+      header: {
+        /** @description Required. A client-chosen, per-transfer token, unique within the source tenant; reuse the exact same value on every retry of the same transfer. A missing header is rejected with 400, as is a blank value. The operationId is derived deterministically from (domainId, sourceTenantId, key), so reusing the key for a different payload returns 409, and different source tenants may reuse the same key without collision. */
+        "Idempotency-Key": string
+      }
       path: {
         domainId: string
         omnibusId: string
@@ -19599,7 +20819,16 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
         }
       }
-      /** @description Invalid request (e.g. source equals destination, malformed body) */
+      /** @description Transfer accepted and being processed. Body carries status=PENDING and the operationId; poll `GET .../internal-transfers/{operationId}` for the terminal status. */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+      /** @description Invalid request (e.g. source equals destination, malformed body, missing or blank Idempotency-Key) */
       400: {
         headers: {
           [name: string]: unknown
@@ -19608,7 +20837,7 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
         }
       }
-      /** @description Omnibus, source tenant, or destination tenant not found */
+      /** @description Omnibus or source tenant not found */
       404: {
         headers: {
           [name: string]: unknown
@@ -19617,7 +20846,7 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
         }
       }
-      /** @description Omnibus is not operational (ACTIVE and UNLOCKED) or a tenant is not UNLOCKED, insufficient available balance, or concurrent reservation conflict */
+      /** @description Omnibus is not operational (ACTIVE and UNLOCKED) or a tenant is not UNLOCKED, insufficient available balance, or concurrent reservation conflict or Idempotency-Key reused with a different payload (same key + source, different transfer details) */
       409: {
         headers: {
           [name: string]: unknown
@@ -19626,7 +20855,7 @@ export interface operations {
           "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
         }
       }
-      /** @description Unexpected server error (e.g. database failure, unrecognised workflow failure) */
+      /** @description Unexpected server error (e.g. database failure) */
       500: {
         headers: {
           [name: string]: unknown
@@ -19878,6 +21107,158 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+    }
+  }
+  getSweepThresholds: {
+    parameters: {
+      query?: {
+        /** @description Page number (0-indexed) */
+        page?: number
+        /** @description Number of items per page */
+        size?: number
+        /** @description Filter by ledger ID (e.g., "ethereum-mainnet"). If omitted, returns thresholds for all ledgers. */
+        ledgerId?: string
+      }
+      header?: never
+      path: {
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_SweepThresholdPageResponse"]
+        }
+      }
+      /** @description Invalid request (e.g., malformed domainId or ledgerId) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_SweepThresholdPageResponse"]
+        }
+      }
+      /** @description Caller is not permitted to access this domain's thresholds */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_SweepThresholdPageResponse"]
+        }
+      }
+      /** @description Domain not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_SweepThresholdPageResponse"]
+        }
+      }
+    }
+  }
+  updateSweepThresholds: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Omnibus_BulkUpdateSweepThresholdsRequest"]
+      }
+    }
+    responses: {
+      /** @description All thresholds updated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_BulkUpdateSweepThresholdsResponse"]
+        }
+      }
+      /** @description Invalid request (e.g., negative threshold, invalid UUID, duplicate or unknown ticker/ledger pair) */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_BulkUpdateSweepThresholdsResponse"]
+        }
+      }
+      /** @description Caller is not permitted to update this domain's thresholds */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_BulkUpdateSweepThresholdsResponse"]
+        }
+      }
+      /** @description Domain not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_BulkUpdateSweepThresholdsResponse"]
+        }
+      }
+      /** @description One or more submitted thresholds are stale: the row was modified by someone else since it was read. No changes are applied (atomic all-or-nothing). The body identifies the conflicting rows with their current values so the client can refresh, re-verify, and resubmit. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_SweepThresholdConflictResponse"]
+        }
+      }
+    }
+  }
+  getInternalTransfer: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+        /** @description Operation ID returned by the create endpoint */
+        operationId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Current state of the internal transfer */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+      /** @description No internal transfer with this operationId (or not yet visible) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
       }
     }
   }
