@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@florent-uzio/custody": "2.12.0"
+  },
+  "changesets": [
+    "confidential-mpt-cmpt-compute"
+  ]
+}
