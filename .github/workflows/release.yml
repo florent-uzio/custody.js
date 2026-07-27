@@ -94,3 +94,21 @@ jobs:
         run: npm run release
         env:
           NPM_CONFIG_PROVENANCE: "true"
+
+      # The stable `release` job gets tags and GitHub releases for free from
+      # changesets/action; this job publishes by hand, so it creates them here.
+      - name: Tag and create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists, skipping."
+            exit 0
+          fi
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          gh release create "v$VERSION" \
+            --prerelease \
+            --title "v$VERSION" \
+            --notes "Published to npm under the \`beta\` dist-tag from \`${{ github.ref_name }}\`. Install with \`npm i @florent-uzio/custody@$VERSION\`. See CHANGELOG.md for details."
