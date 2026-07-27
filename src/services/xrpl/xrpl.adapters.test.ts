@@ -556,6 +556,7 @@ describe("batchToCustodyInnerTransactions", () => {
         type: "MPTokenIssuanceSet",
         tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000003SET" },
         flags: ["tfMPTLock"],
+        mutableFlags: [],
       })
     })
 
@@ -594,6 +595,64 @@ describe("batchToCustodyInnerTransactions", () => {
       const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
       const op = result.operation as { holder: unknown }
       expect(op.holder).toEqual({ type: "Address", address: "rHolderXYZ" })
+    })
+
+    it("maps the tfMPTSetCanHoldConfidentialBalance bit onto mutableFlags", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags:
+          MPTokenIssuanceSetFlags.tfMPTLock |
+          MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance,
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as { flags: string[]; mutableFlags: string[] }
+      expect(op.flags).toEqual(["tfMPTLock"])
+      expect(op.mutableFlags).toEqual(["MPTSetCanConfidentialAmount"])
+    })
+
+    it("maps the confidential flag from the object form too", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags: { tfMPTSetCanHoldConfidentialBalance: true },
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as { flags: string[]; mutableFlags: string[] }
+      expect(op.flags).toEqual([])
+      expect(op.mutableFlags).toEqual(["MPTSetCanConfidentialAmount"])
+    })
+
+    it("passes through the issuer and auditor encryption keys", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags: 0,
+        IssuerEncryptionKey: `02${"AB".repeat(32)}`,
+        AuditorEncryptionKey: `03${"CD".repeat(32)}`,
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as {
+        issuerEncryptionKey: string
+        auditorEncryptionKey: string
+      }
+      expect(op.issuerEncryptionKey).toBe(`02${"AB".repeat(32)}`)
+      expect(op.auditorEncryptionKey).toBe(`03${"CD".repeat(32)}`)
+    })
+
+    it("omits the encryption keys when absent", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags: 0,
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).not.toHaveProperty("issuerEncryptionKey")
+      expect(result.operation).not.toHaveProperty("auditorEncryptionKey")
     })
   })
 

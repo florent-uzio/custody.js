@@ -20,6 +20,7 @@ import type {
   CustodyBatchSigner,
   CustodyInnerTransaction,
   CustodyMpTokenIssuanceCreate,
+  CustodyMpTokenIssuanceSet,
   CustodyOperation,
 } from "./xrpl.types.js"
 
@@ -141,6 +142,26 @@ const mpTokenIssuanceSetFlagsToStrings = (
   if (flags & MPTokenIssuanceSetFlags.tfMPTLock) result.push("tfMPTLock")
   if (flags & MPTokenIssuanceSetFlags.tfMPTUnlock) result.push("tfMPTUnlock")
   return result
+}
+
+type MPTokenIssuanceMutableFlag = CustodyMpTokenIssuanceSet["mutableFlags"][number]
+
+// The confidential-amount capability sits in different places in the two models:
+// xrpl.js carries it as the `tfMPTSetCanHoldConfidentialBalance` bit on `Flags`,
+// while the Custody API exposes it as the sole member of `mutableFlags`. It is
+// arguably not a mutable flag at all, but until the two converge we read the
+// xrpl.js `Flags` bit and emit it on the Custody `mutableFlags` array.
+const mpTokenIssuanceSetMutableFlagsToStrings = (
+  flags?: number | object,
+): MPTokenIssuanceMutableFlag[] => {
+  if (!flags) return []
+  if (typeof flags === "object") {
+    const f = flags as Record<string, boolean>
+    return f.tfMPTSetCanHoldConfidentialBalance ? ["MPTSetCanConfidentialAmount"] : []
+  }
+  return flags & MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance
+    ? ["MPTSetCanConfidentialAmount"]
+    : []
 }
 
 const txToOperation = (tx: RawTx): CustodyOperation => {
@@ -270,8 +291,15 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
         type: "MPTokenIssuanceSet",
         tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
         flags: mpTokenIssuanceSetFlagsToStrings(tx.Flags),
+        mutableFlags: mpTokenIssuanceSetMutableFlagsToStrings(tx.Flags),
         ...(tx.Holder !== undefined && {
           holder: { type: "Address" as const, address: tx.Holder },
+        }),
+        ...(tx.IssuerEncryptionKey !== undefined && {
+          issuerEncryptionKey: tx.IssuerEncryptionKey,
+        }),
+        ...(tx.AuditorEncryptionKey !== undefined && {
+          auditorEncryptionKey: tx.AuditorEncryptionKey,
         }),
       }
     default:

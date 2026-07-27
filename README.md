@@ -51,6 +51,32 @@ Alternatively, install directly from the GitHub repository:
 npm install github:florent-uzio/custody.js
 ```
 
+### Beta releases: confidential MPTs
+
+Beta versions published from the `feat/confidential-transfers` branch depend on
+the unreleased
+[`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts)
+branch. Those builds of `xrpl` and `ripple-binary-codec` are bundled into the
+published package, so the SDK's own confidential-MPT support works with no
+extra setup.
+
+The bundle only covers the SDK's internal use. If your application imports
+`xrpl` directly — to build a `Batch`, set
+`MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance`, or reference any
+`ConfidentialMPT*` transaction type — you get whatever `xrpl` you installed
+yourself, where those symbols do not exist. To author confidential MPT
+transactions in your own code, build and install that branch in your project
+too:
+
+```bash
+git clone --branch confidential-mpts --single-branch https://github.com/XRPLF/xrpl.js.git
+cd xrpl.js && npm ci && npx lerna run build --stream
+npm pack --workspace ripple-binary-codec --workspace xrpl --pack-destination <your-project>/vendor
+```
+
+then point `xrpl` at the tarball and add a `ripple-binary-codec` `overrides`
+entry. This section goes away once XRPLF publishes the branch to npm.
+
 ## Quick Start
 
 ### 1. Generate Keypairs

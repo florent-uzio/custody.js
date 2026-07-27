@@ -9,6 +9,8 @@ import type {
   Core_AddressesCollection,
   Core_AddressReferenceCollection,
   Core_ApiAccount,
+  Core_ApiCmptComputeStatusResponse,
+  Core_ApiInitiateCmptComputeResponse,
   Core_ApiManifest,
   Core_BalancesCollection,
   Core_BalanceWithConfirmedAmount,
@@ -35,6 +37,7 @@ import type {
   GetAddressesPathParams,
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
+  GetCmptComputeStatusPathParams,
   GetComplianceConfigurationPathParams,
   GetDepositInstructionPathParams,
   GetLatestAddressPathParams,
@@ -44,6 +47,8 @@ import type {
   GetManifestsQueryParams,
   GetTransferabilityPathParams,
   GetTransferabilityQueryParams,
+  InitiateCmptComputeBody,
+  InitiateCmptComputePathParams,
   ListComplianceConfigurationsPathParams,
   ListComplianceConfigurationsQueryParams,
   ListDepositInstructionsPathParams,
@@ -216,5 +221,15 @@ export function createAccounts(t: Transport) {
     getDepositInstruction: (
       params: GetDepositInstructionPathParams,
     ): Promise<Core_TrustedDepositInstructions> => t.get(URLs.accountDepositInstruction, params),
+
+    initiateCmptCompute: (
+      params: InitiateCmptComputePathParams,
+      body: InitiateCmptComputeBody,
+    ): Promise<Core_ApiInitiateCmptComputeResponse> =>
+      t.post(URLs.accountCmptCompute, body, params),
+
+    getCmptComputeStatus: (
+      params: GetCmptComputeStatusPathParams,
+    ): Promise<Core_ApiCmptComputeStatusResponse> => t.get(URLs.accountCmptComputeStatus, params),
   } as const
 }

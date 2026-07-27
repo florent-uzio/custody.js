@@ -3533,6 +3533,40 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Initiate a cMPT parameter computation for an account */
+    post: operations["initiateCmptCompute"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute/{computeId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get the status of a cMPT parameter computation */
+    get: operations["getCmptComputeStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -3769,6 +3803,7 @@ export interface components {
        * @enum {string}
        */
       type: "Vault"
+      purposeKeys: components["schemas"]["Core_PurposeKey"][]
     }
     Core_AccountPublicKey:
       | components["schemas"]["Core_AccountPublicKey_ExtendedPublicKey"]
@@ -5074,6 +5109,8 @@ export interface components {
       | components["schemas"]["Core_DepositInstructionsUpdated"]
       | components["schemas"]["Core_LocationCreated"]
       | components["schemas"]["Core_LocationUpdated"]
+      | components["schemas"]["Core_ElGamalKeyProvisioned"]
+      | components["schemas"]["Core_ElGamalKeyProvisioningFailed"]
     Core_HederaFeeStrategy: components["schemas"]["Core_HederaFeeStrategy_Priority"]
     Core_HederaFeeStrategy_Priority: {
       priority: components["schemas"]["Core_FeePriority"]
@@ -5252,6 +5289,7 @@ export interface components {
       | components["schemas"]["Core_IntentDryRunResponse_v0_ConnectProvider"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_RequestDepositInstructions"]
       | components["schemas"]["Core_IntentDryRunResponse_v0_RegisterTrustedPublicKey"]
+      | components["schemas"]["Core_IntentDryRunResponse_v0_ProvisionElGamalKeyPair"]
     Core_IntentDryRunResponse_v0_AcknowledgeBackup: {
       success: boolean
       errors?: string[]
@@ -5771,6 +5809,7 @@ export interface components {
       | "v0_RequestDepositInstructions"
       | "v0_AddProviderKey"
       | "v0_RegisterTrustedPublicKey"
+      | "v0_ProvisionElGamalKeyPair"
     Core_IntentUpdated: {
       /** Format: uuid */
       id: string
@@ -6228,6 +6267,7 @@ export interface components {
        * @enum {string}
        */
       type: "Xrpl"
+      transactionType?: string
     }
     Core_Permissions: {
       readAccess: components["schemas"]["Core_ReadAccess"]
@@ -6421,6 +6461,7 @@ export interface components {
       | components["schemas"]["Core_v0_ConnectProvider"]
       | components["schemas"]["Core_v0_RequestDepositInstructions"]
       | components["schemas"]["Core_v0_RegisterTrustedPublicKey"]
+      | components["schemas"]["Core_v0_ProvisionElGamalKeyPair"]
     Core_Propose_v0_CreateTransactionOrder: {
       /** Format: uuid */
       id: string
@@ -8314,6 +8355,7 @@ export interface components {
       | components["schemas"]["Core_v0_ConnectProvider"]
       | components["schemas"]["Core_v0_RequestDepositInstructions"]
       | components["schemas"]["Core_v0_RegisterTrustedPublicKey"]
+      | components["schemas"]["Core_v0_ProvisionElGamalKeyPair"]
     /** @enum {string} */
     Core_UserOperationRejectionCode:
       | "AccountLocked"
@@ -8801,6 +8843,10 @@ export interface components {
       | components["schemas"]["Core_XrplOperation_Payment"]
       | components["schemas"]["Core_XrplOperation_TrustSet"]
       | components["schemas"]["Core_XrplOperation_Batch"]
+      | components["schemas"]["Core_XrplOperation_ConfidentialMPTConvert"]
+      | components["schemas"]["Core_XrplOperation_ConfidentialMPTConvertBack"]
+      | components["schemas"]["Core_XrplOperation_ConfidentialMPTMergeInbox"]
+      | components["schemas"]["Core_XrplOperation_ConfidentialMPTSend"]
       | components["schemas"]["Core_XrplOperation_TicketCreate"]
     Core_XrplOperation_AccountSet: {
       setFlag?: components["schemas"]["Core_Xrpl_AccountSetFlag"]
@@ -8893,6 +8939,9 @@ export interface components {
        * @enum {string}
        */
       type: "MPTokenIssuanceSet"
+      issuerEncryptionKey?: string
+      auditorEncryptionKey?: string
+      mutableFlags: components["schemas"]["Core_Xrpl_MPTokenIssuanceMutableFlag"][]
     }
     Core_XrplOperation_OfferCreate: {
       flags: components["schemas"]["Core_Xrpl_OfferCreateFlag"][]
@@ -8962,6 +9011,7 @@ export interface components {
       | components["schemas"]["Core_XrplTickerProperties_FungibleToken"]
       | components["schemas"]["Core_XrplTickerProperties_MultiPurposeToken"]
       | components["schemas"]["Core_XrplTickerProperties_Native"]
+      | components["schemas"]["Core_XrplTickerProperties_ConfidentialMultiPurposeToken"]
     Core_XrplTickerProperties_FungibleToken: {
       currencyCode: string
       issuer: string
@@ -12297,6 +12347,76 @@ export interface components {
       executionMode: components["schemas"]["Core_Xrpl_BatchExecutionMode"]
       transactions: components["schemas"]["Core_ApiInnerTransactionData"][]
     }
+    Core_ApiCmptComputeCryptographicFields:
+      | components["schemas"]["Core_ApiCmptComputeCryptographicFields_Convert"]
+      | components["schemas"]["Core_ApiCmptComputeCryptographicFields_ConvertBack"]
+      | components["schemas"]["Core_ApiCmptComputeCryptographicFields_Send"]
+    Core_ApiCmptComputeCryptographicFields_Convert: {
+      /** @description Hex encoded string. */
+      holderEncryptedAmount: string
+      /** @description Hex encoded string. */
+      issuerEncryptedAmount: string
+      /** @description Hex encoded string. */
+      blindingFactor: string
+      /** @description Hex encoded string. */
+      zkProof?: string
+      /** @description Hex encoded string. */
+      auditorEncryptedAmount?: string
+    }
+    Core_ApiCmptComputeCryptographicFields_ConvertBack: {
+      /** @description Hex encoded string. */
+      holderEncryptedAmount: string
+      /** @description Hex encoded string. */
+      issuerEncryptedAmount: string
+      /** @description Hex encoded string. */
+      blindingFactor: string
+      /** @description Hex encoded string. */
+      balanceCommitment: string
+      /** @description Hex encoded string. */
+      zkProof: string
+      /** @description Hex encoded string. */
+      auditorEncryptedAmount?: string
+    }
+    Core_ApiCmptComputeCryptographicFields_Send: {
+      /** @description Hex encoded string. */
+      senderEncryptedBalance?: string
+      /** Format: int64 */
+      senderEncryptedBalanceVersion?: number
+      /** @description Hex encoded string. */
+      senderEncryptedAmount: string
+      /** @description Hex encoded string. */
+      destinationEncryptedAmount: string
+      /** @description Hex encoded string. */
+      issuerEncryptedAmount: string
+      /** @description Hex encoded string. */
+      balanceCommitment: string
+      /** @description Hex encoded string. */
+      amountCommitment: string
+      /** @description Hex encoded string. */
+      zkProof: string
+      /** @description Hex encoded string. */
+      auditorEncryptedAmount?: string
+    }
+    Core_ApiCmptComputeStatusResponse: {
+      /** Format: uuid */
+      id: string
+      status: string
+      cryptographicFields?: components["schemas"]["Core_ApiCmptComputeCryptographicFields"]
+    }
+    Core_ApiInitiateCmptComputeRequest: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      destination?: string
+      /** Format: int32 */
+      ticketSequence?: number
+      ledgerId: string
+    }
+    Core_ApiInitiateCmptComputeResponse: {
+      /** Format: uuid */
+      cmptComputeId: string
+      status: string
+    }
     Core_ApiInnerTransactionData: {
       account: string
       operation: components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation"]
@@ -12327,6 +12447,10 @@ export interface components {
     Core_BatchInnerOperation:
       | components["schemas"]["Core_BatchInnerOperation_AccountSet"]
       | components["schemas"]["Core_BatchInnerOperation_Clawback"]
+      | components["schemas"]["Core_BatchInnerOperation_ConfidentialMPTConvert"]
+      | components["schemas"]["Core_BatchInnerOperation_ConfidentialMPTConvertBack"]
+      | components["schemas"]["Core_BatchInnerOperation_ConfidentialMPTMergeInbox"]
+      | components["schemas"]["Core_BatchInnerOperation_ConfidentialMPTSend"]
       | components["schemas"]["Core_BatchInnerOperation_DepositPreauth"]
       | components["schemas"]["Core_BatchInnerOperation_EscrowFinish"]
       | components["schemas"]["Core_BatchInnerOperation_MPTokenAuthorize"]
@@ -12358,6 +12482,50 @@ export interface components {
        * @enum {string}
        */
       type: "Clawback"
+    }
+    Core_BatchInnerOperation_ConfidentialMPTConvert: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTConvert"
+    }
+    Core_BatchInnerOperation_ConfidentialMPTConvertBack: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTConvertBack"
+    }
+    Core_BatchInnerOperation_ConfidentialMPTMergeInbox: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTMergeInbox"
+    }
+    Core_BatchInnerOperation_ConfidentialMPTSend: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      destination: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount?: string
+      /** @description Hex encoded string. */
+      senderEncryptedBalance?: string
+      /** Format: int64 */
+      senderEncryptedBalanceVersion?: number
+      cryptographicFields?: components["schemas"]["Core_CmptCryptographicFields"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTSend"
     }
     Core_BatchInnerOperation_DepositPreauth: {
       authorize?: components["schemas"]["Core_TransactionDestination"]
@@ -12423,6 +12591,9 @@ export interface components {
       tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
       holder?: components["schemas"]["Core_TransactionDestination"]
       flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceSetFlag"][]
+      issuerEncryptionKey?: string
+      auditorEncryptionKey?: string
+      mutableFlags: components["schemas"]["Core_Xrpl_MPTokenIssuanceMutableFlag"][]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -12481,6 +12652,100 @@ export interface components {
       /** @description Hex encoded string. */
       signature: string
     }
+    Core_CmptCryptographicFields:
+      | components["schemas"]["Core_CmptCryptographicFields_Convert"]
+      | components["schemas"]["Core_CmptCryptographicFields_ConvertBack"]
+      | components["schemas"]["Core_CmptCryptographicFields_Send"]
+    Core_CmptCryptographicFields_Convert: {
+      /** Format: base64 */
+      holderEncryptedAmount: string
+      /** Format: base64 */
+      issuerEncryptedAmount: string
+      /** Format: base64 */
+      blindingFactor: string
+      /** Format: base64 */
+      zkProof?: string
+      /** Format: base64 */
+      auditorEncryptedAmount?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Convert"
+    }
+    Core_CmptCryptographicFields_ConvertBack: {
+      /** Format: base64 */
+      holderEncryptedAmount: string
+      /** Format: base64 */
+      issuerEncryptedAmount: string
+      /** Format: base64 */
+      blindingFactor: string
+      /** Format: base64 */
+      balanceCommitment: string
+      /** Format: base64 */
+      zkProof: string
+      /** Format: base64 */
+      auditorEncryptedAmount?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConvertBack"
+    }
+    Core_CmptCryptographicFields_Send: {
+      /** Format: base64 */
+      senderEncryptedBalance?: string
+      /** Format: int64 */
+      senderEncryptedBalanceVersion?: number
+      /** Format: base64 */
+      senderEncryptedAmount: string
+      /** Format: base64 */
+      destinationEncryptedAmount: string
+      /** Format: base64 */
+      issuerEncryptedAmount: string
+      /** Format: base64 */
+      balanceCommitment: string
+      /** Format: base64 */
+      amountCommitment: string
+      /** Format: base64 */
+      zkProof: string
+      /** Format: base64 */
+      auditorEncryptedAmount?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Send"
+    }
+    Core_ElGamalKeyProvisioned: {
+      /** Format: uuid */
+      id: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ElGamalKeyProvisioned"
+    }
+    Core_ElGamalKeyProvisioningFailed: {
+      /** Format: uuid */
+      id: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ElGamalKeyProvisioningFailed"
+    }
+    Core_IntentDryRunResponse_v0_ProvisionElGamalKeyPair: {
+      success: boolean
+      errors?: string[]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "v0_ProvisionElGamalKeyPair"
+    }
+    /** @enum {string} */
+    Core_KeyPurpose: "ElGamal"
     Core_Participant:
       | components["schemas"]["Core_Participant_Account"]
       | components["schemas"]["Core_Participant_Address"]
@@ -12531,6 +12796,12 @@ export interface components {
        * @enum {string}
        */
       type: "Endpoint"
+    }
+    Core_PurposeKey: {
+      ledgerId: string
+      purpose: components["schemas"]["Core_KeyPurpose"]
+      /** Format: base64 */
+      publicKey: string
     }
     Core_ResolvedSequencing:
       | components["schemas"]["Core_ResolvedSequencing_AccountSequence"]
@@ -12595,6 +12866,50 @@ export interface components {
        */
       type: "Batch"
     }
+    Core_XrplOperation_ConfidentialMPTConvert: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTConvert"
+    }
+    Core_XrplOperation_ConfidentialMPTConvertBack: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTConvertBack"
+    }
+    Core_XrplOperation_ConfidentialMPTMergeInbox: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTMergeInbox"
+    }
+    Core_XrplOperation_ConfidentialMPTSend: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      destination: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount?: string
+      /** @description Hex encoded string. */
+      senderEncryptedBalance?: string
+      /** Format: int64 */
+      senderEncryptedBalanceVersion?: number
+      cryptographicFields?: components["schemas"]["Core_CmptCryptographicFields"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTSend"
+    }
     Core_XrplOperation_TicketCreate: {
       /**
        * Format: int32
@@ -12607,8 +12922,35 @@ export interface components {
        */
       type: "TicketCreate"
     }
+    Core_XrplTickerProperties_ConfidentialMultiPurposeToken: {
+      /** @description XRPL MPToken Issuance ID (192-bit integer hex encoded) */
+      issuanceId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMultiPurposeToken"
+    }
     /** @enum {string} */
     Core_Xrpl_BatchExecutionMode: "AllOrNothing" | "OnlyOne" | "UntilFailure" | "Independent"
+    Core_Xrpl_CmptCryptographicFields: {
+      /** @description Hex encoded string. */
+      senderEncryptedAmount: string
+      /** @description Hex encoded string. */
+      destinationEncryptedAmount: string
+      /** @description Hex encoded string. */
+      issuerEncryptedAmount: string
+      /** @description Hex encoded string. */
+      balanceCommitment: string
+      /** @description Hex encoded string. */
+      amountCommitment: string
+      /** @description Hex encoded string. */
+      zkProof: string
+      /** @description Hex encoded string. */
+      auditorEncryptedAmount?: string
+    }
+    /** @enum {string} */
+    Core_Xrpl_MPTokenIssuanceMutableFlag: "MPTSetCanConfidentialAmount"
     Core_Xrpl_ResolvedAssetQuantity: {
       currency?: components["schemas"]["Core_Xrpl_ResolvedIouCurrency"]
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
@@ -12617,6 +12959,7 @@ export interface components {
     Core_Xrpl_ResolvedBatchInnerOperation:
       | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_AccountSet"]
       | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_Clawback"]
+      | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_ConfidentialMPTSend"]
       | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_DepositPreauth"]
       | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_EscrowFinish"]
       | components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation_MPTokenAuthorize"]
@@ -12648,6 +12991,22 @@ export interface components {
        * @enum {string}
        */
       type: "Clawback"
+    }
+    Core_Xrpl_ResolvedBatchInnerOperation_ConfidentialMPTSend: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
+      destination: string
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /** @description Hex encoded string. */
+      senderEncryptedBalance: string
+      /** Format: int64 */
+      senderEncryptedBalanceVersion: number
+      cryptographicFields: components["schemas"]["Core_Xrpl_CmptCryptographicFields"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTSend"
     }
     Core_Xrpl_ResolvedBatchInnerOperation_DepositPreauth: {
       authorize?: string
@@ -12713,6 +13072,9 @@ export interface components {
       tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
       holder?: string
       flags: components["schemas"]["Core_Xrpl_MPTokenIssuanceSetFlag"][]
+      issuerEncryptionKey?: string
+      auditorEncryptionKey?: string
+      mutableFlags: components["schemas"]["Core_Xrpl_MPTokenIssuanceMutableFlag"][]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -12818,6 +13180,16 @@ export interface components {
        * @enum {string}
        */
       type: "MultiPurposeToken"
+    }
+    Core_v0_ProvisionElGamalKeyPair: {
+      /** Format: uuid */
+      accountId: string
+      ledgerId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "v0_ProvisionElGamalKeyPair"
     }
   }
   responses: never
@@ -21258,6 +21630,111 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+    }
+  }
+  initiateCmptCompute: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Unique identifier for the domain. */
+        domainId: string
+        accountId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Core_ApiInitiateCmptComputeRequest"]
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ApiInitiateCmptComputeResponse"]
+        }
+      }
+      /** @description Invalid value for: path parameter domainId, Invalid value for: path parameter accountId, Invalid value for: body */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "text/plain": string
+        }
+      }
+      /** @description One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError) */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description Account not ready yet (AccountNotReady) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+    }
+  }
+  getCmptComputeStatus: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Unique identifier for the domain. */
+        domainId: string
+        accountId: string
+        computeId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ApiCmptComputeStatusResponse"]
+        }
+      }
+      /** @description Invalid value for: path parameter domainId, Invalid value for: path parameter accountId, Invalid value for: path parameter computeId */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "text/plain": string
+        }
+      }
+      /** @description One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError) */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
+        }
+      }
+      /** @description Entity or Domain not found (EntityNotFoundError) */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Core_ErrorMessage"]
         }
       }
     }

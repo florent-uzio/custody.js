@@ -68,6 +68,13 @@ export type ListDepositInstructionsQueryParams =
 export type GetDepositInstructionPathParams =
   operations["deposit-instructions-by-id"]["parameters"]["path"]
 
+export type InitiateCmptComputePathParams = operations["initiateCmptCompute"]["parameters"]["path"]
+export type InitiateCmptComputeBody =
+  operations["initiateCmptCompute"]["requestBody"]["content"]["application/json"]
+
+export type GetCmptComputeStatusPathParams =
+  operations["getCmptComputeStatus"]["parameters"]["path"]
+
 // Response types
 
 export type Core_AccountsCollection =
@@ -113,6 +120,12 @@ export type Core_TrustedDepositInstructionsCollection =
 
 export type Core_TrustedDepositInstructions =
   operations["deposit-instructions-by-id"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_ApiInitiateCmptComputeResponse =
+  operations["initiateCmptCompute"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_ApiCmptComputeStatusResponse =
+  operations["getCmptComputeStatus"]["responses"]["200"]["content"]["application/json"]
 
 /**
  * Optional filters for {@link findByAddress} / {@link findByAddressOrThrow}.

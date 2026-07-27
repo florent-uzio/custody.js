@@ -59,6 +59,8 @@ export const URLs = createURLs({
   accountDepositInstructions: "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions",
   accountDepositInstruction:
     "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions/{instructions-id}",
+  accountCmptCompute: "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute",
+  accountCmptComputeStatus: "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute/{computeId}",
 
   // Compliance
   complianceProviders: "/v1/domains/{domainId}/compliance/providers",
