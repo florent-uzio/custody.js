@@ -1,7 +1,8 @@
 import { URLs } from "../constants/urls.js"
-import { isUndefined } from "../helpers/index.js"
+import { isUndefined, sleep } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
 import type { Transport } from "../transport/index.js"
+import { TERMINAL_CMPT_COMPUTE_STATUSES } from "./accounts.types.js"
 import type {
   Core_AccountAddress,
   Core_AccountAddressReference,
@@ -55,6 +56,8 @@ import type {
   ListDepositInstructionsQueryParams,
   UpsertComplianceConfigurationBody,
   UpsertComplianceConfigurationPathParams,
+  WaitForCmptComputeOptions,
+  WaitForCmptComputeResult,
 } from "./accounts.types.js"
 
 /**
@@ -118,6 +121,74 @@ function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
   if (ledgerId) parts.push(`on ledger ${ledgerId}`)
   if (domainId) parts.push(`in domain ${domainId}`)
   return parts.length > 0 ? ` ${parts.join(" ")}` : ""
+}
+
+/**
+ * Wait for a cMPT computation to reach a terminal status (Completed or Failed).
+ * Polls the compute status at regular intervals until it finishes or max retries
+ * is reached. `cryptographicFields` is populated on the returned `compute` once
+ * the status is `Completed`.
+ *
+ * A 404 is treated as "not available yet" (e.g. when called immediately after
+ * initiating) and is retried within the same polling loop rather than aborting
+ * the wait.
+ */
+async function waitForCmptCompute(
+  t: Transport,
+  params: GetCmptComputeStatusPathParams,
+  options: WaitForCmptComputeOptions = {},
+): Promise<WaitForCmptComputeResult> {
+  const { maxRetries = 10, intervalMs = 3000, onStatusCheck } = options
+
+  let lastCompute: Core_ApiCmptComputeStatusResponse | undefined
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const compute = await t.get<Core_ApiCmptComputeStatusResponse>(
+        URLs.accountCmptComputeStatus,
+        params,
+      )
+      lastCompute = compute
+      const { status } = compute
+
+      onStatusCheck?.(status, attempt)
+
+      if (TERMINAL_CMPT_COMPUTE_STATUSES.includes(status)) {
+        return {
+          status,
+          isTerminal: true,
+          isSuccess: status === "Completed",
+          compute,
+        }
+      }
+    } catch (error) {
+      if (!(error instanceof CustodyError && error.statusCode === 404)) {
+        throw error
+      }
+      // 404 → the computation is not available yet, keep polling.
+    }
+
+    if (attempt < maxRetries) {
+      await sleep(intervalMs)
+    }
+  }
+
+  // Retries exhausted. If the computation never materialized, surface that as a 404.
+  if (isUndefined(lastCompute)) {
+    throw new CustodyError(
+      { reason: `cMPT computation ${params.computeId} not found after ${maxRetries} attempts` },
+      404,
+    )
+  }
+
+  // The loop returns early on any terminal status, so the last observed
+  // computation is necessarily non-terminal here.
+  return {
+    status: lastCompute.status,
+    isTerminal: false,
+    isSuccess: false,
+    compute: lastCompute,
+  }
 }
 
 export function createAccounts(t: Transport) {
@@ -231,5 +302,29 @@ export function createAccounts(t: Transport) {
     getCmptComputeStatus: (
       params: GetCmptComputeStatusPathParams,
     ): Promise<Core_ApiCmptComputeStatusResponse> => t.get(URLs.accountCmptComputeStatus, params),
+
+    getCmptComputeStatusAndWait: (
+      params: GetCmptComputeStatusPathParams,
+      options?: WaitForCmptComputeOptions,
+    ): Promise<WaitForCmptComputeResult> => waitForCmptCompute(t, params, options),
+
+    /**
+     * Initiates a cMPT computation and waits for it to finish, so the caller
+     * gets the `cryptographicFields` needed to build a confidential transfer in
+     * a single call.
+     */
+    initiateCmptComputeAndWait: async (
+      params: InitiateCmptComputePathParams,
+      body: InitiateCmptComputeBody,
+      options?: WaitForCmptComputeOptions,
+    ): Promise<WaitForCmptComputeResult> => {
+      const { cmptComputeId } = await t.post<Core_ApiInitiateCmptComputeResponse>(
+        URLs.accountCmptCompute,
+        body,
+        params,
+      )
+
+      return waitForCmptCompute(t, { ...params, computeId: cmptComputeId }, options)
+    },
   } as const
 }

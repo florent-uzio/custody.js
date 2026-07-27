@@ -150,6 +150,42 @@ export type Core_ApiCmptComputeStatusResponse = Prettify<
   > & { status: CmptComputeStatus }
 >
 
+/** Statuses that indicate the cMPT computation has finished processing */
+export const TERMINAL_CMPT_COMPUTE_STATUSES: CmptComputeStatus[] = ["Completed", "Failed"]
+
+/**
+ * Options for waiting for a cMPT computation to finish.
+ */
+export type WaitForCmptComputeOptions = {
+  /**
+   * Maximum number of polling attempts (default: 10). Also bounds how long a
+   * not-yet-available (404) computation is waited for, since 404s are retried
+   * within the same loop.
+   */
+  maxRetries?: number
+  /** Interval between polling attempts in milliseconds (default: 3000) */
+  intervalMs?: number
+  /**
+   * Callback function called on each status check.
+   * Useful for logging or updating UI.
+   */
+  onStatusCheck?: (status: CmptComputeStatus, attempt: number) => void
+}
+
+/**
+ * Result of waiting for a cMPT computation to finish.
+ */
+export type WaitForCmptComputeResult = {
+  /** The final status of the computation */
+  status: CmptComputeStatus
+  /** Whether the computation reached a terminal status */
+  isTerminal: boolean
+  /** Whether the computation completed successfully */
+  isSuccess: boolean
+  /** The full status response — `cryptographicFields` is populated on `Completed` */
+  compute: Core_ApiCmptComputeStatusResponse
+}
+
 /**
  * Optional filters for {@link findByAddress} / {@link findByAddressOrThrow}.
  * Both filters are applied client-side; the `/v1/addresses` endpoint only

@@ -88,6 +88,7 @@ export type {
 
 // accounts types
 export type * from "./namespaces/accounts.types.js"
+export { TERMINAL_CMPT_COMPUTE_STATUSES } from "./namespaces/accounts.types.js"
 
 // transactions types
 export type * from "./namespaces/transactions.types.js"
