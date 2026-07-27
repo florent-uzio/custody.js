@@ -2,7 +2,6 @@ import { URLs } from "../constants/urls.js"
 import { isUndefined, sleep } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
 import type { Transport } from "../transport/index.js"
-import { TERMINAL_CMPT_COMPUTE_STATUSES } from "./accounts.types.js"
 import type {
   Core_AccountAddress,
   Core_AccountAddressReference,
@@ -59,6 +58,7 @@ import type {
   WaitForCmptComputeOptions,
   WaitForCmptComputeResult,
 } from "./accounts.types.js"
+import { TERMINAL_CMPT_COMPUTE_STATUSES } from "./accounts.types.js"
 
 /**
  * Finds an account by its blockchain address across all domains.
