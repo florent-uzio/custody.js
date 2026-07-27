@@ -297,7 +297,7 @@ export function createAccounts(t: Transport) {
       params: InitiateCmptComputePathParams,
       body: InitiateCmptComputeBody,
     ): Promise<Core_ApiInitiateCmptComputeResponse> =>
-      t.post(URLs.accountCmptCompute, body, params),
+      t.post(URLs.accountCmptCompute, body, params, { sign: false }),
 
     getCmptComputeStatus: (
       params: GetCmptComputeStatusPathParams,
@@ -322,6 +322,7 @@ export function createAccounts(t: Transport) {
         URLs.accountCmptCompute,
         body,
         params,
+        { sign: false },
       )
 
       return waitForCmptCompute(t, { ...params, computeId: cmptComputeId }, options)

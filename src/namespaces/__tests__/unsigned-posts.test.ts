@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { createFakeTransport } from "../../testing/fake-transport.js"
+import { createAccounts } from "../accounts.js"
 import { createExports } from "../exports.js"
 import { createGenesis } from "../genesis.js"
 import { createIntents } from "../intents.js"
@@ -119,6 +120,33 @@ describe("non-intent POST methods pass sign: false", () => {
       expect.anything(),
       expect.anything(),
       undefined,
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("accounts.initiateCmptCompute", async () => {
+    const accounts = createAccounts(mockTransport)
+    await accounts.initiateCmptCompute({} as any, {} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("accounts.initiateCmptComputeAndWait", async () => {
+    const accounts = createAccounts(mockTransport)
+    mockTransport.post.mockResolvedValueOnce({ cmptComputeId: "compute-1" })
+    mockTransport.get.mockResolvedValueOnce({ status: "Completed" })
+
+    await accounts.initiateCmptComputeAndWait({} as any, {} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
       expect.objectContaining({ sign: false }),
     )
   })
