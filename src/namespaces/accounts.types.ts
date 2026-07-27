@@ -1,5 +1,6 @@
 import type { components, operations } from "../models/custody-types.js"
 import type { LedgerId } from "../models/ledger-ids.js"
+import type { Prettify } from "../type-utils/prettify.js"
 
 // Request types
 
@@ -121,11 +122,33 @@ export type Core_TrustedDepositInstructionsCollection =
 export type Core_TrustedDepositInstructions =
   operations["deposit-instructions-by-id"]["responses"]["200"]["content"]["application/json"]
 
-export type Core_ApiInitiateCmptComputeResponse =
-  operations["initiateCmptCompute"]["responses"]["200"]["content"]["application/json"]
+/**
+ * Statuses returned by the cMPT compute endpoints. `Pending` and `Preparing`
+ * are transient; `Completed` and `Failed` are terminal (`cryptographicFields`
+ * is only populated on `Completed`).
+ *
+ * Trailing `(string & {})` keeps the union assignable from any string, so the
+ * SDK never blocks consumers when the API adds a new status.
+ *
+ * TODO: remove this type and drop the `status` overrides below once the
+ * OpenAPI spec declares the enum — the generated type will then carry the
+ * literals itself.
+ */
+export type CmptComputeStatus = "Pending" | "Preparing" | "Completed" | "Failed" | (string & {})
 
-export type Core_ApiCmptComputeStatusResponse =
-  operations["getCmptComputeStatus"]["responses"]["200"]["content"]["application/json"]
+export type Core_ApiInitiateCmptComputeResponse = Prettify<
+  Omit<
+    operations["initiateCmptCompute"]["responses"]["200"]["content"]["application/json"],
+    "status"
+  > & { status: CmptComputeStatus }
+>
+
+export type Core_ApiCmptComputeStatusResponse = Prettify<
+  Omit<
+    operations["getCmptComputeStatus"]["responses"]["200"]["content"]["application/json"],
+    "status"
+  > & { status: CmptComputeStatus }
+>
 
 /**
  * Optional filters for {@link findByAddress} / {@link findByAddressOrThrow}.
