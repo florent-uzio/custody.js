@@ -106,7 +106,9 @@ jobs:
             echo "Release v$VERSION already exists, skipping."
             exit 0
           fi
-          git tag "v$VERSION"
+          # `changeset publish` already tags the release locally, so only create
+          # the tag when it is missing.
+          git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null || git tag "v$VERSION"
           git push origin "v$VERSION"
           gh release create "v$VERSION" \
             --prerelease \
