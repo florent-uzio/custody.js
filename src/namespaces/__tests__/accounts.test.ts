@@ -447,7 +447,9 @@ describe("initiateCmptComputeAndWait", () => {
 
     const result = await accounts.initiateCmptComputeAndWait(params, body)
 
-    expect(mockTransport.post).toHaveBeenCalledWith(CMPT_COMPUTE_URL, body, params)
+    expect(mockTransport.post).toHaveBeenCalledWith(CMPT_COMPUTE_URL, body, params, {
+      sign: false,
+    })
     expect(mockTransport.get).toHaveBeenCalledWith(CMPT_STATUS_URL, {
       ...params,
       computeId: "c-9",
