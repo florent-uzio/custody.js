@@ -164,6 +164,11 @@ const mpTokenIssuanceSetMutableFlagsToStrings = (
     : []
 }
 
+// Confidential MPT ciphertexts, commitments and proofs are hex-encoded Blob
+// fields on the XRPL wire (and so on the xrpl.js models), but the Custody API
+// types every member of `Core_CmptCryptographicFields` as `format: base64`.
+const hexToBase64 = (hex: string) => Buffer.from(hex, "hex").toString("base64")
+
 const txToOperation = (tx: RawTx): CustodyOperation => {
   switch (tx.TransactionType) {
     case "Payment": {
@@ -301,6 +306,48 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
         ...(tx.AuditorEncryptionKey !== undefined && {
           auditorEncryptionKey: tx.AuditorEncryptionKey,
         }),
+      }
+    // The Convert / ConvertBack / MergeInbox inner operations carry no
+    // cryptographic material: the Custody service derives it server-side from
+    // the plaintext amount, so only the issuance and the amount cross over.
+    case "ConfidentialMPTConvert":
+      return {
+        type: "ConfidentialMPTConvert",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+        amount: tx.MPTAmount,
+      }
+    case "ConfidentialMPTConvertBack":
+      return {
+        type: "ConfidentialMPTConvertBack",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+        amount: tx.MPTAmount,
+      }
+    case "ConfidentialMPTMergeInbox":
+      return {
+        type: "ConfidentialMPTMergeInbox",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+      }
+    // ConfidentialMPTSend is the one type that carries the full proof bundle.
+    // The Custody operation has no plaintext `amount` counterpart on an
+    // xrpl.js Send (the value only exists as ciphertext), and `DestinationTag`
+    // / `CredentialIDs` have no counterpart at all, so all three are dropped.
+    case "ConfidentialMPTSend":
+      return {
+        type: "ConfidentialMPTSend",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+        destination: { type: "Address" as const, address: tx.Destination },
+        cryptographicFields: {
+          type: "Send" as const,
+          senderEncryptedAmount: hexToBase64(tx.SenderEncryptedAmount),
+          destinationEncryptedAmount: hexToBase64(tx.DestinationEncryptedAmount),
+          issuerEncryptedAmount: hexToBase64(tx.IssuerEncryptedAmount),
+          balanceCommitment: hexToBase64(tx.BalanceCommitment),
+          amountCommitment: hexToBase64(tx.AmountCommitment),
+          zkProof: hexToBase64(tx.ZKProof),
+          ...(tx.AuditorEncryptedAmount !== undefined && {
+            auditorEncryptedAmount: hexToBase64(tx.AuditorEncryptedAmount),
+          }),
+        },
       }
     default:
       throw new Error(`Unsupported transaction type: ${tx.TransactionType}`)

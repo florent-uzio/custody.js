@@ -656,6 +656,112 @@ describe("batchToCustodyInnerTransactions", () => {
     })
   })
 
+  describe("ConfidentialMPTConvert", () => {
+    it("maps the issuance and the plaintext amount", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "ConfidentialMPTConvert",
+        MPTokenIssuanceID: "00000004CVT",
+        MPTAmount: "1000",
+        HolderEncryptedAmount: "AA",
+        IssuerEncryptedAmount: "BB",
+        BlindingFactor: "CC",
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTConvert",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000004CVT" },
+        amount: "1000",
+      })
+    })
+  })
+
+  describe("ConfidentialMPTConvertBack", () => {
+    it("maps the issuance and the plaintext amount", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "ConfidentialMPTConvertBack",
+        MPTokenIssuanceID: "00000005CVB",
+        MPTAmount: "250",
+        HolderEncryptedAmount: "AA",
+        IssuerEncryptedAmount: "BB",
+        BlindingFactor: "CC",
+        ZKProof: "DD",
+        BalanceCommitment: "EE",
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTConvertBack",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000005CVB" },
+        amount: "250",
+      })
+    })
+  })
+
+  describe("ConfidentialMPTMergeInbox", () => {
+    it("maps the issuance only", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "ConfidentialMPTMergeInbox",
+        MPTokenIssuanceID: "00000006MRG",
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTMergeInbox",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000006MRG" },
+      })
+    })
+  })
+
+  describe("ConfidentialMPTSend", () => {
+    const sendTx: RawTx = {
+      ...baseTx,
+      TransactionType: "ConfidentialMPTSend",
+      MPTokenIssuanceID: "00000007SND",
+      Destination: "rDestinationXYZ",
+      SenderEncryptedAmount: "0102",
+      DestinationEncryptedAmount: "0304",
+      IssuerEncryptedAmount: "0506",
+      ZKProof: "0708",
+      AmountCommitment: "090A",
+      BalanceCommitment: "0B0C",
+    }
+
+    it("maps the destination and base64-encodes the cryptographic fields", () => {
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(sendTx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTSend",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000007SND" },
+        destination: { type: "Address", address: "rDestinationXYZ" },
+        cryptographicFields: {
+          type: "Send",
+          senderEncryptedAmount: Buffer.from("0102", "hex").toString("base64"),
+          destinationEncryptedAmount: Buffer.from("0304", "hex").toString("base64"),
+          issuerEncryptedAmount: Buffer.from("0506", "hex").toString("base64"),
+          balanceCommitment: Buffer.from("0B0C", "hex").toString("base64"),
+          amountCommitment: Buffer.from("090A", "hex").toString("base64"),
+          zkProof: Buffer.from("0708", "hex").toString("base64"),
+        },
+      })
+    })
+
+    it("includes the auditor ciphertext when present", () => {
+      const tx: RawTx = { ...sendTx, AuditorEncryptedAmount: "0D0E" }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as { cryptographicFields: { auditorEncryptedAmount: string } }
+      expect(op.cryptographicFields.auditorEncryptedAmount).toBe(
+        Buffer.from("0D0E", "hex").toString("base64"),
+      )
+    })
+
+    it("drops the DestinationTag and CredentialIDs, which have no Custody counterpart", () => {
+      const tx: RawTx = { ...sendTx, DestinationTag: 42, CredentialIDs: ["ABC"] }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).not.toHaveProperty("destinationTag")
+      expect(result.operation).not.toHaveProperty("credentialIds")
+    })
+  })
+
   describe("unsupported transaction type", () => {
     it("throws for unknown type", () => {
       const tx = {
