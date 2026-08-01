@@ -5,6 +5,7 @@
     "@florent-uzio/custody": "2.12.0"
   },
   "changesets": [
+    "before-sign-signature-hint",
     "cmpt-compute-unsigned-post",
     "confidential-mpt-cmpt-compute"
   ]

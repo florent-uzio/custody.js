@@ -1,5 +1,11 @@
 # custody
 
+## 2.13.0-beta.2
+
+### Minor Changes
+
+- 59381b5: Surface the backend's set-reordering signature defect instead of leaving it to be investigated, and add an opt-in escape hatch for it. `CustodyError` gains a `hint` field for SDK-authored diagnostics the API's own reason does not explain, plus a `reason` field holding that API reason on its own — group or compare errors on `reason`, since a hint carries request-specific details and is also appended to `message` so it survives into stack traces. `toJSON()` now returns `reason` (no longer the hint-bearing `message`) and the new `hint`. When a signed POST fails with a `401` signature error, the hint names the array fields in the signed body holding 5+ elements (e.g. `request.payload.parameters.operation.flags`), since the API deserializes some array fields into an unordered set and re-serializes them when verifying the signature — faithful up to 4 elements, hash-ordered at 5+, which breaks verification. The SDK still signs exactly the bytes it sends (JCS preserves array order by design) and reorders nothing by default. Adds a `beforeSign` client option: a hook that reshapes a request payload just before canonicalization and signing, so applications can sort such a field into the order the backend re-emits without waiting for an SDK release. The hook is typed against the new `CustodySignedRequest` export — the union of the only three signed bodies (`Core_Propose`, `Core_Approve`, `Core_Reject`) — so narrowing on `type` gives autocomplete down to the operation. See [#223](https://github.com/florent-uzio/custody.js/issues/223).
+
 ## 2.13.0-beta.1
 
 ### Patch Changes
