@@ -95,6 +95,7 @@ export class RippleCustody {
       autoDetectVersion = true,
       openApiUrl,
       specSource,
+      beforeSign,
     } = options
 
     // Fires once if the guard ever passes calls through because no backend
@@ -129,6 +130,7 @@ export class RippleCustody {
         publicKey,
       },
       authService: this.authService,
+      beforeSign,
       privateKey,
       signer,
       timeout,

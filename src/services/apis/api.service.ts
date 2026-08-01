@@ -1,11 +1,11 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
+import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios"
 import crypto from "crypto"
 import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
-import { canonicalizeRequest, isObject } from "../../helpers/index.js"
+import { canonicalizeRequest, isObject, isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
-import type { CustodySignContext } from "../../ripple-custody.types.js"
+import type { BeforeSignHook, CustodySignContext } from "../../ripple-custody.types.js"
 import { AuthService } from "../auth/auth.service.js"
 import { KeypairService } from "../keypairs/index.js"
 import {
@@ -15,6 +15,7 @@ import {
   signRawWithPrivateKey,
 } from "../keypairs/signing-scheme.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
+import { signatureMismatchHint } from "./signature-hint.js"
 
 /**
  * ApiService handles authenticated API requests and token management
@@ -32,6 +33,8 @@ export class ApiService {
    * primitive → encode), differing only in where the raw primitive executes.
    */
   private readonly sign: (message: string, context: CustodySignContext) => Promise<string>
+  /** Optional caller hook applied to a request body just before it is signed. */
+  private readonly beforeSign?: BeforeSignHook
   /**
    * In-flight token refresh, shared across concurrent callers so an expired
    * token triggers a single sign + token request (matters for metered signers).
@@ -42,6 +45,7 @@ export class ApiService {
     this.authService = options.authService
     this.apiUrl = options.apiUrl
     this.authFormData = options.authFormData
+    this.beforeSign = options.beforeSign
 
     const { privateKey, signer } = options
 
@@ -208,22 +212,48 @@ export class ApiService {
   }
 
   /**
+   * Returns the set-reordering diagnostic when a signed request body was
+   * rejected with a 401 signature failure, so a mismatch caused by the backend
+   * re-serializing set-typed array fields is named rather than left to be
+   * investigated. Returns `undefined` for any other 401 (e.g. token issues).
+   */
+  private signatureFailureHint(
+    error: AxiosError<Core_ErrorMessage>,
+    signedRequest: unknown,
+  ): string | undefined {
+    if (isUndefined(signedRequest) || error.response?.status !== 401) return undefined
+
+    const errorData = error.response.data
+    const errorText = isString(errorData)
+      ? errorData
+      : `${errorData?.reason ?? ""} ${errorData?.message ?? ""}`
+    if (!/signature/i.test(errorText)) return undefined
+
+    return signatureMismatchHint(signedRequest)
+  }
+
+  /**
    * Maps a failed request error into a CustodyError and throws it.
    * Shared by all HTTP verb methods.
+   *
+   * @param signedRequest - The `request` payload that was signed, when the call
+   * signed one. Used only to build the 401 signature-failure hint.
    */
-  private handleRequestError(error: unknown, verb: string): never {
+  private handleRequestError(error: unknown, verb: string, signedRequest?: unknown): never {
     // Already a CustodyError (e.g. a signer failure thrown inside post()) — don't
     // re-wrap it in another CustodyError.
     if (error instanceof CustodyError) throw error
     if (axios.isAxiosError<Core_ErrorMessage>(error)) {
       const errorData = error.response?.data
+      const hint = this.signatureFailureHint(error, signedRequest)
       if (isObject(errorData)) {
-        throw new CustodyError(errorData, error.response?.status, error)
+        throw new CustodyError(errorData, error.response?.status, error, hint)
       }
       throw new CustodyError(
         { reason: `${verb} API request failed: ${error.message}` },
         error.response?.status,
         error,
+        hint,
       )
     }
     throw new CustodyError(
@@ -268,11 +298,18 @@ export class ApiService {
     const { sign, ...rest } = config ?? {}
     // Preserve `undefined` when no config was passed so axios receives its own default
     const axiosConfig: AxiosRequestConfig | undefined = config ? rest : undefined
+    // The payload that ends up signed, if any — kept for the 401 signature hint
+    let signedRequest: unknown
     try {
       // Sign the request (default) unless the caller opted out
       if (sign !== false && body && (!body.signature || body.signature === "")) {
+        // Let the caller reshape the payload first; whatever it returns is both
+        // signed and sent, so the signed bytes stay the bytes on the wire
+        if (this.beforeSign) body.request = this.beforeSign(body.request)
+        signedRequest = body.request
+
         // Canonicalize the request body
-        const canonicalizedRequest = canonicalizeRequest(body.request)
+        const canonicalizedRequest = canonicalizeRequest(signedRequest)
 
         // Sign the canonicalized request
         body.signature = await this.sign(canonicalizedRequest, "request-body")
@@ -281,7 +318,7 @@ export class ApiService {
       const response = await this.apiClient.post<T>(url, body, axiosConfig)
       return response.data
     } catch (error) {
-      this.handleRequestError(error, "POST")
+      this.handleRequestError(error, "POST", signedRequest)
     }
   }
 

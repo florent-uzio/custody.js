@@ -1,4 +1,4 @@
-import type { CustodySigner } from "../../ripple-custody.types.js"
+import type { BeforeSignHook, CustodySigner } from "../../ripple-custody.types.js"
 import { type AuthFormData, AuthService } from "../auth/index.js"
 import { type KeypairAlgorithm } from "../keypairs/index.js"
 
@@ -7,6 +7,11 @@ export type PartialAuthFormData = Pick<AuthFormData, "publicKey"> &
 
 export type ApiServiceOptions = {
   authFormData: PartialAuthFormData
+  /**
+   * Escape hatch applied to a request payload just before it is canonicalized
+   * and signed. Off unless provided.
+   */
+  beforeSign?: BeforeSignHook
   authService: AuthService
   apiUrl: string
   keypairAlgorithm?: KeypairAlgorithm

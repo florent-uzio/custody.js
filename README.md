@@ -134,6 +134,7 @@ const custody = new RippleCustody({
 | `autoDetectVersion` | `boolean`         | No       | `true`  | Auto-detect the backend's capabilities from its live OpenAPI spec on the first API call (cached thereafter). Ignored when `apiVersion` is set                                                                                                                       |
 | `openApiUrl`        | `string`          | No       | -       | Override the URL the live spec is fetched from during auto-detection. Defaults to `<apiUrl>/api/OpenAPI?scope=&layout=`. Useful for non-standard instances (e.g. devboxes)                                                                                          |
 | `specSource`        | `SpecSource`      | No       | -       | Advanced: fully override how the live spec is fetched during auto-detection (e.g. custom transport/proxy, or in tests). Takes precedence over `openApiUrl`                                                                                                          |
+| `beforeSign`        | `BeforeSignHook`  | No       | -       | Escape hatch: reshape a request payload just before it is canonicalized and signed. Whatever it returns is both signed and sent. See [Signature failures on array fields](#signature-failures-on-array-fields)                                                      |
 
 \* Provide **exactly one** of `privateKey` or `signer`.
 
@@ -342,6 +343,7 @@ See the [`examples/`](./examples/) directory for working code.
 - [TrustSet](./examples/xrpl/trustset/) — set a trust line
 - [MPToken Issuance Create](./examples/xrpl/mpt/create/) — create an MPToken issuance
 - [MPToken Authorize](./examples/xrpl/mpt/authorize/) — authorize a holder for an MPToken
+- [MPToken Issuance Create with 5 flags](./examples/xrpl/mpt/create-five-flags/) — work around the backend's [signature failure on 5+ flags](#signature-failures-on-array-fields) with `beforeSign`
 - [Regular Key MPToken Issuance](./examples/xrpl/regular-key-mpt-issuance/) — issue an MPToken with the master key disabled and a regular key active
 - [Batch (multi-account)](./examples/xrpl/batch/multi-accounts/) — XLS-56 Batch across multiple inner accounts
 
@@ -383,7 +385,9 @@ try {
   const domains = await custody.domains.list()
 } catch (error) {
   if (error instanceof CustodyError) {
-    console.log(error.message) // Main error reason
+    console.log(error.reason) // The API's failure reason, on its own
+    console.log(error.message) // The reason, plus any `hint` — what stack traces show
+    console.log(error.hint) // Optional SDK diagnostic the API's reason doesn't explain
     console.log(error.statusCode) // HTTP status code (e.g., 400, 404)
     console.log(error.errorMessage) // Optional additional details from API
     console.log(error.cause) // Original error for debugging
@@ -392,7 +396,47 @@ try {
 }
 ```
 
-`console.log(error)` outputs a clean, readable format. Access `error.cause` for full debugging details.
+`console.log(error)` outputs a clean, readable format. Access `error.cause` for
+full debugging details. Group or compare errors on `error.reason` rather than
+`error.message`: a `hint` can carry request-specific details, and it is appended
+to `message` so it survives into stack traces and unhandled rejections.
+
+### Signature failures on array fields
+
+A known Ripple Custody **backend** defect makes some signed requests fail with
+`401 InvalidSignatureError`. The API deserializes certain array fields into an
+unordered set and re-serializes that set when verifying the request-body
+signature. Up to four elements the set keeps insertion order and the round-trip
+is faithful; at five or more it is hash-ordered and re-emitted in one fixed
+order, so the server verifies different bytes than the SDK signed. The known
+case is `MPTokenIssuanceCreate.flags` with 5+ flags.
+
+The SDK does not reorder anything — JCS (RFC 8785) preserves array order by
+design, and the SDK signs exactly the bytes it puts on the wire. Instead, when a
+signed POST fails with a 401 signature error, `error.hint` names the array fields
+large enough to have caused it:
+
+```
+The signed body contains array field(s) with 5+ elements
+(`request.payload.parameters.operation.flags`). The API may re-serialize set-typed
+fields in a different order than sent, which breaks signature verification. ...
+```
+
+Until the backend verifies over the received bytes, applications that need such
+a request to go through can reorder the field themselves with the `beforeSign`
+client option. It runs on signed POST bodies only, just before canonicalization,
+and whatever it returns is both signed and sent — so the signed bytes stay the
+bytes on the wire. Because XRPL flags collapse to a bitmask, reordering them is
+semantically lossless.
+
+The hook receives the exported `CustodySignedRequest` union — intent `Propose`,
+`Approve` and `Reject` are the only signed bodies — so narrowing on `type` (then
+`payload.type` and `parameters.type`) gives full autocomplete down to the XRPL
+operation. Return the request untouched for anything the hook does not handle.
+
+See [MPToken Issuance Create with 5 flags](./examples/xrpl/mpt/create-five-flags/)
+for a runnable example that sorts `flags` into the order the backend re-emits.
+Tracking issue: [#223](https://github.com/florent-uzio/custody.js/issues/223).
 
 ### Version-gated calls
 

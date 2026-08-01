@@ -717,6 +717,144 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
 
       expect(body.signature).toBe(expected)
     })
+
+    describe("401 signature-failure hint", () => {
+      const signatureError = (data: unknown) => ({
+        isAxiosError: true,
+        response: { status: 401, data },
+        message: "Request failed",
+      })
+
+      const bodyWithFiveFlags = () => ({
+        request: {
+          payload: {
+            parameters: {
+              operation: { flags: ["a", "b", "c", "d", "e"] },
+            },
+          },
+        },
+        signature: "",
+      })
+
+      it("names the oversized array fields on a 401 signature failure", async () => {
+        mockAxiosInstance.post.mockRejectedValue(
+          signatureError({ reason: "InvalidSignatureError" }),
+        )
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags())
+          expect.unreachable()
+        } catch (error) {
+          const { hint, message, reason } = error as CustodyError
+          expect(hint).toContain("`request.payload.parameters.operation.flags`")
+          expect(hint).toContain("issues/223")
+          // The API's own reason stays pristine, but the hint rides along in
+          // `message` so it shows up in stack traces
+          expect(reason).toBe("InvalidSignatureError")
+          expect(message).toBe(`InvalidSignatureError\n\n${hint}`)
+        }
+      })
+
+      it("adds no hint when no array reaches 5 elements", async () => {
+        mockAxiosInstance.post.mockRejectedValue(
+          signatureError({ reason: "InvalidSignatureError" }),
+        )
+
+        const body = { request: { operation: { flags: ["a", "b", "c", "d"] } }, signature: "" }
+
+        try {
+          await apiService.post("/test-endpoint", body)
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+          expect((error as CustodyError).message).toBe("InvalidSignatureError")
+        }
+      })
+
+      it("adds no hint on a 401 that is not a signature failure", async () => {
+        mockAxiosInstance.post.mockRejectedValue(signatureError({ reason: "Token expired" }))
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags())
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+          expect((error as CustodyError).message).toBe("Token expired")
+        }
+      })
+
+      it("adds no hint when the request was not signed", async () => {
+        mockAxiosInstance.post.mockRejectedValue(
+          signatureError({ reason: "InvalidSignatureError" }),
+        )
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags(), { sign: false })
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+          expect((error as CustodyError).message).toBe("InvalidSignatureError")
+        }
+      })
+
+      it("appends the hint to the fallback message when the error body is not an object", async () => {
+        mockAxiosInstance.post.mockRejectedValue(signatureError("InvalidSignatureError"))
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags())
+          expect.unreachable()
+        } catch (error) {
+          const { hint, reason } = error as CustodyError
+          expect(reason).toContain("POST API request failed")
+          expect(hint).toContain("`request.payload.parameters.operation.flags`")
+        }
+      })
+    })
+
+    describe("beforeSign", () => {
+      it("signs and sends what the hook returns", async () => {
+        mockAxiosInstance.post.mockResolvedValue({ data: {} })
+
+        const service = new ApiService({
+          apiUrl: mockApiUrl,
+          authFormData: { publicKey: mockPublicKey },
+          authService: mockAuthService as any,
+          privateKey: mockPrivateKey,
+          beforeSign: (request: any) => ({
+            ...request,
+            payload: { operation: { flags: [...request.payload.operation.flags].sort() } },
+          }),
+        })
+
+        const body = {
+          request: { type: "Propose", payload: { operation: { flags: ["b", "a"] } } },
+          signature: "",
+        }
+        const sorted = { type: "Propose", payload: { operation: { flags: ["a", "b"] } } }
+        await service.post("/test-endpoint", body)
+
+        expect(body.request).toEqual(sorted)
+        expect(body.signature).toBe(expectedPrivateKeySignature(sorted))
+        expect(mockAxiosInstance.post).toHaveBeenCalledWith("/test-endpoint", body, undefined)
+      })
+
+      it("does not run when signing is skipped", async () => {
+        mockAxiosInstance.post.mockResolvedValue({ data: {} })
+
+        const beforeSign = vi.fn((request) => request)
+        const service = new ApiService({
+          apiUrl: mockApiUrl,
+          authFormData: { publicKey: mockPublicKey },
+          authService: mockAuthService as any,
+          privateKey: mockPrivateKey,
+          beforeSign,
+        })
+
+        await service.post("/test-endpoint", { name: "hook" }, { sign: false })
+
+        expect(beforeSign).not.toHaveBeenCalled()
+      })
+    })
   })
 
   describe("patch", () => {

@@ -1,4 +1,5 @@
 import type { KnownAppVersion } from "./models/capabilities.generated.js"
+import type { components } from "./models/custody-types.js"
 import type { KeypairAlgorithm } from "./services/keypairs/keypairs.types.js"
 import type { CustodySignContext } from "./services/keypairs/signing-scheme.js"
 import type { SpecSource } from "./versioning/detect.js"
@@ -40,7 +41,47 @@ export type CustodySigner = {
   sign: (request: CustodySignRequest) => Uint8Array | Promise<Uint8Array>
 }
 
+/**
+ * Every request payload the SDK signs, as a union discriminated on `type`.
+ * Intent proposal, approval and rejection are the only signed bodies — every
+ * other POST is sent unsigned — so narrowing on `request.type` gives full
+ * autocomplete down to the operation being proposed.
+ */
+export type CustodySignedRequest =
+  | components["schemas"]["Core_Propose"]
+  | components["schemas"]["Core_Approve"]
+  | components["schemas"]["Core_Reject"]
+
+/**
+ * Last chance to reshape a request payload before the SDK canonicalizes and
+ * signs it. Whatever it returns is both signed and sent, so the signed bytes
+ * remain the bytes on the wire. Runs only on signed POST bodies.
+ *
+ * Narrow the {@link CustodySignedRequest} union on `type` (`"Propose"`,
+ * `"Approve"`, `"Reject"`) — and then on `payload.type` and
+ * `parameters.type` — to reach a fully typed operation, and return the request
+ * unchanged for anything the hook does not handle.
+ *
+ * This is an **escape hatch, not SDK behaviour** — its purpose is to let an
+ * application work around a backend defect without waiting for an SDK release.
+ * The known case is the API re-serializing set-typed array fields (e.g.
+ * `MPTokenIssuanceCreate.flags`) in a different order than sent once they hold
+ * five or more elements, which fails signature verification with a
+ * `401 InvalidSignatureError`. Sorting such a field into the order the backend
+ * re-emits makes the request verify. Treat any such ordering as temporary: it
+ * is an undocumented server-side artifact, not part of the API contract.
+ *
+ * @see {@link https://github.com/florent-uzio/custody.js/issues/223}
+ */
+export type BeforeSignHook = (request: CustodySignedRequest) => CustodySignedRequest
+
 type BaseClientOptions = {
+  /**
+   * Reshape a request payload just before it is canonicalized and signed. An
+   * escape hatch for working around backend signature-verification defects;
+   * see {@link BeforeSignHook}. Not applied when signing is skipped.
+   */
+  beforeSign?: BeforeSignHook
   /**
    * Pin the SDK to a specific Ripple Custody backend app version. When set,
    * calls that the version cannot serve throw `UnsupportedInVersionError`,

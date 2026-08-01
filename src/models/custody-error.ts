@@ -13,15 +13,30 @@ export class CustodyError extends Error {
    */
   public readonly errorMessage?: string
   public readonly statusCode?: number
+  /**
+   * The failure reason on its own, with no SDK-authored `hint` appended —
+   * unlike the inherited `message`. Compare or group errors on this, so a hint
+   * carrying request-specific details never fragments the grouping.
+   */
+  public readonly reason: string
+  /**
+   * SDK-authored diagnostic about a failure the API's own reason does not
+   * explain (e.g. which request field likely broke signature verification).
+   * Also appended to `message`, since stack traces and unhandled rejections
+   * print that and never these fields.
+   */
+  public readonly hint?: string
 
-  constructor(errorData: Core_ErrorMessage, statusCode?: number, cause?: Error) {
+  constructor(errorData: Core_ErrorMessage, statusCode?: number, cause?: Error, hint?: string) {
     // Use the reason as the main error message, fallback to message if reason is not available
-    const message = errorData.reason || errorData.message || "Unknown Custody API error"
-    super(message, { cause })
+    const reason = errorData.reason || errorData.message || "Unknown Custody API error"
+    super(hint ? `${reason}\n\n${hint}` : reason, { cause })
 
     this.name = "CustodyError"
     this.errorMessage = errorData.message
     this.statusCode = statusCode
+    this.reason = reason
+    this.hint = hint
 
     // Maintain proper stack trace
     if (Error.captureStackTrace) {
@@ -32,11 +47,12 @@ export class CustodyError extends Error {
   /**
    * Get the full error details as a structured object
    */
-  public toJSON(): Core_ErrorMessage & { statusCode?: number } {
+  public toJSON(): Core_ErrorMessage & { statusCode?: number; hint?: string } {
     return {
-      reason: this.message,
+      reason: this.reason,
       message: this.errorMessage,
       statusCode: this.statusCode,
+      hint: this.hint,
     }
   }
 
