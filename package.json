@@ -38,7 +38,7 @@
     "dev": "vitest",
     "fetch:openapi-spec": "node ./scripts/fetch-openapi-release.mjs",
     "format": "prettier --write .",
-    "generate:custody-types": "node ./scripts/generate-custody-types/generate.mjs && prettier --write ./src/models/custody-types.ts ./src/models/capabilities.generated.ts",
+    "generate:custody-types": "node ./scripts/generate-custody-types/generate.mjs && prettier --write ./src/models/custody-types.ts ./src/models/custody-internal-types.ts ./src/models/capabilities.generated.ts",
     "lint": "eslint src",
     "local-release": "changeset version && changeset publish",
     "prepare": "npm run build",

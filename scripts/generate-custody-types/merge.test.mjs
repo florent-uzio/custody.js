@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { mergeOpenApiDocs } from "./merge.mjs"
+import { mergeOpenApiDocs, mergeOpenApiDocsBySurface } from "./merge.mjs"
 
 /** Minimal OpenAPI doc factory for tests. `v` is the x-app-version. */
 function doc(v, { paths = {}, schemas = {} } = {}) {
@@ -17,6 +17,14 @@ function official(v, opts) {
 }
 function devbox(v, opts) {
   return { doc: doc(v, opts), channel: "devbox" }
+}
+
+/** Surface-tagged variants (ADR-0007). */
+function officialInternal(v, opts) {
+  return { ...official(v, opts), surface: "internal" }
+}
+function devboxInternal(v, opts) {
+  return { ...devbox(v, opts), surface: "internal" }
 }
 
 describe("mergeOpenApiDocs", () => {
@@ -153,5 +161,70 @@ describe("mergeOpenApiDocs", () => {
 
     expect(Object.keys(merged.paths)).toEqual(["/v1/health"])
     expect(merged.paths["/v1/health"].get.operationId).toBe("HealthController_liveness")
+  })
+})
+
+// --- ADR-0007: public vs internal surfaces ---
+
+describe("mergeOpenApiDocsBySurface", () => {
+  it("merges each surface into its own document", () => {
+    const pub = official("1.38.0", { schemas: { Core_Account: {} } })
+    const int = devboxInternal("1.36.2", { schemas: { Internal_Account: {} } })
+
+    const bySurface = mergeOpenApiDocsBySurface([pub, int])
+
+    expect(Object.keys(bySurface).sort()).toEqual(["internal", "public"])
+    expect(bySurface.public.merged.components.schemas).toEqual({ Core_Account: {} })
+    expect(bySurface.internal.merged.components.schemas).toEqual({ Internal_Account: {} })
+  })
+
+  it("keeps an operationId that exists on both surfaces addressable in each document", () => {
+    const pub = official("1.38.0", {
+      paths: { "/v1/domains/{domainId}/users": { get: { operationId: "getUsers" } } },
+    })
+    const int = devboxInternal("1.36.2", {
+      paths: { "/internal/v1/users": { get: { operationId: "getUsers" } } },
+    })
+
+    const bySurface = mergeOpenApiDocsBySurface([pub, int])
+
+    expect(Object.keys(bySurface.public.merged.paths)).toEqual(["/v1/domains/{domainId}/users"])
+    expect(Object.keys(bySurface.internal.merged.paths)).toEqual(["/internal/v1/users"])
+  })
+
+  it("treats an untagged document as public", () => {
+    const bySurface = mergeOpenApiDocsBySurface([official("1.38.0", { schemas: { Core_A: {} } })])
+
+    expect(Object.keys(bySurface)).toEqual(["public"])
+  })
+
+  it("omits a surface that has no bundled specs", () => {
+    const bySurface = mergeOpenApiDocsBySurface([devboxInternal("1.36.2")])
+
+    expect(Object.keys(bySurface)).toEqual(["internal"])
+  })
+
+  it("applies the official-wins rule within the internal surface", () => {
+    const off = officialInternal("1.38.0", { schemas: { Internal_Foo: { type: "string" } } })
+    const dev = devboxInternal("1.36.2", { schemas: { Internal_Foo: { type: "number" } } })
+
+    const { merged, warnings } = mergeOpenApiDocsBySurface([off, dev]).internal
+
+    expect(merged.components.schemas.Internal_Foo.type).toBe("string")
+    expect(warnings.some((w) => w.includes("devbox") && w.includes("Internal_Foo"))).toBe(true)
+  })
+
+  it("takes each surface's document identity from its own newest official spec", () => {
+    const pub = official("1.38.0")
+    const int = officialInternal("1.36.2")
+
+    const bySurface = mergeOpenApiDocsBySurface([pub, devboxInternal("2.0.0"), int])
+
+    expect(bySurface.public.merged.info["x-app-version"]).toBe("1.38.0")
+    expect(bySurface.internal.merged.info["x-app-version"]).toBe("1.36.2")
+  })
+
+  it("throws when given no documents", () => {
+    expect(() => mergeOpenApiDocsBySurface([])).toThrow()
   })
 })

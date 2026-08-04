@@ -51,7 +51,7 @@ stay consistent.
   internal `info.x-app-version`. Bundled specs feed the type generator and serve
   as the offline / explicit-`apiVersion` capability fallback. They are **not**
   the primary runtime capability source. Every bundled spec belongs to a
-  **channel** (see below).
+  **channel** and a **surface** (see below).
 
 - **Channel** — the provenance of a bundled spec, given by its subdirectory
   under `openapi/`: **official** (`openapi/official/`) or **devbox**
@@ -74,11 +74,32 @@ stay consistent.
   against a real devbox instance via auto-detection, but blocked by any offline
   `apiVersion` pin until an official release ships it.
 
-- **Superset types** — the single merged type universe in
-  `src/models/custody-types.ts`, the union of every bundled spec's `paths`,
-  `operations`, and `components`. The SDK's own code compiles against this and
-  nothing else. Grows with the number of _distinct_ endpoints/schemas (bounded),
-  not with the number of versions.
+- **Surface** — which of the two APIs an instance serves a bundled spec
+  describes: **public** or **internal**. Orthogonal to channel — both channels
+  can carry both surfaces. Given by the spec's folder: `openapi/<channel>/` is
+  public, `openapi/<channel>/internal/` is internal. Each surface merges into
+  its own types file. See
+  [ADR-0007](docs/adr/0007-public-vs-internal-surfaces.md).
+
+- **Public spec** — a bundled spec at a channel root, describing the customer-
+  facing API (`/v1/…`, `Core_*` schemas). Generates
+  `src/models/custody-types.ts`.
+
+- **Internal spec** — a bundled spec under `openapi/<channel>/internal/`,
+  describing the internal API (`/internal/v1/…` and `/api/notifications/…`,
+  `Internal_*` / `Notification_*` schemas) used by internal tooling. An instance
+  serves it live at `<apiUrl>/api/OpenAPI?scope=internal&layout=`. Disjoint from
+  the public spec in paths and schemas, but
+  reuses some of its `operationId`s, so it generates its own
+  `src/models/custody-internal-types.ts`. Shares its release's
+  `x-app-version`, and unions into that version's capability entry.
+
+- **Superset types** — the merged type universe for one surface — public in
+  `src/models/custody-types.ts`, internal in
+  `src/models/custody-internal-types.ts` — the union of every bundled spec of
+  that surface's `paths`, `operations`, and `components`. The SDK's own code
+  compiles against these and nothing else. Grows with the number of _distinct_
+  endpoints/schemas (bounded), not with the number of versions.
 
 - **Capability** — a unit the guard can check for presence in a version. Two
   kinds:

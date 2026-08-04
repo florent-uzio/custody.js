@@ -42,26 +42,43 @@ export function extractCapabilities(doc) {
 /**
  * Build the offline capability dataset from the **official** specs only
  * (ADR-0005): devbox specs contribute to the superset types but not to the
- * per-version dataset that backs `apiVersion`. Official releases have unique
- * `x-app-version` strings, so a duplicate version is a collision we refuse to
- * resolve silently.
+ * per-version dataset that backs `apiVersion`.
  *
- * @param {any[]} docs - official OpenAPI documents
+ * An official release serves both its public and its internal surface
+ * (ADR-0007), so the two specs of one release **union** into a single version
+ * entry — an `apiVersion` pin gates internal endpoints exactly like public
+ * ones. Within a surface, official releases have unique `x-app-version`
+ * strings, so a duplicate there is a collision we refuse to resolve silently.
+ *
+ * @param {Array<{ doc: any, surface?: string }>} taggedDocs - official OpenAPI
+ *   documents tagged with their surface (`surface` defaults to `"public"`).
  * @returns {Record<string, { endpoints: string[], schemas: string[] }>}
  */
-export function buildCapabilityDataset(docs) {
+export function buildCapabilityDataset(taggedDocs) {
   /** @type {Record<string, { endpoints: string[], schemas: string[] }>} */
   const dataset = {}
-  for (const doc of docs) {
+  /** @type {Set<string>} */
+  const seen = new Set()
+
+  for (const { doc, surface = "public" } of taggedDocs) {
     const { version, endpoints, schemas } = extractCapabilities(doc)
-    if (version in dataset) {
+
+    const key = `${surface} ${version}`
+    if (seen.has(key)) {
       throw new Error(
         `Duplicate app version "${version}" in the capability dataset — two ` +
-          `official specs report the same x-app-version.`,
+          `official ${surface} specs report the same x-app-version.`,
       )
     }
-    dataset[version] = { endpoints, schemas }
+    seen.add(key)
+
+    const entry = dataset[version] ?? { endpoints: [], schemas: [] }
+    dataset[version] = {
+      endpoints: [...new Set([...entry.endpoints, ...endpoints])].sort(),
+      schemas: [...new Set([...entry.schemas, ...schemas])].sort(),
+    }
   }
+
   return dataset
 }
 
