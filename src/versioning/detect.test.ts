@@ -67,4 +67,68 @@ describe("buildOpenApiUrl", () => {
       "https://api.example.test/api/OpenAPI?scope=&layout=",
     )
   })
+
+  it("selects the internal document with scope=internal (ADR-0007)", () => {
+    expect(buildOpenApiUrl("https://api.example.test", "internal")).toBe(
+      "https://api.example.test/api/OpenAPI?scope=internal&layout=",
+    )
+  })
+})
+
+// --- ADR-0007: the internal surface ---
+
+describe("detectCapabilities with an internal spec source", () => {
+  const publicSpec = spec("1.36.2", {
+    paths: { "/v1/users": { get: {} } },
+    schemas: { Core_User: {} },
+  })
+  const internalSpec = spec("1.36.2", {
+    paths: { "/internal/v1/users": { get: {} } },
+    schemas: { Internal_User: {} },
+  })
+
+  it("unions both documents and records both surfaces", async () => {
+    const source: SpecSource = { fetchSpec: vi.fn(async () => publicSpec) }
+    const internalSource: SpecSource = { fetchSpec: vi.fn(async () => internalSpec) }
+
+    const caps = await detectCapabilities(source, internalSource)
+
+    expect(caps.appVersion).toBe("1.36.2")
+    expect(caps.endpoints).toEqual(new Set(["GET /v1/users", "GET /internal/v1/users"]))
+    expect(caps.schemas).toEqual(new Set(["Core_User", "Internal_User"]))
+    expect([...caps.surfaces].sort()).toEqual(["internal", "public"])
+  })
+
+  it("falls back to public-only when the internal document is unavailable", async () => {
+    const source: SpecSource = { fetchSpec: vi.fn(async () => publicSpec) }
+    const internalSource: SpecSource = {
+      fetchSpec: vi.fn(async () => {
+        throw new Error("404")
+      }),
+    }
+
+    const caps = await detectCapabilities(source, internalSource)
+
+    expect(caps.endpoints).toEqual(new Set(["GET /v1/users"]))
+    expect([...caps.surfaces]).toEqual(["public"])
+  })
+
+  it("still propagates a failure to fetch the public document", async () => {
+    const source: SpecSource = {
+      fetchSpec: vi.fn(async () => {
+        throw new Error("unreachable")
+      }),
+    }
+    const internalSource: SpecSource = { fetchSpec: vi.fn(async () => internalSpec) }
+
+    await expect(detectCapabilities(source, internalSource)).rejects.toThrow("unreachable")
+  })
+
+  it("resolves public-only when no internal source is given", async () => {
+    const source: SpecSource = { fetchSpec: vi.fn(async () => publicSpec) }
+
+    const caps = await detectCapabilities(source)
+
+    expect([...caps.surfaces]).toEqual(["public"])
+  })
 })

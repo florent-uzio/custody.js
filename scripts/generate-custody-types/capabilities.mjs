@@ -50,12 +50,17 @@ export function extractCapabilities(doc) {
  * ones. Within a surface, official releases have unique `x-app-version`
  * strings, so a duplicate there is a collision we refuse to resolve silently.
  *
+ * Each entry records the `surfaces` that contributed to it, so the runtime
+ * guard can tell "this release does not serve that endpoint" from "no spec for
+ * that surface was ever bundled" — the latter fails open instead of rejecting
+ * every internal call.
+ *
  * @param {Array<{ doc: any, surface?: string }>} taggedDocs - official OpenAPI
  *   documents tagged with their surface (`surface` defaults to `"public"`).
- * @returns {Record<string, { endpoints: string[], schemas: string[] }>}
+ * @returns {Record<string, { surfaces: string[], endpoints: string[], schemas: string[] }>}
  */
 export function buildCapabilityDataset(taggedDocs) {
-  /** @type {Record<string, { endpoints: string[], schemas: string[] }>} */
+  /** @type {Record<string, { surfaces: string[], endpoints: string[], schemas: string[] }>} */
   const dataset = {}
   /** @type {Set<string>} */
   const seen = new Set()
@@ -72,8 +77,9 @@ export function buildCapabilityDataset(taggedDocs) {
     }
     seen.add(key)
 
-    const entry = dataset[version] ?? { endpoints: [], schemas: [] }
+    const entry = dataset[version] ?? { surfaces: [], endpoints: [], schemas: [] }
     dataset[version] = {
+      surfaces: [...new Set([...entry.surfaces, surface])].sort(),
       endpoints: [...new Set([...entry.endpoints, ...endpoints])].sort(),
       schemas: [...new Set([...entry.schemas, ...schemas])].sort(),
     }
@@ -84,7 +90,7 @@ export function buildCapabilityDataset(taggedDocs) {
 
 /**
  * Render the generated `capabilities.generated.ts` module source.
- * @param {Record<string, { endpoints: string[], schemas: string[] }>} dataset
+ * @param {Record<string, { surfaces: string[], endpoints: string[], schemas: string[] }>} dataset
  * @returns {string}
  */
 export function renderCapabilitiesModule(dataset) {
@@ -92,11 +98,13 @@ export function renderCapabilitiesModule(dataset) {
 
   const body = versions
     .map((version) => {
-      const { endpoints, schemas } = dataset[version]
+      const { surfaces, endpoints, schemas } = dataset[version]
+      const surfaceList = surfaces.map((s) => JSON.stringify(s)).join(", ")
       const endpointList = endpoints.map((e) => `      ${JSON.stringify(e)},`).join("\n")
       const schemaList = schemas.map((s) => `      ${JSON.stringify(s)},`).join("\n")
       return [
         `  ${JSON.stringify(version)}: {`,
+        `    surfaces: [${surfaceList}],`,
         `    endpoints: [`,
         endpointList,
         `    ],`,

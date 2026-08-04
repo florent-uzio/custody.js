@@ -87,10 +87,45 @@ duplicate guard **per surface** (two official _public_ specs claiming one
 version is still an error). It remains **official-only** — devbox internal
 specs are types-only, exactly like devbox public specs.
 
-**5. No runtime or public API surface changes.** `apiVersion` still enumerates
-official releases and nothing about the client distinguishes surfaces. Internal
-namespaces are out of scope for this ADR; they are built on later branches
-against the generated internal types.
+**5. Gating is per surface, and an unresolved surface fails open.**
+`TypedTransport` calls `guard.checkEndpoint` on every verb, so without this the
+guard would reject all 42 internal endpoints the moment gating became active —
+they appear in no public spec. `ResolvedCapabilities` therefore carries the
+`surfaces` it actually describes, and `assertEndpoint` returns early for a
+surface that is not among them. This is the guard's existing fail-open
+philosophy applied per surface: it only judges what it has enumerated, and the
+backend stays the ultimate authority. Endpoints and schemas remain flat unions
+(the two surfaces are disjoint, so there is nothing to disambiguate); only the
+`surfaces` set is new. `capabilities.generated.ts` gains a matching
+`surfaces: [...]` field per version.
+
+Call sites opt in through `RequestConfig`, which the internal namespaces set
+alongside the `sign: false` every internal endpoint needs:
+
+```ts
+t.post(InternalURLs.pendingVault, body, undefined, { sign: false, surface: "internal" })
+```
+
+`sign: false` is not a preference — `ApiService.post` canonicalizes `body.request`
+and writes `body.signature`, and **no** internal request body has a `request`
+property, so the default would throw inside the SDK before the call went out.
+
+**6. Auto-detection fetches both documents, best-effort.** An instance serves
+the internal document at `?scope=internal&layout=`, so `detectCapabilities`
+fetches it concurrently with the public one. The public fetch is required (a
+failure fails open as before); the internal fetch is **tolerated** — an instance
+that predates it, or doesn't expose it, resolves to `surfaces: ["public"]` and
+internal calls pass through. The internal URL is derived from `apiUrl`, so no
+new client option is needed; a caller-supplied `specSource` (an override of spec
+fetching wholesale, typically a test) disables internal detection rather than
+issuing an HTTP call behind it.
+
+**7. No public API surface changes.** `apiVersion` still enumerates official
+releases; `surface` is an internal plumbing detail of `RequestConfig`. Internal
+namespaces are out of scope for this ADR: they are built on later branches
+against the generated internal types, and will hang off a single
+`client.internal.*` property so their `operationId` overlap with the public API
+(`getUsers`, `getAllEvents`) never surfaces as a naming collision on the client.
 
 ## Consequences
 
@@ -106,6 +141,13 @@ against the generated internal types.
 - `custody-internal-types.ts` compiles into `dist` even before any internal
   namespace exists. It is types-only, unreferenced and unexported, so it adds no
   runtime code and no public API.
+- **One extra HTTP request per client**, once, lazily, when auto-detection runs
+  (the default). It is concurrent with the public fetch, so it costs no extra
+  wall-clock, and it is skipped entirely when `apiVersion` is pinned or
+  `specSource` is supplied.
+- Namespace branches start on working plumbing: an internal namespace is an
+  ordinary namespace that imports the internal types and passes
+  `{ sign: false, surface: "internal" }`. No transport, auth or service changes.
 - CONTEXT.md gains **Surface**, **Public spec** and **Internal spec**.
 
 ## Rejected alternatives
@@ -130,3 +172,14 @@ against the generated internal types.
 - **Filename suffix (`*-internal.json`) as the surface marker.** Depends on the
   server's asset naming rather than on our layout, and ADR-0005 already settled
   on folders over filename conventions.
+- **Skipping internal detection and always failing open on that surface.**
+  Cheaper by one request, but the SDK would give up on the internal API the
+  capability errors it provides everywhere else, for no structural reason — the
+  document is right there at `?scope=internal`.
+- **Separate per-surface endpoint/schema sets on `ResolvedCapabilities`.**
+  Needed only if the surfaces could define the same `METHOD /path`. They can't
+  (0 shared paths, and the prefixes `/internal/v1` and `/api/notifications` are
+  unused by the public API), so a flat union plus a `surfaces` marker carries
+  the same information with less structure.
+- **New `internalOpenApiUrl` / `internalSpecSource` client options.** Public
+  surface area for a URL that is mechanically derivable from `apiUrl`.

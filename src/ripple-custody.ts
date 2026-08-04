@@ -122,7 +122,16 @@ export class RippleCustody {
       // Auto-detect: lazily fetch the live instance spec on first use.
       const source =
         specSource ?? createHttpSpecSource(openApiUrl ?? buildOpenApiUrl(apiUrl), timeout)
-      this.guard = VersionGuard.deferred(() => detectCapabilities(source), warnGatingDisabled)
+      // The internal surface has its own document (ADR-0007), fetched
+      // best-effort alongside the public one. A custom `specSource` replaces
+      // spec fetching wholesale, so we don't go behind it with an HTTP call.
+      const internalSource = specSource
+        ? undefined
+        : createHttpSpecSource(buildOpenApiUrl(apiUrl, "internal"), timeout)
+      this.guard = VersionGuard.deferred(
+        () => detectCapabilities(source, internalSource),
+        warnGatingDisabled,
+      )
     } else {
       // Detection disabled and no explicit version: gating off (pass-through).
       this.guard = new VersionGuard(undefined, undefined, warnGatingDisabled)

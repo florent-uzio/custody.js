@@ -82,7 +82,11 @@ describe("buildCapabilityDataset", () => {
 describe("renderCapabilitiesModule", () => {
   it("renders a generated TS module exposing CAPABILITIES as const", () => {
     const src = renderCapabilitiesModule({
-      "1.35.0": { endpoints: ["GET /x"], schemas: ["Core_XrplOperation_Batch"] },
+      "1.35.0": {
+        surfaces: ["internal", "public"],
+        endpoints: ["GET /x"],
+        schemas: ["Core_XrplOperation_Batch"],
+      },
     })
 
     expect(src).toContain("export const CAPABILITIES")
@@ -90,5 +94,6 @@ describe("renderCapabilitiesModule", () => {
     expect(src).toContain('"1.35.0"')
     expect(src).toContain("Core_XrplOperation_Batch")
     expect(src).toContain("KnownAppVersion")
+    expect(src).toContain('surfaces: ["internal", "public"],')
   })
 })

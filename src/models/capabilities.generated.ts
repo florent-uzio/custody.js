@@ -8,6 +8,7 @@
 
 export const CAPABILITIES = {
   "1.34.10": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE //v1/domain/{domainId}/account/{accountId}/sponsor",
       "DELETE //v1/domain/{domainId}/account/{entityId}/sponsored-accounts/domains/{sponsoredAccountDomainId}/accounts/{sponsoredAccountId}",
@@ -1055,6 +1056,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.34.8": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -2038,6 +2040,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.34.9": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domain/{domainId}/account/{accountId}/sponsor",
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
@@ -3063,6 +3066,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.35.0": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -4046,6 +4050,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.35.1": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -5029,6 +5034,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.35.2": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -6012,6 +6018,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.35.3": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -6995,6 +7002,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.35.4": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -7984,6 +7992,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.35.5": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -8903,6 +8912,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.36.0": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
       "DELETE /v1/domains/{domainId}/compliance/domain",
@@ -9839,6 +9849,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.36.1": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domain/{domainId}/account/{accountId}/sponsor",
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
@@ -10817,6 +10828,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.36.2": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domain/{domainId}/account/{accountId}/sponsor",
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
@@ -11840,6 +11852,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.36.4": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domain/{domainId}/account/{accountId}/sponsor",
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
@@ -12861,6 +12874,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.37.0": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE /v1/domain/{domainId}/account/{accountId}/sponsor",
       "DELETE /v1/domains/{domainId}/channels/{channelId}",
@@ -13887,6 +13901,7 @@ export const CAPABILITIES = {
     ],
   },
   "1.38.0": {
+    surfaces: ["public"],
     endpoints: [
       "DELETE //v1/domain/{domainId}/account/{accountId}/sponsor",
       "DELETE //v1/domain/{domainId}/account/{entityId}/sponsored-accounts/domains/{sponsoredAccountDomainId}/accounts/{sponsoredAccountId}",

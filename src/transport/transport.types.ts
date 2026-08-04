@@ -1,3 +1,5 @@
+import type { ApiSurface } from "../versioning/version-guard.js"
+
 export type RequestConfig = {
   timeout?: number
   signal?: AbortSignal
@@ -5,8 +7,19 @@ export type RequestConfig = {
   /**
    * POST-only. When `false`, the request body is sent as-is (no canonicalization
    * or signed-envelope signing). Defaults to `true`.
+   *
+   * Every internal endpoint sets `false`: none of their bodies carries the
+   * `request` property the signer canonicalizes.
    */
   sign?: boolean
+  /**
+   * Which API surface the endpoint belongs to (ADR-0007). The version guard
+   * only gates a surface whose capabilities it actually resolved, so the
+   * `client.internal.*` namespaces must set `"internal"`.
+   *
+   * @default "public"
+   */
+  surface?: ApiSurface
 }
 
 /**
