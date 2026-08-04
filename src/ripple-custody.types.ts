@@ -90,6 +90,13 @@ type BaseClientOptions = {
    * @default 30000 (30 seconds)
    */
   timeout?: number
+  /**
+   * When `true`, every outbound API request is logged to `console.log` with
+   * the full method, URL, headers, query parameters, and request body.
+   *
+   * @default false
+   */
+  debug?: boolean
 }
 
 /**

@@ -71,6 +71,24 @@ export class ApiService {
     this.apiClient.defaults.paramsSerializer = (params) =>
       qs.stringify(params, { arrayFormat: "repeat" })
 
+    // Registered first so it fires last (Axios request interceptors run LIFO),
+    // meaning it always sees the final request state — including the Authorization
+    // header added by the auth interceptor below.
+    if (options.debug) {
+      this.apiClient.interceptors.request.use((config) => {
+        const url = `${config.baseURL ?? ""}${config.url ?? ""}`
+        console.log(
+          `[RippleCustody] ${config.method?.toUpperCase()} ${url}`,
+          JSON.stringify(
+            { headers: { ...config.headers }, params: config.params, body: config.data },
+            null,
+            2,
+          ),
+        )
+        return config
+      })
+    }
+
     // Add request interceptor to inject JWT token into headers
     this.apiClient.interceptors.request.use(
       async (config) => {

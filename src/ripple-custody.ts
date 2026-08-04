@@ -95,6 +95,7 @@ export class RippleCustody {
       autoDetectVersion = true,
       openApiUrl,
       specSource,
+      debug,
     } = options
 
     // Fires once if the guard ever passes calls through because no backend
@@ -132,6 +133,7 @@ export class RippleCustody {
       privateKey,
       signer,
       timeout,
+      debug,
     })
     this.transport = new TypedTransport(this.apiService, this.guard)
 
