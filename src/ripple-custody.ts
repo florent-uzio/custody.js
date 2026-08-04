@@ -12,6 +12,7 @@ import {
   createGenesis,
   createHealth,
   createIntents,
+  createInternal,
   createLedgers,
   createOmnibus,
   createPolicies,
@@ -83,6 +84,8 @@ export class RippleCustody {
   public readonly virtualLedgers: ReturnType<typeof createVirtualLedgers>
   public readonly auth: ReturnType<typeof createAuth>
   public readonly xrpl: ReturnType<typeof createXrpl>
+  /** Namespaces served by the instance's internal API (ADR-0007). */
+  public readonly internal: ReturnType<typeof createInternal>
 
   constructor(options: RippleCustodyClientOptions) {
     const {
@@ -182,6 +185,7 @@ export class RippleCustody {
     this.virtualLedgers = createVirtualLedgers(this.transport)
     this.auth = createAuth(this.authService)
     this.xrpl = createXrpl(() => this.xrplService)
+    this.internal = createInternal(this.transport)
   }
 
   /**
