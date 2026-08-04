@@ -24,4 +24,8 @@ export type ApiServiceOptions = {
    * If not provided, defaults to 30 seconds.
    */
   timeout?: number
+  /**
+   * When `true`, every outbound API request is logged to `console.log`.
+   */
+  debug?: boolean
 }
