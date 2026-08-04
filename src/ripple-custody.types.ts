@@ -75,6 +75,85 @@ export type CustodySignedRequest =
  */
 export type BeforeSignHook = (request: CustodySignedRequest) => CustodySignedRequest
 
+/** Which of the SDK's two HTTP clients an exchange came from. */
+export type CustodyDebugClient = "api" | "auth"
+
+/**
+ * Uppercased HTTP verb on a {@link CustodyDebugEvent}. The five listed are the
+ * only verbs the SDK issues; `"UNKNOWN"` covers the case Axios's types allow but
+ * its runtime does not (it marks `config.method` optional, yet always fills it in
+ * before interceptors run). Trailing `(string & {})` keeps the union assignable
+ * from any string, so narrowing on a verb autocompletes without the type
+ * claiming more than Axios guarantees.
+ */
+export type CustodyHttpMethod =
+  "DELETE" | "GET" | "PATCH" | "POST" | "PUT" | "UNKNOWN" | (string & {})
+
+/** Fields every {@link CustodyDebugEvent} carries. */
+type CustodyDebugEventBase = {
+  client: CustodyDebugClient
+  method: CustodyHttpMethod
+  /**
+   * Absolute URL, base URL included. Deliberately a plain `string` and not a
+   * generated `paths` key: path parameters are already interpolated by the time
+   * an event is emitted (`…/v1/domains/d-123/accounts`, not
+   * `…/v1/domains/{domainId}/accounts`), and the `"auth"` client's URL is not an
+   * API path at all.
+   */
+  url: string
+}
+
+/**
+ * One HTTP exchange the SDK observed, handed to a {@link CustodyDebugLogger}.
+ * Narrow on `kind`: a `"request"` fires just before the request goes out, and is
+ * followed by exactly one `"response"` or `"error"`.
+ *
+ * Credentials are always masked — the `Authorization` request header and the
+ * `access_token` / `id_token` / `refresh_token` response fields — so an event is
+ * safe to write wherever the rest of an application's logs go. Everything else
+ * is verbatim, including the auth request's `signature`, which is bound to a
+ * single challenge and is the thing you need when debugging a signature failure.
+ */
+export type CustodyDebugEvent = CustodyDebugEventBase &
+  (
+    | {
+        kind: "request"
+        /** Final outbound headers, with the bearer token masked. */
+        headers: Record<string, unknown>
+        /** Query parameters, before serialization. `undefined` when there are none. */
+        params?: unknown
+        /** Body as passed to Axios, before serialization. */
+        body?: unknown
+      }
+    | {
+        kind: "response"
+        status: number
+        durationMs: number
+        /** Parsed response body. */
+        body?: unknown
+      }
+    | {
+        kind: "error"
+        /** Absent when the request failed without a response (timeout, DNS, socket). */
+        status?: number
+        durationMs: number
+        /** Parsed error response body, when the server sent one. */
+        body?: unknown
+        /** The Axios error message. */
+        message: string
+      }
+  )
+
+/**
+ * Receives every {@link CustodyDebugEvent} the SDK emits. Set as the `debug`
+ * client option to route diagnostics into your own logger (pino, winston, a
+ * test spy), to filter them, or to reshape them.
+ *
+ * Called synchronously on the request path, so keep it cheap and non-blocking.
+ * A logger that throws is ignored rather than allowed to fail the request.
+ */
+export type CustodyDebugLogger = (event: CustodyDebugEvent) => void
+
 type BaseClientOptions = {
   /**
    * Reshape a request payload just before it is canonicalized and signed. An
@@ -82,6 +161,21 @@ type BaseClientOptions = {
    * see {@link BeforeSignHook}. Not applied when signing is skipped.
    */
   beforeSign?: BeforeSignHook
+  /**
+   * Log every HTTP exchange the SDK makes — both API calls and auth token
+   * requests, each request paired with its response or error (status, duration,
+   * error body). Off unless set.
+   *
+   * `true` writes to `console.error` (stderr, so it never mixes into a
+   * program's stdout). Pass a {@link CustodyDebugLogger} instead to route the
+   * structured {@link CustodyDebugEvent}s into your own logger.
+   *
+   * The bearer token is always masked, in both forms — in the `Authorization`
+   * request header and in the token endpoint's response body.
+   *
+   * @default false
+   */
+  debug?: boolean | CustodyDebugLogger
   /**
    * Pin the SDK to a specific Ripple Custody backend app version. When set,
    * calls that the version cannot serve throw `UnsupportedInVersionError`,

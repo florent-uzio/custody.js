@@ -2,6 +2,10 @@ export { DEFAULT_TIMEOUT_MS } from "./constants/index.js"
 export { RippleCustody } from "./ripple-custody.js"
 export type {
   BeforeSignHook,
+  CustodyDebugClient,
+  CustodyDebugEvent,
+  CustodyDebugLogger,
+  CustodyHttpMethod,
   CustodySignContext,
   CustodySignRequest,
   CustodySignedRequest,

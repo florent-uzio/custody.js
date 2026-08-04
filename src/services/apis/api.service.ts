@@ -7,6 +7,7 @@ import { canonicalizeRequest, isObject, isString, isUndefined } from "../../help
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
 import type { BeforeSignHook, CustodySignContext } from "../../ripple-custody.types.js"
 import { AuthService } from "../auth/auth.service.js"
+import { attachDebugInterceptors } from "../debug/index.js"
 import { KeypairService } from "../keypairs/index.js"
 import {
   assertValidRawSignature,
@@ -74,6 +75,13 @@ export class ApiService {
     // Set params serializer to handle arrays the way Ripple Custody expects
     this.apiClient.defaults.paramsSerializer = (params) =>
       qs.stringify(params, { arrayFormat: "repeat" })
+
+    // Registered before every other interceptor so the debug logger observes
+    // the final request (Authorization included) and sees a failure before the
+    // 401 retry below can absorb it. See attachDebugInterceptors.
+    if (options.debug) {
+      attachDebugInterceptors(this.apiClient, options.debug, "api")
+    }
 
     // Add request interceptor to inject JWT token into headers
     this.apiClient.interceptors.request.use(

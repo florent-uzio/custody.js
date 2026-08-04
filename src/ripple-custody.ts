@@ -32,6 +32,7 @@ import {
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
+import { resolveDebugLogger } from "./services/debug/index.js"
 import { createHttpPorts, XrplService } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
 import { buildOpenApiUrl, createHttpSpecSource, detectCapabilities } from "./versioning/detect.js"
@@ -96,7 +97,12 @@ export class RippleCustody {
       openApiUrl,
       specSource,
       beforeSign,
+      debug,
     } = options
+
+    // Resolve `true` into the built-in console sink once, so both HTTP clients
+    // report through the same logger.
+    const debugLogger = resolveDebugLogger(debug)
 
     // Fires once if the guard ever passes calls through because no backend
     // version could be resolved (detection failed, or gating is disabled).
@@ -123,7 +129,7 @@ export class RippleCustody {
     }
 
     // Only initialize core services eagerly
-    this.authService = new AuthService({ authUrl, timeout })
+    this.authService = new AuthService({ authUrl, debug: debugLogger, timeout })
     this.apiService = new ApiService({
       apiUrl,
       authFormData: {
@@ -131,6 +137,7 @@ export class RippleCustody {
       },
       authService: this.authService,
       beforeSign,
+      debug: debugLogger,
       privateKey,
       signer,
       timeout,

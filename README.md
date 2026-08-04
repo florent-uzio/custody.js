@@ -125,21 +125,83 @@ const custody = new RippleCustody({
 
 #### Client options
 
-| Option              | Type              | Required | Default | Description                                                                                                                                                                                                                                                         |
-| ------------------- | ----------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiUrl`            | `string`          | Yes      | -       | API URL for the API endpoints (e.g. `"https://api.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                                  |
-| `authUrl`           | `string`          | Yes      | -       | Authentication URL for the API endpoints (e.g. `"https://auth.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                      |
-| `privateKey`        | `string`          | Yes\*    | -       | Private key (PEM) the SDK signs with internally. Provide exactly one of `privateKey` or `signer`                                                                                                                                                                    |
-| `signer`            | `CustodySigner`   | Yes\*    | -       | External signer `{ algorithm, sign }` that runs only the raw signing primitive, keeping the private key outside the SDK (e.g. HSM/KMS). Provide exactly one of `privateKey` or `signer`. See [External signer](#external-signer-hsmkms) below                       |
-| `publicKey`         | `string`          | Yes      | -       | Public key for authentication. Required in both signing modes                                                                                                                                                                                                       |
-| `timeout`           | `number`          | No       | `30000` | Request timeout in milliseconds                                                                                                                                                                                                                                     |
-| `apiVersion`        | `KnownAppVersion` | No       | -       | Pin the SDK to a specific Ripple Custody backend app version. Calls that version cannot serve throw `UnsupportedInVersionError`, gated against bundled capability data (no network). Only bundled versions are accepted, and setting this skips live auto-detection |
-| `autoDetectVersion` | `boolean`         | No       | `true`  | Auto-detect the backend's capabilities from its live OpenAPI spec on the first API call (cached thereafter). Ignored when `apiVersion` is set                                                                                                                       |
-| `openApiUrl`        | `string`          | No       | -       | Override the URL the live spec is fetched from during auto-detection. Defaults to `<apiUrl>/api/OpenAPI?scope=&layout=`. Useful for non-standard instances (e.g. devboxes)                                                                                          |
-| `specSource`        | `SpecSource`      | No       | -       | Advanced: fully override how the live spec is fetched during auto-detection (e.g. custom transport/proxy, or in tests). Takes precedence over `openApiUrl`                                                                                                          |
-| `beforeSign`        | `BeforeSignHook`  | No       | -       | Escape hatch: reshape a request payload just before it is canonicalized and signed. Whatever it returns is both signed and sent. See [Signature failures on array fields](#signature-failures-on-array-fields)                                                      |
+| Option              | Type                            | Required | Default | Description                                                                                                                                                                                                                                                         |
+| ------------------- | ------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apiUrl`            | `string`                        | Yes      | -       | API URL for the API endpoints (e.g. `"https://api.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                                  |
+| `authUrl`           | `string`                        | Yes      | -       | Authentication URL for the API endpoints (e.g. `"https://auth.metaco.8rey62.m3t4c0.services"`)                                                                                                                                                                      |
+| `privateKey`        | `string`                        | Yes\*    | -       | Private key (PEM) the SDK signs with internally. Provide exactly one of `privateKey` or `signer`                                                                                                                                                                    |
+| `signer`            | `CustodySigner`                 | Yes\*    | -       | External signer `{ algorithm, sign }` that runs only the raw signing primitive, keeping the private key outside the SDK (e.g. HSM/KMS). Provide exactly one of `privateKey` or `signer`. See [External signer](#external-signer-hsmkms) below                       |
+| `publicKey`         | `string`                        | Yes      | -       | Public key for authentication. Required in both signing modes                                                                                                                                                                                                       |
+| `timeout`           | `number`                        | No       | `30000` | Request timeout in milliseconds                                                                                                                                                                                                                                     |
+| `apiVersion`        | `KnownAppVersion`               | No       | -       | Pin the SDK to a specific Ripple Custody backend app version. Calls that version cannot serve throw `UnsupportedInVersionError`, gated against bundled capability data (no network). Only bundled versions are accepted, and setting this skips live auto-detection |
+| `autoDetectVersion` | `boolean`                       | No       | `true`  | Auto-detect the backend's capabilities from its live OpenAPI spec on the first API call (cached thereafter). Ignored when `apiVersion` is set                                                                                                                       |
+| `openApiUrl`        | `string`                        | No       | -       | Override the URL the live spec is fetched from during auto-detection. Defaults to `<apiUrl>/api/OpenAPI?scope=&layout=`. Useful for non-standard instances (e.g. devboxes)                                                                                          |
+| `specSource`        | `SpecSource`                    | No       | -       | Advanced: fully override how the live spec is fetched during auto-detection (e.g. custom transport/proxy, or in tests). Takes precedence over `openApiUrl`                                                                                                          |
+| `beforeSign`        | `BeforeSignHook`                | No       | -       | Escape hatch: reshape a request payload just before it is canonicalized and signed. Whatever it returns is both signed and sent. See [Signature failures on array fields](#signature-failures-on-array-fields)                                                      |
+| `debug`             | `boolean \| CustodyDebugLogger` | No       | `false` | Log every HTTP exchange the SDK makes — API calls and auth token requests. `true` writes to `console.error`; a function receives structured events. See [Debug logging](#debug-logging)                                                                             |
 
 \* Provide **exactly one** of `privateKey` or `signer`.
+
+#### Debug logging
+
+Set `debug` to see exactly what the SDK sends and receives. Both HTTP clients are
+covered — the API client and the auth token endpoint — and each request is paired
+with its response or error, carrying the status, duration, and error body.
+
+```typescript
+const custody = new RippleCustody({
+  apiUrl: "https://api.ripple.com",
+  authUrl: "https://auth.api.ripple.com/token",
+  publicKey,
+  privateKey,
+  debug: true,
+})
+```
+
+`true` writes to **`console.error`** (stderr), so diagnostics never mix into a
+program's stdout — which matters if you pipe your own output anywhere. Note that
+`console.debug` and `console.info` both write to _stdout_ in Node, so neither is
+an option here:
+
+```
+[custody:auth] → POST https://auth.api.ripple.com/token { "headers": { … }, "body": { "grant_type": "password", "signature": "MEQCIC…", … } }
+[custody:auth] ← 200 POST https://auth.api.ripple.com/token (112ms) { "body": { "access_token": "<redacted>", … } }
+[custody:api]  → POST https://api.ripple.com/v1/intents { "headers": { "Authorization": "Bearer <redacted>", … }, "body": { … } }
+[custody:api]  ← 401 POST https://api.ripple.com/v1/intents (89ms) — Request failed with status code 401 { "body": { "reason": "InvalidSignatureError" } }
+```
+
+Credentials are always masked, in both forms: the `Authorization` request header
+and the `access_token` / `id_token` / `refresh_token` response fields. Everything
+else is verbatim — including the auth request's `signature`, which is bound to a
+single challenge and is what you need when debugging a signature failure.
+
+To route diagnostics into your own logger, pass a `CustodyDebugLogger` instead. It
+receives a structured `CustodyDebugEvent`, discriminated on `kind`:
+
+```typescript
+import { RippleCustody, type CustodyDebugEvent } from "@florent-uzio/custody"
+
+const custody = new RippleCustody({
+  // …
+  debug: (event: CustodyDebugEvent) => {
+    // event.client is "api" | "auth"; event.kind is "request" | "response" | "error"
+    if (event.kind === "error") logger.error({ ...event }, "custody request failed")
+    else logger.debug({ ...event })
+  },
+})
+```
+
+This is also the way to control severity: log collectors often tag anything on
+stderr as error-level, so if `debug: true` makes your dashboards noisy, pass a
+logger that emits at the level you want instead.
+
+Note that `event.url` is the **resolved** absolute URL (`…/v1/domains/d-123/accounts`),
+not the `/v1/domains/{domainId}/accounts` template — path parameters are
+interpolated before the request is dispatched. Group events by URL with that in
+mind.
+
+The logger is called synchronously on the request path, so keep it cheap. A logger
+that throws is ignored rather than allowed to fail the request.
 
 #### External signer (HSM/KMS)
 
