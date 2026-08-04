@@ -94,6 +94,14 @@ stay consistent.
   `src/models/custody-internal-types.ts`. Shares its release's
   `x-app-version`, and unions into that version's capability entry.
 
+- **Internal namespace** — an SDK namespace whose endpoints live on the internal
+  surface. All of them hang off `client.internal.*` (so the two surfaces'
+  `operationId`s cannot collide on the client), import
+  `src/models/custody-internal-types.ts`, name their paths in
+  `src/constants/internal-urls.ts` (`InternalURLs`, deliberately non-exhaustive,
+  unlike the public `URLs`), and pass `surface: "internal"` — plus `sign: false`
+  on writes, since no internal body carries a signed envelope.
+
 - **Superset types** — the merged type universe for one surface — public in
   `src/models/custody-types.ts`, internal in
   `src/models/custody-internal-types.ts` — the union of every bundled spec of
@@ -142,6 +150,16 @@ stay consistent.
   Exposed under `client.health.*`, not top-level, so it does not collide with
   `RippleCustody.ready()` (which resolves the version guard, an unrelated
   concept). Available on app versions ≥ 1.36.1.
+
+- **CB_IN decryption** — recovering the cleartext amount of a confidential MPT
+  account's CB_IN (inbox) balance. Asynchronous: `POST /internal/v1/cmpt-cb-in`
+  accepts a `(domainId, accountId, ledgerId, issuanceId)` request and returns
+  `202` with a request id, and `GET /internal/v1/cmpt-cb-in/{requestId}` carries
+  the `decryptedAmount` once the request reaches `Completed` (`error` on
+  `Failed`). Exposed as `client.internal.cbInDecryption.*`, the first internal
+  namespace. Same request-state machine as a **cMPT compute**
+  (`client.accounts.initiateCmptCompute`), which prepares the cryptographic
+  fields of a confidential MPT transaction on the public surface.
 
 - **System property** — an instance-wide configuration value listed by
   `GET /v1/properties` (`client.systemProperties.list()`), identified by a

@@ -150,6 +150,16 @@ against the generated internal types, and will hang off a single
   `{ sign: false, surface: "internal" }`. No transport, auth or service changes.
 - CONTEXT.md gains **Surface**, **Public spec** and **Internal spec**.
 
+## Follow-up
+
+Realized on `feat/internal-cb-in-decryption`: `client.internal.cbInDecryption`
+(CB_IN decryption, `/internal/v1/cmpt-cb-in`) is the first internal namespace,
+and it needed no plumbing change — only `src/constants/internal-urls.ts`
+(`InternalURLs`, typed against the internal `paths` and, unlike the public
+`URLs`, deliberately non-exhaustive with no completeness assertion, since the
+SDK names only the internal endpoints it implements). The resulting conventions
+are recorded in CONTEXT.md under **Internal namespace**.
+
 ## Rejected alternatives
 
 - **`internal` as a third channel (`openapi/internal/`).** Conflates provenance

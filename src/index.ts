@@ -96,6 +96,11 @@ export type {
 export type * from "./namespaces/accounts.types.js"
 export { TERMINAL_CMPT_COMPUTE_STATUSES } from "./namespaces/accounts.types.js"
 
+// internal-surface types (ADR-0007): the internal `operations` map itself stays
+// unexported, only the namespace-facing aliases derived from it
+export type * from "./namespaces/internal/cb-in-decryption.types.js"
+export { TERMINAL_CB_IN_DECRYPTION_STATUSES } from "./namespaces/internal/cb-in-decryption.types.js"
+
 // transactions types
 export type * from "./namespaces/transactions.types.js"
 

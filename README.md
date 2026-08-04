@@ -362,6 +362,12 @@ shows the most common ones; the full surface — every namespace and its
 methods — is documented in [`docs/namespaces.md`](./docs/namespaces.md). XRPL
 and Batch signing methods have their own [XRPL Service](#xrpl-service) section.
 
+Namespaces under `client.internal.*` target the instance's **internal** API
+instead of the customer-facing one. They are meant for internal tooling: not
+covered by the public API's compatibility promises, and only version-gated on
+instances that serve the internal OpenAPI document. See [Internal
+namespaces](./docs/namespaces.md#internal-namespaces).
+
 ## XRPL Service
 
 The XRPL service provides a simplified, high-level API for creating XRPL transaction intents. Instead of manually building complex intent payloads, use `proposeIntent()` with a discriminated union — it handles user validation, domain resolution, and account lookup automatically.

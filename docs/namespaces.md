@@ -2,8 +2,10 @@
 
 Every namespace below is wired on the `RippleCustody` client. The [Quick
 Start](../README.md#3-use-the-sdk) shows the most common ones; this table is
-the full surface. XRPL and Batch signing methods have their own [XRPL
-Service](../README.md#xrpl-service) section.
+the full public surface. XRPL and Batch signing methods have their own [XRPL
+Service](../README.md#xrpl-service) section; the namespaces backed by the
+instance's internal API are listed under [Internal
+namespaces](#internal-namespaces).
 
 | Namespace                              | Methods                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Notes                                                                                                                                              |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -42,6 +44,41 @@ Service](../README.md#xrpl-service) section.
 | `client.virtualLedgers.accounts`       | `list`, `create`, `update`, `getBalances`, `assignDepositIdentificationSource`, `getAddresses`                                                                                                                                                                                                                                                                                                                                                                                                                                              | Per-account virtual ledger operations                                                                                                              |
 | `client.auth`                          | `getCurrentToken`, `getTokenExpiration`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Current JWT token and its expiration                                                                                                               |
 | `client.xrpl`                          | `proposeIntent`, `rawSign`, `rawSignAndWait`, `dryRunBatch`, `signBatchPayload`, `signBatchPayloadAndWait`, `getBatchSignature`, `proposeBatch`, `getPublicKey`                                                                                                                                                                                                                                                                                                                                                                             | See [XRPL Service](../README.md#xrpl-service)                                                                                                      |
+
+## Internal namespaces
+
+Everything under `client.internal.*` targets the instance's **internal** API
+(`/internal/v1/…`) rather than the customer-facing one, and is grouped there so
+the two surfaces' `operationId`s can never collide on the client. See
+[ADR-0007](adr/0007-public-vs-internal-surfaces.md).
+
+Three things follow from that and hold for every internal namespace:
+
+- **Not customer-facing.** These endpoints back internal tooling. They are not
+  covered by the public API's compatibility promises and can change between
+  releases without notice.
+- **Not version-gated.** The capability guard only judges surfaces it resolved.
+  An instance that serves the internal document (`?scope=internal`) gates them
+  like any other endpoint; one that doesn't lets the calls through, and the
+  backend decides.
+- **Unsigned bodies.** Internal request bodies carry no signed envelope, so
+  every internal write passes `{ sign: false }` internally.
+
+| Namespace                        | Methods                                                        | Notes                                                                                                                                                          |
+| -------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `client.internal.cbInDecryption` | `initiate`, `getStatus`, `getStatusAndWait`, `initiateAndWait` | CB_IN inbox balance decryption for confidential MPT accounts (devbox). Asynchronous: `initiate` returns a request id; `decryptedAmount` arrives on `Completed` |
+
+```ts
+// One call: initiate, then poll to a terminal status.
+const { isSuccess, decryption } = await client.internal.cbInDecryption.initiateAndWait({
+  domainId,
+  accountId,
+  ledgerId: "xrpl-devnet",
+  issuanceId,
+})
+
+if (isSuccess) console.log(decryption.decryptedAmount)
+```
 
 ## Top-level client methods
 

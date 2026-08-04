@@ -1,0 +1,7 @@
+---
+"@florent-uzio/custody": minor
+---
+
+Add `client.internal.cbInDecryption` — the first namespace on the **internal** API surface (ADR-0007) — wrapping the two CB_IN inbox balance decryption endpoints for confidential MPT (cMPT) accounts: `POST /internal/v1/cmpt-cb-in` and `GET /internal/v1/cmpt-cb-in/{requestId}`. Methods: `initiate`, `getStatus`, plus `getStatusAndWait` / `initiateAndWait`, which poll to a terminal status (`Completed` / `Failed`) exactly like their `client.accounts.*CmptCompute*` counterparts — same `maxRetries` / `intervalMs` / `onStatusCheck` options, and a 404 while the request materializes is retried rather than thrown. `decryptedAmount` is populated on the returned status once the decryption reaches `Completed`.
+
+Everything under `client.internal.*` targets the instance's internal API rather than the customer-facing one: types come from `src/models/custody-internal-types.ts`, paths from the new `InternalURLs` map (`src/constants/internal-urls.ts`, typed against the internal document and deliberately non-exhaustive), and every call passes `surface: "internal"` — plus `sign: false` on writes, since no internal request body carries a signed envelope. Consequently these endpoints are only version-gated on instances that serve the internal OpenAPI document; elsewhere the guard fails open for that surface and the backend decides. They back internal tooling and are not covered by the public API's compatibility promises.
