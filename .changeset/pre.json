@@ -7,6 +7,7 @@
   "changesets": [
     "before-sign-signature-hint",
     "cmpt-compute-unsigned-post",
-    "confidential-mpt-cmpt-compute"
+    "confidential-mpt-cmpt-compute",
+    "vendor-xrpl-confidential-mpts-031913c"
   ]
 }

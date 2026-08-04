@@ -1,5 +1,13 @@
 # custody
 
+## 2.13.0-beta.3
+
+### Patch Changes
+
+- c2d89c0: Refresh the vendored [`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts) builds from commit `63af7e9` to `031913c`, and bundle `@xrplf/mpt-crypto` alongside `xrpl` and `ripple-binary-codec`. Neither vendored package bumps its version upstream (`xrpl` is still `5.0.0`, `ripple-binary-codec` still `2.8.0`), so this is a contents-only refresh with no change to the SDK's own API. `@xrplf/mpt-crypto` (the WASM proof/ElGamal package) has to be vendored now because `xrpl` declares it as a plain dependency at `^0.1.0` rather than an optional peer dependency, and it is not published on the npm registry — without the bundle, installing this package would fail to resolve it. All three are pinned through `overrides` and packed via `bundleDependencies`, which grows the published package from ~3.6 MB to ~5.2 MB. See `vendor/README.md`.
+
+  The refreshed `ripple-binary-codec` definitions rename the `MPTokenIssuanceCreate` / `MPTokenIssuanceSet` `MutableFlags` field to `ImmutableFlags` and drop the `MPTokenIssuanceMutable` ledger-entry flag map, so confidential MPT transactions now serialize against the current devbox rippled rather than the older field name. Per XLS-0094, `xrpl`'s separate `MPTokenIssuanceSetMutableFlags` (`tmfMPT*`) enum is also gone, folded into `MPTokenIssuanceSetFlags` as `tfMPTSetCanLock` (4) through `tfMPTSetCanClawback` (128). The three flag values `client.xrpl`'s adapters read numerically are unaffected — `tfMPTLock` (1), `tfMPTUnlock` (2) and `tfMPTSetCanHoldConfidentialBalance` (256) all keep their previous values — so `MPTokenIssuanceSet` operations still map to the Custody `flags` and `mutableFlags` fields as before. Applications that import `xrpl` directly and referenced `MPTokenIssuanceSetMutableFlags` will need to move those flags onto `Flags` when they update their own vendored copy.
+
 ## 2.13.0-beta.2
 
 ### Minor Changes
