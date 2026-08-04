@@ -1,5 +1,15 @@
 # custody
 
+## 2.13.0-beta.5
+
+### Minor Changes
+
+- b7e61b1: Add an **internal API surface** to the OpenAPI type-generation pipeline (ADR-0007). Bundled specs are now organized by two orthogonal axes: **channel** (provenance — `openapi/official/`, `openapi/devbox/`, unchanged from ADR-0005) and **surface** (which API the spec describes — a spec at a channel root is `public`, one under `openapi/<channel>/internal/` is `internal`). The internal API (`/internal/v1/…`, `Internal_*` schemas) is disjoint from the public one in both paths and schemas, but reuses some of its `operationId`s (`getUsers`, `getAllEvents`), so each surface is merged into its own document and emitted as its own types file: `src/models/custody-types.ts` for public (output unchanged) and the new `src/models/custody-internal-types.ts` for internal. Within a surface the official-authoritative / devbox-additive merge rules are unchanged. The offline capability dataset stays official-only but now **unions both surfaces of a release** into one `x-app-version` entry, so an official internal spec dropped into `openapi/official/internal/` gates its endpoints under an `apiVersion` pin with no code change; the duplicate-version guard still fires per surface. Bundles the devbox `1.36.2` internal spec at `openapi/devbox/internal/openapi-1-36-2-internal.json`.
+
+  Gating is now **per surface**. `TypedTransport` checks every call against the version guard, so without this the guard would reject every internal endpoint as unsupported the moment it became active — none of them appears in a public spec. `ResolvedCapabilities` (and each `capabilities.generated.ts` entry) now records the `surfaces` it actually describes, and the guard returns early for a surface it never enumerated — the same fail-open philosophy it already applies when no version resolves at all, narrowed to one surface. Auto-detection fetches the instance's internal document from `<apiUrl>/api/OpenAPI?scope=internal&layout=` concurrently with the public one and unions the two; the internal fetch is best-effort, so an instance that doesn't expose it simply resolves to `surfaces: ["public"]`. Detection is skipped when `apiVersion` is pinned or a custom `specSource` is supplied, and no new client option is introduced. Call sites opt in via `RequestConfig.surface`, which is stripped before the config reaches axios.
+
+  No public API change: `custody-internal-types.ts` is not re-exported from the client, `apiVersion` still enumerates official releases only, and the `client.internal.*` namespaces that consume all of this will land in follow-up releases.
+
 ## 2.13.0-beta.4
 
 ### Minor Changes

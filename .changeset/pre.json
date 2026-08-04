@@ -9,6 +9,7 @@
     "cmpt-compute-unsigned-post",
     "confidential-mpt-cmpt-compute",
     "debug-http-logging",
+    "internal-openapi-surface",
     "vendor-xrpl-confidential-mpts-031913c"
   ]
 }
