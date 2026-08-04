@@ -372,11 +372,53 @@ describe("TypedTransport", () => {
     })
   })
 
+  describe("internal surface (ADR-0007)", () => {
+    const guard = new VersionGuard({
+      appVersion: "test",
+      endpoints: new Set(["GET /v1/allowed"]),
+      schemas: new Set(),
+      surfaces: new Set(["public" as const]),
+    })
+
+    beforeEach(() => {
+      vi.clearAllMocks()
+      transport = new TypedTransport(mockApiService as any, guard)
+    })
+
+    it("passes an internal call through when only public capabilities resolved", async () => {
+      mockApiService.get.mockResolvedValue({ data: [] })
+
+      await expect(
+        transport.get("/internal/v1/users", undefined, undefined, { surface: "internal" }),
+      ).resolves.toEqual({ data: [] })
+    })
+
+    it("still gates a public call against the same guard", async () => {
+      await expect(transport.get("/v1/denied")).rejects.toThrow(UnsupportedInVersionError)
+    })
+
+    it("does not leak `surface` into the axios config", async () => {
+      mockApiService.post.mockResolvedValue({ ok: true })
+
+      await transport.post("/internal/v1/vaults/current", { signedPayload: "x" }, undefined, {
+        surface: "internal",
+        sign: false,
+      })
+
+      expect(mockApiService.post).toHaveBeenCalledWith(
+        "/internal/v1/vaults/current",
+        { signedPayload: "x" },
+        { sign: false },
+      )
+    })
+  })
+
   describe("endpoint version gating", () => {
     const guard = new VersionGuard({
       appVersion: "test",
       endpoints: new Set(["GET /v1/allowed", "GET /v1/domains/{domainId}"]),
       schemas: new Set(),
+      surfaces: new Set(["public" as const]),
     })
 
     beforeEach(() => {

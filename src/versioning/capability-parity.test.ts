@@ -1,5 +1,5 @@
 // @ts-expect-error - works
-import { readdirSync, readFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 // @ts-expect-error - works
 import { dirname, join } from "node:path"
 // @ts-expect-error - works
@@ -10,12 +10,18 @@ import { extractCapabilitiesFromSpec } from "./detect.js"
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-const specDirs = [join(here, "../../openapi/official"), join(here, "../../openapi/devbox")]
+const openapiDir = join(here, "../../openapi")
+
+// Both channels, and both surfaces within each channel (ADR-0007): the internal
+// specs feed the same capability dataset, so they need the same parity check.
+const specDirs = ["official", "devbox"]
+  .flatMap((channel) => [join(openapiDir, channel), join(openapiDir, channel, "internal")])
+  .filter((dir: string) => existsSync(dir))
 
 const specFiles = specDirs.flatMap((dir) =>
-  readdirSync(dir)
-    .filter((name: string) => name.endsWith(".json"))
-    .map((name: string) => join(dir, name)),
+  readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => join(dir, entry.name)),
 )
 
 describe("capability extraction parity", () => {

@@ -22,6 +22,13 @@
  * `components`, `properties`, …) are merged key-by-key, recursing into shared
  * keys. Only `paths` and `components` are unioned; every other top-level field
  * is taken from the base (newest official) document.
+ *
+ * Orthogonal to the channel is the spec's **surface** — `public` or `internal`
+ * (ADR-0007). Surfaces are merged **separately**, into one document each: the
+ * internal API is a disjoint API served by the same instance, and its
+ * `operationId`s (`getUsers`, `getAllEvents`) collide with public ones, so a
+ * single merged document would silently drop operations. Within a surface the
+ * official/devbox rules above apply unchanged.
  */
 
 /** @param {any} v @returns {v is Record<string, unknown>} */
@@ -142,6 +149,43 @@ function mergeValue(a, b, path, warnings, prefer = "b") {
     return b
   }
   return a
+}
+
+/** The two API surfaces a bundled spec can describe (ADR-0007). */
+export const PUBLIC_SURFACE = "public"
+export const INTERNAL_SURFACE = "internal"
+
+/**
+ * @param {Array<{ doc: any, channel: string, surface?: string }>} taggedDocs
+ * @returns {Array<{ doc: any, channel: string }>}
+ */
+function docsForSurface(taggedDocs, surface) {
+  return taggedDocs
+    .filter((t) => (t.surface ?? PUBLIC_SURFACE) === surface)
+    .map((t) => ({ doc: t.doc, channel: t.channel }))
+}
+
+/**
+ * Merge channel- and surface-tagged documents into **one document per surface**
+ * (ADR-0007). Each surface is merged in isolation by {@link mergeOpenApiDocs},
+ * so a surface with no bundled specs is simply absent from the result.
+ *
+ * @param {Array<{ doc: any, channel: string, surface?: string }>} taggedDocs -
+ *   tagged OpenAPI documents; `surface` defaults to `"public"`.
+ * @returns {Record<string, { merged: any, warnings: string[] }>} keyed by surface.
+ */
+export function mergeOpenApiDocsBySurface(taggedDocs) {
+  if (!taggedDocs || taggedDocs.length === 0) {
+    throw new Error("mergeOpenApiDocsBySurface: no documents provided")
+  }
+
+  /** @type {Record<string, { merged: any, warnings: string[] }>} */
+  const out = {}
+  for (const surface of [PUBLIC_SURFACE, INTERNAL_SURFACE]) {
+    const docs = docsForSurface(taggedDocs, surface)
+    if (docs.length > 0) out[surface] = mergeOpenApiDocs(docs)
+  }
+  return out
 }
 
 /**
