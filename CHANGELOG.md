@@ -1,5 +1,15 @@
 # custody
 
+## 2.13.0-beta.4
+
+### Minor Changes
+
+- 9175c5a: Add a `debug` client option that logs every HTTP exchange the SDK makes, so a failing call can be diagnosed without patching the SDK or attaching a proxy. Both HTTP clients are covered — the API client and the auth token endpoint, the latter being where signature failures actually surface — and each request is paired with its response or error, carrying the status, round-trip duration and error body.
+
+  `debug: true` writes to `console.error` (stderr, so diagnostics never mix into a program's stdout, which callers may be piping). Passing a `CustodyDebugLogger` instead routes the structured events into your own logger, for filtering or reshaping: it receives a `CustodyDebugEvent` discriminated on `kind` (`"request"`, then exactly one `"response"` or `"error"`) and tagged with `client` (`"api"` or `"auth"`). The logger is called synchronously on the request path, and one that throws is ignored rather than allowed to fail the request. Exports `CustodyDebugEvent`, `CustodyDebugLogger`, `CustodyDebugClient` and `CustodyHttpMethod` (the uppercased verb, narrowed from plain `string` to the five verbs the SDK issues plus any future string, following the same pattern as `CmptComputeStatus` and `LedgerId`).
+
+  Credentials are always masked, in both forms — the `Authorization` request header and the `access_token` / `id_token` / `refresh_token` response fields — so events are safe to write wherever the rest of an application's logs go. Everything else is verbatim, including the auth request's `signature`, which is bound to a single challenge and is the thing you need when debugging a signature mismatch. Failures raised inside the request interceptor chain (a token request that never succeeded) emit nothing, since nothing went on the wire and the underlying cause is already logged on the auth client.
+
 ## 2.13.0-beta.3
 
 ### Patch Changes

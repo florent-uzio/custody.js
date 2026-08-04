@@ -8,6 +8,7 @@
     "before-sign-signature-hint",
     "cmpt-compute-unsigned-post",
     "confidential-mpt-cmpt-compute",
+    "debug-http-logging",
     "vendor-xrpl-confidential-mpts-031913c"
   ]
 }
