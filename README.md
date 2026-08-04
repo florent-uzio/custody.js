@@ -56,9 +56,9 @@ npm install github:florent-uzio/custody.js
 Beta versions published from the `feat/confidential-transfers` branch depend on
 the unreleased
 [`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts)
-branch. Those builds of `xrpl` and `ripple-binary-codec` are bundled into the
-published package, so the SDK's own confidential-MPT support works with no
-extra setup.
+branch. Those builds of `xrpl`, `ripple-binary-codec` and `@xrplf/mpt-crypto`
+are bundled into the published package, so the SDK's own confidential-MPT
+support works with no extra setup.
 
 The bundle only covers the SDK's internal use. If your application imports
 `xrpl` directly — to build a `Batch`, set
@@ -71,11 +71,14 @@ too:
 ```bash
 git clone --branch confidential-mpts --single-branch https://github.com/XRPLF/xrpl.js.git
 cd xrpl.js && npm ci && npx lerna run build --stream
-npm pack --workspace ripple-binary-codec --workspace xrpl --pack-destination <your-project>/vendor
+npm pack --workspace ripple-binary-codec --workspace xrpl --workspace @xrplf/mpt-crypto \
+  --pack-destination <your-project>/vendor
 ```
 
-then point `xrpl` at the tarball and add a `ripple-binary-codec` `overrides`
-entry. This section goes away once XRPLF publishes the branch to npm.
+then point `xrpl` at the tarball and add `ripple-binary-codec` and
+`@xrplf/mpt-crypto` `overrides` entries — `xrpl` now depends on
+`@xrplf/mpt-crypto` outright, and it is not on the npm registry. This section
+goes away once XRPLF publishes the branch to npm.
 
 ## Quick Start
 

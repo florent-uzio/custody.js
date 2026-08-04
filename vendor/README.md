@@ -2,15 +2,16 @@
 
 These tarballs are local `npm pack` outputs of the **unreleased**
 [`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts)
-branch, at commit `63af7e9`. They exist only so this branch can use the
+branch, at commit `031913c`. They exist only so this branch can use the
 XLS-96 confidential-MPT surface before XRPLF publishes it to npm.
 
 | Tarball                                                   | Source package                 |
 | --------------------------------------------------------- | ------------------------------ |
-| `xrpl-5.0.0-confidential-mpts.63af7e9.tgz`                | `packages/xrpl`                |
-| `ripple-binary-codec-2.8.0-confidential-mpts.63af7e9.tgz` | `packages/ripple-binary-codec` |
+| `xrpl-5.0.0-confidential-mpts.031913c.tgz`                | `packages/xrpl`                |
+| `ripple-binary-codec-2.8.0-confidential-mpts.031913c.tgz` | `packages/ripple-binary-codec` |
+| `xrplf-mpt-crypto-0.1.0-confidential-mpts.031913c.tgz`    | `packages/mpt-crypto`          |
 
-## Why both packages
+## Why all three packages
 
 The branch does not bump any version numbers — `xrpl` is still `5.0.0` and
 `ripple-binary-codec` is still `2.8.0` — but `ripple-binary-codec`'s
@@ -21,10 +22,13 @@ only `xrpl` would resolve `ripple-binary-codec@2.8.0` from the registry and
 silently fail to serialize any confidential transaction, so `package.json`
 pins it through an `overrides` entry.
 
-`@xrplf/mpt-crypto` (the WASM proof/ElGamal package) is **not** vendored. It is
-an optional peer dependency that `xrpl` lazily imports only from the
-`xrpl/confidential` subpath, which this SDK does not use. Add it here if
-client-side proof generation is ever needed.
+`@xrplf/mpt-crypto` (the WASM proof/ElGamal package) is vendored for a different
+reason: it used to be an _optional peer_ dependency, but as of `0650a2e` `xrpl`
+declares it as a plain `dependency` at `^0.1.0`. Despite that commit's message,
+`@xrplf/mpt-crypto` is not on the npm registry — a bare `npm install` therefore
+404s on it. It is pinned through an `overrides` entry too, so `xrpl`'s `^0.1.0`
+range resolves to the tarball rather than to the registry. Its committed
+`wasm/` artifacts are packed as-is; nothing needs to be compiled.
 
 ## Publishing
 
@@ -35,14 +39,14 @@ dependency rather than as the root project. Both problems are solved by
 `bundleDependencies` in `package.json`:
 
 ```json
-"bundleDependencies": ["xrpl", "ripple-binary-codec"]
+"bundleDependencies": ["xrpl", "ripple-binary-codec", "@xrplf/mpt-crypto"]
 ```
 
-npm then packs the installed `node_modules/xrpl` and
-`node_modules/ripple-binary-codec` trees into the published tarball, so the
-consumer resolves the forked builds from
+npm then packs the installed `node_modules/xrpl`,
+`node_modules/ripple-binary-codec` and `node_modules/@xrplf/mpt-crypto` trees
+into the published tarball, so the consumer resolves the forked builds from
 `node_modules/@florent-uzio/custody/node_modules/`. This grows the package from
-~0.3 MB to ~3.6 MB.
+~0.3 MB to ~5.2 MB.
 
 Note that this covers the SDK's _own_ use of `xrpl`. A consumer who imports
 `xrpl` directly in their app still gets whatever version they installed
@@ -56,15 +60,25 @@ directory.
 
 ```sh
 git clone --branch confidential-mpts --single-branch https://github.com/XRPLF/xrpl.js.git
-cd xrpl.js && git checkout 63af7e9
+cd xrpl.js && git checkout 031913c
 npm ci && npx lerna run build --stream
-npm pack --workspace ripple-binary-codec --workspace xrpl --pack-destination <repo>/vendor
+npm pack --workspace ripple-binary-codec --workspace xrpl --workspace @xrplf/mpt-crypto \
+  --pack-destination <repo>/vendor
 # then rename each tarball with the -confidential-mpts.<sha> suffix
+```
+
+Because the branch never bumps versions, the tarball contents change while
+`name@version` stays the same. `npm install` alone will keep resolving the paths
+already recorded in `package-lock.json`, so refresh the lockfile after swapping
+tarballs:
+
+```sh
+rm -rf node_modules package-lock.json && npm install
 ```
 
 ## Removing
 
 When XRPLF ships this (likely as a `confidential-mpts-experimental` dist-tag,
 as was done for `batch-experimental`), delete this directory, drop the
-`overrides` block from `package.json`, restore `"xrpl": "^<version>"`, and drop
-the `!vendor/*.tgz` negation from `.gitignore`.
+`overrides` and `bundleDependencies` blocks from `package.json`, restore
+`"xrpl": "^<version>"`, and drop the `!vendor/*.tgz` negation from `.gitignore`.
