@@ -9,9 +9,9 @@ import type {
   Core_AddressesCollection,
   Core_AddressReferenceCollection,
   Core_ApiAccount,
-  Core_ApiCmptComputeStatusResponse,
-  Core_ApiInitiateCmptComputeResponse,
+  Core_ApiInitiateParametersComputeResponse,
   Core_ApiManifest,
+  Core_ApiParametersComputeStatusResponse,
   Core_BalancesCollection,
   Core_BalanceWithConfirmedAmount,
   Core_ComplianceConfiguration,
@@ -37,7 +37,6 @@ import type {
   GetAddressesPathParams,
   GetAddressesQueryParams,
   GetAllDomainsAddressesQueryParams,
-  GetCmptComputeStatusPathParams,
   GetComplianceConfigurationPathParams,
   GetDepositInstructionPathParams,
   GetLatestAddressPathParams,
@@ -45,20 +44,21 @@ import type {
   GetManifestPathParams,
   GetManifestsPathParams,
   GetManifestsQueryParams,
+  GetParametersComputeStatusPathParams,
   GetTransferabilityPathParams,
   GetTransferabilityQueryParams,
-  InitiateCmptComputeBody,
-  InitiateCmptComputePathParams,
+  InitiateParametersComputeBody,
+  InitiateParametersComputePathParams,
   ListComplianceConfigurationsPathParams,
   ListComplianceConfigurationsQueryParams,
   ListDepositInstructionsPathParams,
   ListDepositInstructionsQueryParams,
   UpsertComplianceConfigurationBody,
   UpsertComplianceConfigurationPathParams,
-  WaitForCmptComputeOptions,
-  WaitForCmptComputeResult,
+  WaitForParametersComputeOptions,
+  WaitForParametersComputeResult,
 } from "./accounts.types.js"
-import { TERMINAL_CMPT_COMPUTE_STATUSES } from "./accounts.types.js"
+import { TERMINAL_PARAMETERS_COMPUTE_STATUSES } from "./accounts.types.js"
 
 /**
  * Finds an account by its blockchain address across all domains.
@@ -124,7 +124,7 @@ function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
 }
 
 /**
- * Wait for a cMPT computation to reach a terminal status (Completed or Failed).
+ * Wait for a parameters computation to reach a terminal status (Completed or Failed).
  * Polls the compute status at regular intervals until it finishes or max retries
  * is reached. `cryptographicFields` is populated on the returned `compute` once
  * the status is `Completed`.
@@ -133,19 +133,19 @@ function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
  * initiating) and is retried within the same polling loop rather than aborting
  * the wait.
  */
-async function waitForCmptCompute(
+async function waitForParametersCompute(
   t: Transport,
-  params: GetCmptComputeStatusPathParams,
-  options: WaitForCmptComputeOptions = {},
-): Promise<WaitForCmptComputeResult> {
+  params: GetParametersComputeStatusPathParams,
+  options: WaitForParametersComputeOptions = {},
+): Promise<WaitForParametersComputeResult> {
   const { maxRetries = 10, intervalMs = 3000, onStatusCheck } = options
 
-  let lastCompute: Core_ApiCmptComputeStatusResponse | undefined
+  let lastCompute: Core_ApiParametersComputeStatusResponse | undefined
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const compute = await t.get<Core_ApiCmptComputeStatusResponse>(
-        URLs.accountCmptComputeStatus,
+      const compute = await t.get<Core_ApiParametersComputeStatusResponse>(
+        URLs.accountParametersComputeStatus,
         params,
       )
       lastCompute = compute
@@ -153,7 +153,7 @@ async function waitForCmptCompute(
 
       onStatusCheck?.(status, attempt)
 
-      if (TERMINAL_CMPT_COMPUTE_STATUSES.includes(status)) {
+      if (TERMINAL_PARAMETERS_COMPUTE_STATUSES.includes(status)) {
         return {
           status,
           isTerminal: true,
@@ -176,7 +176,9 @@ async function waitForCmptCompute(
   // Retries exhausted. If the computation never materialized, surface that as a 404.
   if (isUndefined(lastCompute)) {
     throw new CustodyError(
-      { reason: `cMPT computation ${params.computeId} not found after ${maxRetries} attempts` },
+      {
+        reason: `parameters computation ${params.computeId} not found after ${maxRetries} attempts`,
+      },
       404,
     )
   }
@@ -293,39 +295,40 @@ export function createAccounts(t: Transport) {
       params: GetDepositInstructionPathParams,
     ): Promise<Core_TrustedDepositInstructions> => t.get(URLs.accountDepositInstruction, params),
 
-    initiateCmptCompute: (
-      params: InitiateCmptComputePathParams,
-      body: InitiateCmptComputeBody,
-    ): Promise<Core_ApiInitiateCmptComputeResponse> =>
-      t.post(URLs.accountCmptCompute, body, params, { sign: false }),
+    initiateParametersCompute: (
+      params: InitiateParametersComputePathParams,
+      body: InitiateParametersComputeBody,
+    ): Promise<Core_ApiInitiateParametersComputeResponse> =>
+      t.post(URLs.accountParametersCompute, body, params, { sign: false }),
 
-    getCmptComputeStatus: (
-      params: GetCmptComputeStatusPathParams,
-    ): Promise<Core_ApiCmptComputeStatusResponse> => t.get(URLs.accountCmptComputeStatus, params),
+    getParametersComputeStatus: (
+      params: GetParametersComputeStatusPathParams,
+    ): Promise<Core_ApiParametersComputeStatusResponse> =>
+      t.get(URLs.accountParametersComputeStatus, params),
 
-    getCmptComputeStatusAndWait: (
-      params: GetCmptComputeStatusPathParams,
-      options?: WaitForCmptComputeOptions,
-    ): Promise<WaitForCmptComputeResult> => waitForCmptCompute(t, params, options),
+    getParametersComputeStatusAndWait: (
+      params: GetParametersComputeStatusPathParams,
+      options?: WaitForParametersComputeOptions,
+    ): Promise<WaitForParametersComputeResult> => waitForParametersCompute(t, params, options),
 
     /**
-     * Initiates a cMPT computation and waits for it to finish, so the caller
+     * Initiates a parameters computation and waits for it to finish, so the caller
      * gets the `cryptographicFields` needed to build a confidential transfer in
      * a single call.
      */
-    initiateCmptComputeAndWait: async (
-      params: InitiateCmptComputePathParams,
-      body: InitiateCmptComputeBody,
-      options?: WaitForCmptComputeOptions,
-    ): Promise<WaitForCmptComputeResult> => {
-      const { cmptComputeId } = await t.post<Core_ApiInitiateCmptComputeResponse>(
-        URLs.accountCmptCompute,
+    initiateParametersComputeAndWait: async (
+      params: InitiateParametersComputePathParams,
+      body: InitiateParametersComputeBody,
+      options?: WaitForParametersComputeOptions,
+    ): Promise<WaitForParametersComputeResult> => {
+      const { id } = await t.post<Core_ApiInitiateParametersComputeResponse>(
+        URLs.accountParametersCompute,
         body,
         params,
         { sign: false },
       )
 
-      return waitForCmptCompute(t, { ...params, computeId: cmptComputeId }, options)
+      return waitForParametersCompute(t, { ...params, computeId: id }, options)
     },
   } as const
 }

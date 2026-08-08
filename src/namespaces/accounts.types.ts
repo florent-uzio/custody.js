@@ -69,12 +69,13 @@ export type ListDepositInstructionsQueryParams =
 export type GetDepositInstructionPathParams =
   operations["deposit-instructions-by-id"]["parameters"]["path"]
 
-export type InitiateCmptComputePathParams = operations["initiateCmptCompute"]["parameters"]["path"]
-export type InitiateCmptComputeBody =
-  operations["initiateCmptCompute"]["requestBody"]["content"]["application/json"]
+export type InitiateParametersComputePathParams =
+  operations["initiateParametersCompute"]["parameters"]["path"]
+export type InitiateParametersComputeBody =
+  operations["initiateParametersCompute"]["requestBody"]["content"]["application/json"]
 
-export type GetCmptComputeStatusPathParams =
-  operations["getCmptComputeStatus"]["parameters"]["path"]
+export type GetParametersComputeStatusPathParams =
+  operations["getParametersComputeStatus"]["parameters"]["path"]
 
 // Response types
 
@@ -123,9 +124,9 @@ export type Core_TrustedDepositInstructions =
   operations["deposit-instructions-by-id"]["responses"]["200"]["content"]["application/json"]
 
 /**
- * Statuses returned by the cMPT compute endpoints. `Pending` and `Preparing`
- * are transient; `Completed` and `Failed` are terminal (`cryptographicFields`
- * is only populated on `Completed`).
+ * Statuses returned by the parameters compute endpoints. `Pending` and
+ * `Preparing` are transient; `Completed` and `Failed` are terminal
+ * (`cryptographicFields` is only populated on `Completed`).
  *
  * Trailing `(string & {})` keeps the union assignable from any string, so the
  * SDK never blocks consumers when the API adds a new status.
@@ -134,29 +135,33 @@ export type Core_TrustedDepositInstructions =
  * OpenAPI spec declares the enum — the generated type will then carry the
  * literals itself.
  */
-export type CmptComputeStatus = "Pending" | "Preparing" | "Completed" | "Failed" | (string & {})
+export type ParametersComputeStatus =
+  "Pending" | "Preparing" | "Completed" | "Failed" | (string & {})
 
-export type Core_ApiInitiateCmptComputeResponse = Prettify<
+export type Core_ApiInitiateParametersComputeResponse = Prettify<
   Omit<
-    operations["initiateCmptCompute"]["responses"]["200"]["content"]["application/json"],
+    operations["initiateParametersCompute"]["responses"]["200"]["content"]["application/json"],
     "status"
-  > & { status: CmptComputeStatus }
+  > & { status: ParametersComputeStatus }
 >
 
-export type Core_ApiCmptComputeStatusResponse = Prettify<
+export type Core_ApiParametersComputeStatusResponse = Prettify<
   Omit<
-    operations["getCmptComputeStatus"]["responses"]["200"]["content"]["application/json"],
+    operations["getParametersComputeStatus"]["responses"]["200"]["content"]["application/json"],
     "status"
-  > & { status: CmptComputeStatus }
+  > & { status: ParametersComputeStatus }
 >
 
-/** Statuses that indicate the cMPT computation has finished processing */
-export const TERMINAL_CMPT_COMPUTE_STATUSES: CmptComputeStatus[] = ["Completed", "Failed"]
+/** Statuses that indicate the parameters computation has finished processing */
+export const TERMINAL_PARAMETERS_COMPUTE_STATUSES: ParametersComputeStatus[] = [
+  "Completed",
+  "Failed",
+]
 
 /**
- * Options for waiting for a cMPT computation to finish.
+ * Options for waiting for a parameters computation to finish.
  */
-export type WaitForCmptComputeOptions = {
+export type WaitForParametersComputeOptions = {
   /**
    * Maximum number of polling attempts (default: 10). Also bounds how long a
    * not-yet-available (404) computation is waited for, since 404s are retried
@@ -169,21 +174,21 @@ export type WaitForCmptComputeOptions = {
    * Callback function called on each status check.
    * Useful for logging or updating UI.
    */
-  onStatusCheck?: (status: CmptComputeStatus, attempt: number) => void
+  onStatusCheck?: (status: ParametersComputeStatus, attempt: number) => void
 }
 
 /**
- * Result of waiting for a cMPT computation to finish.
+ * Result of waiting for a parameters computation to finish.
  */
-export type WaitForCmptComputeResult = {
+export type WaitForParametersComputeResult = {
   /** The final status of the computation */
-  status: CmptComputeStatus
+  status: ParametersComputeStatus
   /** Whether the computation reached a terminal status */
   isTerminal: boolean
   /** Whether the computation completed successfully */
   isSuccess: boolean
   /** The full status response — `cryptographicFields` is populated on `Completed` */
-  compute: Core_ApiCmptComputeStatusResponse
+  compute: Core_ApiParametersComputeStatusResponse
 }
 
 /**

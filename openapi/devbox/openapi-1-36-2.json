@@ -6826,13 +6826,13 @@
         ]
       }
     },
-    "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute": {
+    "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute": {
       "post": {
         "tags": [
-          "CmptCompute"
+          "ParametersCompute"
         ],
-        "summary": "Initiate a cMPT parameter computation for an account",
-        "operationId": "initiateCmptCompute",
+        "summary": "Initiate a parameter computation for an account",
+        "operationId": "initiateParametersCompute",
         "parameters": [
           {
             "name": "domainId",
@@ -6858,7 +6858,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Core_ApiInitiateCmptComputeRequest"
+                "$ref": "#/components/schemas/Core_ApiInitiateParametersComputeRequest"
               }
             }
           },
@@ -6870,7 +6870,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Core_ApiInitiateCmptComputeResponse"
+                  "$ref": "#/components/schemas/Core_ApiInitiateParametersComputeResponse"
                 }
               }
             }
@@ -6913,13 +6913,13 @@
         ]
       }
     },
-    "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute/{computeId}": {
+    "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute/{computeId}": {
       "get": {
         "tags": [
-          "CmptCompute"
+          "ParametersCompute"
         ],
         "summary": "Get the status of a cMPT parameter computation",
-        "operationId": "getCmptComputeStatus",
+        "operationId": "getParametersComputeStatus",
         "parameters": [
           {
             "name": "domainId",
@@ -6956,7 +6956,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Core_ApiCmptComputeStatusResponse"
+                  "$ref": "#/components/schemas/Core_ApiParametersComputeStatusResponse"
                 }
               }
             }
@@ -10307,172 +10307,6 @@
         ],
         "type": "string"
       },
-      "Core_ApiCmptComputeCryptographicFields": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/Core_ApiCmptComputeCryptographicFields_Convert"
-          },
-          {
-            "$ref": "#/components/schemas/Core_ApiCmptComputeCryptographicFields_ConvertBack"
-          },
-          {
-            "$ref": "#/components/schemas/Core_ApiCmptComputeCryptographicFields_Send"
-          }
-        ]
-      },
-      "Core_ApiCmptComputeCryptographicFields_Convert": {
-        "required": [
-          "holderEncryptedAmount",
-          "issuerEncryptedAmount",
-          "blindingFactor"
-        ],
-        "type": "object",
-        "properties": {
-          "holderEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "issuerEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "blindingFactor": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "zkProof": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "auditorEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          }
-        }
-      },
-      "Core_ApiCmptComputeCryptographicFields_ConvertBack": {
-        "required": [
-          "holderEncryptedAmount",
-          "issuerEncryptedAmount",
-          "blindingFactor",
-          "balanceCommitment",
-          "zkProof"
-        ],
-        "type": "object",
-        "properties": {
-          "holderEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "issuerEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "blindingFactor": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "balanceCommitment": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "zkProof": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "auditorEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          }
-        }
-      },
-      "Core_ApiCmptComputeCryptographicFields_Send": {
-        "required": [
-          "senderEncryptedAmount",
-          "destinationEncryptedAmount",
-          "issuerEncryptedAmount",
-          "balanceCommitment",
-          "amountCommitment",
-          "zkProof"
-        ],
-        "type": "object",
-        "properties": {
-          "senderEncryptedBalance": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "senderEncryptedBalanceVersion": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "senderEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "destinationEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "issuerEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "balanceCommitment": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "amountCommitment": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "zkProof": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          },
-          "auditorEncryptedAmount": {
-            "pattern": "^[A-Fa-f0-9]*$",
-            "type": "string",
-            "description": "Hex encoded string."
-          }
-        }
-      },
-      "Core_ApiCmptComputeStatusResponse": {
-        "required": [
-          "id",
-          "status"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "status": {
-            "type": "string"
-          },
-          "cryptographicFields": {
-            "$ref": "#/components/schemas/Core_ApiCmptComputeCryptographicFields"
-          }
-        }
-      },
       "Core_ApiDryRunTransactionProcessingHint": {
         "enum": [
           "AccountAlreadyActivatedOnLedger",
@@ -10518,10 +10352,18 @@
         ],
         "type": "string"
       },
-      "Core_ApiInitiateCmptComputeRequest": {
+      "Core_ApiInitiateParametersComputeRequest": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_ApiInitiateParametersComputeRequest_CmptSend"
+          }
+        ]
+      },
+      "Core_ApiInitiateParametersComputeRequest_CmptSend": {
         "required": [
           "tokenIdentifier",
           "amount",
+          "destination",
           "ledgerId"
         ],
         "type": "object",
@@ -10548,14 +10390,14 @@
           }
         }
       },
-      "Core_ApiInitiateCmptComputeResponse": {
+      "Core_ApiInitiateParametersComputeResponse": {
         "required": [
-          "cmptComputeId",
+          "id",
           "status"
         ],
         "type": "object",
         "properties": {
-          "cmptComputeId": {
+          "id": {
             "type": "string",
             "format": "uuid"
           },
@@ -10614,6 +10456,193 @@
           },
           "additionalDetails": {
             "$ref": "#/components/schemas/Core_ManifestAdditionalDetails"
+          }
+        }
+      },
+      "Core_ApiParametersComputeCryptographicFields": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/Core_ApiParametersComputeCryptographicFields_Clawback"
+          },
+          {
+            "$ref": "#/components/schemas/Core_ApiParametersComputeCryptographicFields_Convert"
+          },
+          {
+            "$ref": "#/components/schemas/Core_ApiParametersComputeCryptographicFields_ConvertBack"
+          },
+          {
+            "$ref": "#/components/schemas/Core_ApiParametersComputeCryptographicFields_Send"
+          }
+        ]
+      },
+      "Core_ApiParametersComputeCryptographicFields_Clawback": {
+        "required": [
+          "zkProof",
+          "amount"
+        ],
+        "type": "object",
+        "properties": {
+          "zkProof": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Core_ApiParametersComputeCryptographicFields_Convert": {
+        "required": [
+          "holderEncryptedAmount",
+          "issuerEncryptedAmount",
+          "blindingFactor"
+        ],
+        "type": "object",
+        "properties": {
+          "holderEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "issuerEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "blindingFactor": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "zkProof": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "auditorEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          }
+        }
+      },
+      "Core_ApiParametersComputeCryptographicFields_ConvertBack": {
+        "required": [
+          "holderEncryptedAmount",
+          "issuerEncryptedAmount",
+          "blindingFactor",
+          "balanceCommitment",
+          "zkProof"
+        ],
+        "type": "object",
+        "properties": {
+          "holderEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "issuerEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "blindingFactor": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "balanceCommitment": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "zkProof": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "auditorEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          }
+        }
+      },
+      "Core_ApiParametersComputeCryptographicFields_Send": {
+        "required": [
+          "senderEncryptedAmount",
+          "destinationEncryptedAmount",
+          "issuerEncryptedAmount",
+          "balanceCommitment",
+          "amountCommitment",
+          "zkProof"
+        ],
+        "type": "object",
+        "properties": {
+          "senderEncryptedBalance": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "senderEncryptedBalanceVersion": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "senderEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "destinationEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "issuerEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "balanceCommitment": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "amountCommitment": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "zkProof": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          },
+          "auditorEncryptedAmount": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Hex encoded string."
+          }
+        }
+      },
+      "Core_ApiParametersComputeStatusResponse": {
+        "required": [
+          "id",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "cryptographicFields": {
+            "$ref": "#/components/schemas/Core_ApiParametersComputeCryptographicFields"
           }
         }
       },
@@ -12637,6 +12666,9 @@
       "Core_CmptCryptographicFields": {
         "oneOf": [
           {
+            "$ref": "#/components/schemas/Core_CmptCryptographicFields_Clawback"
+          },
+          {
             "$ref": "#/components/schemas/Core_CmptCryptographicFields_Convert"
           },
           {
@@ -12649,9 +12681,34 @@
         "discriminator": {
           "propertyName": "type",
           "mapping": {
+            "Clawback": "#/components/schemas/Core_CmptCryptographicFields_Clawback",
             "Convert": "#/components/schemas/Core_CmptCryptographicFields_Convert",
             "ConvertBack": "#/components/schemas/Core_CmptCryptographicFields_ConvertBack",
             "Send": "#/components/schemas/Core_CmptCryptographicFields_Send"
+          }
+        }
+      },
+      "Core_CmptCryptographicFields_Clawback": {
+        "required": [
+          "zkProof",
+          "amount",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "zkProof": {
+            "type": "string",
+            "format": "base64"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "type": {
+            "enum": [
+              "Clawback"
+            ],
+            "type": "string"
           }
         }
       },
@@ -25605,6 +25662,9 @@
             "$ref": "#/components/schemas/Core_XrplOperation_Clawback"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplOperation_ConfidentialMPTClawback"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplOperation_ConfidentialMPTConvert"
           },
           {
@@ -25653,6 +25713,7 @@
             "AccountSet": "#/components/schemas/Core_XrplOperation_AccountSet",
             "Batch": "#/components/schemas/Core_XrplOperation_Batch",
             "Clawback": "#/components/schemas/Core_XrplOperation_Clawback",
+            "ConfidentialMPTClawback": "#/components/schemas/Core_XrplOperation_ConfidentialMPTClawback",
             "ConfidentialMPTConvert": "#/components/schemas/Core_XrplOperation_ConfidentialMPTConvert",
             "ConfidentialMPTConvertBack": "#/components/schemas/Core_XrplOperation_ConfidentialMPTConvertBack",
             "ConfidentialMPTMergeInbox": "#/components/schemas/Core_XrplOperation_ConfidentialMPTMergeInbox",
@@ -25760,6 +25821,31 @@
           "type": {
             "enum": [
               "Clawback"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_ConfidentialMPTClawback": {
+        "required": [
+          "tokenIdentifier",
+          "holder",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "tokenIdentifier": {
+            "$ref": "#/components/schemas/Core_Xrpl_MPTokenIdentifier"
+          },
+          "holder": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "cryptographicFields": {
+            "$ref": "#/components/schemas/Core_CmptCryptographicFields"
+          },
+          "type": {
+            "enum": [
+              "ConfidentialMPTClawback"
             ],
             "type": "string"
           }
@@ -26539,7 +26625,8 @@
           "tfMPTCanTransfer",
           "tfMPTCanEscrow",
           "tfMPTCanLock",
-          "tfMPTCanTrade"
+          "tfMPTCanTrade",
+          "tfMPTCanConfidentialAmount"
         ],
         "type": "string"
       },

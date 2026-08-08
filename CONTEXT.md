@@ -157,8 +157,8 @@ stay consistent.
   `202` with a request id, and `GET /internal/v1/cmpt-cb-in/{requestId}` carries
   the `decryptedAmount` once the request reaches `Completed` (`error` on
   `Failed`). Exposed as `client.internal.cbInDecryption.*`, the first internal
-  namespace. Same request-state machine as a **cMPT compute**
-  (`client.accounts.initiateCmptCompute`), which prepares the cryptographic
+  namespace. Same request-state machine as a **parameters compute**
+  (`client.accounts.initiateParametersCompute`), which prepares the cryptographic
   fields of a confidential MPT transaction on the public surface.
 
 - **System property** — an instance-wide configuration value listed by

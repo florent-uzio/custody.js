@@ -125,9 +125,9 @@ describe("non-intent POST methods pass sign: false", () => {
     )
   })
 
-  it("accounts.initiateCmptCompute", async () => {
+  it("accounts.initiateParametersCompute", async () => {
     const accounts = createAccounts(mockTransport)
-    await accounts.initiateCmptCompute({} as any, {} as any)
+    await accounts.initiateParametersCompute({} as any, {} as any)
 
     expect(mockTransport.post).toHaveBeenCalledWith(
       expect.anything(),
@@ -137,12 +137,12 @@ describe("non-intent POST methods pass sign: false", () => {
     )
   })
 
-  it("accounts.initiateCmptComputeAndWait", async () => {
+  it("accounts.initiateParametersComputeAndWait", async () => {
     const accounts = createAccounts(mockTransport)
-    mockTransport.post.mockResolvedValueOnce({ cmptComputeId: "compute-1" })
+    mockTransport.post.mockResolvedValueOnce({ id: "compute-1" })
     mockTransport.get.mockResolvedValueOnce({ status: "Completed" })
 
-    await accounts.initiateCmptComputeAndWait({} as any, {} as any)
+    await accounts.initiateParametersComputeAndWait({} as any, {} as any)
 
     expect(mockTransport.post).toHaveBeenCalledWith(
       expect.anything(),
