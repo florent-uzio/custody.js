@@ -321,11 +321,12 @@ describe("generateNewExternalAddressDeprecated", () => {
   })
 })
 
-const CMPT_STATUS_URL = "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute/{computeId}"
-const CMPT_COMPUTE_URL = "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute"
+const PARAMETERS_STATUS_URL =
+  "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute/{computeId}"
+const PARAMETERS_COMPUTE_URL = "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute"
 const cryptographicFields = { zkProof: "DEADBEEF" }
 
-describe("getCmptComputeStatusAndWait", () => {
+describe("getParametersComputeStatusAndWait", () => {
   const params = { domainId: "d-1", accountId: "a-1", computeId: "c-1" }
   let accounts: ReturnType<typeof createAccounts>
 
@@ -338,7 +339,7 @@ describe("getCmptComputeStatusAndWait", () => {
     const compute = { id: "c-1", status: "Completed", cryptographicFields }
     mockTransport.get.mockResolvedValue(compute)
 
-    const result = await accounts.getCmptComputeStatusAndWait(params)
+    const result = await accounts.getParametersComputeStatusAndWait(params)
 
     expect(result).toEqual({
       status: "Completed",
@@ -346,13 +347,13 @@ describe("getCmptComputeStatusAndWait", () => {
       isSuccess: true,
       compute,
     })
-    expect(mockTransport.get).toHaveBeenCalledWith(CMPT_STATUS_URL, params)
+    expect(mockTransport.get).toHaveBeenCalledWith(PARAMETERS_STATUS_URL, params)
   })
 
   it("should return isSuccess false for Failed status", async () => {
     mockTransport.get.mockResolvedValue({ id: "c-1", status: "Failed" })
 
-    const result = await accounts.getCmptComputeStatusAndWait(params)
+    const result = await accounts.getParametersComputeStatusAndWait(params)
 
     expect(result.isTerminal).toBe(true)
     expect(result.isSuccess).toBe(false)
@@ -365,7 +366,7 @@ describe("getCmptComputeStatusAndWait", () => {
       .mockResolvedValueOnce({ id: "c-1", status: "Preparing" })
       .mockResolvedValueOnce({ id: "c-1", status: "Completed", cryptographicFields })
 
-    const result = await accounts.getCmptComputeStatusAndWait(params, { maxRetries: 5 })
+    const result = await accounts.getParametersComputeStatusAndWait(params, { maxRetries: 5 })
 
     expect(result.isSuccess).toBe(true)
     expect(result.compute.cryptographicFields).toEqual(cryptographicFields)
@@ -375,7 +376,7 @@ describe("getCmptComputeStatusAndWait", () => {
   it("should return a non-terminal result when max retries are exceeded", async () => {
     mockTransport.get.mockResolvedValue({ id: "c-1", status: "Preparing" })
 
-    const result = await accounts.getCmptComputeStatusAndWait(params, { maxRetries: 2 })
+    const result = await accounts.getParametersComputeStatusAndWait(params, { maxRetries: 2 })
 
     // 2 attempts in the polling loop, no extra fetch afterwards
     expect(mockTransport.get).toHaveBeenCalledTimes(2)
@@ -390,7 +391,7 @@ describe("getCmptComputeStatusAndWait", () => {
       .mockResolvedValueOnce({ id: "c-1", status: "Pending" })
       .mockResolvedValueOnce({ id: "c-1", status: "Completed", cryptographicFields })
 
-    await accounts.getCmptComputeStatusAndWait(params, { onStatusCheck })
+    await accounts.getParametersComputeStatusAndWait(params, { onStatusCheck })
 
     expect(onStatusCheck).toHaveBeenCalledWith("Pending", 1)
     expect(onStatusCheck).toHaveBeenCalledWith("Completed", 2)
@@ -403,7 +404,7 @@ describe("getCmptComputeStatusAndWait", () => {
       .mockRejectedValueOnce(notFoundError)
       .mockResolvedValueOnce({ id: "c-1", status: "Completed", cryptographicFields })
 
-    const result = await accounts.getCmptComputeStatusAndWait(params, { maxRetries: 10 })
+    const result = await accounts.getParametersComputeStatusAndWait(params, { maxRetries: 10 })
 
     expect(result.isSuccess).toBe(true)
     expect(mockTransport.get).toHaveBeenCalledTimes(3)
@@ -413,25 +414,26 @@ describe("getCmptComputeStatusAndWait", () => {
     mockTransport.get.mockRejectedValue(new CustodyError({ reason: "Not found" }, 404))
 
     await expect(
-      accounts.getCmptComputeStatusAndWait(params, { maxRetries: 2 }),
+      accounts.getParametersComputeStatusAndWait(params, { maxRetries: 2 }),
     ).rejects.toMatchObject({ statusCode: 404 })
   })
 
   it("should throw non-404 errors immediately", async () => {
     mockTransport.get.mockRejectedValue(new CustodyError({ reason: "Server error" }, 500))
 
-    await expect(accounts.getCmptComputeStatusAndWait(params)).rejects.toThrow("Server error")
+    await expect(accounts.getParametersComputeStatusAndWait(params)).rejects.toThrow("Server error")
     expect(mockTransport.get).toHaveBeenCalledTimes(1)
   })
 })
 
-describe("initiateCmptComputeAndWait", () => {
+describe("initiateParametersComputeAndWait", () => {
   const params = { domainId: "d-1", accountId: "a-1" }
   const body = {
     tokenIdentifier: { type: "MPTokenIssuanceID", value: "mpt-1" },
     amount: "100",
+    destination: "rDestination",
     ledgerId: "xrpl",
-  } as Parameters<ReturnType<typeof createAccounts>["initiateCmptComputeAndWait"]>[1]
+  } as Parameters<ReturnType<typeof createAccounts>["initiateParametersComputeAndWait"]>[1]
   let accounts: ReturnType<typeof createAccounts>
 
   beforeEach(() => {
@@ -440,17 +442,17 @@ describe("initiateCmptComputeAndWait", () => {
   })
 
   it("should initiate then poll the returned compute id until Completed", async () => {
-    mockTransport.post.mockResolvedValue({ cmptComputeId: "c-9", status: "Pending" })
+    mockTransport.post.mockResolvedValue({ id: "c-9", status: "Pending" })
     mockTransport.get
       .mockResolvedValueOnce({ id: "c-9", status: "Preparing" })
       .mockResolvedValueOnce({ id: "c-9", status: "Completed", cryptographicFields })
 
-    const result = await accounts.initiateCmptComputeAndWait(params, body)
+    const result = await accounts.initiateParametersComputeAndWait(params, body)
 
-    expect(mockTransport.post).toHaveBeenCalledWith(CMPT_COMPUTE_URL, body, params, {
+    expect(mockTransport.post).toHaveBeenCalledWith(PARAMETERS_COMPUTE_URL, body, params, {
       sign: false,
     })
-    expect(mockTransport.get).toHaveBeenCalledWith(CMPT_STATUS_URL, {
+    expect(mockTransport.get).toHaveBeenCalledWith(PARAMETERS_STATUS_URL, {
       ...params,
       computeId: "c-9",
     })
@@ -459,10 +461,10 @@ describe("initiateCmptComputeAndWait", () => {
   })
 
   it("should surface a Failed computation without throwing", async () => {
-    mockTransport.post.mockResolvedValue({ cmptComputeId: "c-9", status: "Pending" })
+    mockTransport.post.mockResolvedValue({ id: "c-9", status: "Pending" })
     mockTransport.get.mockResolvedValue({ id: "c-9", status: "Failed" })
 
-    const result = await accounts.initiateCmptComputeAndWait(params, body)
+    const result = await accounts.initiateParametersComputeAndWait(params, body)
 
     expect(result.isTerminal).toBe(true)
     expect(result.isSuccess).toBe(false)
@@ -471,7 +473,7 @@ describe("initiateCmptComputeAndWait", () => {
   it("should not poll when initiating fails", async () => {
     mockTransport.post.mockRejectedValue(new CustodyError({ reason: "Account not ready" }, 409))
 
-    await expect(accounts.initiateCmptComputeAndWait(params, body)).rejects.toThrow(
+    await expect(accounts.initiateParametersComputeAndWait(params, body)).rejects.toThrow(
       "Account not ready",
     )
     expect(mockTransport.get).not.toHaveBeenCalled()

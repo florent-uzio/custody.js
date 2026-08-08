@@ -3533,7 +3533,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute": {
+  "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute": {
     parameters: {
       query?: never
       header?: never
@@ -3542,15 +3542,15 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Initiate a cMPT parameter computation for an account */
-    post: operations["initiateCmptCompute"]
+    /** Initiate a parameter computation for an account */
+    post: operations["initiateParametersCompute"]
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  "/v1/domains/{domainId}/accounts/{accountId}/cmpt-compute/{computeId}": {
+  "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute/{computeId}": {
     parameters: {
       query?: never
       header?: never
@@ -3558,7 +3558,7 @@ export interface paths {
       cookie?: never
     }
     /** Get the status of a cMPT parameter computation */
-    get: operations["getCmptComputeStatus"]
+    get: operations["getParametersComputeStatus"]
     put?: never
     post?: never
     delete?: never
@@ -8843,6 +8843,7 @@ export interface components {
       | components["schemas"]["Core_XrplOperation_Payment"]
       | components["schemas"]["Core_XrplOperation_TrustSet"]
       | components["schemas"]["Core_XrplOperation_Batch"]
+      | components["schemas"]["Core_XrplOperation_ConfidentialMPTClawback"]
       | components["schemas"]["Core_XrplOperation_ConfidentialMPTConvert"]
       | components["schemas"]["Core_XrplOperation_ConfidentialMPTConvertBack"]
       | components["schemas"]["Core_XrplOperation_ConfidentialMPTMergeInbox"]
@@ -9088,6 +9089,7 @@ export interface components {
       | "tfMPTCanEscrow"
       | "tfMPTCanLock"
       | "tfMPTCanTrade"
+      | "tfMPTCanConfidentialAmount"
     /** @enum {string} */
     Core_Xrpl_MPTokenIssuanceSetFlag: "tfMPTLock" | "tfMPTUnlock"
     /** @enum {string} */
@@ -12347,11 +12349,38 @@ export interface components {
       executionMode: components["schemas"]["Core_Xrpl_BatchExecutionMode"]
       transactions: components["schemas"]["Core_ApiInnerTransactionData"][]
     }
-    Core_ApiCmptComputeCryptographicFields:
-      | components["schemas"]["Core_ApiCmptComputeCryptographicFields_Convert"]
-      | components["schemas"]["Core_ApiCmptComputeCryptographicFields_ConvertBack"]
-      | components["schemas"]["Core_ApiCmptComputeCryptographicFields_Send"]
-    Core_ApiCmptComputeCryptographicFields_Convert: {
+    Core_ApiInitiateParametersComputeRequest: components["schemas"]["Core_ApiInitiateParametersComputeRequest_CmptSend"]
+    Core_ApiInitiateParametersComputeRequest_CmptSend: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      destination: string
+      /** Format: int32 */
+      ticketSequence?: number
+      ledgerId: string
+    }
+    Core_ApiInitiateParametersComputeResponse: {
+      /** Format: uuid */
+      id: string
+      status: string
+    }
+    Core_ApiInnerTransactionData: {
+      account: string
+      operation: components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation"]
+      sequencing: components["schemas"]["Core_ResolvedSequencing"]
+    }
+    Core_ApiParametersComputeCryptographicFields:
+      | components["schemas"]["Core_ApiParametersComputeCryptographicFields_Clawback"]
+      | components["schemas"]["Core_ApiParametersComputeCryptographicFields_Convert"]
+      | components["schemas"]["Core_ApiParametersComputeCryptographicFields_ConvertBack"]
+      | components["schemas"]["Core_ApiParametersComputeCryptographicFields_Send"]
+    Core_ApiParametersComputeCryptographicFields_Clawback: {
+      /** @description Hex encoded string. */
+      zkProof: string
+      /** Format: int64 */
+      amount: number
+    }
+    Core_ApiParametersComputeCryptographicFields_Convert: {
       /** @description Hex encoded string. */
       holderEncryptedAmount: string
       /** @description Hex encoded string. */
@@ -12363,7 +12392,7 @@ export interface components {
       /** @description Hex encoded string. */
       auditorEncryptedAmount?: string
     }
-    Core_ApiCmptComputeCryptographicFields_ConvertBack: {
+    Core_ApiParametersComputeCryptographicFields_ConvertBack: {
       /** @description Hex encoded string. */
       holderEncryptedAmount: string
       /** @description Hex encoded string. */
@@ -12377,7 +12406,7 @@ export interface components {
       /** @description Hex encoded string. */
       auditorEncryptedAmount?: string
     }
-    Core_ApiCmptComputeCryptographicFields_Send: {
+    Core_ApiParametersComputeCryptographicFields_Send: {
       /** @description Hex encoded string. */
       senderEncryptedBalance?: string
       /** Format: int64 */
@@ -12397,30 +12426,11 @@ export interface components {
       /** @description Hex encoded string. */
       auditorEncryptedAmount?: string
     }
-    Core_ApiCmptComputeStatusResponse: {
+    Core_ApiParametersComputeStatusResponse: {
       /** Format: uuid */
       id: string
       status: string
-      cryptographicFields?: components["schemas"]["Core_ApiCmptComputeCryptographicFields"]
-    }
-    Core_ApiInitiateCmptComputeRequest: {
-      tokenIdentifier: components["schemas"]["Core_Xrpl_ResolvedMPTokenIdentifier"]
-      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
-      amount: string
-      destination?: string
-      /** Format: int32 */
-      ticketSequence?: number
-      ledgerId: string
-    }
-    Core_ApiInitiateCmptComputeResponse: {
-      /** Format: uuid */
-      cmptComputeId: string
-      status: string
-    }
-    Core_ApiInnerTransactionData: {
-      account: string
-      operation: components["schemas"]["Core_Xrpl_ResolvedBatchInnerOperation"]
-      sequencing: components["schemas"]["Core_ResolvedSequencing"]
+      cryptographicFields?: components["schemas"]["Core_ApiParametersComputeCryptographicFields"]
     }
     Core_BatchEntry:
       | components["schemas"]["Core_BatchEntry_ParticipantOperation"]
@@ -12653,9 +12663,21 @@ export interface components {
       signature: string
     }
     Core_CmptCryptographicFields:
+      | components["schemas"]["Core_CmptCryptographicFields_Clawback"]
       | components["schemas"]["Core_CmptCryptographicFields_Convert"]
       | components["schemas"]["Core_CmptCryptographicFields_ConvertBack"]
       | components["schemas"]["Core_CmptCryptographicFields_Send"]
+    Core_CmptCryptographicFields_Clawback: {
+      /** Format: base64 */
+      zkProof: string
+      /** Format: int64 */
+      amount: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Clawback"
+    }
     Core_CmptCryptographicFields_Convert: {
       /** Format: base64 */
       holderEncryptedAmount: string
@@ -12865,6 +12887,16 @@ export interface components {
        * @enum {string}
        */
       type: "Batch"
+    }
+    Core_XrplOperation_ConfidentialMPTClawback: {
+      tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
+      holder: components["schemas"]["Core_TransactionDestination"]
+      cryptographicFields?: components["schemas"]["Core_CmptCryptographicFields"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "ConfidentialMPTClawback"
     }
     Core_XrplOperation_ConfidentialMPTConvert: {
       tokenIdentifier: components["schemas"]["Core_Xrpl_MPTokenIdentifier"]
@@ -21634,7 +21666,7 @@ export interface operations {
       }
     }
   }
-  initiateCmptCompute: {
+  initiateParametersCompute: {
     parameters: {
       query?: never
       header?: never
@@ -21647,7 +21679,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        "application/json": components["schemas"]["Core_ApiInitiateCmptComputeRequest"]
+        "application/json": components["schemas"]["Core_ApiInitiateParametersComputeRequest"]
       }
     }
     responses: {
@@ -21656,7 +21688,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Core_ApiInitiateCmptComputeResponse"]
+          "application/json": components["schemas"]["Core_ApiInitiateParametersComputeResponse"]
         }
       }
       /** @description Invalid value for: path parameter domainId, Invalid value for: path parameter accountId, Invalid value for: body */
@@ -21688,7 +21720,7 @@ export interface operations {
       }
     }
   }
-  getCmptComputeStatus: {
+  getParametersComputeStatus: {
     parameters: {
       query?: never
       header?: never
@@ -21707,7 +21739,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": components["schemas"]["Core_ApiCmptComputeStatusResponse"]
+          "application/json": components["schemas"]["Core_ApiParametersComputeStatusResponse"]
         }
       }
       /** @description Invalid value for: path parameter domainId, Invalid value for: path parameter accountId, Invalid value for: path parameter computeId */
