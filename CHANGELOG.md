@@ -1,5 +1,21 @@
 # custody
 
+## 2.13.0-beta.7
+
+### Minor Changes
+
+- cca44c3: Update the bundled devbox OpenAPI spec `1.36.2` to the current build, which replaces the cMPT compute endpoint with a generalised **parameters compute** one: `POST /v1/domains/{domainId}/accounts/{accountId}/cmpt-compute` and its status endpoint are gone, superseded by `.../parameters-compute` (operationIds `initiateParametersCompute` / `getParametersComputeStatus`). The SDK follows the API, so the four beta-only methods added in `2.13.0-beta.0` are renamed — `client.accounts.initiateCmptCompute` → `initiateParametersCompute`, `getCmptComputeStatus` → `getParametersComputeStatus`, `getCmptComputeStatusAndWait` → `getParametersComputeStatusAndWait`, `initiateCmptComputeAndWait` → `initiateParametersComputeAndWait` — along with their types (`CmptComputeStatus` → `ParametersComputeStatus`, `WaitForCmptComputeOptions` / `WaitForCmptComputeResult` → `WaitForParametersComputeOptions` / `WaitForParametersComputeResult`, `Core_ApiInitiateCmptComputeResponse` → `Core_ApiInitiateParametersComputeResponse`, `Core_ApiCmptComputeStatusResponse` → `Core_ApiParametersComputeStatusResponse`) and the exported `TERMINAL_CMPT_COMPUTE_STATUSES` → `TERMINAL_PARAMETERS_COMPUTE_STATUSES`. No aliases are kept: the old names pointed at endpoints the backend no longer serves. Behaviour, options and return shapes are otherwise unchanged.
+
+  Two request/response changes ride along. The initiate response now returns the computation id as `id` rather than `cmptComputeId` — `initiateParametersComputeAndWait` reads the new field, so callers that only use the `*AndWait` helpers are unaffected. The initiate body is now a `oneOf` whose only member is the cMPT send request, in which `destination` is required rather than optional.
+
+  The spec also adds `ConfidentialMPTClawback`: a `Core_XrplOperation_ConfidentialMPTClawback` transaction operation with `Core_CmptCryptographicFields_Clawback`, plus a `Clawback` member of the compute's `cryptographicFields` union. Both are typed and flow through `client.intents.propose()` / `client.transactions.dryRun()` with no new API. `batchToCustodyInnerTransactions` and `batchToCustodyBatchPayload` still reject a `ConfidentialMPTClawback`, because the API's `Core_BatchInnerOperation` union does not accept one — a clawback can only be proposed as a standalone transaction, not as a Batch inner transaction.
+
+### Patch Changes
+
+- 073d15d: Bundle the official OpenAPI specs for `1.34.11`, `1.34.12`, `1.34.13`, `1.39.0` and `1.39.2`, and regenerate the types. These five releases add no endpoints and no schemas — the API surface of `1.39.2` is identical to `1.38.0`, and the three `1.34.x` patches are identical to `1.34.10` — so there are no new namespaces or methods. `client.capabilities` now recognises the five versions.
+
+  Two changes ride along in the generated types, both from `1.39.x`. `Core_Balance.totalAmount` and `Core_Balance.availableAmount` dropped their `minimum: 0` constraint and are now documented as "can be negative, zero, or positive"; the TypeScript type is unchanged (`string`), but code that assumed balances are never negative should be revisited. Nine already-deprecated fields also gained a `Deletion target: Mar. 31st 2027` note in their JSDoc — among them all of `Core_ApiTicker`, `Core_Approve.expiryAt` / `Core_Reject.expiryAt`, `Core_LedgerTransactionData.blockTime`, `Core_SenderTransferParty_Account.addresses` / `Core_RecipientTransferParty_Account.address`, `Core_TransactionOrderParameters_XRPL.amount` and `destinationTag`, and the `ledgerId` of `Core_v0_CreateAccount` / `Core_v0_UpdateEndpoint`.
+
 ## 2.13.0-beta.6
 
 ### Minor Changes
