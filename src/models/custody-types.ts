@@ -3587,11 +3587,13 @@ export interface components {
       /**
        * Format: date-time
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       lastBalancesUpdateRequestedAt?: string
       /**
        * Format: date-time
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       lastBalancesUpdateProcessedAt?: string
       ledgers: components["schemas"]["Core_ApiAccountLedgerProcessing"][]
@@ -4108,20 +4110,31 @@ export interface components {
       /**
        * Format: uuid
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       id: string
-      /** @deprecated */
+      /**
+       * @deprecated
+       * @description Deletion target: Mar. 31st 2027
+       */
       ledgerId: string
       /** @deprecated */
       kind: components["schemas"]["Core_TickerKind"]
-      /** @deprecated */
+      /**
+       * @deprecated
+       * @description Deletion target: Mar. 31st 2027
+       */
       name: string
       /**
        * Format: int32
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       decimals?: number
-      /** @deprecated */
+      /**
+       * @deprecated
+       * @description Deletion target: Mar. 31st 2027
+       */
       symbol?: string
       /** @deprecated */
       ledgerDetails: components["schemas"]["Core_TickerLedgerDetails"]
@@ -4267,6 +4280,7 @@ export interface components {
       /**
        * Format: date-time
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       expiryAt?: string
       /** Format: uuid */
@@ -4382,13 +4396,13 @@ export interface components {
       accountReference: components["schemas"]["Core_AccountReference"]
       /** Format: uuid */
       tickerId: string
-      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      /** @description This field is a large integer that can be negative, zero, or positive. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       totalAmount: string
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       reservedAmount: string
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       quarantinedAmount: string
-      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      /** @description This field is a large integer that can be negative, zero, or positive. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       availableAmount: string
       /** Format: date-time */
       lastUpdatedAt: string
@@ -5982,6 +5996,7 @@ export interface components {
       /**
        * Format: date-time
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       blockTime?: string
       /** Format: date-time */
@@ -6526,7 +6541,10 @@ export interface components {
       domainId: string
       /** Format: uuid */
       accountId: string
-      /** @deprecated */
+      /**
+       * @deprecated
+       * @description Deletion target: Mar. 31st 2027
+       */
       address?: string
       addressDetails?: components["schemas"]["Core_AddressDetails"]
       /**
@@ -6549,6 +6567,7 @@ export interface components {
       /**
        * Format: date-time
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       expiryAt?: string
       /** Format: uuid */
@@ -6623,7 +6642,10 @@ export interface components {
       domainId: string
       /** Format: uuid */
       accountId: string
-      /** @deprecated */
+      /**
+       * @deprecated
+       * @description Deletion target: Mar. 31st 2027
+       */
       addresses?: string[]
       addressesDetails?: components["schemas"]["Core_AddressDetails"][]
       /**
@@ -7867,7 +7889,7 @@ export interface components {
       destination?: components["schemas"]["Core_TransactionDestination"]
       /**
        * @deprecated
-       * @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision.
+       * @description Deletion target: Mar. 31st 2027. This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision.
        */
       amount?: string
       feeStrategy: components["schemas"]["Core_XrplFeeStrategy"]
@@ -7878,6 +7900,7 @@ export interface components {
       /**
        * Format: int64
        * @deprecated
+       * @description Deletion target: Mar. 31st 2027
        */
       destinationTag?: number
       memos: components["schemas"]["Core_XrplMemo"][]
@@ -9151,7 +9174,10 @@ export interface components {
       id: string
       alias: string
       providerDetails: components["schemas"]["Core_v0_CreateAccountProviderDetailsPayload"]
-      /** @deprecated */
+      /**
+       * @deprecated
+       * @description Deletion target: Mar. 31st 2027
+       */
       ledgerId?: string
       ledgerIds?: string[]
       lock: components["schemas"]["Core_IntentLockStatus"]
@@ -9565,7 +9591,10 @@ export interface components {
       address: string
       /** Format: int32 */
       trustScore: number
-      /** @deprecated */
+      /**
+       * @deprecated
+       * @description Deletion target: Mar. 31st 2027
+       */
       ledgerId?: string
       parameters?: components["schemas"]["Core_EndpointLedgerParameters"]
       alias: string
@@ -19408,7 +19437,11 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description The Health Check is successful */
+      /**
+       * @description Service is alive
+       *
+       *     The Health Check is successful
+       */
       200: {
         headers: {
           [name: string]: unknown
@@ -19513,7 +19546,11 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description The Health Check is successful */
+      /**
+       * @description Service is ready
+       *
+       *     The Health Check is successful
+       */
       200: {
         headers: {
           [name: string]: unknown
@@ -19554,7 +19591,11 @@ export interface operations {
           }
         }
       }
-      /** @description The Health Check is not successful */
+      /**
+       * @description Service is not ready
+       *
+       *     The Health Check is not successful
+       */
       503: {
         headers: {
           [name: string]: unknown
