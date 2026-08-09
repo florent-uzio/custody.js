@@ -14,6 +14,7 @@
     "openapi-1-39-2",
     "parameters-compute-rename",
     "parameters-compute-type-discriminator",
-    "vendor-xrpl-confidential-mpts-031913c"
+    "vendor-xrpl-confidential-mpts-031913c",
+    "xrpl-elgamal-and-issuance-helpers"
   ]
 }
