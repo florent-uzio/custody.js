@@ -291,4 +291,35 @@ describe("createHttpPorts", () => {
       expect(result).toEqual({ id: "account-1" })
     })
   })
+
+  describe("listTransactions", () => {
+    it("gets URLs.transactions with domainId and passes the query through", async () => {
+      mockTransport.get.mockResolvedValue({ items: [] })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.listTransactions("domain-1", { "orderReference.Id": "order-1" })
+
+      expect(mockTransport.get).toHaveBeenCalledWith(
+        URLs.transactions,
+        { domainId: "domain-1" },
+        { "orderReference.Id": "order-1" },
+      )
+      expect(result).toEqual({ items: [] })
+    })
+  })
+
+  describe("getTransaction", () => {
+    it("gets URLs.transaction with domainId and transactionId", async () => {
+      mockTransport.get.mockResolvedValue({ id: "tx-1" })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.getTransaction("domain-1", "tx-1")
+
+      expect(mockTransport.get).toHaveBeenCalledWith(URLs.transaction, {
+        domainId: "domain-1",
+        transactionId: "tx-1",
+      })
+      expect(result).toEqual({ id: "tx-1" })
+    })
+  })
 })

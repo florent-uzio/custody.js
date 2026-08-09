@@ -13,6 +13,7 @@ import {
   batchSignersToCustodyBatchSigners,
   batchToCustodyBatchPayload,
   batchToCustodyInnerTransactions,
+  parametersComputeToCryptographicFields,
 } from "./xrpl.adapters.js"
 
 type RawTx = Batch["RawTransactions"][number]["RawTransaction"]
@@ -972,5 +973,108 @@ describe("batchToCustodyBatchPayload", () => {
       }),
     )
     expect(result).not.toHaveProperty("batchSigners")
+  })
+})
+
+describe("parametersComputeToCryptographicFields", () => {
+  const hex = {
+    senderEncryptedAmount: "aa01",
+    destinationEncryptedAmount: "bb02",
+    issuerEncryptedAmount: "cc03",
+    balanceCommitment: "dd04",
+    amountCommitment: "ee05",
+    zkProof: "ff06",
+  }
+  const b64 = (value: string) => Buffer.from(value, "hex").toString("base64")
+
+  it("re-encodes Send fields from hex to base64 and tags the variant", () => {
+    const result = parametersComputeToCryptographicFields(hex)
+
+    expect(result).toEqual({
+      type: "Send",
+      senderEncryptedAmount: b64("aa01"),
+      destinationEncryptedAmount: b64("bb02"),
+      issuerEncryptedAmount: b64("cc03"),
+      balanceCommitment: b64("dd04"),
+      amountCommitment: b64("ee05"),
+      zkProof: b64("ff06"),
+    })
+  })
+
+  it("carries the optional Send fields through when present", () => {
+    const result = parametersComputeToCryptographicFields({
+      ...hex,
+      senderEncryptedBalance: "1122",
+      senderEncryptedBalanceVersion: 3,
+      auditorEncryptedAmount: "3344",
+    })
+
+    expect(result).toMatchObject({
+      // The nested copy is base64 like its siblings — it is the Batch entry's
+      // separate top-level field that stays hex, and that one is not produced here.
+      senderEncryptedBalance: b64("1122"),
+      senderEncryptedBalanceVersion: 3,
+      auditorEncryptedAmount: b64("3344"),
+    })
+  })
+
+  it("omits optional Send fields that are absent rather than emitting undefined", () => {
+    const result = parametersComputeToCryptographicFields(hex)
+
+    expect(result).not.toHaveProperty("senderEncryptedBalance")
+    expect(result).not.toHaveProperty("senderEncryptedBalanceVersion")
+    expect(result).not.toHaveProperty("auditorEncryptedAmount")
+  })
+
+  it("detects Clawback from the numeric amount and leaves it unencoded", () => {
+    const result = parametersComputeToCryptographicFields({ zkProof: "ff06", amount: 250 })
+
+    expect(result).toEqual({ type: "Clawback", zkProof: b64("ff06"), amount: 250 })
+  })
+
+  it("detects Clawback even when the amount is zero", () => {
+    const result = parametersComputeToCryptographicFields({ zkProof: "ff06", amount: 0 })
+
+    expect(result).toEqual({ type: "Clawback", zkProof: b64("ff06"), amount: 0 })
+  })
+
+  it("detects Convert from holderEncryptedAmount without a balance commitment", () => {
+    const result = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+    })
+
+    expect(result).toEqual({
+      type: "Convert",
+      holderEncryptedAmount: b64("aa01"),
+      issuerEncryptedAmount: b64("bb02"),
+      blindingFactor: b64("cc03"),
+    })
+  })
+
+  it("detects ConvertBack when a balance commitment is present", () => {
+    const result = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      balanceCommitment: "dd04",
+      zkProof: "ff06",
+    })
+
+    expect(result).toEqual({
+      type: "ConvertBack",
+      holderEncryptedAmount: b64("aa01"),
+      issuerEncryptedAmount: b64("bb02"),
+      blindingFactor: b64("cc03"),
+      balanceCommitment: b64("dd04"),
+      zkProof: b64("ff06"),
+    })
+  })
+
+  it("throws naming the observed keys when the shape matches no variant", () => {
+    expect(() => parametersComputeToCryptographicFields({ zkProof: "ff06" } as never)).toThrow(
+      "Unrecognized parameters-compute cryptographicFields shape: [zkProof]",
+    )
   })
 })

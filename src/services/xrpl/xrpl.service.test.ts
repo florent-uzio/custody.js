@@ -52,6 +52,10 @@ const expectedCompressedKey = "026C69D2EF5C90DC83E19945DEE870D66733244E26F131DEB
 
 const mockBase64Signature = Buffer.from("aabbccdd", "hex").toString("base64")
 
+const mockElGamalKey = Buffer.from("0102030405060708", "hex").toString("base64")
+const mockIssuanceId = "00000C1EC6D1B4AB2CA3E5F9B85C7E1F8D2A3B4C5D6E7F80"
+const mockTransactionId = "d3c2f1a0-1234-4b5c-8d9e-0f1a2b3c4d5e"
+
 const mockBatchSigningData = {
   signingPayload: "deadbeefcafebabe",
   signingPayloadHash: "0011223344556677",
@@ -93,9 +97,26 @@ function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
                 publicKey: { value: mockBase64PublicKey },
               },
             ],
+            purposeKeys: [
+              { ledgerId: mockLedgerId, purpose: "ElGamal" as const, publicKey: mockElGamalKey },
+            ],
           },
         },
       })),
+    listTransactions:
+      overrides.listTransactions ?? (async () => ({ items: [{ id: mockTransactionId }] }) as any),
+    getTransaction:
+      overrides.getTransaction ??
+      (async () =>
+        ({
+          id: mockTransactionId,
+          ledgerTransactionData: {
+            ledgerData: {
+              type: "Xrpl" as const,
+              tokenData: { issuanceId: mockIssuanceId },
+            },
+          },
+        }) as any),
   } as XrplPorts
 }
 
@@ -588,6 +609,337 @@ describe("XrplService", () => {
       await expect(
         service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
       ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+    })
+  })
+
+  // ── provisionElGamalKeyPair ───────────────────────────────────
+
+  describe("provisionElGamalKeyPair", () => {
+    it("should submit a v0_ProvisionElGamalKeyPair intent with correct structure", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.provisionElGamalKeyPair(mockAddress)
+
+      expect(capturedBody.request.type).toBe("Propose")
+      expect(capturedBody.request.author).toEqual({ domainId: mockDomainId, id: mockUserId })
+      expect(capturedBody.request.targetDomainId).toBe(mockDomainId)
+      expect(capturedBody.request.payload).toEqual({
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        type: "v0_ProvisionElGamalKeyPair",
+      })
+    })
+
+    it("should carry no payload id, fee strategy or parameters", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      // The payload id option belongs to transaction orders; this intent has no
+      // such field, so passing one must not leak into the payload.
+      await service.provisionElGamalKeyPair(mockAddress, { payloadId: "payload-123" })
+
+      expect(capturedBody.request.payload).not.toHaveProperty("id")
+      expect(capturedBody.request.payload).not.toHaveProperty("parameters")
+    })
+
+    it("should honour requestId and description on the envelope", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.provisionElGamalKeyPair(mockAddress, {
+        requestId: "request-abc",
+        description: "Provision issuer ElGamal key",
+      })
+
+      expect(capturedBody.request.id).toBe("request-abc")
+      expect(capturedBody.request.description).toBe("Provision issuer ElGamal key")
+    })
+
+    it("should propagate resolveContext failures", async () => {
+      ports = createTestPorts({
+        resolveContext: async () => {
+          throw new CustodyError({ reason: "Account not found for address" })
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.provisionElGamalKeyPair(mockAddress)).rejects.toThrow(
+        "Account not found for address",
+      )
+    })
+  })
+
+  // ── getElGamalPublicKey ───────────────────────────────────────
+
+  describe("getElGamalPublicKey", () => {
+    it("should return the base64 ElGamal key for the ledger unchanged", async () => {
+      const result = await service.getElGamalPublicKey({
+        domainId: mockDomainId,
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+      })
+
+      expect(result).toBe(mockElGamalKey)
+    })
+
+    it("should select the key matching the requested ledger", async () => {
+      ports = createTestPorts({
+        getAccount: async () =>
+          ({
+            data: {
+              providerDetails: {
+                type: "Vault",
+                purposeKeys: [
+                  { ledgerId: "other-ledger", purpose: "ElGamal", publicKey: "othercCg=" },
+                  { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+                ],
+              },
+            },
+          }) as any,
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getElGamalPublicKey({
+        domainId: mockDomainId,
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+      })
+
+      expect(result).toBe(mockElGamalKey)
+    })
+
+    it("should throw when the account is not a Vault account", async () => {
+      ports = createTestPorts({
+        getAccount: async () =>
+          ({
+            data: { providerDetails: { type: "External" } },
+          }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getElGamalPublicKey({
+          domainId: mockDomainId,
+          accountId: mockAccountId,
+          ledgerId: mockLedgerId,
+        }),
+      ).rejects.toThrow("Account is not a Vault account")
+    })
+
+    it("should throw when no ElGamal key is provisioned for that ledger", async () => {
+      await expect(
+        service.getElGamalPublicKey({
+          domainId: mockDomainId,
+          accountId: mockAccountId,
+          ledgerId: "another-ledger",
+        }),
+      ).rejects.toThrow("No ElGamal key provisioned for account")
+    })
+  })
+
+  // ── getMptIssuanceId ──────────────────────────────────────────
+
+  describe("getMptIssuanceId", () => {
+    it("should query the domain's transactions by order reference", async () => {
+      let capturedDomainId: string | undefined
+      let capturedQuery: any
+      ports = createTestPorts({
+        listTransactions: async (domainId, query) => {
+          capturedDomainId = domainId
+          capturedQuery = query
+          return { items: [{ id: mockTransactionId }] } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceId({
+        domainId: mockDomainId,
+        payloadId: "payload-123",
+      })
+
+      expect(capturedDomainId).toBe(mockDomainId)
+      expect(capturedQuery).toEqual({ "orderReference.Id": "payload-123" })
+      expect(result).toBe(mockIssuanceId)
+    })
+
+    it("should read the ledger data off the transaction detail, not the collection", async () => {
+      let capturedDomainId: string | undefined
+      let capturedTransactionId: string | undefined
+      ports = createTestPorts({
+        getTransaction: async (domainId, transactionId) => {
+          capturedDomainId = domainId
+          capturedTransactionId = transactionId
+          return {
+            ledgerTransactionData: {
+              ledgerData: { type: "Xrpl", tokenData: { issuanceId: mockIssuanceId } },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceId({
+        domainId: mockDomainId,
+        payloadId: "payload-123",
+      })
+
+      expect(capturedDomainId).toBe(mockDomainId)
+      expect(capturedTransactionId).toBe(mockTransactionId)
+      expect(result).toBe(mockIssuanceId)
+    })
+
+    it("should keep looking when an earlier transaction carries no token data", async () => {
+      const details: Record<string, any> = {
+        "tx-transfer": { ledgerTransactionData: { ledgerData: { type: "Xrpl" } } },
+        "tx-issuance": {
+          ledgerTransactionData: {
+            ledgerData: { type: "Xrpl", tokenData: { issuanceId: mockIssuanceId } },
+          },
+        },
+      }
+      ports = createTestPorts({
+        listTransactions: async () =>
+          ({ items: [{ id: "tx-transfer" }, { id: "tx-issuance" }] }) as any,
+        getTransaction: async (_domainId, transactionId) => details[transactionId],
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceId({
+        domainId: mockDomainId,
+        payloadId: "payload-123",
+      })
+
+      expect(result).toBe(mockIssuanceId)
+    })
+
+    it("should throw when the order has registered no transaction", async () => {
+      ports = createTestPorts({ listTransactions: async () => ({ items: [] }) as any })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceId({ domainId: mockDomainId, payloadId: "payload-123" }),
+      ).rejects.toThrow("No transaction registered for transaction order payload-123")
+    })
+
+    it("should throw when the transaction is not yet on-chain", async () => {
+      ports = createTestPorts({ getTransaction: async () => ({}) as any })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceId({ domainId: mockDomainId, payloadId: "payload-123" }),
+      ).rejects.toThrow("carries no MPT issuance ID")
+    })
+
+    it("should throw when the transaction carries no token data", async () => {
+      ports = createTestPorts({
+        getTransaction: async () =>
+          ({ ledgerTransactionData: { ledgerData: { type: "Xrpl" } } }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceId({ domainId: mockDomainId, payloadId: "payload-123" }),
+      ).rejects.toThrow("carries no MPT issuance ID")
+    })
+  })
+
+  // ── getMptIssuanceIdAndWait ───────────────────────────────────
+
+  describe("getMptIssuanceIdAndWait", () => {
+    /** Detail response for a transaction carrying the issuance the ledger minted. */
+    const onChain = {
+      ledgerTransactionData: {
+        ledgerData: { type: "Xrpl", tokenData: { issuanceId: mockIssuanceId } },
+      },
+    } as any
+
+    it("should return the issuance ID without polling when it is already readable", async () => {
+      let calls = 0
+      ports = createTestPorts({
+        getTransaction: async () => {
+          calls++
+          return onChain
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceIdAndWait(
+        { domainId: mockDomainId, payloadId: "payload-123" },
+        { maxRetries: 3, intervalMs: 0 },
+      )
+
+      expect(result).toBe(mockIssuanceId)
+      expect(calls).toBe(1)
+    })
+
+    it("should keep polling until the transaction is registered with its ledger data", async () => {
+      const listResponses = [{ items: [] } as any, { items: [{ id: mockTransactionId }] } as any]
+      const details = [{} as any, onChain] // registered, ledger data not filled in yet
+      const onAttempt = vi.fn()
+      ports = createTestPorts({
+        listTransactions: async () =>
+          listResponses.shift() ?? { items: [{ id: mockTransactionId }] },
+        getTransaction: async () => details.shift(),
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceIdAndWait(
+        { domainId: mockDomainId, payloadId: "payload-123" },
+        { maxRetries: 5, intervalMs: 0, onAttempt },
+      )
+
+      expect(result).toBe(mockIssuanceId)
+      expect(onAttempt).toHaveBeenCalledTimes(3)
+    })
+
+    it("should throw with the last observed reason when retries are exhausted", async () => {
+      ports = createTestPorts({ getTransaction: async () => ({}) as any })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceIdAndWait(
+          { domainId: mockDomainId, payloadId: "payload-123" },
+          { maxRetries: 2, intervalMs: 0 },
+        ),
+      ).rejects.toThrow(
+        "No MPT issuance ID for transaction order payload-123 after 2 attempts. " +
+          "Transaction order payload-123 carries no MPT issuance ID.",
+      )
+    })
+
+    it("should surface a transport failure rather than retrying it away", async () => {
+      ports = createTestPorts({
+        listTransactions: async () => {
+          throw new CustodyError({ reason: "Unauthorized" }, 401)
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceIdAndWait(
+          { domainId: mockDomainId, payloadId: "payload-123" },
+          { maxRetries: 5, intervalMs: 0 },
+        ),
+      ).rejects.toThrow("Unauthorized")
     })
   })
 

@@ -186,6 +186,67 @@ export type XrplIntentOptions = {
 
 export type Core_XrplOperation = components["schemas"]["Core_XrplOperation"]
 
+// Confidential MPT (cMPT)
+
+/**
+ * The hex-encoded cryptographic material a parameters computation returns,
+ * as carried on `Core_ApiParametersComputeStatusResponse.cryptographicFields`.
+ */
+export type Core_ApiParametersComputeCryptographicFields =
+  components["schemas"]["Core_ApiParametersComputeCryptographicFields"]
+
+/**
+ * The base64-encoded cryptographic material a confidential MPT operation
+ * carries. Produced from the compute response by
+ * `parametersComputeToCryptographicFields`.
+ */
+export type Core_CmptCryptographicFields = components["schemas"]["Core_CmptCryptographicFields"]
+
+/**
+ * Identifies the account whose ElGamal public key to read, and the ledger the
+ * key was provisioned for. An account holds one ElGamal key per ledger.
+ */
+export type GetElGamalPublicKeyParams = {
+  /** Domain ID of the account */
+  domainId: string
+  /** Custody account ID */
+  accountId: string
+  /** Ledger the key was provisioned on */
+  ledgerId: string
+}
+
+/**
+ * Identifies the transaction order whose resulting MPT issuance ID to read.
+ * `payloadId` is the `v0_CreateTransactionOrder` payload ID — the value passed
+ * as `options.payloadId` to `proposeIntent`, defaulted to a fresh UUID when
+ * omitted, so pass an explicit one to look the issuance up afterwards.
+ */
+export type GetMptIssuanceIdParams = {
+  /** Domain ID of the issuer account */
+  domainId: string
+  /** Payload ID of the `MPTokenIssuanceCreate` transaction order */
+  payloadId: string
+}
+
+/**
+ * Outcome of a single MPT issuance ID lookup: the issuance, or the reason it is
+ * not readable yet. Both entry points build their error from `reason`, so the
+ * polling one does not have to drive its loop off exceptions.
+ */
+export type MptIssuanceIdLookup = { issuanceId: string } | { reason: string }
+
+/**
+ * Options for polling the MPT issuance ID an `MPTokenIssuanceCreate` produced.
+ */
+export type WaitForMptIssuanceIdOptions = {
+  /** Maximum number of polling attempts (default: 10) */
+  maxRetries?: number
+  /** Interval between polling attempts in milliseconds (default: 3000) */
+  intervalMs?: number
+  /** Callback on each polling attempt */
+  onAttempt?: (attempt: number) => void
+}
+
 export type BuildTransactionIntentProps = {
   operation: Core_XrplOperation
   context: IntentContext
