@@ -257,6 +257,19 @@ export class ApiService {
       if (isObject(errorData)) {
         throw new CustodyError(errorData, error.response?.status, error, hint)
       }
+      // Several endpoints declare their validation errors as `text/plain`, so the
+      // only description of what went wrong is a bare string body — the axios
+      // generic types it as the JSON error shape, hence the widening. Keep the verb
+      // prefix and append it rather than falling through to axios's generic message.
+      const errorText: unknown = errorData
+      if (isString(errorText) && errorText.trim()) {
+        throw new CustodyError(
+          { reason: `${verb} API request failed: ${errorText.trim()}` },
+          error.response?.status,
+          error,
+          hint,
+        )
+      }
       throw new CustodyError(
         { reason: `${verb} API request failed: ${error.message}` },
         error.response?.status,

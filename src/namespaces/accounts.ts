@@ -124,6 +124,18 @@ function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
 }
 
 /**
+ * Fills in the `type` discriminator the API requires but the generated body
+ * type omits, so callers never have to restate the union's only legal value.
+ * A caller-supplied `type` wins, which is what makes this forward-compatible if
+ * the union gains a second member.
+ */
+function withParametersComputeType(
+  body: InitiateParametersComputeBody,
+): InitiateParametersComputeBody {
+  return { ...body, type: body.type ?? "cmpt-send" }
+}
+
+/**
  * Wait for a parameters computation to reach a terminal status (Completed or Failed).
  * Polls the compute status at regular intervals until it finishes or max retries
  * is reached. `cryptographicFields` is populated on the returned `compute` once
@@ -299,7 +311,9 @@ export function createAccounts(t: Transport) {
       params: InitiateParametersComputePathParams,
       body: InitiateParametersComputeBody,
     ): Promise<Core_ApiInitiateParametersComputeResponse> =>
-      t.post(URLs.accountParametersCompute, body, params, { sign: false }),
+      t.post(URLs.accountParametersCompute, withParametersComputeType(body), params, {
+        sign: false,
+      }),
 
     getParametersComputeStatus: (
       params: GetParametersComputeStatusPathParams,
@@ -323,7 +337,7 @@ export function createAccounts(t: Transport) {
     ): Promise<WaitForParametersComputeResult> => {
       const { id } = await t.post<Core_ApiInitiateParametersComputeResponse>(
         URLs.accountParametersCompute,
-        body,
+        withParametersComputeType(body),
         params,
         { sign: false },
       )

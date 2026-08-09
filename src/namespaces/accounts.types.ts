@@ -71,8 +71,29 @@ export type GetDepositInstructionPathParams =
 
 export type InitiateParametersComputePathParams =
   operations["initiateParametersCompute"]["parameters"]["path"]
-export type InitiateParametersComputeBody =
-  operations["initiateParametersCompute"]["requestBody"]["content"]["application/json"]
+
+/**
+ * Discriminator the parameters compute endpoint requires on its body. The
+ * request schema is a sealed union with a single member, and unlike every other
+ * such union in the spec it does not declare its mapping, so the generated body
+ * type omits the field and every call 400s with
+ * `Missing required field at 'type'`.
+ *
+ * TODO: remove this type and the `type` override below once the OpenAPI spec
+ * declares the discriminator — the generated type will then carry it itself.
+ */
+export type ParametersComputeType = "cmpt-send"
+
+/**
+ * `type` is optional here: `initiateParametersCompute` injects the only legal
+ * value when the caller omits it, so consumers never have to restate it. It
+ * becomes meaningful if the union ever gains a second member.
+ */
+export type InitiateParametersComputeBody = Prettify<
+  operations["initiateParametersCompute"]["requestBody"]["content"]["application/json"] & {
+    type?: ParametersComputeType
+  }
+>
 
 export type GetParametersComputeStatusPathParams =
   operations["getParametersComputeStatus"]["parameters"]["path"]

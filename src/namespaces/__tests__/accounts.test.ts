@@ -426,10 +426,38 @@ describe("getParametersComputeStatusAndWait", () => {
   })
 })
 
+describe("initiateParametersCompute", () => {
+  const params = { domainId: "d-1", accountId: "a-1" }
+  const body = {
+    tokenIdentifier: { issuanceId: "mpt-1" },
+    amount: "100",
+    destination: "rDestination",
+    ledgerId: "xrpl",
+  } as Parameters<ReturnType<typeof createAccounts>["initiateParametersCompute"]>[1]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("should inject the type discriminator the API requires", async () => {
+    const accounts = createAccounts(mockTransport)
+    mockTransport.post.mockResolvedValue({ id: "c-1", status: "Pending" })
+
+    await accounts.initiateParametersCompute(params, body)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      PARAMETERS_COMPUTE_URL,
+      { ...body, type: "cmpt-send" },
+      params,
+      { sign: false },
+    )
+  })
+})
+
 describe("initiateParametersComputeAndWait", () => {
   const params = { domainId: "d-1", accountId: "a-1" }
   const body = {
-    tokenIdentifier: { type: "MPTokenIssuanceID", value: "mpt-1" },
+    tokenIdentifier: { issuanceId: "mpt-1" },
     amount: "100",
     destination: "rDestination",
     ledgerId: "xrpl",
@@ -449,9 +477,12 @@ describe("initiateParametersComputeAndWait", () => {
 
     const result = await accounts.initiateParametersComputeAndWait(params, body)
 
-    expect(mockTransport.post).toHaveBeenCalledWith(PARAMETERS_COMPUTE_URL, body, params, {
-      sign: false,
-    })
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      PARAMETERS_COMPUTE_URL,
+      { ...body, type: "cmpt-send" },
+      params,
+      { sign: false },
+    )
     expect(mockTransport.get).toHaveBeenCalledWith(PARAMETERS_STATUS_URL, {
       ...params,
       computeId: "c-9",
@@ -468,6 +499,20 @@ describe("initiateParametersComputeAndWait", () => {
 
     expect(result.isTerminal).toBe(true)
     expect(result.isSuccess).toBe(false)
+  })
+
+  it("should keep a caller-supplied type discriminator", async () => {
+    mockTransport.post.mockResolvedValue({ id: "c-9", status: "Completed", cryptographicFields })
+    mockTransport.get.mockResolvedValue({ id: "c-9", status: "Completed", cryptographicFields })
+
+    await accounts.initiateParametersComputeAndWait(params, { ...body, type: "cmpt-send" })
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      PARAMETERS_COMPUTE_URL,
+      { ...body, type: "cmpt-send" },
+      params,
+      { sign: false },
+    )
   })
 
   it("should not poll when initiating fails", async () => {
