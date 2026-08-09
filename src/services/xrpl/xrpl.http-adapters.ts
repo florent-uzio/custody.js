@@ -8,6 +8,11 @@ import type {
   Core_IntentResponse,
   Core_ProposeIntentBody,
 } from "../../namespaces/intents.types.js"
+import type {
+  Core_TransactionDetails,
+  Core_TransactionsCollection,
+  GetTransactionsQueryParams,
+} from "../../namespaces/transactions.types.js"
 import type { Core_MeReference } from "../../namespaces/users.types.js"
 import type { Transport } from "../../transport/index.js"
 import type { XrplPorts } from "./xrpl.ports.js"
@@ -66,6 +71,17 @@ export function createHttpPorts(transport: Transport): XrplPorts {
 
     getAccount(domainId: string, accountId: string): Promise<Core_ApiAccount> {
       return transport.get<Core_ApiAccount>(URLs.account, { domainId, accountId })
+    },
+
+    listTransactions(
+      domainId: string,
+      query: GetTransactionsQueryParams,
+    ): Promise<Core_TransactionsCollection> {
+      return transport.get<Core_TransactionsCollection>(URLs.transactions, { domainId }, query)
+    },
+
+    getTransaction(domainId: string, transactionId: string): Promise<Core_TransactionDetails> {
+      return transport.get<Core_TransactionDetails>(URLs.transaction, { domainId, transactionId })
     },
   }
 }
