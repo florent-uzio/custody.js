@@ -524,6 +524,43 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       }
     })
 
+    it("should preserve a text/plain error body in the thrown reason", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: {
+          status: 400,
+          data: "Invalid value for: body (Missing required field at 'type')",
+        },
+        message: "Request failed with status code 400",
+      }
+      mockAxiosInstance.get.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.get("/test-endpoint")
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toBe(
+          "GET API request failed: Invalid value for: body (Missing required field at 'type')",
+        )
+        expect((error as CustodyError).statusCode).toBe(400)
+      }
+    })
+
+    it("should fall back to the axios message when the string body is blank", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: { status: 500, data: "   " },
+        message: "Server error",
+      }
+      mockAxiosInstance.get.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.get("/test-endpoint")
+      } catch (error) {
+        expect((error as CustodyError).message).toBe("GET API request failed: Server error")
+      }
+    })
+
     it("should wrap non-Axios errors as CustodyError", async () => {
       const genericError = new Error("Network failure")
       mockAxiosInstance.get.mockRejectedValue(genericError)
