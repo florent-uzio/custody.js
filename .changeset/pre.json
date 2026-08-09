@@ -13,6 +13,7 @@
     "internal-openapi-surface",
     "openapi-1-39-2",
     "parameters-compute-rename",
+    "parameters-compute-type-discriminator",
     "vendor-xrpl-confidential-mpts-031913c"
   ]
 }
