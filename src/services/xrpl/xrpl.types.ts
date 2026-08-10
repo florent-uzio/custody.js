@@ -203,16 +203,21 @@ export type Core_ApiParametersComputeCryptographicFields =
 export type Core_CmptCryptographicFields = components["schemas"]["Core_CmptCryptographicFields"]
 
 /**
- * Identifies the account whose ElGamal public key to read, and the ledger the
- * key was provisioned for. An account holds one ElGamal key per ledger.
+ * Disambiguation for {@link XrplService.getElGamalPublicKey}. Both fields are
+ * only needed when the address resolves to more than one account — the domain
+ * and ledger are otherwise inferred from the address itself.
  */
-export type GetElGamalPublicKeyParams = {
-  /** Domain ID of the account */
-  domainId: string
-  /** Custody account ID */
-  accountId: string
-  /** Ledger the key was provisioned on */
-  ledgerId: string
+export type GetElGamalPublicKeyOptions = {
+  /**
+   * Domain ID of the account. Required when the login has multiple domains.
+   */
+  domainId?: string
+  /**
+   * Ledger ID to disambiguate when the same address exists on multiple ledgers
+   * under the same login. Also selects which of the account's per-ledger
+   * ElGamal keys is returned.
+   */
+  ledgerId?: XrplLedgerId
 }
 
 /**

@@ -21,7 +21,7 @@ import type {
   Core_BatchSigner,
   Core_XrplOperation,
   GetBatchSignatureParams,
-  GetElGamalPublicKeyParams,
+  GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
   IntentContext,
   MptIssuanceIdLookup,
@@ -124,12 +124,17 @@ export class XrplService {
    * @param address - XRPL address of the account to provision
    * @param options - Optional configuration for the intent
    * @returns The proposed intent response
-   * @throws {CustodyError} If the account is not found
+   * @throws {CustodyError} If the address is not a valid XRPL address, or the
+   *   account is not found
    */
   public async provisionElGamalKeyPair(
     address: string,
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
+    if (!isValidAddress(address)) {
+      throw new CustodyError({ reason: `Invalid address: ${address}` })
+    }
+
     await this.guard.checkFeature("Core_v0_ProvisionElGamalKeyPair", "xrpl.provisionElGamalKeyPair")
 
     const context = await this.ports.resolveContext(address, {
@@ -156,16 +161,30 @@ export class XrplService {
    * ledger — the value `MPTokenIssuanceSet` expects in `issuerEncryptionKey`
    * and `auditorEncryptionKey`, needing no re-encoding.
    *
-   * @param params - Domain, account and ledger identifying the key
+   * Takes the same XRPL address as {@link provisionElGamalKeyPair}: the domain,
+   * account and ledger are resolved from it. Pass `domainId` / `ledgerId` only
+   * when the address is registered more than once and the lookup is ambiguous.
+   *
+   * @param address - XRPL address of the account whose key to read
+   * @param options - Domain and ledger, when the address alone is ambiguous
    * @returns The ElGamal public key, base64-encoded
-   * @throws {CustodyError} If the account is not a Vault account, or no ElGamal
-   *   key is provisioned for that ledger
+   * @throws {CustodyError} If the address is not a valid XRPL address, resolves
+   *   to no or several accounts, the account is not a Vault account, or no
+   *   ElGamal key is provisioned for that ledger
    */
-  public async getElGamalPublicKey({
-    domainId,
-    accountId,
-    ledgerId,
-  }: GetElGamalPublicKeyParams): Promise<string> {
+  public async getElGamalPublicKey(
+    address: string,
+    options: GetElGamalPublicKeyOptions = {},
+  ): Promise<string> {
+    if (!isValidAddress(address)) {
+      throw new CustodyError({ reason: `Invalid address: ${address}` })
+    }
+
+    const { domainId, accountId, ledgerId } = await this.ports.resolveContext(address, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
     const account = await this.ports.getAccount(domainId, accountId)
 
     const { providerDetails } = account.data
@@ -181,7 +200,7 @@ export class XrplService {
     if (!key) {
       throw new CustodyError({
         reason:
-          `No ElGamal key provisioned for account ${accountId} on ledger ${ledgerId}. ` +
+          `No ElGamal key provisioned for account ${accountId} (${address}) on ledger ${ledgerId}. ` +
           "Call xrpl.provisionElGamalKeyPair first and wait for the intent to execute.",
       })
     }
