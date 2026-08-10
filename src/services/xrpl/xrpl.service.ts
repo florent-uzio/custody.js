@@ -21,12 +21,16 @@ import type {
   Core_BatchSigner,
   Core_XrplOperation,
   GetBatchSignatureParams,
+  GetElGamalPublicKeyOptions,
+  GetMptIssuanceIdParams,
   IntentContext,
+  MptIssuanceIdLookup,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   SignBatchPayloadHandle,
   SignBatchPayloadOptions,
   SignBatchPayloadResult,
+  WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
 } from "./xrpl.types.js"
@@ -104,6 +108,171 @@ export class XrplService {
     }
 
     return compressPublicKey(key.publicKey.value)
+  }
+
+  /**
+   * Provisions the ElGamal key pair a confidential MPT (cMPT) account needs.
+   *
+   * Every participant in a confidential transfer — issuer, senders, receivers,
+   * and the auditor when one is configured — must have one before any
+   * confidential operation will be accepted. The vault generates and stores the
+   * pair; the public half becomes readable via {@link getElGamalPublicKey}.
+   *
+   * Unlike the XRPL operations, this is its own intent type rather than a
+   * transaction order, so it takes no fee strategy and no payload ID.
+   *
+   * @param address - XRPL address of the account to provision
+   * @param options - Optional configuration for the intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If the address is not a valid XRPL address, or the
+   *   account is not found
+   */
+  public async provisionElGamalKeyPair(
+    address: string,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    if (!isValidAddress(address)) {
+      throw new CustodyError({ reason: `Invalid address: ${address}` })
+    }
+
+    await this.guard.checkFeature("Core_v0_ProvisionElGamalKeyPair", "xrpl.provisionElGamalKeyPair")
+
+    const context = await this.ports.resolveContext(address, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
+    const payload = {
+      accountId: context.accountId,
+      ledgerId: context.ledgerId,
+      type: "v0_ProvisionElGamalKeyPair",
+    } satisfies components["schemas"]["Core_v0_ProvisionElGamalKeyPair"]
+
+    return this.ports.submitIntent({
+      request: {
+        ...buildRequestEnvelope(context, options, payload),
+        type: "Propose",
+      },
+    })
+  }
+
+  /**
+   * Retrieves the base64 ElGamal public key provisioned for an account on a
+   * ledger — the value `MPTokenIssuanceSet` expects in `issuerEncryptionKey`
+   * and `auditorEncryptionKey`, needing no re-encoding.
+   *
+   * Takes the same XRPL address as {@link provisionElGamalKeyPair}: the domain,
+   * account and ledger are resolved from it. Pass `domainId` / `ledgerId` only
+   * when the address is registered more than once and the lookup is ambiguous.
+   *
+   * @param address - XRPL address of the account whose key to read
+   * @param options - Domain and ledger, when the address alone is ambiguous
+   * @returns The ElGamal public key, base64-encoded
+   * @throws {CustodyError} If the address is not a valid XRPL address, resolves
+   *   to no or several accounts, the account is not a Vault account, or no
+   *   ElGamal key is provisioned for that ledger
+   */
+  public async getElGamalPublicKey(
+    address: string,
+    options: GetElGamalPublicKeyOptions = {},
+  ): Promise<string> {
+    if (!isValidAddress(address)) {
+      throw new CustodyError({ reason: `Invalid address: ${address}` })
+    }
+
+    const { domainId, accountId, ledgerId } = await this.ports.resolveContext(address, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
+    const account = await this.ports.getAccount(domainId, accountId)
+
+    const { providerDetails } = account.data
+
+    if (providerDetails.type !== "Vault") {
+      throw new CustodyError({ reason: "Account is not a Vault account" })
+    }
+
+    const key = providerDetails.purposeKeys.find(
+      (k) => k.purpose === "ElGamal" && k.ledgerId === ledgerId,
+    )
+
+    if (!key) {
+      throw new CustodyError({
+        reason:
+          `No ElGamal key provisioned for account ${accountId} (${address}) on ledger ${ledgerId}. ` +
+          "Call xrpl.provisionElGamalKeyPair first and wait for the intent to execute.",
+      })
+    }
+
+    return key.publicKey
+  }
+
+  /**
+   * Resolves the MPT issuance ID an `MPTokenIssuanceCreate` produced, by
+   * looking up the transaction its order registered and reading the issuance
+   * off the transaction's XRPL ledger data.
+   *
+   * The issuance ID is minted by the ledger, so it exists only once the
+   * transaction is on-chain — wait for the intent to execute before calling
+   * this.
+   *
+   * @param params - Domain and the payload ID of the `MPTokenIssuanceCreate` order
+   * @returns The 192-bit MPT issuance ID, hex-encoded
+   * @throws {CustodyError} If no transaction is registered for the order, or it
+   *   carries no MPT issuance (not yet on-chain, or not an issuance-creating order)
+   */
+  public async getMptIssuanceId({ domainId, payloadId }: GetMptIssuanceIdParams): Promise<string> {
+    const lookup = await this.fetchMptIssuanceId(domainId, payloadId)
+
+    if (!("issuanceId" in lookup)) {
+      throw new CustodyError({ reason: lookup.reason })
+    }
+
+    return lookup.issuanceId
+  }
+
+  /**
+   * Resolves the MPT issuance ID an `MPTokenIssuanceCreate` produced, polling
+   * until it is readable.
+   *
+   * Custody registers the transaction an order produced, then fills in its XRPL
+   * ledger data, some time *after* the intent reports `Executed` — so
+   * `getMptIssuanceId` called straight after `intents.getAndWait` legitimately
+   * finds nothing. This waits that gap out instead of the caller sleeping for a
+   * fixed guess.
+   *
+   * @param params - Domain and the payload ID of the `MPTokenIssuanceCreate` order
+   * @param options - Polling configuration (default: 10 attempts, 3s apart)
+   * @returns The 192-bit MPT issuance ID, hex-encoded
+   * @throws {CustodyError} If the issuance is still unreadable after the
+   *   maximum retries, reporting why the last attempt came up empty
+   */
+  public async getMptIssuanceIdAndWait(
+    { domainId, payloadId }: GetMptIssuanceIdParams,
+    options: WaitForMptIssuanceIdOptions = {},
+  ): Promise<string> {
+    const { maxRetries = 10, intervalMs = 3000, onAttempt } = options
+
+    let lastReason = `No transaction registered for transaction order ${payloadId}`
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      onAttempt?.(attempt)
+
+      const lookup = await this.fetchMptIssuanceId(domainId, payloadId)
+      if ("issuanceId" in lookup) {
+        return lookup.issuanceId
+      }
+      lastReason = lookup.reason
+
+      if (attempt < maxRetries) {
+        await sleep(intervalMs)
+      }
+    }
+
+    throw new CustodyError({
+      reason: `No MPT issuance ID for transaction order ${payloadId} after ${maxRetries} attempts. ${lastReason}`,
+    })
   }
 
   /**
@@ -489,6 +658,45 @@ export class XrplService {
     }
 
     return undefined
+  }
+
+  /**
+   * Looks the order's transaction up once and reads the MPT issuance off its
+   * XRPL ledger data, reporting the reason instead of throwing when either the
+   * transaction or its ledger data has not been registered yet.
+   *
+   * Two calls, not one: the collection endpoint is the only way to map a
+   * transaction order to its transaction, but it returns a lighter projection
+   * that omits `ledgerTransactionData.ledgerData`. The issuance ID only appears
+   * on the per-transaction detail response.
+   * @private
+   */
+  private async fetchMptIssuanceId(
+    domainId: string,
+    payloadId: string,
+  ): Promise<MptIssuanceIdLookup> {
+    const { items } = await this.ports.listTransactions(domainId, {
+      "orderReference.Id": payloadId,
+    })
+
+    if (items.length === 0) {
+      return { reason: `No transaction registered for transaction order ${payloadId}` }
+    }
+
+    for (const { id } of items) {
+      const { ledgerTransactionData } = await this.ports.getTransaction(domainId, id)
+      const ledgerData = ledgerTransactionData?.ledgerData
+
+      if (ledgerData?.type === "Xrpl" && !isUndefined(ledgerData.tokenData)) {
+        return { issuanceId: ledgerData.tokenData.issuanceId }
+      }
+    }
+
+    return {
+      reason:
+        `Transaction order ${payloadId} carries no MPT issuance ID. ` +
+        "Confirm the intent executed and that the operation was MPTokenIssuanceCreate.",
+    }
   }
 
   /**

@@ -5,11 +5,14 @@ import type {
   Core_BatchSigner,
   Core_XrplOperation,
   GetBatchSignatureParams,
+  GetElGamalPublicKeyOptions,
+  GetMptIssuanceIdParams,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   SignBatchPayloadHandle,
   SignBatchPayloadOptions,
   SignBatchPayloadResult,
+  WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
   XrplService,
@@ -39,6 +42,65 @@ export function createXrpl(getService: () => XrplService) {
       params: { Account: string; operation: Core_XrplOperation },
       options?: XrplIntentOptions,
     ): Promise<Core_IntentResponse> => getService().proposeIntent(params, options),
+
+    /**
+     * Provision the ElGamal key pair a confidential MPT (cMPT) account needs.
+     *
+     * Required for every participant — issuer, senders, receivers, and the
+     * auditor when configured — before any confidential operation is accepted.
+     * Read the resulting public key back with `getElGamalPublicKey`.
+     *
+     * @param address - XRPL address of the account to provision
+     * @param options - Optional configuration for the intent
+     * @returns The proposed intent response
+     */
+    provisionElGamalKeyPair: async (
+      address: string,
+      options?: XrplIntentOptions,
+    ): Promise<Core_IntentResponse> => getService().provisionElGamalKeyPair(address, options),
+
+    /**
+     * Read an account's base64 ElGamal public key for a ledger — the value
+     * `MPTokenIssuanceSet` takes as `issuerEncryptionKey` / `auditorEncryptionKey`.
+     *
+     * The domain, account and ledger are resolved from the address; pass
+     * `domainId` / `ledgerId` only when the address is registered more than once.
+     *
+     * @param address - XRPL address of the account whose key to read
+     * @param options - Domain and ledger, when the address alone is ambiguous
+     * @returns The ElGamal public key, base64-encoded
+     */
+    getElGamalPublicKey: async (
+      address: string,
+      options?: GetElGamalPublicKeyOptions,
+    ): Promise<string> => getService().getElGamalPublicKey(address, options),
+
+    /**
+     * Resolve the MPT issuance ID an executed `MPTokenIssuanceCreate` produced,
+     * from the payload ID of its transaction order.
+     *
+     * @param params - Domain and the payload ID of the `MPTokenIssuanceCreate` order
+     * @returns The 192-bit MPT issuance ID, hex-encoded
+     */
+    getMptIssuanceId: async (params: GetMptIssuanceIdParams): Promise<string> =>
+      getService().getMptIssuanceId(params),
+
+    /**
+     * Resolve the MPT issuance ID an executed `MPTokenIssuanceCreate` produced,
+     * polling until the transaction its order registered carries the issuance.
+     *
+     * Custody fills that ledger data in shortly *after* the intent reports
+     * `Executed`, so prefer this over `getMptIssuanceId` when reading the
+     * issuance straight after `intents.getAndWait`.
+     *
+     * @param params - Domain and the payload ID of the `MPTokenIssuanceCreate` order
+     * @param options - Polling configuration (default: 10 attempts, 3s apart)
+     * @returns The 192-bit MPT issuance ID, hex-encoded
+     */
+    getMptIssuanceIdAndWait: async (
+      params: GetMptIssuanceIdParams,
+      options?: WaitForMptIssuanceIdOptions,
+    ): Promise<string> => getService().getMptIssuanceIdAndWait(params, options),
 
     /**
      * Create an XRPL raw sign.

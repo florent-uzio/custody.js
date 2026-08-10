@@ -14,7 +14,9 @@ import { isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type {
   BatchPayloadInput,
+  Core_ApiParametersComputeCryptographicFields,
   Core_BatchExecutionMode,
+  Core_CmptCryptographicFields,
   Core_ParticipantSequencing,
   CustodyAccountSetFlag,
   CustodyBatchSigner,
@@ -352,6 +354,96 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
     default:
       throw new Error(`Unsupported transaction type: ${tx.TransactionType}`)
   }
+}
+
+/**
+ * Re-encodes the cryptographic material a parameters computation returns into
+ * the form a confidential MPT operation carries.
+ *
+ * `GET .../parameters-compute/{computeId}` returns every field **hex**-encoded,
+ * while `Core_CmptCryptographicFields` on the operation is **base64** — so the
+ * compute response cannot be spliced into a `ConfidentialMPTSend` as-is.
+ *
+ * The response also carries no `type` discriminator, unlike the operation's
+ * union, so the variant is inferred from the fields present: a
+ * `senderEncryptedAmount` means `Send`, a numeric `amount` means `Clawback`, a
+ * `balanceCommitment` alongside `holderEncryptedAmount` means `ConvertBack`,
+ * and `holderEncryptedAmount` alone means `Convert`.
+ *
+ * One field deliberately has no counterpart here: a Batch entry's **top-level**
+ * `senderEncryptedBalance` stays hex, so pass `fields.senderEncryptedBalance`
+ * straight through rather than reading it off the result of this call.
+ *
+ * @param fields - `cryptographicFields` from a completed parameters computation
+ * @returns The same material, base64-encoded and tagged with its operation type
+ * @throws {CustodyError} If the shape matches none of the four known variants
+ */
+export const parametersComputeToCryptographicFields = (
+  fields: Core_ApiParametersComputeCryptographicFields,
+): Core_CmptCryptographicFields => {
+  if ("senderEncryptedAmount" in fields) {
+    return {
+      type: "Send",
+      senderEncryptedAmount: hexToBase64(fields.senderEncryptedAmount),
+      destinationEncryptedAmount: hexToBase64(fields.destinationEncryptedAmount),
+      issuerEncryptedAmount: hexToBase64(fields.issuerEncryptedAmount),
+      balanceCommitment: hexToBase64(fields.balanceCommitment),
+      amountCommitment: hexToBase64(fields.amountCommitment),
+      zkProof: hexToBase64(fields.zkProof),
+      ...(!isUndefined(fields.senderEncryptedBalance) && {
+        senderEncryptedBalance: hexToBase64(fields.senderEncryptedBalance),
+      }),
+      ...(!isUndefined(fields.senderEncryptedBalanceVersion) && {
+        senderEncryptedBalanceVersion: fields.senderEncryptedBalanceVersion,
+      }),
+      ...(!isUndefined(fields.auditorEncryptedAmount) && {
+        auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
+      }),
+    }
+  }
+
+  if ("amount" in fields) {
+    return {
+      type: "Clawback",
+      zkProof: hexToBase64(fields.zkProof),
+      amount: fields.amount,
+    }
+  }
+
+  if ("holderEncryptedAmount" in fields) {
+    // Only ConvertBack commits to the resulting balance; Convert has no such
+    // field, and its zkProof is optional where ConvertBack's is required.
+    if ("balanceCommitment" in fields) {
+      return {
+        type: "ConvertBack",
+        holderEncryptedAmount: hexToBase64(fields.holderEncryptedAmount),
+        issuerEncryptedAmount: hexToBase64(fields.issuerEncryptedAmount),
+        blindingFactor: hexToBase64(fields.blindingFactor),
+        balanceCommitment: hexToBase64(fields.balanceCommitment),
+        zkProof: hexToBase64(fields.zkProof),
+        ...(!isUndefined(fields.auditorEncryptedAmount) && {
+          auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
+        }),
+      }
+    }
+
+    return {
+      type: "Convert",
+      holderEncryptedAmount: hexToBase64(fields.holderEncryptedAmount),
+      issuerEncryptedAmount: hexToBase64(fields.issuerEncryptedAmount),
+      blindingFactor: hexToBase64(fields.blindingFactor),
+      ...(!isUndefined(fields.zkProof) && { zkProof: hexToBase64(fields.zkProof) }),
+      ...(!isUndefined(fields.auditorEncryptedAmount) && {
+        auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
+      }),
+    }
+  }
+
+  throw new CustodyError({
+    reason:
+      "Unrecognized parameters-compute cryptographicFields shape: " +
+      `[${Object.keys(fields).join(", ")}]`,
+  })
 }
 
 /**

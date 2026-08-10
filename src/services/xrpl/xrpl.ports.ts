@@ -6,6 +6,11 @@ import type {
   Core_IntentResponse,
   Core_ProposeIntentBody,
 } from "../../namespaces/intents.types.js"
+import type {
+  Core_TransactionDetails,
+  Core_TransactionsCollection,
+  GetTransactionsQueryParams,
+} from "../../namespaces/transactions.types.js"
 import type { IntentContext } from "./xrpl.types.js"
 
 /**
@@ -48,4 +53,22 @@ export interface XrplPorts {
    * Wraps GET /v1/domains/{domainId}/accounts/{accountId}.
    */
   getAccount(domainId: string, accountId: string): Promise<Core_ApiAccount>
+
+  /**
+   * Lists the domain's transactions, filtered by the given query (the SDK uses
+   * `orderReference.Id` to find the transaction a transaction order produced).
+   * Wraps GET /v1/domains/{domainId}/transactions.
+   */
+  listTransactions(
+    domainId: string,
+    query: GetTransactionsQueryParams,
+  ): Promise<Core_TransactionsCollection>
+
+  /**
+   * Retrieves a single transaction. The collection endpoint returns a lighter
+   * projection that omits `ledgerTransactionData.ledgerData`, so reading on-ledger
+   * data requires this detail call.
+   * Wraps GET /v1/domains/{domainId}/transactions/{transactionId}.
+   */
+  getTransaction(domainId: string, transactionId: string): Promise<Core_TransactionDetails>
 }
