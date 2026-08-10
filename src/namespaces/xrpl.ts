@@ -5,7 +5,7 @@ import type {
   Core_BatchSigner,
   Core_XrplOperation,
   GetBatchSignatureParams,
-  GetElGamalPublicKeyParams,
+  GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
@@ -63,11 +63,17 @@ export function createXrpl(getService: () => XrplService) {
      * Read an account's base64 ElGamal public key for a ledger — the value
      * `MPTokenIssuanceSet` takes as `issuerEncryptionKey` / `auditorEncryptionKey`.
      *
-     * @param params - Domain, account and ledger identifying the key
+     * The domain, account and ledger are resolved from the address; pass
+     * `domainId` / `ledgerId` only when the address is registered more than once.
+     *
+     * @param address - XRPL address of the account whose key to read
+     * @param options - Domain and ledger, when the address alone is ambiguous
      * @returns The ElGamal public key, base64-encoded
      */
-    getElGamalPublicKey: async (params: GetElGamalPublicKeyParams): Promise<string> =>
-      getService().getElGamalPublicKey(params),
+    getElGamalPublicKey: async (
+      address: string,
+      options?: GetElGamalPublicKeyOptions,
+    ): Promise<string> => getService().getElGamalPublicKey(address, options),
 
     /**
      * Resolve the MPT issuance ID an executed `MPTokenIssuanceCreate` produced,

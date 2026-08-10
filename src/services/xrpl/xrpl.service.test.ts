@@ -686,22 +686,101 @@ describe("XrplService", () => {
         "Account not found for address",
       )
     })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.provisionElGamalKeyPair("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
   })
 
   // ── getElGamalPublicKey ───────────────────────────────────────
 
   describe("getElGamalPublicKey", () => {
     it("should return the base64 ElGamal key for the ledger unchanged", async () => {
-      const result = await service.getElGamalPublicKey({
-        domainId: mockDomainId,
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-      })
+      const result = await service.getElGamalPublicKey(mockAddress)
 
       expect(result).toBe(mockElGamalKey)
     })
 
-    it("should select the key matching the requested ledger", async () => {
+    it("should resolve domain, account and ledger from the address", async () => {
+      let capturedAddress: string | undefined
+      let capturedOpts: any
+      let capturedAccountLookup: [string, string] | undefined
+      ports = createTestPorts({
+        resolveContext: async (address, opts) => {
+          capturedAddress = address
+          capturedOpts = opts
+          return mockContext
+        },
+        getAccount: async (domainId, accountId) => {
+          capturedAccountLookup = [domainId, accountId]
+          return {
+            data: {
+              providerDetails: {
+                type: "Vault",
+                purposeKeys: [
+                  { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+                ],
+              },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.getElGamalPublicKey(mockAddress, {
+        domainId: mockDomainId,
+        ledgerId: mockLedgerId,
+      })
+
+      expect(capturedAddress).toBe(mockAddress)
+      expect(capturedOpts).toEqual({ domainId: mockDomainId, ledgerId: mockLedgerId })
+      expect(capturedAccountLookup).toEqual([mockDomainId, mockAccountId])
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKey("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
+
+    it("should propagate resolveContext failures for an ambiguous address", async () => {
+      ports = createTestPorts({
+        resolveContext: async () => {
+          throw new CustodyError({
+            reason: `Multiple accounts found for address ${mockAddress}. Please specify ledgerId and/or domainId to disambiguate.`,
+          })
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "Multiple accounts found for address",
+      )
+    })
+
+    it("should select the key matching the resolved ledger", async () => {
       ports = createTestPorts({
         getAccount: async () =>
           ({
@@ -718,11 +797,7 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      const result = await service.getElGamalPublicKey({
-        domainId: mockDomainId,
-        accountId: mockAccountId,
-        ledgerId: mockLedgerId,
-      })
+      const result = await service.getElGamalPublicKey(mockAddress)
 
       expect(result).toBe(mockElGamalKey)
     })
@@ -736,23 +811,20 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getElGamalPublicKey({
-          domainId: mockDomainId,
-          accountId: mockAccountId,
-          ledgerId: mockLedgerId,
-        }),
-      ).rejects.toThrow("Account is not a Vault account")
+      await expect(service.getElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "Account is not a Vault account",
+      )
     })
 
     it("should throw when no ElGamal key is provisioned for that ledger", async () => {
-      await expect(
-        service.getElGamalPublicKey({
-          domainId: mockDomainId,
-          accountId: mockAccountId,
-          ledgerId: "another-ledger",
-        }),
-      ).rejects.toThrow("No ElGamal key provisioned for account")
+      ports = createTestPorts({
+        resolveContext: async () => ({ ...mockContext, ledgerId: "another-ledger" }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "No ElGamal key provisioned for account",
+      )
     })
   })
 
