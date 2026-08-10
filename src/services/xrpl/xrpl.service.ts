@@ -23,6 +23,7 @@ import type {
   GetBatchSignatureParams,
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
+  GetPublicKeyOptions,
   IntentContext,
   MptIssuanceIdLookup,
   RawSignAndWaitOptions,
@@ -79,35 +80,30 @@ export class XrplService {
 
   /**
    * Retrieves the compressed secp256k1 public key for an XRPL account.
-   * @param domainId - The domain ID of the account
-   * @param accountId - The account ID
+   *
+   * Takes the same XRPL address as {@link rawSign} and
+   * {@link getElGamalPublicKey}: the domain and account are resolved from it.
+   * Pass `domainId` / `ledgerId` only when the address is registered more than
+   * once and the lookup is ambiguous.
+   *
+   * @param address - XRPL address of the account whose key to read
+   * @param options - Domain and ledger, when the address alone is ambiguous
    * @returns The compressed public key in uppercase hex format
-   * @throws {CustodyError} If the account is not a Vault account or the key is not found
+   * @throws {CustodyError} If the address is not a valid XRPL address, resolves
+   *   to no or several accounts, the account is not a Vault account, or the key
+   *   is not found
    */
-  public async getPublicKey({
-    domainId,
-    accountId,
-  }: {
-    domainId: string
-    accountId: string
-  }): Promise<string> {
-    const account = await this.ports.getAccount(domainId, accountId)
-
-    const { providerDetails } = account.data
-
-    if (providerDetails.type !== "Vault") {
-      throw new CustodyError({ reason: "Account is not a Vault account" })
+  public async getPublicKey(address: string, options: GetPublicKeyOptions = {}): Promise<string> {
+    if (!isValidAddress(address)) {
+      throw new CustodyError({ reason: `Invalid address: ${address}` })
     }
 
-    const key = providerDetails.keys?.find((k) => k.id === "SECP256K1_CUSTODY_1")
+    const { domainId, accountId } = await this.ports.resolveContext(address, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
 
-    if (!key?.publicKey) {
-      throw new CustodyError({
-        reason: "Public key not found for key ID SECP256K1_CUSTODY_1",
-      })
-    }
-
-    return compressPublicKey(key.publicKey.value)
+    return this.fetchPublicKey(domainId, accountId)
   }
 
   /**
@@ -327,10 +323,7 @@ export class XrplService {
     const transaction = { ...xrplTransaction }
 
     if (!transaction.SigningPubKey) {
-      const pubKey = await this.getPublicKey({
-        domainId: context.domainId,
-        accountId: context.accountId,
-      })
+      const pubKey = await this.fetchPublicKey(context.domainId, context.accountId)
       transaction.SigningPubKey = pubKey
     }
 
@@ -464,10 +457,7 @@ export class XrplService {
 
     const context = await this.resolveSignerContext(signerAddress, options)
 
-    const signingPubKey = await this.getPublicKey({
-      domainId: context.domainId,
-      accountId: context.accountId,
-    })
+    const signingPubKey = await this.fetchPublicKey(context.domainId, context.accountId)
 
     const base64Encoded = Buffer.from(signingPayload, "hex").toString("base64")
 
@@ -697,6 +687,31 @@ export class XrplService {
         `Transaction order ${payloadId} carries no MPT issuance ID. ` +
         "Confirm the intent executed and that the operation was MPTokenIssuanceCreate.",
     }
+  }
+
+  /**
+   * Reads the compressed secp256k1 public key off an already-resolved account,
+   * skipping the address lookup the public method performs.
+   * @private
+   */
+  private async fetchPublicKey(domainId: string, accountId: string): Promise<string> {
+    const account = await this.ports.getAccount(domainId, accountId)
+
+    const { providerDetails } = account.data
+
+    if (providerDetails.type !== "Vault") {
+      throw new CustodyError({ reason: "Account is not a Vault account" })
+    }
+
+    const key = providerDetails.keys?.find((k) => k.id === "SECP256K1_CUSTODY_1")
+
+    if (!key?.publicKey) {
+      throw new CustodyError({
+        reason: "Public key not found for key ID SECP256K1_CUSTODY_1",
+      })
+    }
+
+    return compressPublicKey(key.publicKey.value)
   }
 
   /**

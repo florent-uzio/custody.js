@@ -538,11 +538,58 @@ describe("XrplService", () => {
 
   describe("getPublicKey", () => {
     it("should return the compressed public key for a Vault account", async () => {
-      const result = await service.getPublicKey({
-        domainId: mockDomainId,
-        accountId: mockAccountId,
-      })
+      const result = await service.getPublicKey(mockAddress)
       expect(result).toBe(expectedCompressedKey)
+    })
+
+    it("should resolve domain and account from the address", async () => {
+      let capturedAddress: string | undefined
+      let capturedOpts: any
+      let capturedAccountLookup: [string, string] | undefined
+      ports = createTestPorts({
+        resolveContext: async (address, opts) => {
+          capturedAddress = address
+          capturedOpts = opts
+          return mockContext
+        },
+        getAccount: async (domainId, accountId) => {
+          capturedAccountLookup = [domainId, accountId]
+          return {
+            data: {
+              providerDetails: {
+                type: "Vault",
+                keys: [{ id: "SECP256K1_CUSTODY_1", publicKey: { value: mockBase64PublicKey } }],
+              },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.getPublicKey(mockAddress, {
+        domainId: mockDomainId,
+        ledgerId: mockLedgerId,
+      })
+
+      expect(capturedAddress).toBe(mockAddress)
+      expect(capturedOpts).toEqual({ domainId: mockDomainId, ledgerId: mockLedgerId })
+      expect(capturedAccountLookup).toEqual([mockDomainId, mockAccountId])
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getPublicKey("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
     })
 
     it("should throw when the account is not a Vault account", async () => {
@@ -554,9 +601,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Account is not a Vault account")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Account is not a Vault account",
+      )
     })
 
     it("should throw when SECP256K1_CUSTODY_1 key is not found", async () => {
@@ -573,9 +620,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
 
     it("should throw when keys array is undefined", async () => {
@@ -587,9 +634,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
 
     it("should throw when the key exists but publicKey is undefined", async () => {
@@ -606,9 +653,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
   })
 

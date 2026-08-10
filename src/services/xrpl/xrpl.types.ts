@@ -221,6 +221,23 @@ export type GetElGamalPublicKeyOptions = {
 }
 
 /**
+ * Disambiguation for {@link XrplService.getPublicKey}. Both fields are only
+ * needed when the address resolves to more than one account — the domain and
+ * ledger are otherwise inferred from the address itself.
+ */
+export type GetPublicKeyOptions = {
+  /**
+   * Domain ID of the account. Required when the login has multiple domains.
+   */
+  domainId?: string
+  /**
+   * Ledger ID to disambiguate when the same address exists on multiple ledgers
+   * under the same login.
+   */
+  ledgerId?: XrplLedgerId
+}
+
+/**
  * Identifies the transaction order whose resulting MPT issuance ID to read.
  * `payloadId` is the `v0_CreateTransactionOrder` payload ID — the value passed
  * as `options.payloadId` to `proposeIntent`, defaulted to a fresh UUID when
