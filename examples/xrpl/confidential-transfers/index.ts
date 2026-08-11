@@ -397,10 +397,38 @@ const runConfidentialTransfers = async () => {
    * Every account that touches a confidential amount needs one — including the
    * issuer, whose key every amount is also encrypted to, and the auditor when
    * one is configured.
+   *
+   * An account can only be provisioned once per ledger: a second attempt is
+   * rejected with `ElGamal key already provisioned for account …`. So this asks
+   * first — the accounts named in `CONFIG.accounts` are reused across runs,
+   * while the ones this script creates are not. `findElGamalPublicKey` answers
+   * with `undefined` rather than throwing when there is no key yet.
+   *
+   * The vault writes the key shortly *after* the intent reports `Executed`, so
+   * reading it back takes `getElGamalPublicKeyAndWait`; the non-polling
+   * `getElGamalPublicKey` would throw here.
    */
+  const elGamalKeys = new Map<Role, string>()
+
   for (const participant of participants) {
+    const existing = await custody.xrpl.findElGamalPublicKey(participant.address, { domainId })
+
+    if (existing) {
+      console.log(`→ ElGamal key already provisioned (${participant.role}), skipping`)
+      elGamalKeys.set(participant.role, existing)
+      continue
+    }
+
     await execute(`provision ElGamal key (${participant.role})`, (requestId) =>
       custody.xrpl.provisionElGamalKeyPair(participant.address, { requestId, domainId }),
+    )
+
+    elGamalKeys.set(
+      participant.role,
+      await custody.xrpl.getElGamalPublicKeyAndWait(participant.address, {
+        domainId,
+        ...CONFIG.polling,
+      }),
     )
   }
 
@@ -408,25 +436,16 @@ const runConfidentialTransfers = async () => {
 
   /**
    * One atomic operation sets the mutable confidentiality flag and publishes
-   * the issuer's (and optionally the auditor's) ElGamal public key. Both are
-   * already base64 as the API expects them, so they go straight through.
+   * the issuer's (and optionally the auditor's) ElGamal public key. Step 5
+   * collected both as it went, and they are already base64 as the API expects
+   * them, so they go straight through.
    *
    * This is one-way: `MPTSetCanConfidentialAmount` has no clearing counterpart,
    * so an issuance cannot be made non-confidential again.
    */
-  const issuerEncryptionKey = await custody.xrpl.getElGamalPublicKey({
-    domainId,
-    accountId: issuer.accountId,
-    ledgerId: CONFIG.creation.ledgerId,
-  })
+  const issuerEncryptionKey = elGamalKeys.get("issuer")!
 
-  const auditorEncryptionKey = auditor
-    ? await custody.xrpl.getElGamalPublicKey({
-        domainId,
-        accountId: auditor.accountId,
-        ledgerId: CONFIG.creation.ledgerId,
-      })
-    : undefined
+  const auditorEncryptionKey = auditor ? elGamalKeys.get("auditor") : undefined
 
   await execute("grant confidential property", (requestId) =>
     custody.xrpl.proposeIntent(

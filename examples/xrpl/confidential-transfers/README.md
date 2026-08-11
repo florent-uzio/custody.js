@@ -133,7 +133,7 @@ what. Merging on each receipt, as `index.ts` does, keeps the mapping one-to-one.
   `MPTokenIssuanceSet`
 - `client.xrpl.getMptIssuanceIdAndWait` — resolves the issuance ID an executed
   `MPTokenIssuanceCreate` minted, polling until the ledger data is registered
-  (custody fills it in shortly *after* the intent reports `Executed`, so the
+  (custody fills it in shortly _after_ the intent reports `Executed`, so the
   non-polling `getMptIssuanceId` throws when called straight afterwards)
 - `client.accounts.initiateParametersComputeAndWait` — per-participant proof
   computation for a Batch
