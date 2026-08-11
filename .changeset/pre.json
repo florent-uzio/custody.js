@@ -9,12 +9,16 @@
     "cmpt-compute-unsigned-post",
     "confidential-mpt-cmpt-compute",
     "debug-http-logging",
+    "elgamal-public-key-by-address",
     "internal-cb-in-decryption",
     "internal-openapi-surface",
     "openapi-1-39-2",
+    "parameters-compute-null-fields",
     "parameters-compute-rename",
     "parameters-compute-type-discriminator",
+    "public-key-by-address",
     "vendor-xrpl-confidential-mpts-031913c",
-    "xrpl-elgamal-and-issuance-helpers"
+    "xrpl-elgamal-and-issuance-helpers",
+    "xrpl-service-guards-and-structure"
   ]
 }

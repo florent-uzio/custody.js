@@ -1,5 +1,47 @@
 # custody
 
+## 2.13.0-beta.10
+
+### Minor Changes
+
+- 10d5935: Take an XRPL address in `client.xrpl.getElGamalPublicKey` instead of a resolved `{ domainId, accountId, ledgerId }` triple.
+
+  `client.xrpl.getElGamalPublicKey(address, options?)` now resolves the domain, account and ledger from the r-address itself, the same way `provisionElGamalKeyPair`, `proposeIntent` and `rawSign` already do — so provisioning a key and reading it back take the identical argument, and callers no longer have to look an account ID up through `client.accounts.findByAddress` first just to name the account they already have an address for. The ledger the key is read from is the one the address resolved to, which is also the ledger the intent provisioned it on.
+
+  Both `getElGamalPublicKey` and `provisionElGamalKeyPair` now validate the address with `isValidAddress` from xrpl.js before any request goes out, as `rawSignAndWait` and `signBatchPayload` already do for the addresses they take — a typo fails with `Invalid address: <value>` rather than as an account-not-found from the lookup endpoint, and the two cMPT methods reject the same inputs instead of one failing locally and the other at the API.
+
+  `options.domainId` and `options.ledgerId` disambiguate: they are only needed when the address is registered more than once — across domains under the same login, or on several ledgers (`xrpl` vs `xrpl-testnet-august-2024`) — in which case the address lookup throws and names the option to pass, rather than silently picking a match. A missing ElGamal key still throws a `CustodyError`, now naming the address alongside the account and ledger.
+
+  This is a breaking change to the method's signature: `getElGamalPublicKey({ domainId, accountId, ledgerId })` becomes `getElGamalPublicKey(address, { domainId?, ledgerId? })`, and the exported `GetElGamalPublicKeyParams` type is replaced by `GetElGamalPublicKeyOptions`. The trade-off is one extra address-resolution round-trip per call, which is what every other address-taking method on the namespace already pays.
+
+- 9f8cb23: Take an XRPL address in `client.xrpl.getPublicKey` instead of a resolved `{ domainId, accountId }` pair.
+
+  `client.xrpl.getPublicKey(address, options?)` now resolves the domain and account from the r-address itself, the same way `proposeIntent`, `rawSign`, `provisionElGamalKeyPair` and `getElGamalPublicKey` already do — so reading an account's signing key takes the same argument as every other address-taking method on the namespace, and callers no longer have to look an account ID up through `client.accounts.findByAddress` first just to name an account they already have an address for.
+
+  The address is validated with `isValidAddress` from xrpl.js before any request goes out, so a typo fails with `Invalid address: <value>` rather than as an account-not-found from the lookup endpoint.
+
+  `options.domainId` and `options.ledgerId` disambiguate: they are only needed when the address is registered more than once — across domains under the same login, or on several ledgers (`xrpl` vs `xrpl-testnet-august-2024`) — in which case the address lookup throws and names the option to pass, rather than silently picking a match.
+
+  This is a breaking change to the method's signature: `getPublicKey({ domainId, accountId })` becomes `getPublicKey(address, { domainId?, ledgerId? })`, with a new exported `GetPublicKeyOptions` type. The trade-off is one extra address-resolution round-trip per call, which is what every other address-taking method already pays. `rawSignAndWait`, `signBatchPayload` and `signBatchPayloadAndWait` read the key off the context they have already resolved, so they make no additional call.
+
+- 66d3565: Fix `client.xrpl.dryRunBatch` ignoring `options.ledgerId`, and apply the XRPL address guard uniformly across the namespace.
+
+  **`dryRunBatch` dropped `ledgerId`.** Step 1 of the XLS-56 Batch flow resolved the submitter with `{ domainId }` alone while `proposeBatch` (Step 3) resolved it with `{ domainId, ledgerId }`. Since `ledgerId` is what disambiguates an address registered on more than one ledger, and the resolved ledger lands in the transaction order payload, a submitter present on both `xrpl` and `xrpl-testnet-august-2024` could have its dry-run signing data computed against a different ledger than the batch was ultimately submitted to — or fail the lookup as ambiguous at Step 1 while succeeding at Step 3. Both steps now pass the same disambiguation.
+
+  **The address guard is now a real precondition everywhere.** `proposeIntent`, `rawSign`, `dryRunBatch` and `proposeBatch` did not validate the XRPL address they were given, so a typo surfaced as an account-not-found from the lookup endpoint (or, for the batch methods, after a version-detection round-trip) rather than as an immediate `Invalid address`. They now validate before any network call, matching `getPublicKey`, `getElGamalPublicKey`, `provisionElGamalKeyPair`, `rawSignAndWait` and `signBatchPayload`.
+
+  The messages are unified on `Invalid <label>: <value>`, where the label names the offending parameter only when it is not simply the address. One message changes: `rawSignAndWait`'s `signerAccount` check now reports `Invalid signerAccount: <value>` instead of `Invalid signerAccount address: <value>`. `Invalid address: <value>` and `Invalid signerAddress: <value>` are unchanged.
+
+  Callers passing malformed addresses to `proposeIntent`, `rawSign`, `dryRunBatch` or `proposeBatch` will now see a `CustodyError` earlier and from a different origin than before — the request never leaves the SDK.
+
+  Internally, `XrplService` is regrouped by concern (intents, keys, MPT issuance, raw signing, batch) with each private helper placed under the group that owns it, and the duplicated retry loop behind `getMptIssuanceIdAndWait` and `pollManifestSignature` is now a single `pollUntil` helper. No public behaviour changes from either.
+
+### Patch Changes
+
+- cb1ebd2: Fix `parametersComputeToCryptographicFields` mangling optional fields the parameters-compute response returns as `null`. The API sends an explicit `null` — not an omitted key — for material it has no value for, most visibly `auditorEncryptedAmount` when the issuance has no auditor key registered. The generated types declare those fields as merely optional, so the helper's `undefined`-only checks let a `null` through to the hex→base64 conversion and emitted the field as an empty string, which the API then rejects.
+
+  Every optional field in the helper — `senderEncryptedBalance`, `senderEncryptedBalanceVersion`, `auditorEncryptedAmount` on `Send`, `zkProof` and `auditorEncryptedAmount` on `Convert`, `auditorEncryptedAmount` on `ConvertBack` — is now omitted when it is `null` as well as when it is absent. The variant inference is null-aware for the same reason: a `null` `senderEncryptedAmount`, `amount`, `holderEncryptedAmount` or `balanceCommitment` no longer selects a variant just by being a present key, so a `Convert` response that spells out `balanceCommitment: null` is no longer read as a `ConvertBack`. A Clawback `amount` of `0` still discriminates. Values that are actually present convert exactly as before.
+
 ## 2.13.0-beta.9
 
 ### Minor Changes
