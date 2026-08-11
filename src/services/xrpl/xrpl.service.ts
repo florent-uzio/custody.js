@@ -31,6 +31,7 @@ import type {
   SignBatchPayloadHandle,
   SignBatchPayloadOptions,
   SignBatchPayloadResult,
+  WaitForElGamalPublicKeyOptions,
   WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
@@ -150,7 +151,14 @@ export class XrplService {
    * Every participant in a confidential transfer — issuer, senders, receivers,
    * and the auditor when one is configured — must have one before any
    * confidential operation will be accepted. The vault generates and stores the
-   * pair; the public half becomes readable via {@link getElGamalPublicKey}.
+   * pair; the public half becomes readable via {@link getElGamalPublicKey} —
+   * shortly *after* this intent reports `Executed`, so use
+   * {@link getElGamalPublicKeyAndWait} to read it back immediately.
+   *
+   * An account can only be provisioned once per ledger: a second call is
+   * rejected with `ElGamal key already provisioned for account …`. Check with
+   * {@link findElGamalPublicKey} before provisioning an account that may already
+   * have a key.
    *
    * Unlike the XRPL operations, this is its own intent type rather than a
    * transaction order, so it takes no fee strategy and no payload ID.
@@ -197,6 +205,11 @@ export class XrplService {
    * account and ledger are resolved from it. Pass `domainId` / `ledgerId` only
    * when the address is registered more than once and the lookup is ambiguous.
    *
+   * Reads once and throws when there is no key. Use
+   * {@link getElGamalPublicKeyAndWait} straight after provisioning, and
+   * {@link findElGamalPublicKey} when the absence of a key is an expected answer
+   * rather than an error.
+   *
    * @param address - XRPL address of the account whose key to read
    * @param options - Domain and ledger, when the address alone is ambiguous
    * @returns The ElGamal public key, base64-encoded
@@ -208,6 +221,113 @@ export class XrplService {
     address: string,
     options: GetElGamalPublicKeyOptions = {},
   ): Promise<string> {
+    const { accountId, ledgerId, publicKey } = await this.resolveAndFetchElGamalPublicKey(
+      address,
+      options,
+    )
+
+    if (isUndefined(publicKey)) {
+      throw new CustodyError({
+        reason:
+          `No ElGamal key provisioned for account ${accountId} (${address}) on ledger ${ledgerId}. ` +
+          "Call xrpl.provisionElGamalKeyPair first and wait for the intent to execute.",
+      })
+    }
+
+    return publicKey
+  }
+
+  /**
+   * Reads the base64 ElGamal public key provisioned for an account, returning
+   * `undefined` instead of throwing when there is none.
+   *
+   * A key can only be provisioned once per account and ledger — a second
+   * `provisionElGamalKeyPair` is rejected with `ElGamal key already provisioned
+   * for account …` — so a re-runnable script has to establish whether the
+   * account already has one. That is a question `getElGamalPublicKey` cannot
+   * answer without the caller catching its error and guessing which errors mean
+   * "absent"; this returns the answer.
+   *
+   * Takes the same XRPL address as {@link getElGamalPublicKey}, and reports
+   * absence only for the key: an invalid address, an ambiguous lookup or a
+   * non-Vault account still throw.
+   *
+   * @param address - XRPL address of the account whose key to read
+   * @param options - Domain and ledger, when the address alone is ambiguous
+   * @returns The ElGamal public key base64-encoded, or `undefined` if none is
+   *   provisioned for that ledger
+   * @throws {CustodyError} If the address is not a valid XRPL address, resolves
+   *   to no or several accounts, or the account is not a Vault account
+   */
+  public async findElGamalPublicKey(
+    address: string,
+    options: GetElGamalPublicKeyOptions = {},
+  ): Promise<string | undefined> {
+    const { publicKey } = await this.resolveAndFetchElGamalPublicKey(address, options)
+
+    return publicKey
+  }
+
+  /**
+   * Retrieves the base64 ElGamal public key provisioned for an account, polling
+   * until it is readable.
+   *
+   * The vault writes the key some time *after* the provisioning intent reports
+   * `Executed`, so `getElGamalPublicKey` called straight after
+   * `intents.getAndWait` legitimately finds nothing. This waits that gap out
+   * instead of the caller sleeping for a fixed guess.
+   *
+   * @param address - XRPL address of the account whose key to read
+   * @param options - Domain, ledger and polling configuration (default: 10
+   *   attempts, 3s apart)
+   * @returns The ElGamal public key, base64-encoded
+   * @throws {CustodyError} If the address is not a valid XRPL address, resolves
+   *   to no or several accounts, the account is not a Vault account, or no key
+   *   is readable after the maximum retries
+   */
+  public async getElGamalPublicKeyAndWait(
+    address: string,
+    options: WaitForElGamalPublicKeyOptions = {},
+  ): Promise<string> {
+    assertValidAddress(address)
+
+    const maxRetries = options.maxRetries ?? 10
+
+    const { domainId, accountId, ledgerId } = await this.ports.resolveContext(address, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
+    const publicKey = await pollUntil(
+      () => this.fetchElGamalPublicKey(domainId, accountId, ledgerId),
+      {
+        maxRetries,
+        intervalMs: options.intervalMs ?? 3000,
+        onAttempt: options.onAttempt,
+      },
+    )
+
+    if (isUndefined(publicKey)) {
+      throw new CustodyError({
+        reason:
+          `No ElGamal key provisioned for account ${accountId} (${address}) on ledger ${ledgerId} ` +
+          `after ${maxRetries} attempts. Confirm xrpl.provisionElGamalKeyPair executed for this account.`,
+      })
+    }
+
+    return publicKey
+  }
+
+  /**
+   * Resolves the address and reads the ElGamal key off the account once,
+   * returning the resolved identifiers alongside it so the caller can name them
+   * in an error without resolving twice.
+   * @private
+   */
+  private async resolveAndFetchElGamalPublicKey(
+    address: string,
+    options: GetElGamalPublicKeyOptions,
+  ): Promise<{ accountId: string; ledgerId: string; publicKey: string | undefined }> {
     assertValidAddress(address)
 
     const { domainId, accountId, ledgerId } = await this.ports.resolveContext(address, {
@@ -215,6 +335,23 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
+    return {
+      accountId,
+      ledgerId,
+      publicKey: await this.fetchElGamalPublicKey(domainId, accountId, ledgerId),
+    }
+  }
+
+  /**
+   * Reads the ElGamal public key for a ledger off an already-resolved account,
+   * returning `undefined` when the account carries none for that ledger.
+   * @private
+   */
+  private async fetchElGamalPublicKey(
+    domainId: string,
+    accountId: string,
+    ledgerId: string,
+  ): Promise<string | undefined> {
     const account = await this.ports.getAccount(domainId, accountId)
 
     const { providerDetails } = account.data
@@ -223,19 +360,9 @@ export class XrplService {
       throw new CustodyError({ reason: "Account is not a Vault account" })
     }
 
-    const key = providerDetails.purposeKeys.find(
+    return providerDetails.purposeKeys.find(
       (k) => k.purpose === "ElGamal" && k.ledgerId === ledgerId,
-    )
-
-    if (!key) {
-      throw new CustodyError({
-        reason:
-          `No ElGamal key provisioned for account ${accountId} (${address}) on ledger ${ledgerId}. ` +
-          "Call xrpl.provisionElGamalKeyPair first and wait for the intent to execute.",
-      })
-    }
-
-    return key.publicKey
+    )?.publicKey
   }
 
   /**
