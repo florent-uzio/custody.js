@@ -13,6 +13,7 @@ import type {
   SignBatchPayloadHandle,
   SignBatchPayloadOptions,
   SignBatchPayloadResult,
+  WaitForElGamalPublicKeyOptions,
   WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
@@ -75,6 +76,39 @@ export function createXrpl(getService: () => XrplService) {
       address: string,
       options?: GetElGamalPublicKeyOptions,
     ): Promise<string> => getService().getElGamalPublicKey(address, options),
+
+    /**
+     * Read an account's base64 ElGamal public key, or `undefined` when none is
+     * provisioned for the ledger.
+     *
+     * A key can only be provisioned once per account and ledger, so use this to
+     * decide whether `provisionElGamalKeyPair` still needs to run — a second
+     * provisioning is rejected as an invalid intent.
+     *
+     * @param address - XRPL address of the account whose key to read
+     * @param options - Domain and ledger, when the address alone is ambiguous
+     * @returns The ElGamal public key base64-encoded, or `undefined` if unprovisioned
+     */
+    findElGamalPublicKey: async (
+      address: string,
+      options?: GetElGamalPublicKeyOptions,
+    ): Promise<string | undefined> => getService().findElGamalPublicKey(address, options),
+
+    /**
+     * Read an account's base64 ElGamal public key, polling until it is readable.
+     *
+     * The vault writes the key shortly *after* the `provisionElGamalKeyPair`
+     * intent reports `Executed`, so prefer this over `getElGamalPublicKey` when
+     * reading the key straight after `intents.getAndWait`.
+     *
+     * @param address - XRPL address of the account whose key to read
+     * @param options - Domain, ledger and polling configuration (default: 10 attempts, 3s apart)
+     * @returns The ElGamal public key, base64-encoded
+     */
+    getElGamalPublicKeyAndWait: async (
+      address: string,
+      options?: WaitForElGamalPublicKeyOptions,
+    ): Promise<string> => getService().getElGamalPublicKeyAndWait(address, options),
 
     /**
      * Resolve the MPT issuance ID an executed `MPTokenIssuanceCreate` produced,

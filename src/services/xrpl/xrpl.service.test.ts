@@ -893,6 +893,176 @@ describe("XrplService", () => {
     })
   })
 
+  // ── findElGamalPublicKey ──────────────────────────────────────
+
+  describe("findElGamalPublicKey", () => {
+    it("should return the key when one is provisioned for the resolved ledger", async () => {
+      const result = await service.findElGamalPublicKey(mockAddress)
+
+      expect(result).toBe(mockElGamalKey)
+    })
+
+    it("should return undefined rather than throw when no key is provisioned", async () => {
+      ports = createTestPorts({
+        resolveContext: async () => ({ ...mockContext, ledgerId: "another-ledger" }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.findElGamalPublicKey(mockAddress)).resolves.toBeUndefined()
+    })
+
+    it("should still throw for an invalid address, before any request", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.findElGamalPublicKey("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
+
+    it("should still throw when the account is not a Vault account", async () => {
+      ports = createTestPorts({
+        getAccount: async () => ({ data: { providerDetails: { type: "External" } } }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(service.findElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "Account is not a Vault account",
+      )
+    })
+  })
+
+  // ── getElGamalPublicKeyAndWait ────────────────────────────────
+
+  describe("getElGamalPublicKeyAndWait", () => {
+    /** An account whose vault has not written the ElGamal key yet. */
+    const noKeyYet = { data: { providerDetails: { type: "Vault", purposeKeys: [] } } } as any
+
+    it("should return the key without polling when it is already readable", async () => {
+      let calls = 0
+      ports = createTestPorts({
+        getAccount: async () => {
+          calls++
+          return {
+            data: {
+              providerDetails: {
+                type: "Vault",
+                purposeKeys: [
+                  { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+                ],
+              },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getElGamalPublicKeyAndWait(mockAddress, {
+        maxRetries: 3,
+        intervalMs: 0,
+      })
+
+      expect(result).toBe(mockElGamalKey)
+      expect(calls).toBe(1)
+    })
+
+    it("should keep polling until the vault has written the key", async () => {
+      const accounts = [
+        noKeyYet,
+        noKeyYet,
+        {
+          data: {
+            providerDetails: {
+              type: "Vault",
+              purposeKeys: [
+                { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+              ],
+            },
+          },
+        } as any,
+      ]
+      const onAttempt = vi.fn()
+      ports = createTestPorts({ getAccount: async () => accounts.shift() })
+      service = new XrplService(ports)
+
+      const result = await service.getElGamalPublicKeyAndWait(mockAddress, {
+        maxRetries: 5,
+        intervalMs: 0,
+        onAttempt,
+      })
+
+      expect(result).toBe(mockElGamalKey)
+      expect(onAttempt).toHaveBeenCalledTimes(3)
+    })
+
+    it("should resolve the address once, not on every attempt", async () => {
+      let resolveCalls = 0
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalls++
+          return mockContext
+        },
+        getAccount: async () => noKeyYet,
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getElGamalPublicKeyAndWait(mockAddress, { maxRetries: 3, intervalMs: 0 }),
+      ).rejects.toThrow("after 3 attempts")
+      expect(resolveCalls).toBe(1)
+    })
+
+    it("should name the account and ledger when retries are exhausted", async () => {
+      ports = createTestPorts({ getAccount: async () => noKeyYet })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getElGamalPublicKeyAndWait(mockAddress, { maxRetries: 2, intervalMs: 0 }),
+      ).rejects.toThrow(
+        `No ElGamal key provisioned for account ${mockAccountId} (${mockAddress}) on ledger ${mockLedgerId} after 2 attempts.`,
+      )
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKeyAndWait("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
+
+    it("should surface a transport failure rather than retrying it away", async () => {
+      let calls = 0
+      ports = createTestPorts({
+        getAccount: async () => {
+          calls++
+          throw new CustodyError({ reason: "Unauthorized" }, 401)
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getElGamalPublicKeyAndWait(mockAddress, { maxRetries: 3, intervalMs: 0 }),
+      ).rejects.toThrow("Unauthorized")
+      expect(calls).toBe(1)
+    })
+  })
+
   // ── getMptIssuanceId ──────────────────────────────────────────
 
   describe("getMptIssuanceId", () => {
