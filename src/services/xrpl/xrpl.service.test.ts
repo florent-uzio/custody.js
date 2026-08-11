@@ -134,6 +134,24 @@ describe("XrplService", () => {
   // ── proposeIntent ─────────────────────────────────────────────
 
   describe("proposeIntent", () => {
+    it("rejects an invalid Account before calling the submit port", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.proposeIntent({
+          Account: "not-an-address",
+          operation: {
+            type: "Payment",
+            amount: "1000000",
+            destination: { type: "Address", address: mockAddress },
+          },
+        }),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(submitIntent).not.toHaveBeenCalled()
+    })
+
     it("should submit a Payment intent with correct structure", async () => {
       let capturedBody: any
       ports = createTestPorts({
@@ -538,11 +556,58 @@ describe("XrplService", () => {
 
   describe("getPublicKey", () => {
     it("should return the compressed public key for a Vault account", async () => {
-      const result = await service.getPublicKey({
-        domainId: mockDomainId,
-        accountId: mockAccountId,
-      })
+      const result = await service.getPublicKey(mockAddress)
       expect(result).toBe(expectedCompressedKey)
+    })
+
+    it("should resolve domain and account from the address", async () => {
+      let capturedAddress: string | undefined
+      let capturedOpts: any
+      let capturedAccountLookup: [string, string] | undefined
+      ports = createTestPorts({
+        resolveContext: async (address, opts) => {
+          capturedAddress = address
+          capturedOpts = opts
+          return mockContext
+        },
+        getAccount: async (domainId, accountId) => {
+          capturedAccountLookup = [domainId, accountId]
+          return {
+            data: {
+              providerDetails: {
+                type: "Vault",
+                keys: [{ id: "SECP256K1_CUSTODY_1", publicKey: { value: mockBase64PublicKey } }],
+              },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.getPublicKey(mockAddress, {
+        domainId: mockDomainId,
+        ledgerId: mockLedgerId,
+      })
+
+      expect(capturedAddress).toBe(mockAddress)
+      expect(capturedOpts).toEqual({ domainId: mockDomainId, ledgerId: mockLedgerId })
+      expect(capturedAccountLookup).toEqual([mockDomainId, mockAccountId])
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getPublicKey("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
     })
 
     it("should throw when the account is not a Vault account", async () => {
@@ -554,9 +619,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Account is not a Vault account")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Account is not a Vault account",
+      )
     })
 
     it("should throw when SECP256K1_CUSTODY_1 key is not found", async () => {
@@ -573,9 +638,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
 
     it("should throw when keys array is undefined", async () => {
@@ -587,9 +652,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
 
     it("should throw when the key exists but publicKey is undefined", async () => {
@@ -606,9 +671,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
   })
 
@@ -1027,6 +1092,17 @@ describe("XrplService", () => {
       Sequence: 1,
     }
 
+    it("rejects an invalid Account before calling the submit port", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.rawSign({ ...mockXrplTransaction, Account: "not-an-address" }),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(submitIntent).not.toHaveBeenCalled()
+    })
+
     it("should submit a raw sign intent with correct structure", async () => {
       let capturedBody: any
       ports = createTestPorts({
@@ -1235,7 +1311,7 @@ describe("XrplService", () => {
     it("should throw CustodyError if signerAccount is not a valid XRPL address", async () => {
       const tx = { ...mockXrplTransaction, SigningPubKey: "PK" }
       await expect(service.rawSignAndWait(tx, { signerAccount: "not-an-address" })).rejects.toThrow(
-        "Invalid signerAccount address: not-an-address",
+        "Invalid signerAccount: not-an-address",
       )
     })
 
@@ -1310,7 +1386,7 @@ describe("XrplService", () => {
   // ── dryRunBatch ───────────────────────────────────────────────
 
   describe("dryRunBatch", () => {
-    const submitterAddress = "rSubmitterAddress"
+    const submitterAddress = "rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w"
     const batchPayload: BatchPayloadInput = {
       Account: submitterAddress,
       executionMode: "AllOrNothing",
@@ -1330,6 +1406,35 @@ describe("XrplService", () => {
     it("returns batchSigningData from the dry-run estimate", async () => {
       const result = await service.dryRunBatch(batchPayload)
       expect(result).toEqual(mockBatchSigningData)
+    })
+
+    it("passes domainId and ledgerId to resolveContext", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({ resolveContext, dryRunIntent: async () => mockDryRunResponse })
+      service = new XrplService(ports)
+
+      await service.dryRunBatch(batchPayload, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+
+      // The dry-run must resolve the submitter the same way proposeBatch does:
+      // dropping ledgerId here would sign for a different ledger than step 3 submits to.
+      expect(resolveContext).toHaveBeenCalledWith(submitterAddress, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+    })
+
+    it("rejects an invalid submitter address before calling the dry-run port", async () => {
+      const dryRunIntent = vi.fn(async () => mockDryRunResponse)
+      ports = createTestPorts({ dryRunIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.dryRunBatch({ ...batchPayload, Account: "not-an-address" }),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(dryRunIntent).not.toHaveBeenCalled()
     })
 
     it("submits a v0_CreateTransactionOrder dry-run with empty batchSigners and PlatformManaged sequencing", async () => {
@@ -1623,7 +1728,7 @@ describe("XrplService", () => {
   // ── proposeBatch ──────────────────────────────────────────────
 
   describe("proposeBatch", () => {
-    const submitterAddress = "rSubmitterAddress"
+    const submitterAddress = "rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w"
     const batchPayload: BatchPayloadInput = {
       Account: submitterAddress,
       executionMode: "AllOrNothing",
@@ -1681,6 +1786,17 @@ describe("XrplService", () => {
         domainId: "domain-456",
         ledgerId: "ledger-456",
       })
+    })
+
+    it("rejects an invalid submitter address before calling the submit port", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.proposeBatch({ ...batchPayload, Account: "not-an-address" }, batchSigners),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(submitIntent).not.toHaveBeenCalled()
     })
 
     it("reuses caller-provided requestId and payloadId for dry-run/propose pairing", async () => {

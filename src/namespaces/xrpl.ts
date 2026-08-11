@@ -7,6 +7,7 @@ import type {
   GetBatchSignatureParams,
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
+  GetPublicKeyOptions,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   SignBatchPayloadHandle,
@@ -213,10 +214,15 @@ export function createXrpl(getService: () => XrplService) {
 
     /**
      * Get the compressed secp256k1 public key for an XRPL account.
-     * @param params - The domain ID and account ID
+     *
+     * The domain and account are resolved from the address; pass
+     * `domainId` / `ledgerId` only when the address is registered more than once.
+     *
+     * @param address - XRPL address of the account whose key to read
+     * @param options - Domain and ledger, when the address alone is ambiguous
      * @returns The compressed public key in uppercase hex format
      */
-    getPublicKey: async (params: { domainId: string; accountId: string }): Promise<string> =>
-      getService().getPublicKey(params),
+    getPublicKey: async (address: string, options?: GetPublicKeyOptions): Promise<string> =>
+      getService().getPublicKey(address, options),
   } as const
 }
