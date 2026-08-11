@@ -1026,6 +1026,62 @@ describe("parametersComputeToCryptographicFields", () => {
     expect(result).not.toHaveProperty("auditorEncryptedAmount")
   })
 
+  // The API sends `null` — not an absent key — for material it has no value
+  // for, which the generated types do not model.
+  it("omits optional Send fields the API returned as null", () => {
+    const result = parametersComputeToCryptographicFields({
+      ...hex,
+      senderEncryptedBalance: null,
+      senderEncryptedBalanceVersion: null,
+      auditorEncryptedAmount: null,
+    } as never)
+
+    expect(result).not.toHaveProperty("senderEncryptedBalance")
+    expect(result).not.toHaveProperty("senderEncryptedBalanceVersion")
+    expect(result).not.toHaveProperty("auditorEncryptedAmount")
+  })
+
+  it("omits a null auditorEncryptedAmount on Convert and ConvertBack", () => {
+    const convert = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      zkProof: null,
+      auditorEncryptedAmount: null,
+    } as never)
+    const convertBack = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      balanceCommitment: "dd04",
+      zkProof: "ff06",
+      auditorEncryptedAmount: null,
+    } as never)
+
+    expect(convert).toEqual({
+      type: "Convert",
+      holderEncryptedAmount: b64("aa01"),
+      issuerEncryptedAmount: b64("bb02"),
+      blindingFactor: b64("cc03"),
+    })
+    expect(convertBack).not.toHaveProperty("auditorEncryptedAmount")
+  })
+
+  // A null discriminator must not select a variant: a Convert response that
+  // spells out `balanceCommitment: null` is still a Convert.
+  it("ignores null-valued keys when inferring the variant", () => {
+    const result = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      balanceCommitment: null,
+      senderEncryptedAmount: null,
+      amount: null,
+    } as never)
+
+    expect(result).toMatchObject({ type: "Convert" })
+  })
+
   it("detects Clawback from the numeric amount and leaves it unencoded", () => {
     const result = parametersComputeToCryptographicFields({ zkProof: "ff06", amount: 250 })
 
