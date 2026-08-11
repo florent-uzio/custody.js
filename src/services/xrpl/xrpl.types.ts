@@ -203,9 +203,10 @@ export type Core_ApiParametersComputeCryptographicFields =
 export type Core_CmptCryptographicFields = components["schemas"]["Core_CmptCryptographicFields"]
 
 /**
- * Disambiguation for {@link XrplService.getElGamalPublicKey}. Both fields are
- * only needed when the address resolves to more than one account — the domain
- * and ledger are otherwise inferred from the address itself.
+ * Disambiguation for {@link XrplService.getElGamalPublicKey} and
+ * {@link XrplService.findElGamalPublicKey}. Both fields are only needed when the
+ * address resolves to more than one account — the domain and ledger are
+ * otherwise inferred from the address itself.
  */
 export type GetElGamalPublicKeyOptions = {
   /**
@@ -218,6 +219,20 @@ export type GetElGamalPublicKeyOptions = {
    * ElGamal keys is returned.
    */
   ledgerId?: XrplLedgerId
+}
+
+/**
+ * Options for {@link XrplService.getElGamalPublicKeyAndWait} — the
+ * disambiguation {@link GetElGamalPublicKeyOptions} takes, plus how long to wait
+ * for the vault to write the key after the provisioning intent executed.
+ */
+export type WaitForElGamalPublicKeyOptions = GetElGamalPublicKeyOptions & {
+  /** Maximum number of polling attempts (default: 10) */
+  maxRetries?: number
+  /** Interval between polling attempts in milliseconds (default: 3000) */
+  intervalMs?: number
+  /** Callback on each polling attempt */
+  onAttempt?: (attempt: number) => void
 }
 
 /**
