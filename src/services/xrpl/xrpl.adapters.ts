@@ -171,6 +171,29 @@ const mpTokenIssuanceSetMutableFlagsToStrings = (
 // types every member of `Core_CmptCryptographicFields` as `format: base64`.
 const hexToBase64 = (hex: string) => Buffer.from(hex, "hex").toString("base64")
 
+/**
+ * Treats `null` as absent alongside `undefined`. The parameters-compute
+ * response sends an explicit `null` — not an omitted key — for material it has
+ * no value for (`auditorEncryptedAmount` when no auditor key is registered),
+ * where the generated types only ever declare the field optional. An
+ * `undefined`-only check lets that `null` through to `hexToBase64`, which turns
+ * it into an empty string rather than leaving the field off.
+ */
+const isPresent = <T>(value: T | null | undefined): value is T =>
+  !isUndefined(value) && value !== null
+
+/**
+ * Narrows a parameters-compute union member by a discriminating key, requiring
+ * the key to carry a value rather than merely exist — a `null` field must not
+ * select a variant. `0` counts as present, so a Clawback of zero still
+ * discriminates on `amount`.
+ */
+const hasValue = <K extends string>(
+  fields: Core_ApiParametersComputeCryptographicFields,
+  key: K,
+): fields is Extract<Core_ApiParametersComputeCryptographicFields, Record<K, unknown>> =>
+  key in fields && isPresent((fields as Record<string, unknown>)[key])
+
 const txToOperation = (tx: RawTx): CustodyOperation => {
   switch (tx.TransactionType) {
     case "Payment": {
@@ -381,7 +404,7 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
 export const parametersComputeToCryptographicFields = (
   fields: Core_ApiParametersComputeCryptographicFields,
 ): Core_CmptCryptographicFields => {
-  if ("senderEncryptedAmount" in fields) {
+  if (hasValue(fields, "senderEncryptedAmount")) {
     return {
       type: "Send",
       senderEncryptedAmount: hexToBase64(fields.senderEncryptedAmount),
@@ -390,19 +413,19 @@ export const parametersComputeToCryptographicFields = (
       balanceCommitment: hexToBase64(fields.balanceCommitment),
       amountCommitment: hexToBase64(fields.amountCommitment),
       zkProof: hexToBase64(fields.zkProof),
-      ...(!isUndefined(fields.senderEncryptedBalance) && {
+      ...(isPresent(fields.senderEncryptedBalance) && {
         senderEncryptedBalance: hexToBase64(fields.senderEncryptedBalance),
       }),
-      ...(!isUndefined(fields.senderEncryptedBalanceVersion) && {
+      ...(isPresent(fields.senderEncryptedBalanceVersion) && {
         senderEncryptedBalanceVersion: fields.senderEncryptedBalanceVersion,
       }),
-      ...(!isUndefined(fields.auditorEncryptedAmount) && {
+      ...(isPresent(fields.auditorEncryptedAmount) && {
         auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
       }),
     }
   }
 
-  if ("amount" in fields) {
+  if (hasValue(fields, "amount")) {
     return {
       type: "Clawback",
       zkProof: hexToBase64(fields.zkProof),
@@ -410,10 +433,10 @@ export const parametersComputeToCryptographicFields = (
     }
   }
 
-  if ("holderEncryptedAmount" in fields) {
+  if (hasValue(fields, "holderEncryptedAmount")) {
     // Only ConvertBack commits to the resulting balance; Convert has no such
     // field, and its zkProof is optional where ConvertBack's is required.
-    if ("balanceCommitment" in fields) {
+    if (hasValue(fields, "balanceCommitment")) {
       return {
         type: "ConvertBack",
         holderEncryptedAmount: hexToBase64(fields.holderEncryptedAmount),
@@ -421,7 +444,7 @@ export const parametersComputeToCryptographicFields = (
         blindingFactor: hexToBase64(fields.blindingFactor),
         balanceCommitment: hexToBase64(fields.balanceCommitment),
         zkProof: hexToBase64(fields.zkProof),
-        ...(!isUndefined(fields.auditorEncryptedAmount) && {
+        ...(isPresent(fields.auditorEncryptedAmount) && {
           auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
         }),
       }
@@ -432,8 +455,8 @@ export const parametersComputeToCryptographicFields = (
       holderEncryptedAmount: hexToBase64(fields.holderEncryptedAmount),
       issuerEncryptedAmount: hexToBase64(fields.issuerEncryptedAmount),
       blindingFactor: hexToBase64(fields.blindingFactor),
-      ...(!isUndefined(fields.zkProof) && { zkProof: hexToBase64(fields.zkProof) }),
-      ...(!isUndefined(fields.auditorEncryptedAmount) && {
+      ...(isPresent(fields.zkProof) && { zkProof: hexToBase64(fields.zkProof) }),
+      ...(isPresent(fields.auditorEncryptedAmount) && {
         auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
       }),
     }
