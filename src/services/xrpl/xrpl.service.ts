@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from "uuid"
 import { encodeForSigning, isValidAddress, type SubmittableTransaction } from "xrpl"
-import { sleep } from "../../helpers/async/async.js"
+import { pollUntil } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
 import { CustodyError } from "../../models/index.js"
@@ -37,11 +37,44 @@ import type {
 } from "./xrpl.types.js"
 import { validateBatchSequencing } from "./xrpl.validators.js"
 
+/**
+ * Throws a uniform error for any XRPL address that fails `isValidAddress`, so a
+ * typo fails before any request goes out rather than as an account-not-found
+ * from the lookup endpoint.
+ *
+ * `label` names the offending parameter when it is not simply "the address" —
+ * `signerAccount`, `signerAddress` — so the message points at the argument the
+ * caller passed.
+ */
+function assertValidAddress(address: string, label = "address"): void {
+  if (!isValidAddress(address)) {
+    throw new CustodyError({ reason: `Invalid ${label}: ${address}` })
+  }
+}
+
+/**
+ * Orchestrates the XRPL surface of the Custody API. Every I/O call goes through
+ * {@link XrplPorts}, so this class holds only sequencing, validation and
+ * error-shaping — no HTTP.
+ *
+ * Methods are grouped by concern (intents, keys, MPT issuance, raw signing,
+ * batch), each group followed by the private helpers it owns. Helper names
+ * follow a consistent ladder:
+ *
+ * - `fetch*` — one call, no retries; returns `undefined` when the value is not
+ *   readable yet
+ * - `poll*` — retries a `fetch*`; returns `undefined` when the attempts run out
+ * - `wait*` — retries a `fetch*`; throws when the attempts run out
+ */
 export class XrplService {
   constructor(
     private readonly ports: XrplPorts,
     private readonly guard: VersionGuard = new VersionGuard(undefined),
   ) {}
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Intents
+  // ───────────────────────────────────────────────────────────────────────────
 
   /**
    * Proposes any XRPL transaction intent.
@@ -56,12 +89,15 @@ export class XrplService {
    * @param params - The Account address and XRPL operation
    * @param options - Optional configuration for the intent
    * @returns The proposed intent response
-   * @throws {CustodyError} If validation fails or the sender account is not found
+   * @throws {CustodyError} If the Account is not a valid XRPL address,
+   *   validation fails, or the sender account is not found
    */
   public async proposeIntent(
     params: { Account: string; operation: Core_XrplOperation },
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
+    assertValidAddress(params.Account)
+
     await this.guard.checkFeature(xrplOperationSchema(params.operation.type), "xrpl.proposeIntent")
 
     const context = await this.ports.resolveContext(params.Account, {
@@ -77,6 +113,10 @@ export class XrplService {
 
     return this.ports.submitIntent(intent)
   }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Keys
+  // ───────────────────────────────────────────────────────────────────────────
 
   /**
    * Retrieves the compressed secp256k1 public key for an XRPL account.
@@ -94,9 +134,7 @@ export class XrplService {
    *   is not found
    */
   public async getPublicKey(address: string, options: GetPublicKeyOptions = {}): Promise<string> {
-    if (!isValidAddress(address)) {
-      throw new CustodyError({ reason: `Invalid address: ${address}` })
-    }
+    assertValidAddress(address)
 
     const { domainId, accountId } = await this.ports.resolveContext(address, {
       domainId: options.domainId,
@@ -127,9 +165,7 @@ export class XrplService {
     address: string,
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
-    if (!isValidAddress(address)) {
-      throw new CustodyError({ reason: `Invalid address: ${address}` })
-    }
+    assertValidAddress(address)
 
     await this.guard.checkFeature("Core_v0_ProvisionElGamalKeyPair", "xrpl.provisionElGamalKeyPair")
 
@@ -172,9 +208,7 @@ export class XrplService {
     address: string,
     options: GetElGamalPublicKeyOptions = {},
   ): Promise<string> {
-    if (!isValidAddress(address)) {
-      throw new CustodyError({ reason: `Invalid address: ${address}` })
-    }
+    assertValidAddress(address)
 
     const { domainId, accountId, ledgerId } = await this.ports.resolveContext(address, {
       domainId: options.domainId,
@@ -203,6 +237,35 @@ export class XrplService {
 
     return key.publicKey
   }
+
+  /**
+   * Reads the compressed secp256k1 public key off an already-resolved account,
+   * skipping the address lookup the public method performs.
+   * @private
+   */
+  private async fetchPublicKey(domainId: string, accountId: string): Promise<string> {
+    const account = await this.ports.getAccount(domainId, accountId)
+
+    const { providerDetails } = account.data
+
+    if (providerDetails.type !== "Vault") {
+      throw new CustodyError({ reason: "Account is not a Vault account" })
+    }
+
+    const key = providerDetails.keys?.find((k) => k.id === "SECP256K1_CUSTODY_1")
+
+    if (!key?.publicKey) {
+      throw new CustodyError({
+        reason: "Public key not found for key ID SECP256K1_CUSTODY_1",
+      })
+    }
+
+    return compressPublicKey(key.publicKey.value)
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // MPT issuance
+  // ───────────────────────────────────────────────────────────────────────────
 
   /**
    * Resolves the MPT issuance ID an `MPTokenIssuanceCreate` produced, by
@@ -248,40 +311,94 @@ export class XrplService {
     { domainId, payloadId }: GetMptIssuanceIdParams,
     options: WaitForMptIssuanceIdOptions = {},
   ): Promise<string> {
-    const { maxRetries = 10, intervalMs = 3000, onAttempt } = options
+    const maxRetries = options.maxRetries ?? 10
 
     let lastReason = `No transaction registered for transaction order ${payloadId}`
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      onAttempt?.(attempt)
+    const issuanceId = await pollUntil(
+      async () => {
+        const lookup = await this.fetchMptIssuanceId(domainId, payloadId)
 
-      const lookup = await this.fetchMptIssuanceId(domainId, payloadId)
-      if ("issuanceId" in lookup) {
-        return lookup.issuanceId
-      }
-      lastReason = lookup.reason
+        if ("issuanceId" in lookup) {
+          return lookup.issuanceId
+        }
 
-      if (attempt < maxRetries) {
-        await sleep(intervalMs)
+        lastReason = lookup.reason
+        return undefined
+      },
+      {
+        maxRetries,
+        intervalMs: options.intervalMs ?? 3000,
+        onAttempt: options.onAttempt,
+      },
+    )
+
+    if (isUndefined(issuanceId)) {
+      throw new CustodyError({
+        reason: `No MPT issuance ID for transaction order ${payloadId} after ${maxRetries} attempts. ${lastReason}`,
+      })
+    }
+
+    return issuanceId
+  }
+
+  /**
+   * Looks the order's transaction up once and reads the MPT issuance off its
+   * XRPL ledger data, reporting the reason instead of throwing when either the
+   * transaction or its ledger data has not been registered yet.
+   *
+   * Two calls, not one: the collection endpoint is the only way to map a
+   * transaction order to its transaction, but it returns a lighter projection
+   * that omits `ledgerTransactionData.ledgerData`. The issuance ID only appears
+   * on the per-transaction detail response.
+   * @private
+   */
+  private async fetchMptIssuanceId(
+    domainId: string,
+    payloadId: string,
+  ): Promise<MptIssuanceIdLookup> {
+    const { items } = await this.ports.listTransactions(domainId, {
+      "orderReference.Id": payloadId,
+    })
+
+    if (items.length === 0) {
+      return { reason: `No transaction registered for transaction order ${payloadId}` }
+    }
+
+    for (const { id } of items) {
+      const { ledgerTransactionData } = await this.ports.getTransaction(domainId, id)
+      const ledgerData = ledgerTransactionData?.ledgerData
+
+      if (ledgerData?.type === "Xrpl" && !isUndefined(ledgerData.tokenData)) {
+        return { issuanceId: ledgerData.tokenData.issuanceId }
       }
     }
 
-    throw new CustodyError({
-      reason: `No MPT issuance ID for transaction order ${payloadId} after ${maxRetries} attempts. ${lastReason}`,
-    })
+    return {
+      reason:
+        `Transaction order ${payloadId} carries no MPT issuance ID. ` +
+        "Confirm the intent executed and that the operation was MPTokenIssuanceCreate.",
+    }
   }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Raw signing
+  // ───────────────────────────────────────────────────────────────────────────
 
   /**
    * Creates and proposes a raw sign intent for an XRPL transaction.
    * @param xrplTransaction - The XRPL transaction details
    * @param options - Optional configuration for the raw sign intent
    * @returns The proposed intent response
-   * @throws {CustodyError} If validation fails or the sender account is not found
+   * @throws {CustodyError} If the Account is not a valid XRPL address,
+   *   validation fails, or the sender account is not found
    */
   public async rawSign(
     xrplTransaction: SubmittableTransaction,
     options: XrplIntentOptions = {},
   ): Promise<Core_IntentResponse> {
+    assertValidAddress(xrplTransaction.Account)
+
     const context = await this.ports.resolveContext(xrplTransaction.Account, {
       domainId: options.domainId,
       ledgerId: options.ledgerId,
@@ -303,18 +420,21 @@ export class XrplService {
    * @param xrplTransaction - The XRPL transaction details
    * @param options - Optional configuration for the raw sign intent and polling
    * @returns The signature, signing public key in uppercase hex and the signed transaction
-   * @throws {CustodyError} If validation fails, the sender account is not found,
-   *   or the manifest signature is not available after maximum retries
+   * @throws {CustodyError} If the signing address is not a valid XRPL address,
+   *   validation fails, the sender account is not found, or the manifest
+   *   signature is not available after maximum retries
    */
   public async rawSignAndWait(
     xrplTransaction: SubmittableTransaction,
     options: RawSignAndWaitOptions = {},
   ): Promise<RawSignAndWaitResult> {
-    if (!isUndefined(options.signerAccount) && !isValidAddress(options.signerAccount)) {
-      throw new CustodyError({ reason: `Invalid signerAccount address: ${options.signerAccount}` })
+    if (!isUndefined(options.signerAccount)) {
+      assertValidAddress(options.signerAccount, "signerAccount")
     }
 
     const signerAddress = options.signerAccount ?? xrplTransaction.Account
+    assertValidAddress(signerAddress)
+
     const context = await this.ports.resolveContext(signerAddress, {
       domainId: options.domainId,
       ledgerId: options.ledgerId,
@@ -349,224 +469,8 @@ export class XrplService {
   }
 
   /**
-   * Step 1 of the XLS-56 Batch flow — dry-runs a Batch transaction order and
-   * returns the canonical signing data. Each participant must sign
-   * `signingPayload` with their own XRPL key; collect those signatures and pass
-   * them to `proposeBatch` (Step 3).
-   *
-   * Use `signBatchPayloadAndWait` to sign for inner accounts managed by this
-   * custody instance.
-   *
-   * @param payload - Submitter address, execution mode, and inner entries
-   * @param options - Optional configuration for the dry-run intent
-   * @returns The batch signing data (`signingPayload`, `signingPayloadHash`, resolved transactions)
-   * @throws {CustodyError} If the dry run fails or does not return batch signing data
-   */
-  public async dryRunBatch(
-    payload: BatchPayloadInput,
-    options: XrplIntentOptions = {},
-  ): Promise<Core_ApiBatchSigningData> {
-    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.dryRunBatch")
-    validateBatchSequencing(payload)
-
-    const context = await this.ports.resolveContext(payload.Account, {
-      domainId: options.domainId,
-    })
-
-    const operation = buildBatchOperation(payload, [])
-    const body = buildDryRunBody(operation, context, options)
-
-    const response = await this.ports.dryRunIntent(body)
-
-    if (response.type !== "v0_CreateTransactionOrder") {
-      throw new CustodyError({
-        reason: `Unexpected dry-run response type: ${response.type}`,
-      })
-    }
-    if (!response.success) {
-      throw new CustodyError({
-        reason: `Batch dry run failed: ${response.errors?.join(", ") ?? "unknown error"}`,
-      })
-    }
-    if (response.estimate.type !== "XRPL" || !response.estimate.batchSigningData) {
-      throw new CustodyError({
-        reason: "Dry run did not return batchSigningData — confirm the operation type is Batch",
-      })
-    }
-
-    return response.estimate.batchSigningData
-  }
-
-  /**
-   * Step 2 of the XLS-56 Batch flow — signs the `signingPayload` returned by
-   * `dryRunBatch` for a single inner account managed by this custody instance,
-   * and waits for the manifest signature.
-   *
-   * Inner accounts on other custody instances (or non-custody participants)
-   * sign independently with their own keys.
-   *
-   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
-   * @param signerAddress - XRPL address of the inner account to sign for
-   * @param options - Optional configuration for the raw sign intent and polling
-   * @returns The signature, signing public key, and pre-built BatchSigner shapes
-   * @throws {CustodyError} If the signer account is not found, or the signature is not
-   *   available after maximum retries
-   */
-  public async signBatchPayloadAndWait(
-    signingPayload: string,
-    signerAddress: string,
-    options: SignBatchPayloadOptions = {},
-  ): Promise<SignBatchPayloadResult> {
-    const handle = await this.signBatchPayload(signingPayload, signerAddress, options)
-
-    const signature = await this.waitForManifestSignature(
-      handle.domainId,
-      handle.accountId,
-      handle.payloadId,
-      options.polling,
-    )
-
-    return buildSignBatchPayloadResult(handle, signature)
-  }
-
-  /**
-   * Step 2 of the XLS-56 Batch flow (non-blocking variant) — proposes the raw
-   * sign intent for the `signingPayload` returned by `dryRunBatch` for a single
-   * inner account managed by this custody instance, then returns immediately
-   * without waiting for the manifest signature.
-   *
-   * Use this when the custody instance operator approves signatures
-   * out-of-band: persist the returned `SignBatchPayloadHandle` and pass it to
-   * `getBatchSignature` later (possibly from another process) to fetch the
-   * signature once it is available.
-   *
-   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
-   * @param signerAddress - XRPL address of the inner account to sign for
-   * @param options - Optional configuration for the raw sign intent
-   * @returns A handle with the manifest ID and the fields needed to retrieve the signature
-   * @throws {CustodyError} If the signer account is not found
-   */
-  public async signBatchPayload(
-    signingPayload: string,
-    signerAddress: string,
-    options: SignBatchPayloadOptions = {},
-  ): Promise<SignBatchPayloadHandle> {
-    if (!isValidAddress(signerAddress)) {
-      throw new CustodyError({ reason: `Invalid signerAddress: ${signerAddress}` })
-    }
-
-    const context = await this.resolveSignerContext(signerAddress, options)
-
-    const signingPubKey = await this.fetchPublicKey(context.domainId, context.accountId)
-
-    const base64Encoded = Buffer.from(signingPayload, "hex").toString("base64")
-
-    const { intentResponse, payloadId } = await this.proposeRawSignIntent(
-      base64Encoded,
-      context,
-      options,
-    )
-
-    return {
-      payloadId,
-      domainId: context.domainId,
-      accountId: context.accountId,
-      signerAddress,
-      signingPubKey,
-      intentResponse,
-    }
-  }
-
-  /**
-   * Retrieves the signature for a payload proposed via `signBatchPayload`,
-   * building the BatchSigner shapes when it is available.
-   *
-   * Performs a single fetch by default (`maxRetries: 1`); the operator may not
-   * have approved the signature yet, in which case `undefined` is returned and
-   * the caller decides when to retry. Pass `maxRetries`/`intervalMs` to opt into
-   * light polling.
-   *
-   * @param params - Fields from the `SignBatchPayloadHandle` (a handle may be passed directly)
-   * @param options - Optional polling configuration (defaults to a single attempt)
-   * @returns The signature and BatchSigner shapes, or `undefined` if not yet signed
-   * @throws {CustodyError} On any non-404 error fetching the manifest
-   */
-  public async getBatchSignature(
-    params: GetBatchSignatureParams,
-    options: WaitForSignatureOptions = {},
-  ): Promise<SignBatchPayloadResult | undefined> {
-    const signature = await this.pollManifestSignature(
-      params.domainId,
-      params.accountId,
-      params.payloadId,
-      { maxRetries: 1, ...options },
-    )
-
-    if (isUndefined(signature)) {
-      return undefined
-    }
-
-    return buildSignBatchPayloadResult(params, signature)
-  }
-
-  /**
-   * Step 3 of the XLS-56 Batch flow — submits the Batch as a real intent with
-   * collected `batchSigners`. The payload must match the one used for
-   * `dryRunBatch`; reuse `options.payloadId` and `options.requestId` if you
-   * need referential identity with the dry-run.
-   *
-   * @param payload - Same submitter, execution mode, and entries as the dry-run
-   * @param batchSigners - Signatures collected in Step 2 (one per participant)
-   * @param options - Optional configuration for the intent
-   * @returns The proposed intent response
-   * @throws {CustodyError} If validation fails or the submitter account is not found
-   */
-  public async proposeBatch(
-    payload: BatchPayloadInput,
-    batchSigners: Core_BatchSigner[],
-    options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
-    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch")
-    validateBatchSequencing(payload)
-
-    const context = await this.ports.resolveContext(payload.Account, {
-      domainId: options.domainId,
-      ledgerId: options.ledgerId,
-    })
-
-    const operation = buildBatchOperation(payload, batchSigners)
-    const body = buildTransactionIntent({ operation, context, options })
-
-    return this.ports.submitIntent(body)
-  }
-
-  /**
-   * Resolves the intent context for an inner-batch signer. Skips the address
-   * lookup when `accountId` and `ledgerId` are provided.
-   * @private
-   */
-  private async resolveSignerContext(
-    signerAddress: string,
-    options: SignBatchPayloadOptions,
-  ): Promise<IntentContext> {
-    if (options.accountId && options.ledgerId) {
-      const fullContext = await this.ports.resolveContext(signerAddress, {
-        domainId: options.domainId,
-      })
-      return {
-        domainId: fullContext.domainId,
-        userId: fullContext.userId,
-        accountId: options.accountId,
-        ledgerId: options.ledgerId,
-        address: signerAddress,
-      }
-    }
-    return this.ports.resolveContext(signerAddress, { domainId: options.domainId })
-  }
-
-  /**
    * Proposes a raw sign intent with base64-encoded bytes.
-   * Shared by rawSign, rawSignAndWait, and signBatchPayloadAndWait.
+   * Shared by rawSign, rawSignAndWait, and signBatchPayload.
    * @private
    */
   private async proposeRawSignIntent(
@@ -632,86 +536,11 @@ export class XrplService {
     manifestId: string,
     options: WaitForSignatureOptions = {},
   ): Promise<string | undefined> {
-    const { maxRetries = 3, intervalMs = 3000, onAttempt } = options
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      onAttempt?.(attempt)
-
-      const signature = await this.fetchManifestSignature(domainId, accountId, manifestId)
-      if (!isUndefined(signature)) {
-        return signature
-      }
-
-      if (attempt < maxRetries) {
-        await sleep(intervalMs)
-      }
-    }
-
-    return undefined
-  }
-
-  /**
-   * Looks the order's transaction up once and reads the MPT issuance off its
-   * XRPL ledger data, reporting the reason instead of throwing when either the
-   * transaction or its ledger data has not been registered yet.
-   *
-   * Two calls, not one: the collection endpoint is the only way to map a
-   * transaction order to its transaction, but it returns a lighter projection
-   * that omits `ledgerTransactionData.ledgerData`. The issuance ID only appears
-   * on the per-transaction detail response.
-   * @private
-   */
-  private async fetchMptIssuanceId(
-    domainId: string,
-    payloadId: string,
-  ): Promise<MptIssuanceIdLookup> {
-    const { items } = await this.ports.listTransactions(domainId, {
-      "orderReference.Id": payloadId,
+    return pollUntil(() => this.fetchManifestSignature(domainId, accountId, manifestId), {
+      maxRetries: options.maxRetries ?? 3,
+      intervalMs: options.intervalMs ?? 3000,
+      onAttempt: options.onAttempt,
     })
-
-    if (items.length === 0) {
-      return { reason: `No transaction registered for transaction order ${payloadId}` }
-    }
-
-    for (const { id } of items) {
-      const { ledgerTransactionData } = await this.ports.getTransaction(domainId, id)
-      const ledgerData = ledgerTransactionData?.ledgerData
-
-      if (ledgerData?.type === "Xrpl" && !isUndefined(ledgerData.tokenData)) {
-        return { issuanceId: ledgerData.tokenData.issuanceId }
-      }
-    }
-
-    return {
-      reason:
-        `Transaction order ${payloadId} carries no MPT issuance ID. ` +
-        "Confirm the intent executed and that the operation was MPTokenIssuanceCreate.",
-    }
-  }
-
-  /**
-   * Reads the compressed secp256k1 public key off an already-resolved account,
-   * skipping the address lookup the public method performs.
-   * @private
-   */
-  private async fetchPublicKey(domainId: string, accountId: string): Promise<string> {
-    const account = await this.ports.getAccount(domainId, accountId)
-
-    const { providerDetails } = account.data
-
-    if (providerDetails.type !== "Vault") {
-      throw new CustodyError({ reason: "Account is not a Vault account" })
-    }
-
-    const key = providerDetails.keys?.find((k) => k.id === "SECP256K1_CUSTODY_1")
-
-    if (!key?.publicKey) {
-      throw new CustodyError({
-        reason: "Public key not found for key ID SECP256K1_CUSTODY_1",
-      })
-    }
-
-    return compressPublicKey(key.publicKey.value)
   }
 
   /**
@@ -738,5 +567,231 @@ export class XrplService {
     }
 
     return undefined
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Batch (XLS-56)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Step 1 of the XLS-56 Batch flow — dry-runs a Batch transaction order and
+   * returns the canonical signing data. Each participant must sign
+   * `signingPayload` with their own XRPL key; collect those signatures and pass
+   * them to `proposeBatch` (Step 3).
+   *
+   * Use `signBatchPayloadAndWait` to sign for inner accounts managed by this
+   * custody instance.
+   *
+   * @param payload - Submitter address, execution mode, and inner entries
+   * @param options - Optional configuration for the dry-run intent
+   * @returns The batch signing data (`signingPayload`, `signingPayloadHash`, resolved transactions)
+   * @throws {CustodyError} If the submitter Account is not a valid XRPL address,
+   *   the dry run fails, or it does not return batch signing data
+   */
+  public async dryRunBatch(
+    payload: BatchPayloadInput,
+    options: XrplIntentOptions = {},
+  ): Promise<Core_ApiBatchSigningData> {
+    assertValidAddress(payload.Account)
+
+    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.dryRunBatch")
+    validateBatchSequencing(payload)
+
+    const context = await this.ports.resolveContext(payload.Account, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
+    const operation = buildBatchOperation(payload, [])
+    const body = buildDryRunBody(operation, context, options)
+
+    const response = await this.ports.dryRunIntent(body)
+
+    if (response.type !== "v0_CreateTransactionOrder") {
+      throw new CustodyError({
+        reason: `Unexpected dry-run response type: ${response.type}`,
+      })
+    }
+    if (!response.success) {
+      throw new CustodyError({
+        reason: `Batch dry run failed: ${response.errors?.join(", ") ?? "unknown error"}`,
+      })
+    }
+    if (response.estimate.type !== "XRPL" || !response.estimate.batchSigningData) {
+      throw new CustodyError({
+        reason: "Dry run did not return batchSigningData — confirm the operation type is Batch",
+      })
+    }
+
+    return response.estimate.batchSigningData
+  }
+
+  /**
+   * Step 2 of the XLS-56 Batch flow — signs the `signingPayload` returned by
+   * `dryRunBatch` for a single inner account managed by this custody instance,
+   * and waits for the manifest signature.
+   *
+   * Inner accounts on other custody instances (or non-custody participants)
+   * sign independently with their own keys.
+   *
+   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
+   * @param signerAddress - XRPL address of the inner account to sign for
+   * @param options - Optional configuration for the raw sign intent and polling
+   * @returns The signature, signing public key, and pre-built BatchSigner shapes
+   * @throws {CustodyError} If the signer address is invalid, the signer account
+   *   is not found, or the signature is not available after maximum retries
+   */
+  public async signBatchPayloadAndWait(
+    signingPayload: string,
+    signerAddress: string,
+    options: SignBatchPayloadOptions = {},
+  ): Promise<SignBatchPayloadResult> {
+    const handle = await this.signBatchPayload(signingPayload, signerAddress, options)
+
+    const signature = await this.waitForManifestSignature(
+      handle.domainId,
+      handle.accountId,
+      handle.payloadId,
+      options.polling,
+    )
+
+    return buildSignBatchPayloadResult(handle, signature)
+  }
+
+  /**
+   * Step 2 of the XLS-56 Batch flow (non-blocking variant) — proposes the raw
+   * sign intent for the `signingPayload` returned by `dryRunBatch` for a single
+   * inner account managed by this custody instance, then returns immediately
+   * without waiting for the manifest signature.
+   *
+   * Use this when the custody instance operator approves signatures
+   * out-of-band: persist the returned `SignBatchPayloadHandle` and pass it to
+   * `getBatchSignature` later (possibly from another process) to fetch the
+   * signature once it is available.
+   *
+   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
+   * @param signerAddress - XRPL address of the inner account to sign for
+   * @param options - Optional configuration for the raw sign intent
+   * @returns A handle with the manifest ID and the fields needed to retrieve the signature
+   * @throws {CustodyError} If the signer address is invalid, or the signer
+   *   account is not found
+   */
+  public async signBatchPayload(
+    signingPayload: string,
+    signerAddress: string,
+    options: SignBatchPayloadOptions = {},
+  ): Promise<SignBatchPayloadHandle> {
+    assertValidAddress(signerAddress, "signerAddress")
+
+    const context = await this.resolveSignerContext(signerAddress, options)
+
+    const signingPubKey = await this.fetchPublicKey(context.domainId, context.accountId)
+
+    const base64Encoded = Buffer.from(signingPayload, "hex").toString("base64")
+
+    const { intentResponse, payloadId } = await this.proposeRawSignIntent(
+      base64Encoded,
+      context,
+      options,
+    )
+
+    return {
+      payloadId,
+      domainId: context.domainId,
+      accountId: context.accountId,
+      signerAddress,
+      signingPubKey,
+      intentResponse,
+    }
+  }
+
+  /**
+   * Retrieves the signature for a payload proposed via `signBatchPayload`,
+   * building the BatchSigner shapes when it is available.
+   *
+   * Performs a single fetch by default (`maxRetries: 1`); the operator may not
+   * have approved the signature yet, in which case `undefined` is returned and
+   * the caller decides when to retry. Pass `maxRetries`/`intervalMs` to opt into
+   * light polling.
+   *
+   * @param params - Fields from the `SignBatchPayloadHandle` (a handle may be passed directly)
+   * @param options - Optional polling configuration (defaults to a single attempt)
+   * @returns The signature and BatchSigner shapes, or `undefined` if not yet signed
+   * @throws {CustodyError} On any non-404 error fetching the manifest
+   */
+  public async getBatchSignature(
+    params: GetBatchSignatureParams,
+    options: WaitForSignatureOptions = {},
+  ): Promise<SignBatchPayloadResult | undefined> {
+    const signature = await this.pollManifestSignature(
+      params.domainId,
+      params.accountId,
+      params.payloadId,
+      { maxRetries: 1, ...options },
+    )
+
+    if (isUndefined(signature)) {
+      return undefined
+    }
+
+    return buildSignBatchPayloadResult(params, signature)
+  }
+
+  /**
+   * Step 3 of the XLS-56 Batch flow — submits the Batch as a real intent with
+   * collected `batchSigners`. The payload must match the one used for
+   * `dryRunBatch`; reuse `options.payloadId` and `options.requestId` if you
+   * need referential identity with the dry-run.
+   *
+   * @param payload - Same submitter, execution mode, and entries as the dry-run
+   * @param batchSigners - Signatures collected in Step 2 (one per participant)
+   * @param options - Optional configuration for the intent
+   * @returns The proposed intent response
+   * @throws {CustodyError} If the submitter Account is not a valid XRPL address,
+   *   validation fails, or the submitter account is not found
+   */
+  public async proposeBatch(
+    payload: BatchPayloadInput,
+    batchSigners: Core_BatchSigner[],
+    options: XrplIntentOptions = {},
+  ): Promise<Core_IntentResponse> {
+    assertValidAddress(payload.Account)
+
+    await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch")
+    validateBatchSequencing(payload)
+
+    const context = await this.ports.resolveContext(payload.Account, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
+    const operation = buildBatchOperation(payload, batchSigners)
+    const body = buildTransactionIntent({ operation, context, options })
+
+    return this.ports.submitIntent(body)
+  }
+
+  /**
+   * Resolves the intent context for an inner-batch signer. Skips the address
+   * lookup when `accountId` and `ledgerId` are provided.
+   * @private
+   */
+  private async resolveSignerContext(
+    signerAddress: string,
+    options: SignBatchPayloadOptions,
+  ): Promise<IntentContext> {
+    if (options.accountId && options.ledgerId) {
+      const fullContext = await this.ports.resolveContext(signerAddress, {
+        domainId: options.domainId,
+      })
+      return {
+        domainId: fullContext.domainId,
+        userId: fullContext.userId,
+        accountId: options.accountId,
+        ledgerId: options.ledgerId,
+        address: signerAddress,
+      }
+    }
+    return this.ports.resolveContext(signerAddress, { domainId: options.domainId })
   }
 }

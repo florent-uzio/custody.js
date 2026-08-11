@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { sleep } from "./async.js"
+import { pollUntil, sleep } from "./async.js"
 
 describe("sleep", () => {
   beforeEach(() => {
@@ -153,5 +153,78 @@ describe("sleep", () => {
     // After 300ms total
     await vi.advanceTimersByTimeAsync(200)
     expect(results).toEqual(["start", "after 100ms", "after 300ms total"])
+  })
+})
+
+describe("pollUntil", () => {
+  const noWait = { maxRetries: 3, intervalMs: 0 }
+
+  // The `sleep` block above installs fake timers and never uninstalls them
+  // (`restoreAllMocks` leaves them in place), so reclaim real ones here.
+  beforeEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("returns the first defined result without further attempts", async () => {
+    const attempt = vi.fn(async () => "value")
+
+    await expect(pollUntil(attempt, noWait)).resolves.toBe("value")
+    expect(attempt).toHaveBeenCalledTimes(1)
+  })
+
+  it("retries until the attempt returns a value", async () => {
+    const attempt = vi
+      .fn<() => Promise<string | undefined>>()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce("value")
+
+    await expect(pollUntil(attempt, noWait)).resolves.toBe("value")
+    expect(attempt).toHaveBeenCalledTimes(3)
+  })
+
+  it("returns undefined once the attempts are exhausted", async () => {
+    const attempt = vi.fn(async () => undefined)
+
+    await expect(pollUntil(attempt, noWait)).resolves.toBeUndefined()
+    expect(attempt).toHaveBeenCalledTimes(3)
+  })
+
+  it("reports the 1-based attempt number to onAttempt", async () => {
+    const attempts: number[] = []
+
+    await pollUntil(async () => undefined, { ...noWait, onAttempt: (n) => attempts.push(n) })
+
+    expect(attempts).toEqual([1, 2, 3])
+  })
+
+  it("does not sleep after the final attempt", async () => {
+    vi.useFakeTimers()
+    try {
+      const promise = pollUntil(async () => undefined, { maxRetries: 2, intervalMs: 1000 })
+
+      // One interval covers the only gap there is — between attempts 1 and 2.
+      await vi.advanceTimersByTimeAsync(1000)
+
+      await expect(promise).resolves.toBeUndefined()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("propagates an error thrown by the attempt instead of retrying", async () => {
+    const attempt = vi.fn(async () => {
+      throw new Error("boom")
+    })
+
+    await expect(pollUntil(attempt, noWait)).rejects.toThrow("boom")
+    expect(attempt).toHaveBeenCalledTimes(1)
+  })
+
+  it("treats a falsy-but-defined result as a value", async () => {
+    const attempt = vi.fn(async () => 0)
+
+    await expect(pollUntil(attempt, noWait)).resolves.toBe(0)
+    expect(attempt).toHaveBeenCalledTimes(1)
   })
 })
