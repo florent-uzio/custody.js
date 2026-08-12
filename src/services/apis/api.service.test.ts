@@ -584,6 +584,58 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
         expect((error as CustodyError).message).toBe("Unknown error occurred")
       }
     })
+
+    describe("500 query-parameter hint", () => {
+      // The params are read off the request config axios attaches to the error,
+      // which is what the SDK relies on rather than threading them through.
+      const serverError = (status: number, params?: unknown) => ({
+        isAxiosError: true,
+        response: { status, data: { reason: "Internal server error" } },
+        config: { params },
+        message: "Request failed with status code 500",
+      })
+
+      it("names quarantineStatus on a 500 the parameter was sent with", async () => {
+        mockAxiosInstance.get.mockRejectedValue(
+          serverError(500, { "recipient.accountId": ["acc-1"], quarantineStatus: "Quarantined" }),
+        )
+
+        try {
+          await apiService.get("/test-endpoint")
+          expect.unreachable()
+        } catch (error) {
+          const { hint, message, reason } = error as CustodyError
+          expect(hint).toContain("`quarantineStatus`")
+          expect(hint).toContain("issues/238")
+          expect(reason).toBe("Internal server error")
+          expect(message).toBe(`Internal server error\n\n${hint}`)
+        }
+      })
+
+      it("adds no hint on a 500 the parameter was not sent with", async () => {
+        mockAxiosInstance.get.mockRejectedValue(serverError(500, { quarantined: true }))
+
+        try {
+          await apiService.get("/test-endpoint")
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+        }
+      })
+
+      it("adds no hint when the parameter appears on a status other than 500", async () => {
+        mockAxiosInstance.get.mockRejectedValue(
+          serverError(400, { quarantineStatus: "Quarantined" }),
+        )
+
+        try {
+          await apiService.get("/test-endpoint")
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+        }
+      })
+    })
   })
 
   describe("post", () => {

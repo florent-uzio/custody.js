@@ -16,6 +16,7 @@ import {
   signRawWithPrivateKey,
 } from "../keypairs/signing-scheme.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
+import { quarantineStatusHint } from "./quarantine-status-hint.js"
 import { signatureMismatchHint } from "./signature-hint.js"
 
 /**
@@ -241,6 +242,20 @@ export class ApiService {
   }
 
   /**
+   * Returns the diagnostic for the query parameters a `500` was sent with, so a
+   * server-side failure a specific filter is known to cause is named rather than
+   * reported as a bare internal error. Returns `undefined` for any other status.
+   *
+   * The parameters are read back off the axios error rather than threaded in,
+   * since axios keeps the request config on the error it throws.
+   */
+  private queryFailureHint(error: AxiosError<Core_ErrorMessage>): string | undefined {
+    if (error.response?.status !== 500) return undefined
+
+    return quarantineStatusHint(error.config?.params)
+  }
+
+  /**
    * Maps a failed request error into a CustodyError and throws it.
    * Shared by all HTTP verb methods.
    *
@@ -253,7 +268,9 @@ export class ApiService {
     if (error instanceof CustodyError) throw error
     if (axios.isAxiosError<Core_ErrorMessage>(error)) {
       const errorData = error.response?.data
-      const hint = this.signatureFailureHint(error, signedRequest)
+      // The two hints are mutually exclusive by status (401 vs 500), so at most
+      // one of them ever has something to say about a given failure.
+      const hint = this.signatureFailureHint(error, signedRequest) ?? this.queryFailureHint(error)
       if (isObject(errorData)) {
         throw new CustodyError(errorData, error.response?.status, error, hint)
       }
