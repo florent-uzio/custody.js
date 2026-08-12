@@ -103,6 +103,10 @@ export { TERMINAL_CB_IN_DECRYPTION_STATUSES } from "./namespaces/internal/cb-in-
 
 // transactions types
 export type * from "./namespaces/transactions.types.js"
+export {
+  PENDING_TRANSACTION_STATUSES,
+  TERMINAL_TRANSACTION_STATUSES,
+} from "./namespaces/transactions.types.js"
 
 // users types
 export type * from "./namespaces/users.types.js"
