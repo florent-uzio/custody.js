@@ -27,7 +27,6 @@ export class ApiService {
   private readonly authFormData: PartialAuthFormData
   private readonly authService: AuthService
   private readonly apiUrl: string
-  private challenge: string
   /**
    * Signs a message for the given context and returns the base64 signature the
    * server expects. Built once from either the provided `privateKey` or the
@@ -176,9 +175,6 @@ export class ApiService {
         return encodeSignature(algorithm, rawSignature)
       }
     }
-
-    // Use provided challenge or generate a new one
-    this.challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
   }
 
   /**
@@ -198,12 +194,19 @@ export class ApiService {
     }
 
     const refresh = (async () => {
-      // Generate a fresh challenge for each token refresh to avoid stale challenge rejection
-      this.challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
+      // Generate a fresh challenge for each token refresh to avoid stale challenge
+      // rejection. It stays a local: forced refreshes deliberately sign concurrently
+      // here (see above), so a shared field would be overwritten by a sibling refresh
+      // while the signer is awaited, and this refresh would post its own signature
+      // against the sibling's challenge — which the API rejects with a
+      // `401 InvalidSignatureError`. Signing concurrently is not the same as posting
+      // concurrently: `AuthService.getToken` still collapses a forced refresh onto an
+      // in-flight one and drops this signature on the floor (#243).
+      const challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
 
       const authData = {
-        signature: await this.sign(this.challenge, "auth-challenge"),
-        challenge: this.challenge,
+        signature: await this.sign(challenge, "auth-challenge"),
+        challenge,
         publicKey: this.authFormData.publicKey,
       }
       return this.authService.getToken(authData, forceRefresh)

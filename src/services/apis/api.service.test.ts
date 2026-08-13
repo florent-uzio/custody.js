@@ -48,6 +48,7 @@ vi.mock("../keypairs/index.js", () => {
 
 import axios from "axios"
 import type { CustodySigner } from "../../ripple-custody.types.js"
+import type { AuthFormData } from "../auth/auth.service.types.js"
 import { KeypairService } from "../keypairs/index.js"
 import {
   encodeSignature,
@@ -75,10 +76,13 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       ),
     )
 
-  // Mock AuthService
+  // Mock AuthService. `getToken` declares the real parameters so `mock.calls` is
+  // typed — tests that assert on the auth data posted read it off there.
   const mockAuthService = {
     isTokenExpired: vi.fn(() => false),
-    getToken: vi.fn(() => Promise.resolve("mock-jwt-token")),
+    getToken: vi.fn((_authData: AuthFormData, _forceRefresh?: boolean) =>
+      Promise.resolve("mock-jwt-token"),
+    ),
     getCurrentToken: vi.fn(() => "mock-jwt-token"),
   }
 
@@ -199,23 +203,6 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
           }),
       ).toThrow(CustodyError)
     })
-
-    it("should use provided challenge if available", async () => {
-      const customChallenge = "custom-challenge"
-      vi.clearAllMocks()
-
-      new ApiService({
-        apiUrl: mockApiUrl,
-        authFormData: { publicKey: mockPublicKey, challenge: customChallenge },
-        authService: mockAuthService as any,
-        privateKey: mockPrivateKey,
-      })
-
-      // The challenge is used internally, we verify it doesn't generate a new one
-      const { v4 } = await import("uuid")
-      // v4 should not be called when challenge is provided
-      expect(vi.mocked(v4)).not.toHaveBeenCalled()
-    })
   })
 
   describe("external signer", () => {
@@ -298,7 +285,9 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       )
 
       const body = { request: { type: "test" }, signature: "" }
-      const error = await service.post("/test-endpoint", body).catch((e) => e)
+      const error = (await service
+        .post("/test-endpoint", body)
+        .catch((e: unknown) => e)) as CustodyError
 
       expect(error).toBeInstanceOf(CustodyError)
       expect(error.message).toMatch(/External signer failed: hsm offline/)
@@ -390,6 +379,56 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
 
       resolvers[1]("token-B")
       await Promise.all([pB, pC])
+    })
+
+    it("pairs each concurrent refresh's signature with its own challenge", async () => {
+      // Forced refreshes deliberately run alongside an in-flight one, so the
+      // challenge cannot live on shared state: signing is awaited, and a sibling
+      // overwriting it mid-await would post signature(A) against challenge(B) —
+      // a `401 InvalidSignatureError` that looks random under concurrency.
+      const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+      const release: Array<() => void> = []
+      const sign = vi.fn(
+        ({ data }: { data: Uint8Array }) =>
+          new Promise<Uint8Array>((resolve) => {
+            release.push(() => resolve(Buffer.from(`sig-for-${Buffer.from(data).toString()}`)))
+          }),
+      )
+      const { requestInterceptor: interceptor } = buildWithSigner(secpSigner(sign))
+      const responseInterceptor = mockAxiosInstance.interceptors.response.use.mock.calls.at(
+        -1,
+      )?.[1] as typeof responseErrorInterceptor
+
+      const { v4 } = await import("uuid")
+      let issued = 0
+      vi.mocked(v4).mockImplementation(((): string => `challenge-${++issued}`) as never)
+      mockAuthService.isTokenExpired.mockReturnValue(true)
+      mockAuthService.getToken.mockResolvedValue("token")
+
+      // Refresh A (non-forced), then refresh B forced by a 401 while A is still
+      // awaiting its signer — the window the shared field used to be clobbered in.
+      const pA = interceptor({ headers: {} } as InternalAxiosRequestConfig)
+      ;(mockAxiosInstance as any as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: {} })
+      const pB = responseInterceptor({
+        isAxiosError: true,
+        response: { status: 401 },
+        config: { headers: {}, _retried: false },
+      })
+
+      await flush()
+      expect(release).toHaveLength(2)
+      release.forEach((resolve) => resolve())
+      await Promise.all([pA, pB])
+
+      // Each refresh posted the signature it computed over the challenge it sent.
+      expect(mockAuthService.getToken).toHaveBeenCalledTimes(2)
+      for (const [authData] of mockAuthService.getToken.mock.calls) {
+        expect(authData.signature).toBe(b64(`sig-for-${authData.challenge}`))
+      }
+      // Two distinct challenges really were in flight, so the pairing above is
+      // not vacuously true.
+      const challenges = mockAuthService.getToken.mock.calls.map(([authData]) => authData.challenge)
+      expect(new Set(challenges).size).toBe(2)
     })
 
     it("throws when neither privateKey nor signer is provided", () => {
