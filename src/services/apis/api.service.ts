@@ -195,11 +195,13 @@ export class ApiService {
 
     const refresh = (async () => {
       // Generate a fresh challenge for each token refresh to avoid stale challenge
-      // rejection. It stays a local: forced refreshes deliberately run concurrently
-      // (see above), so a shared field would be overwritten by a sibling refresh
+      // rejection. It stays a local: forced refreshes deliberately sign concurrently
+      // here (see above), so a shared field would be overwritten by a sibling refresh
       // while the signer is awaited, and this refresh would post its own signature
       // against the sibling's challenge — which the API rejects with a
-      // `401 InvalidSignatureError`.
+      // `401 InvalidSignatureError`. Signing concurrently is not the same as posting
+      // concurrently: `AuthService.getToken` still collapses a forced refresh onto an
+      // in-flight one and drops this signature on the floor (#243).
       const challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
 
       const authData = {
