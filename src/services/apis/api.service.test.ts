@@ -48,6 +48,7 @@ vi.mock("../keypairs/index.js", () => {
 
 import axios from "axios"
 import type { CustodySigner } from "../../ripple-custody.types.js"
+import type { AuthFormData } from "../auth/auth.service.types.js"
 import { KeypairService } from "../keypairs/index.js"
 import {
   encodeSignature,
@@ -75,10 +76,13 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       ),
     )
 
-  // Mock AuthService
+  // Mock AuthService. `getToken` declares the real parameters so `mock.calls` is
+  // typed — tests that assert on the auth data posted read it off there.
   const mockAuthService = {
     isTokenExpired: vi.fn(() => false),
-    getToken: vi.fn(() => Promise.resolve("mock-jwt-token")),
+    getToken: vi.fn((_authData: AuthFormData, _forceRefresh?: boolean) =>
+      Promise.resolve("mock-jwt-token"),
+    ),
     getCurrentToken: vi.fn(() => "mock-jwt-token"),
   }
 
@@ -199,7 +203,6 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
           }),
       ).toThrow(CustodyError)
     })
-
   })
 
   describe("external signer", () => {
@@ -282,7 +285,9 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       )
 
       const body = { request: { type: "test" }, signature: "" }
-      const error = await service.post("/test-endpoint", body).catch((e) => e)
+      const error = (await service
+        .post("/test-endpoint", body)
+        .catch((e: unknown) => e)) as CustodyError
 
       expect(error).toBeInstanceOf(CustodyError)
       expect(error.message).toMatch(/External signer failed: hsm offline/)
