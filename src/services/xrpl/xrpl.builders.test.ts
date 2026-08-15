@@ -95,19 +95,36 @@ describe("xrpl builders — request envelope characterization", () => {
 
   describe("buildTransactionIntent", () => {
     it("wraps the same envelope under `request` with type Propose when description is provided", () => {
-      const body = buildTransactionIntent({ operation, context, options: explicitOptions })
+      const { body } = buildTransactionIntent({ operation, context, options: explicitOptions })
       expect(body).toEqual({
         request: { ...expectedEnvelope, type: "Propose" },
       })
     })
 
     it("omits the description key entirely when description is absent", () => {
-      const body = buildTransactionIntent({ operation, context, options: optionsNoDescription })
+      const { body } = buildTransactionIntent({ operation, context, options: optionsNoDescription })
 
       expect("description" in body.request).toBe(false)
       expect(body).toEqual({
         request: { ...expectedEnvelope, description: undefined, type: "Propose" },
       })
+    })
+
+    it("returns the caller's payload id", () => {
+      const { payloadId } = buildTransactionIntent({
+        operation,
+        context,
+        options: optionsNoDescription,
+      })
+
+      expect(payloadId).toBe("fixed-payload-id")
+    })
+
+    it("returns the generated payload id when none was supplied", () => {
+      const { body, payloadId } = buildTransactionIntent({ operation, context, options: {} })
+
+      expect(payloadId).toEqual(expect.any(String))
+      expect(body.request.payload.id).toBe(payloadId)
     })
   })
 

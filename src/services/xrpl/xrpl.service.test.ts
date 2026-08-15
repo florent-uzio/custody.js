@@ -191,6 +191,52 @@ describe("XrplService", () => {
       })
     })
 
+    it("returns the payload id it submitted the transaction order under", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntent({
+        Account: mockAddress,
+        operation: {
+          type: "Payment",
+          amount: "1000000",
+          destination: { type: "Address", address: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH" },
+          destinationTag: 0,
+        },
+      })
+
+      expect(result).toEqual({ requestId: "request-123", payloadId: expect.any(String) })
+      expect(result.payloadId).toBe(capturedBody.request.payload.id)
+    })
+
+    it("returns the caller's payload id when one was supplied", async () => {
+      ports = createTestPorts({
+        submitIntent: async () => ({ requestId: "request-123" }) as any,
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntent(
+        {
+          Account: mockAddress,
+          operation: {
+            type: "Payment",
+            amount: "1000000",
+            destination: { type: "Address", address: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH" },
+            destinationTag: 0,
+          },
+        },
+        { payloadId: "payload-abc" },
+      )
+
+      expect(result.payloadId).toBe("payload-abc")
+    })
+
     it("should submit a TrustSet intent", async () => {
       let capturedBody: any
       ports = createTestPorts({
@@ -1285,7 +1331,8 @@ describe("XrplService", () => {
 
       const result = await service.rawSign(mockXrplTransaction)
 
-      expect(result).toEqual({ requestId: "request-123" })
+      expect(result).toEqual({ requestId: "request-123", payloadId: expect.any(String) })
+      expect(result.payloadId).toBe(capturedBody.request.payload.id)
       expect(capturedBody.request.author.domainId).toBe(mockDomainId)
       expect(capturedBody.request.author.id).toBe(mockUserId)
       expect(capturedBody.request.type).toBe("Propose")
@@ -1932,7 +1979,7 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await service.proposeBatch(batchPayload, batchSigners)
+      const result = await service.proposeBatch(batchPayload, batchSigners)
 
       expect(capturedBody.request.type).toBe("Propose")
       expect(capturedBody.request.payload.type).toBe("v0_CreateTransactionOrder")
@@ -1940,6 +1987,8 @@ describe("XrplService", () => {
       expect(op.type).toBe("Batch")
       expect(op.batchSigners).toEqual(batchSigners)
       expect(op.sequencing).toEqual({ type: "PlatformManaged" })
+      expect(result).toEqual({ requestId: "request-123", payloadId: expect.any(String) })
+      expect(result.payloadId).toBe(capturedBody.request.payload.id)
     })
 
     it("passes domainId and ledgerId to resolveContext", async () => {
