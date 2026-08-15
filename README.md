@@ -9,7 +9,7 @@ A comprehensive JavaScript/Typescript SDK for interacting with the Ripple Custod
 - **Cryptographic Support**: Ed25519, secp256k1, secp256r1 keypair generation and signing
 - **Domain Management**: List and retrieve domain information
 - **Endpoint Management**: List and retrieve endpoints within a domain
-- **Intent Operations**: Propose, approve, reject, and manage intents with built-in polling
+- **Intent Operations**: Propose, approve, reject, and manage intents with built-in polling. `proposePayload()` builds the whole signed request envelope around a `v0_*` payload — author, expiry, ids and target domain — so no consumer assembles it by hand. See [Intents](./docs/intents.md)
 - **Account Management**: Manage accounts, addresses, and balances
 - **Transaction Operations**: Handle transaction orders, transfers, and dry runs
 - **User & Invitation Management**: Manage users, roles, and invitations
@@ -23,7 +23,7 @@ A comprehensive JavaScript/Typescript SDK for interacting with the Ripple Custod
 - **System Signing**: Retrieve system-signing info (`client.systemSigning.*`)
 - **Type Safety**: Full TypeScript support with types derived from the OpenAPI specification
 - **Ledger ID Autocomplete**: `LedgerId`, `XrplLedgerId`, and `NonXrplLedgerId` exports give IDE autocomplete for the supported ledgers (e.g. `"ethereum"`, `"xrpl"`, `"solana"`, …) while still accepting any string — so newly added ledgers never break the SDK
-- **XRPL Intent Proposal**: Single `proposeIntent()` method for all XRPL transaction types (Payment, TrustSet, DepositPreauth, Clawback, OfferCreate, AccountSet, TicketCreate, Batch, MPToken operations) using a type-safe discriminated union
+- **XRPL Intent Proposal**: Single `proposeIntent()` method for all XRPL transaction types (Payment, TrustSet, DepositPreauth, Clawback, OfferCreate, AccountSet, TicketCreate, Batch, MPToken operations) using a type-safe discriminated union — or `proposeIntentAndWait()` to follow it all the way to the ledger in one call
 - **Raw Signing**: Sign arbitrary XRPL transactions and Batch inner transactions via Custody
 
 ## Architecture
@@ -33,7 +33,8 @@ The SDK is built around a few key layers:
 - **`TypedTransport`** — wraps the HTTP client with automatic URL template interpolation and path/query parameter splitting.
 - **Namespace factories** (`createDomains`, `createAccounts`, etc.) — return plain objects that map method names to typed transport calls. Each factory is a thin, stateless function.
 - **`RippleCustody`** — the public client class that assembles all namespaces in its constructor. Consumers interact exclusively through `client.domains.list()`, `client.accounts.get()`, etc.
-- **`XrplService`** — builds XRPL transaction intents via a single `proposeIntent()` entry point, handles domain/account resolution through injected I/O ports (`XrplPorts`), and supports raw signing with manifest polling.
+- **`XrplService`** — builds XRPL transaction intents via a single `proposeIntent()` entry point (or `proposeIntentAndWait()`, which also follows the transaction to the ledger), handles domain/account resolution through injected I/O ports (`XrplPorts`), and supports raw signing with manifest polling.
+- **Shared intent plumbing** — the request envelope (`buildRequestEnvelope`) and the domain/user resolution (`resolveDomainAndUser`) live with the `intents` and `domains` namespaces, so the namespaces and `XrplService` share one definition of each rather than restating them.
 
 ## Installation
 
@@ -274,6 +275,14 @@ const endpoint = await custody.endpoints.get({
 })
 
 // Intent Operations
+// Propose a `v0_*` payload — the SDK builds the signed request envelope
+// (author, expiryAt, id, targetDomainId, customProperties) around it.
+const { requestId, domainId } = await custody.intents.proposePayload(
+  { type: "v0_ReleaseQuarantinedTransfers", accountId: "account-id", transferIds: ["transfer-id"] },
+  { description: "Release the transfers held for review", expiryDays: 7 },
+)
+
+// `intents.propose` remains the raw escape hatch when you assemble it yourself
 const intent = await custody.intents.propose({
   request: {
     author: { id: "user-id", domainId: "domain-id" },
@@ -303,6 +312,9 @@ const result = await custody.intents.getAndWait(
 
 if (result.isSuccess) {
   console.log("Intent executed successfully!")
+} else {
+  // One sentence saying why — undefined exactly when `isSuccess` is true
+  console.log(result.reason)
 }
 
 // Account Operations
@@ -339,9 +351,21 @@ const orders = await custody.transactions.orders({ domainId: "domain-id" }, { li
 const transfers = await custody.transactions.transfers({ domainId: "domain-id" })
 const dryRun = await custody.transactions.dryRun({ domainId: "domain-id" }, {/* params */})
 
+// Wait for the transaction a transaction order produced. An intent reporting
+// `Executed` only means custody accepted the order, not that it reached the
+// ledger — `isSuccess` requires both, and `reason` says why when it is false.
+const tx = await custody.transactions.byOrderAndWait({
+  domainId: "domain-id",
+  transactionOrderId: "payload-id",
+})
+
 // User Operations
 const me = await custody.users.me()
 const users = await custody.users.list({ domainId: "domain-id" })
+
+// The domain and user you are acting as, resolved from `/v1/me` — the ids
+// almost every other call needs, without the domain lookup by hand
+const { domainId: myDomainId, userId } = await custody.domains.me()
 
 // Ledger Operations
 const ledgers = await custody.ledgers.list()
@@ -361,6 +385,13 @@ Every namespace is wired on the `RippleCustody` client. The Quick Start above
 shows the most common ones; the full surface — every namespace and its
 methods — is documented in [`docs/namespaces.md`](./docs/namespaces.md). XRPL
 and Batch signing methods have their own [XRPL Service](#xrpl-service) section.
+
+Every write goes through an intent, and proposing one spans several namespaces
+at once. [`docs/intents.md`](./docs/intents.md) covers that lifecycle end to
+end: the two stages and why `Executed` does not mean the transaction landed,
+which propose method to reach for, the request id vs payload id distinction,
+how to read a failure, and why the waiting variants are the wrong tool for
+approval-gated production flows.
 
 Namespaces under `client.internal.*` target the instance's **internal** API
 instead of the customer-facing one. They are meant for internal tooling: not
@@ -403,6 +434,54 @@ await custody.xrpl.proposeIntent({
 const { signature, signingPubKey } = await custody.xrpl.rawSignAndWait(autofilledTx)
 ```
 
+`proposeIntentAndWait()` does the same as `proposeIntent()` and then follows the
+transaction to the ledger — both waits in one call, so there is no
+`intents.getAndWait` → `transactions.byOrderAndWait` chain to write:
+
+```typescript
+const result = await custody.xrpl.proposeIntentAndWait(
+  {
+    Account: "rSenderAddress...",
+    operation: {
+      type: "Payment",
+      destination: { address: "rDestAddress...", type: "Address" },
+      amount: "1000000",
+    },
+  },
+  // Each stage polls separately — they wait on different things: custody
+  // accepting the order, then the ledger. Both default to 10 attempts, 3s apart.
+  { transaction: { maxRetries: 20 } },
+)
+
+if (result.isSuccess) {
+  // Completed *and* the ledger accepted it — safe to build the next transaction on
+  console.dir(result.transaction, { depth: null })
+} else if (!result.intent.isSuccess) {
+  // The intent never executed, so no transaction was ever created
+  console.log("Intent did not execute:", result.intent.status)
+} else {
+  console.log(result.reason)
+}
+```
+
+The top level of the result **is** `transactions.byOrderAndWait`'s — `status`,
+`isTerminal`, `isSuccess`, `transaction`, `reason` — with the intent stage on
+`result.intent` and the resolved `requestId` / `payloadId` / `domainId`
+alongside. The transaction stage is skipped when the intent does not execute:
+no transaction is coming, so there is nothing to wait for.
+
+Nothing here throws on a rejected intent or a failed transaction — the outcome
+is the return value.
+
+> **The `…AndWait` methods are the wrong tool for approval-gated production
+> flows.** Polling defaults to 10 attempts 3s apart — 30 seconds — and a
+> custodian approving an intent by hand can take minutes, so these will honestly
+> return `{ isTerminal: false, status: "Open" }`: still waiting on a human, not
+> a failure. Raising `maxRetries` does not fix it; no polling budget is right
+> for a person. Propose without waiting, keep the ids, and pick the intent up
+> from `client.channels` or `client.events` when the approval lands. See
+> [Intents](./docs/intents.md).
+
 ### Examples
 
 See the [`examples/`](./examples/) directory for working code.
@@ -417,6 +496,11 @@ See the [`examples/`](./examples/) directory for working code.
 - [MPToken Issuance Create with 5 flags](./examples/xrpl/mpt/create-five-flags/) — work around the backend's [signature failure on 5+ flags](#signature-failures-on-array-fields) with `beforeSign`
 - [Regular Key MPToken Issuance](./examples/xrpl/regular-key-mpt-issuance/) — issue an MPToken with the master key disabled and a regular key active
 - [Batch (multi-account)](./examples/xrpl/batch/multi-accounts/) — XLS-56 Batch across multiple inner accounts
+- [Propose and wait](./examples/xrpl/propose-and-wait/) — follow a payment to the ledger in one call, and read the two failure branches apart
+
+#### Intent examples
+
+- [Release quarantined transfers](./examples/intents/release-quarantined-transfers/) — propose a non-XRPL `v0_*` intent without assembling the envelope, and why to prefer `proposePayload` in production
 
 #### Webhook examples
 
@@ -440,10 +524,15 @@ webhook route is treated as a genuine Custody event.
 | `ledgerId`                | `XrplLedgerId`                | -       | XRPL ledger to use (`"xrpl"` or `"xrpl-testnet-august-2024"`) — required when the address spans both |
 | `feePriority`             | `"Low" \| "Medium" \| "High"` | `"Low"` | Transaction fee priority                                                                             |
 | `expiryDays`              | `number`                      | `1`     | Days until the intent expires                                                                        |
+| `description`             | `string`                      | -       | Human-readable description on the request (`request.description`)                                    |
 | `requestCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the request                                                                       |
 | `payloadCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the payload                                                                       |
 | `requestId`               | `string`                      | auto    | Override the auto-generated request ID                                                               |
 | `payloadId`               | `string`                      | auto    | Override the auto-generated payload ID                                                               |
+
+The first four are the envelope options every intent shares, so
+`intents.proposePayload()` and `intents.proposeAndWait()` take them too. The
+rest are specific to a transaction order.
 
 `proposeIntent()`, `rawSign()` and `proposeBatch()` return the intent response
 plus the `payloadId` the intent was proposed under, so follow-up lookups need no
@@ -458,6 +547,12 @@ const { requestId, payloadId } = await custody.xrpl.proposeIntent({
 await custody.intents.getAndWait({ domainId, intentId: requestId })
 const issuanceId = await custody.xrpl.getMptIssuanceIdAndWait({ domainId, payloadId })
 ```
+
+The two ids are **not** interchangeable: `requestId` identifies the _intent_
+(poll and approve by it), `payloadId` identifies the _transaction order_ inside
+it (look the resulting transaction up by it, where it appears as
+`orderReference.Id`). Both default to a generated UUID v7 and both come back, so
+you never have to pre-mint one to learn what the SDK is about to use.
 
 ## Error Handling
 
