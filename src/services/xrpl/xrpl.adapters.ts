@@ -9,6 +9,7 @@ import {
   MPTokenIssuanceSetFlags,
   OfferCreateFlags,
   TrustSetFlags,
+  isValidAddress,
 } from "xrpl"
 import { isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
@@ -609,15 +610,30 @@ export const batchToCustodyBatchPayload = (
  * `cryptographicFields` on the operation, which are base64 (see
  * {@link parametersComputeToCryptographicFields}).
  *
- * @throws {CustodyError} If a `confidentialSends` key matches no inner
- * transaction, or matches one that is not a `ConfidentialMPTSend`
+ * @throws {CustodyError} If a `confidentialSends` key is not a valid XRPL
+ * address, matches no inner transaction, or matches one that is not a
+ * `ConfidentialMPTSend`
  */
 export const batchToCustodyInnerTransactions = (
   batch: Pick<Batch, "Account" | "RawTransactions">,
   options?: BatchToCustodyOptions,
 ): CustodyInnerTransaction[] => {
   const { confidentialSends } = options ?? {}
-  const unmatchedAddresses = new Set(Object.keys(confidentialSends ?? {}))
+  const addresses = Object.keys(confidentialSends ?? {})
+
+  // Checked before the conversion runs: a malformed key can never match an
+  // inner transaction, so it would otherwise surface as the far less specific
+  // "no matching inner transaction" below.
+  const invalidAddresses = addresses.filter((address) => !isValidAddress(address))
+  if (invalidAddresses.length > 0) {
+    throw new CustodyError({
+      reason:
+        "confidentialSends contains keys that are not valid XRPL addresses: " +
+        `${invalidAddresses.join(", ")}`,
+    })
+  }
+
+  const unmatchedAddresses = new Set(addresses)
 
   const entries = batch.RawTransactions.map(({ RawTransaction: tx }): CustodyInnerTransaction => {
     const sequencing: Core_ParticipantSequencing = !isUndefined(tx.TicketSequence)

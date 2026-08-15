@@ -163,9 +163,11 @@ export type BatchToCustodyOptions = {
    * Keyed by the inner transaction's `Account` (XRPL address). Applied to that
    * account's `ConfidentialMPTSend` entry.
    *
-   * Every key must match an inner transaction, and that inner transaction must
-   * be a `ConfidentialMPTSend` — otherwise the conversion throws, since a typo
-   * would otherwise silently produce an entry the platform rejects.
+   * Every key must be a valid XRPL address (checked with xrpl.js
+   * `isValidAddress`) and must match an inner transaction, and that inner
+   * transaction must be a `ConfidentialMPTSend` — otherwise the conversion
+   * throws, since a typo would otherwise silently produce an entry the
+   * platform rejects.
    */
   confidentialSends?: Record<string, ConfidentialSendEntryFields>
 }

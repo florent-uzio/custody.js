@@ -763,8 +763,11 @@ describe("batchToCustodyInnerTransactions", () => {
     })
 
     describe("confidentialSends", () => {
-      const SENDER_A = "rSenderA"
-      const SENDER_B = "rSenderB"
+      // Keys are validated with xrpl.js `isValidAddress`, so these have to be
+      // real addresses rather than the readable placeholders used elsewhere.
+      const SENDER_A = "rMoRUj5W3vt73dKygv2goMfY6NuqXwLw1Z"
+      const SENDER_B = "rfqtyHLUt9jSerqFhthvmxTAtfNZdSiASQ"
+      const UNRELATED = "rJXboNLh4S8ZKfjqHDzepdD63tb5Unxo2e"
 
       const twoSenders: Pick<Batch, "Account" | "RawTransactions"> = {
         Account: SUBMITTER,
@@ -828,12 +831,20 @@ describe("batchToCustodyInnerTransactions", () => {
         expect(result.operation).not.toHaveProperty("senderEncryptedBalanceVersion")
       })
 
-      it("throws when an address matches no inner transaction", () => {
+      it("throws when a key is not a valid XRPL address", () => {
         expect(() =>
           batchToCustodyInnerTransactions(twoSenders, {
-            confidentialSends: { rTypo: { amount: "1000" } },
+            confidentialSends: { rSenderA: { amount: "1000" } },
           }),
-        ).toThrow("no matching inner transaction: rTypo")
+        ).toThrow("not valid XRPL addresses: rSenderA")
+      })
+
+      it("throws when a valid address matches no inner transaction", () => {
+        expect(() =>
+          batchToCustodyInnerTransactions(twoSenders, {
+            confidentialSends: { [UNRELATED]: { amount: "1000" } },
+          }),
+        ).toThrow(`no matching inner transaction: ${UNRELATED}`)
       })
 
       it("throws when the matching inner transaction is not a ConfidentialMPTSend", () => {
@@ -855,7 +866,7 @@ describe("batchToCustodyInnerTransactions", () => {
           batchToCustodyInnerTransactions(batch, {
             confidentialSends: { [SENDER_A]: { amount: "1000" } },
           }),
-        ).toThrow('confidentialSends["rSenderA"] targets a Payment inner transaction')
+        ).toThrow(`confidentialSends["${SENDER_A}"] targets a Payment inner transaction`)
       })
 
       it("is forwarded by batchToCustodyBatchPayload", () => {
