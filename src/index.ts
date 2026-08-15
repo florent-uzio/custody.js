@@ -120,8 +120,8 @@ export type * from "./namespaces/system-properties.types.js"
 // user invitations types
 export type * from "./namespaces/user-invitations.types.js"
 
-// domain resolver types (DomainUserReference kept for callers who need it)
-export type { DomainUserReference } from "./models/domain-resolver.js"
+// domain resolver types — the shapes `domains.me()` takes and returns
+export type { DomainResolveOptions, DomainUserReference } from "./models/domain-resolver.js"
 
 // tickers types
 export type * from "./namespaces/tickers.types.js"
