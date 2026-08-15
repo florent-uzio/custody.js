@@ -5,6 +5,7 @@ import type {
   Core_IntentDryRunResponse,
   Core_IntentResponse,
   Core_ProposeIntentBody,
+  Core_TrustedIntent,
 } from "../../namespaces/intents.types.js"
 import type {
   Core_TransactionDetails,
@@ -34,6 +35,13 @@ export interface XrplPorts {
    * Wraps POST /v1/intents.
    */
   submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse>
+
+  /**
+   * Retrieves a proposed intent, for polling it to a terminal status. Throws a
+   * 404 `CustodyError` while custody has not registered it yet.
+   * Wraps GET /v1/domains/{domainId}/intents/{intentId}.
+   */
+  getIntent(domainId: string, intentId: string): Promise<Core_TrustedIntent>
 
   /**
    * Dry-runs an intent and returns the resolved estimate (including

@@ -59,10 +59,12 @@ function currentTransaction(items: Core_TransactionDetails[]): Core_TransactionD
  * `isSuccess` / `isTerminal` so the caller can read `processing.hint`,
  * `processing.cause` and `ledgerTransactionData.failure` off the returned
  * transaction instead of parsing them out of a message.
+ *
+ * Takes the lookup as a callback rather than a transport, so `XrplService` can
+ * drive the same loop through its ports instead of restating it.
  */
-async function waitForOrderTransaction(
-  t: Transport,
-  { domainId, transactionOrderId }: GetTransactionOrderDetailsPathParams,
+export async function waitForOrderTransaction(
+  listByOrder: () => Promise<Core_TransactionsCollection>,
   options: WaitForTransactionOptions = {},
 ): Promise<WaitForTransactionResult> {
   const { maxRetries = 10, intervalMs = 3000, onStatusCheck } = options
@@ -70,11 +72,7 @@ async function waitForOrderTransaction(
   let lastTransaction: Core_TransactionDetails | undefined
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const { items } = await t.get<Core_TransactionsCollection>(
-      URLs.transactions,
-      { domainId },
-      { "orderReference.Id": transactionOrderId },
-    )
+    const { items } = await listByOrder()
 
     const transaction = currentTransaction(items)
     const status = transaction?.processing?.status
@@ -160,9 +158,18 @@ export function createTransactions(t: Transport) {
      *   when no transaction was ever registered for the order
      */
     byOrderAndWait: (
-      params: GetTransactionOrderDetailsPathParams,
+      { domainId, transactionOrderId }: GetTransactionOrderDetailsPathParams,
       options?: WaitForTransactionOptions,
-    ): Promise<WaitForTransactionResult> => waitForOrderTransaction(t, params, options),
+    ): Promise<WaitForTransactionResult> =>
+      waitForOrderTransaction(
+        () =>
+          t.get<Core_TransactionsCollection>(
+            URLs.transactions,
+            { domainId },
+            { "orderReference.Id": transactionOrderId },
+          ),
+        options,
+      ),
 
     dryRun: (
       params: DryRunTransactionPathParams,

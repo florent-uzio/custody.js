@@ -7,6 +7,7 @@ import type {
   Core_IntentDryRunResponse,
   Core_IntentResponse,
   Core_ProposeIntentBody,
+  Core_TrustedIntent,
 } from "../../namespaces/intents.types.js"
 import type {
   Core_TransactionDetails,
@@ -49,6 +50,10 @@ export function createHttpPorts(transport: Transport): XrplPorts {
 
     submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse> {
       return transport.post<Core_IntentResponse>(URLs.intents, body)
+    },
+
+    getIntent(domainId: string, intentId: string): Promise<Core_TrustedIntent> {
+      return transport.get<Core_TrustedIntent>(URLs.getIntent, { domainId, intentId })
     },
 
     dryRunIntent(body: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> {
