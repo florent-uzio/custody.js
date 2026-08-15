@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../../models/index.js"
 import { createFakeTransport } from "../../testing/fake-transport.js"
 import { createIntents } from "../intents.js"
+import type { Core_ProposeIntentBody, Core_ProposeUserIntentPayload } from "../intents.types.js"
+import type { Core_MeReference } from "../users.types.js"
 
 vi.mock("../../helpers/index.js", async () => {
   const actual = await vi.importActual("../../helpers/index.js")
@@ -14,16 +16,29 @@ vi.mock("../../helpers/index.js", async () => {
 const mockTransport = createFakeTransport()
 
 /** A `/v1/me` reference with the given domains, each carrying a user reference. */
-function meWithDomains(...domainIds: string[]) {
+function meWithDomains(...domainIds: string[]): Core_MeReference {
   return {
     publicKey: "cHVibGlj",
-    loginId: { id: "login-1" },
+    loginId: { id: "login-1", providerId: "provider-1" },
     domains: domainIds.map((id) => ({
       id,
       alias: `alias-${id}`,
       userReference: { id: `user-of-${id}`, alias: "me", roles: [] },
     })),
   }
+}
+
+/**
+ * The signed `request` envelope of the nth `POST /v1/intents` call.
+ * The transport double types its body as `unknown`, so the cast is the test
+ * asserting what the namespace is contracted to send.
+ */
+function proposedRequest(nth = 0): Core_ProposeIntentBody["request"] {
+  const call = mockTransport.post.mock.calls[nth]
+  if (!call) {
+    throw new Error(`No POST call at index ${nth}`)
+  }
+  return (call[1] as Core_ProposeIntentBody).request
 }
 
 describe("createIntents", () => {
@@ -219,11 +234,11 @@ describe("createIntents", () => {
   })
 
   describe("proposePayload", () => {
-    const payload = {
+    const payload: Core_ProposeUserIntentPayload = {
       type: "v0_ReleaseQuarantinedTransfers",
       accountId: "a-1",
       transferIds: ["t-1"],
-    } as const
+    }
 
     beforeEach(() => {
       mockTransport.get.mockResolvedValue(meWithDomains("d-1"))
@@ -235,9 +250,8 @@ describe("createIntents", () => {
 
       expect(result).toEqual({ requestId: "r-1", domainId: "d-1" })
 
-      const [url, body] = mockTransport.post.mock.calls[0]
-      expect(url).toBe("/v1/intents")
-      expect(body.request).toMatchObject({
+      expect(mockTransport.post.mock.calls[0]?.[0]).toBe("/v1/intents")
+      expect(proposedRequest()).toMatchObject({
         type: "Propose",
         author: { domainId: "d-1", id: "user-of-d-1" },
         targetDomainId: "d-1",
@@ -249,31 +263,30 @@ describe("createIntents", () => {
     it("generates a request id when none was supplied", async () => {
       await intents.proposePayload(payload)
 
-      const [, body] = mockTransport.post.mock.calls[0]
-      expect(body.request.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
+      expect(proposedRequest().id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
     })
 
     it("echoes a caller-supplied request id unchanged", async () => {
       await intents.proposePayload(payload, { requestId: "fixed-id" })
 
-      expect(mockTransport.post.mock.calls[0][1].request.id).toBe("fixed-id")
+      expect(proposedRequest().id).toBe("fixed-id")
     })
 
     it("expires in a day by default, and honours expiryDays", async () => {
       await intents.proposePayload(payload)
       await intents.proposePayload(payload, { expiryDays: 30 })
 
-      const [first, second] = mockTransport.post.mock.calls.map(([, body]) =>
-        new Date(body.request.expiryAt).getTime(),
-      )
       const day = 24 * 60 * 60 * 1000
-      expect(second - first).toBeGreaterThan(28 * day)
+      const elapsed =
+        new Date(proposedRequest(1).expiryAt).getTime() -
+        new Date(proposedRequest(0).expiryAt).getTime()
+      expect(elapsed).toBeGreaterThan(28 * day)
     })
 
     it("omits description entirely when not provided, since the request is signed", async () => {
       await intents.proposePayload(payload)
 
-      expect("description" in mockTransport.post.mock.calls[0][1].request).toBe(false)
+      expect("description" in proposedRequest()).toBe(false)
     })
 
     it("includes description and custom properties when provided", async () => {
@@ -282,7 +295,7 @@ describe("createIntents", () => {
         requestCustomProperties: { ticket: "OPS-1" },
       })
 
-      expect(mockTransport.post.mock.calls[0][1].request).toMatchObject({
+      expect(proposedRequest()).toMatchObject({
         description: "release the funds",
         customProperties: { ticket: "OPS-1" },
       })
@@ -294,10 +307,7 @@ describe("createIntents", () => {
       const result = await intents.proposePayload(payload, { domainId: "d-2" })
 
       expect(result.domainId).toBe("d-2")
-      expect(mockTransport.post.mock.calls[0][1].request.author).toEqual({
-        domainId: "d-2",
-        id: "user-of-d-2",
-      })
+      expect(proposedRequest().author).toEqual({ domainId: "d-2", id: "user-of-d-2" })
     })
 
     it("throws rather than guessing when the login is ambiguous", async () => {
@@ -309,7 +319,7 @@ describe("createIntents", () => {
   })
 
   describe("proposeAndWait", () => {
-    const payload = { type: "v0_NotarizeData", data: "aGk=" } as const
+    const payload: Core_ProposeUserIntentPayload = { type: "v0_NotarizeData", data: "aGk=" }
 
     beforeEach(() => {
       mockTransport.post.mockResolvedValue({ requestId: "r-1" })
@@ -381,7 +391,7 @@ describe("createIntents", () => {
         maxRetries: 4,
       })
 
-      expect(mockTransport.post.mock.calls[0][1].request.id).toBe("fixed-id")
+      expect(proposedRequest().id).toBe("fixed-id")
       expect(result.reason).toContain("after 4 attempts")
     })
   })

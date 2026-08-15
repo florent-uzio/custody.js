@@ -2,14 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CustodyError } from "../../models/index.js"
 import { createFakeTransport } from "../../testing/fake-transport.js"
 import { createDomains, resolveDomainAndUser } from "../domains.js"
+import type { Core_MeReference } from "../users.types.js"
 
 const mockTransport = createFakeTransport()
 
 /** A `/v1/me` reference with the given domains, each carrying a user reference. */
-function meWithDomains(...domainIds: string[]) {
+function meWithDomains(...domainIds: string[]): Core_MeReference {
   return {
     publicKey: "cHVibGlj",
-    loginId: { id: "login-1" },
+    loginId: { id: "login-1", providerId: "provider-1" },
     domains: domainIds.map((id) => ({
       id,
       alias: `alias-${id}`,
@@ -48,7 +49,7 @@ describe("resolveDomainAndUser", () => {
   })
 
   it("throws when there is no login id", () => {
-    const me = { ...meWithDomains("d-1"), loginId: undefined }
+    const me: Core_MeReference = { ...meWithDomains("d-1"), loginId: undefined }
     expect(() => resolveDomainAndUser(me)).toThrow(/no login ID/)
   })
 
