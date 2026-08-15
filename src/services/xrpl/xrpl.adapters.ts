@@ -14,6 +14,8 @@ import { isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type {
   BatchPayloadInput,
+  BatchToCustodyOptions,
+  ConfidentialSendEntryFields,
   Core_ApiParametersComputeCryptographicFields,
   Core_BatchExecutionMode,
   Core_CmptCryptographicFields,
@@ -356,6 +358,8 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
     // The Custody operation has no plaintext `amount` counterpart on an
     // xrpl.js Send (the value only exists as ciphertext), and `DestinationTag`
     // / `CredentialIDs` have no counterpart at all, so all three are dropped.
+    // `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion`
+    // are supplied out of band via `BatchToCustodyOptions.confidentialSends`.
     case "ConfidentialMPTSend":
       return {
         type: "ConfidentialMPTSend",
@@ -525,6 +529,32 @@ const batchFlagsToExecutionMode = (flags: number | object | undefined): Core_Bat
   return matches[0]!
 }
 
+// Splices the custody-only entry fields onto a ConfidentialMPTSend operation.
+// Fields left undefined are omitted rather than emitted as `undefined`.
+const withConfidentialSendFields = (
+  operation: CustodyOperation,
+  address: string,
+  fields: ConfidentialSendEntryFields,
+): CustodyOperation => {
+  if (operation.type !== "ConfidentialMPTSend") {
+    throw new CustodyError({
+      reason:
+        `confidentialSends["${address}"] targets a ${operation.type} inner transaction; ` +
+        "only ConfidentialMPTSend entries carry these fields",
+    })
+  }
+  return {
+    ...operation,
+    ...(!isUndefined(fields.amount) && { amount: fields.amount }),
+    ...(!isUndefined(fields.senderEncryptedBalance) && {
+      senderEncryptedBalance: fields.senderEncryptedBalance,
+    }),
+    ...(!isUndefined(fields.senderEncryptedBalanceVersion) && {
+      senderEncryptedBalanceVersion: fields.senderEncryptedBalanceVersion,
+    }),
+  }
+}
+
 /**
  * Converts an autofilled xrpl.js Batch into a `BatchPayloadInput` for
  * `dryRunBatch` / `proposeBatch`.
@@ -537,12 +567,19 @@ const batchFlagsToExecutionMode = (flags: number | object | undefined): Core_Bat
  * - `LastLedgerSequence` is passed through when present
  * - `BatchSigners` on the input is ignored — collect signatures separately
  *   and pass them to `proposeBatch`
+ *
+ * `options.confidentialSends` supplies the three `ConfidentialMPTSend` entry
+ * fields the XRPL wire format has no room for — see
+ * {@link batchToCustodyInnerTransactions}.
  */
-export const batchToCustodyBatchPayload = (batch: Batch): BatchPayloadInput => {
+export const batchToCustodyBatchPayload = (
+  batch: Batch,
+  options?: BatchToCustodyOptions,
+): BatchPayloadInput => {
   return {
     Account: batch.Account,
     executionMode: batchFlagsToExecutionMode(batch.Flags),
-    entries: batchToCustodyInnerTransactions(batch),
+    entries: batchToCustodyInnerTransactions(batch, options),
     ...(!isUndefined(batch.Sequence) && {
       sequencing: { type: "AccountSequence" as const, value: batch.Sequence },
     }),
@@ -559,26 +596,62 @@ export const batchToCustodyBatchPayload = (batch: Batch): BatchPayloadInput => {
  * Each inner transaction is emitted as a `SubmitterOperation` when its
  * `Account` matches the outer `Batch.Account` (the submitter), and as a
  * `ParticipantOperation` otherwise.
+ *
+ * `options.confidentialSends` exists because a `ConfidentialMPTSend` entry
+ * needs three fields an xrpl.js transaction cannot carry: the plaintext
+ * `amount`, and the sender's `senderEncryptedBalance` /
+ * `senderEncryptedBalanceVersion`. The ledger needs none of them — the amount
+ * only ever exists as ciphertext and the balance is read from ledger state at
+ * apply time — but Harmonize needs all three to dry-run the Batch and
+ * re-derive the proofs, so they have to be passed in alongside the Batch.
+ *
+ * `senderEncryptedBalance` is passed through as **hex**, unlike the
+ * `cryptographicFields` on the operation, which are base64 (see
+ * {@link parametersComputeToCryptographicFields}).
+ *
+ * @throws {CustodyError} If a `confidentialSends` key matches no inner
+ * transaction, or matches one that is not a `ConfidentialMPTSend`
  */
 export const batchToCustodyInnerTransactions = (
   batch: Pick<Batch, "Account" | "RawTransactions">,
+  options?: BatchToCustodyOptions,
 ): CustodyInnerTransaction[] => {
-  return batch.RawTransactions.map(({ RawTransaction: tx }): CustodyInnerTransaction => {
+  const { confidentialSends } = options ?? {}
+  const unmatchedAddresses = new Set(Object.keys(confidentialSends ?? {}))
+
+  const entries = batch.RawTransactions.map(({ RawTransaction: tx }): CustodyInnerTransaction => {
     const sequencing: Core_ParticipantSequencing = !isUndefined(tx.TicketSequence)
       ? { type: "Ticket", value: tx.TicketSequence }
       : { type: "AccountSequence", value: tx.Sequence ?? 0 }
+
+    const extras = confidentialSends?.[tx.Account]
+    unmatchedAddresses.delete(tx.Account)
+    const operation = isUndefined(extras)
+      ? txToOperation(tx)
+      : withConfidentialSendFields(txToOperation(tx), tx.Account, extras)
+
     if (tx.Account === batch.Account) {
       return {
         type: "SubmitterOperation",
         sequencing,
-        operation: txToOperation(tx),
+        operation,
       }
     }
     return {
       type: "ParticipantOperation",
       participant: { type: "Address", address: tx.Account },
       sequencing,
-      operation: txToOperation(tx),
+      operation,
     }
   })
+
+  if (unmatchedAddresses.size > 0) {
+    throw new CustodyError({
+      reason:
+        "confidentialSends contains addresses with no matching inner transaction: " +
+        `${[...unmatchedAddresses].join(", ")}`,
+    })
+  }
+
+  return entries
 }

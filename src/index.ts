@@ -144,10 +144,13 @@ export {
 } from "./services/xrpl/index.js"
 export type {
   BatchPayloadInput,
+  BatchToCustodyOptions,
+  ConfidentialSendEntryFields,
   Core_ApiBatchSigningData,
   Core_ApiParametersComputeCryptographicFields,
   Core_BatchEntry,
   Core_BatchExecutionMode,
+  Core_BatchInnerOperation_ConfidentialMPTSend,
   Core_BatchSigner,
   Core_CmptCryptographicFields,
   Core_IntentDryRunResponse_v0_CreateTransactionOrder,
