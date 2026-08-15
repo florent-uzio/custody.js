@@ -1,5 +1,45 @@
 # custody
 
+## 2.13.0-beta.12
+
+### Patch Changes
+
+- 83ef4cc: Stop concurrent token refreshes from racing on a shared auth challenge, which made any request fail intermittently with `401 InvalidSignatureError` under load. The challenge was held on an instance field and read twice across the `await` on the signer: a refresh signed the challenge it generated, then — after the signer resolved — re-read the field to build the request body, by which point a sibling refresh could have overwritten it. The refresh then posted its own signature against the other's challenge, and the auth server rejected it. Forced refreshes are deliberately not collapsed (the 401 retry always signs anew) and the response interceptor forces one on any 401, so a burst of concurrent requests produces a burst of racers, each failure triggering another refresh — self-amplifying rather than self-correcting. The challenge now lives in a local for the lifetime of the refresh, so the signature and the challenge sent with it always come from the same one; the instance field had no other reader and is gone.
+
+  The window is microseconds when signing in-process with `privateKey` and a full round-trip when using an external `signer`, so HSM- and KMS-backed clients were hit hardest. Applications passing an explicit `challenge` in `authFormData` were never affected, since the assignment was then idempotent — that was also the workaround. Note this is the auth-challenge signature, not the request-body signature: unlike [#223](https://github.com/florent-uzio/custody.js/issues/223) it is independent of payload shape, which is why it presented as random across unrelated operations. See [#240](https://github.com/florent-uzio/custody.js/issues/240).
+
+## 2.13.0-beta.11
+
+### Minor Changes
+
+- 5493381: Add `client.xrpl.findElGamalPublicKey` and `client.xrpl.getElGamalPublicKeyAndWait`, so a cMPT flow can both wait for a provisioned ElGamal key to become readable and check whether one already exists.
+
+  `getElGamalPublicKeyAndWait(address, options?)` polls until the key is readable, then throws — the same `fetch`/`poll`/`wait` ladder `getMptIssuanceIdAndWait` already follows, with the same defaults (10 attempts, 3s apart). The vault writes the key some time _after_ the `provisionElGamalKeyPair` intent reports `Executed`, so `getElGamalPublicKey` called straight after `intents.getAndWait` legitimately finds nothing and throws `No ElGamal key provisioned for account …`. This waits that gap out instead of the caller sleeping for a fixed guess. The address is resolved once, before the loop, so the polling costs one account read per attempt and not two.
+
+  `findElGamalPublicKey(address, options?)` returns `string | undefined` instead of throwing when no key is provisioned. An account can only be provisioned once per ledger — a second `provisionElGamalKeyPair` is rejected with `ElGamal key already provisioned for account <id> on ledger <id>` — so any script that may run twice against the same accounts has to establish first whether the key is already there. That question was previously unanswerable without catching `getElGamalPublicKey`'s error and guessing which failures mean "absent"; `findElGamalPublicKey` reports absence for the key alone, and still throws for an invalid address, an ambiguous lookup or a non-Vault account. The `find` / `get` pair mirrors `accounts.findByAddress` / `findByAddressOrThrow`.
+
+  `getElGamalPublicKey` is unchanged — one read, throws when there is no key. Its documentation, and `provisionElGamalKeyPair`'s, now point at the two siblings and state that provisioning is once-per-ledger.
+
+  `WaitForElGamalPublicKeyOptions` (the disambiguation of `GetElGamalPublicKeyOptions` plus `maxRetries` / `intervalMs` / `onAttempt`) and `GetElGamalPublicKeyOptions` itself are now exported from the package root, which the latter was not.
+
+- a08f137: Add `client.transactions.byOrderAndWait({ domainId, transactionOrderId }, options)`, which waits for the transaction a transaction order produced and reports whether the ledger accepted it.
+
+  This is the wait the SDK was missing between the two it already had. `intents.getAndWait` tells you custody accepted the order; `xrpl.getMptIssuanceIdAndWait` waits past the transaction-registration gap to read one specific field off the result. Neither answers "did the order's transaction actually land?" — which is the question every step of a multi-transaction flow has to answer before starting the next one, because an intent reporting `Executed` does not mean anything is on chain yet. It is the call to reach for straight after `intents.getAndWait`.
+
+  Two things can go wrong after an intent executes, and the result covers both. Custody can fail to prepare or broadcast the transaction, which surfaces as `processing.status: "Failed"` carrying a hint — `InvalidUserPayload` for an operation the service could not build, `InvalidAmount`, `LockedDestination`, and so on. Or the transaction reaches the ledger and the ledger throws it out, which surfaces as `ledgerTransactionData.failure` of `FailedOnChain` or `PartiallyFailedOnChain` — and that case is why `isSuccess` is not simply `status === "Completed"`: custody reports `Completed` once it is done with the transaction, including transactions the ledger rejected. An on-chain failure is also treated as terminal in its own right, so the wait does not keep polling a rejected transaction until custody's processing status catches up.
+
+  It returns rather than throws, following `intents.getAndWait`: `{ status, isTerminal, isSuccess, transaction }`, where `isSuccess` means completed _and_ accepted — the state a caller can safely build the next transaction on. The failure detail stays structured on the returned `transaction` (`processing.hint`, `processing.cause`, `processing.reason`, `ledgerTransactionData.failure`) instead of being flattened into an error message, so callers that want to branch on it do not have to catch and parse. Retries are on the caller's budget: `maxRetries` (default 10), `intervalMs` (default 3000), and an `onStatusCheck(status, attempt)` callback, whose `status` is `undefined` on an attempt where no transaction was registered yet. Exhausting the attempts returns `isTerminal: false` with the last state observed, and `transaction: undefined` when custody had registered none at all — which is what tells "this order never produced a transaction" apart from "it produced one that is still in flight".
+
+  One subtlety it handles that hand-rolled versions of this loop tend to miss: an order can map to more than one transaction. When custody replaces a transaction — a fee-bumped resubmission, say — the superseded attempt stays in the collection under the same `orderReference.Id`, marked `Replaced`. Reading the first item back can therefore report the outcome of an attempt that no longer counts, and a replaced attempt already sitting at `Completed` will happily be mistaken for a landed one. The lookup drops the `Replaced` rows and takes the newest of the rest by `registeredAt`, sorted client-side so the choice does not depend on the endpoint's default ordering.
+
+  The transaction order ID is the intent payload ID, so pass an explicit `options.payloadId` to `xrpl.proposeIntent` — the default is a fresh UUID the caller never sees, and without it there is no handle to wait on. Exports `WaitForTransactionOptions`, `WaitForTransactionResult`, `Core_TransactionProcessingStatus`, and the `TERMINAL_TRANSACTION_STATUSES` / `PENDING_TRANSACTION_STATUSES` arrays, mirroring what the intents namespace exports for intent statuses.
+
+### Patch Changes
+
+- bb3d63a: Name the `quarantineStatus` filter as the likely cause when a request fails with a bare `500 Internal server error`. Some Ripple Custody versions answer any transfers query carrying `quarantineStatus` with an internal error, even though the parameter is declared in every bundled OpenAPI spec — so `client.transactions.transfers({ domainId }, { quarantineStatus: "Quarantined" })` fails with nothing to go on, and the filter responsible has to be found by bisecting the query. The `hint` on `CustodyError` now points at it, and at the substitute: filtering on the deprecated `quarantined` boolean returns the same rows for `Quarantined` (`quarantined: true`).
+
+  The parameter is not rewritten automatically. `Core_QuarantineStatus` has three values and the boolean has two, so only `Quarantined` has an exact equivalent — `quarantined: false` conflates `Released`, `Skipped` and the `null` the API returns on fee transfers — and silently substituting it would turn a loud 500 into wrong data for a caller filtering on `Skipped`. The hint fires only on a `500` whose request actually carried the parameter, and hedges on which server versions are affected, since only devbox `1.36.2` was observed. See [#238](https://github.com/florent-uzio/custody.js/issues/238).
+
 ## 2.13.0-beta.10
 
 ### Minor Changes

@@ -761,6 +761,127 @@ describe("batchToCustodyInnerTransactions", () => {
       expect(result.operation).not.toHaveProperty("destinationTag")
       expect(result.operation).not.toHaveProperty("credentialIds")
     })
+
+    describe("confidentialSends", () => {
+      // Keys are validated with xrpl.js `isValidAddress`, so these have to be
+      // real addresses rather than the readable placeholders used elsewhere.
+      const SENDER_A = "rMoRUj5W3vt73dKygv2goMfY6NuqXwLw1Z"
+      const SENDER_B = "rfqtyHLUt9jSerqFhthvmxTAtfNZdSiASQ"
+      const UNRELATED = "rJXboNLh4S8ZKfjqHDzepdD63tb5Unxo2e"
+
+      const twoSenders: Pick<Batch, "Account" | "RawTransactions"> = {
+        Account: SUBMITTER,
+        RawTransactions: [
+          { RawTransaction: { ...sendTx, Account: SENDER_A } },
+          { RawTransaction: { ...sendTx, Account: SENDER_B } },
+        ],
+      }
+
+      it("leaves the output untouched when no options are passed", () => {
+        expect(batchToCustodyInnerTransactions(twoSenders)).toEqual(
+          batchToCustodyInnerTransactions(twoSenders, {}),
+        )
+        const [result] = batchToCustodyInnerTransactions(twoSenders)
+        expect(result.operation).not.toHaveProperty("amount")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalance")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalanceVersion")
+      })
+
+      it("applies the three fields to the matching entry only", () => {
+        const [a, b] = batchToCustodyInnerTransactions(twoSenders, {
+          confidentialSends: {
+            [SENDER_A]: {
+              amount: "1000",
+              senderEncryptedBalance: "0F1E",
+              senderEncryptedBalanceVersion: 7,
+            },
+          },
+        })
+        expect(a.operation).toMatchObject({
+          type: "ConfidentialMPTSend",
+          amount: "1000",
+          senderEncryptedBalance: "0F1E",
+          senderEncryptedBalanceVersion: 7,
+        })
+        expect(b.operation).not.toHaveProperty("amount")
+        expect(b.operation).not.toHaveProperty("senderEncryptedBalance")
+        expect(b.operation).not.toHaveProperty("senderEncryptedBalanceVersion")
+      })
+
+      it("passes senderEncryptedBalance through as hex, unlike the base64 cryptographicFields", () => {
+        const [result] = batchToCustodyInnerTransactions(twoSenders, {
+          confidentialSends: { [SENDER_A]: { senderEncryptedBalance: "0F1E" } },
+        })
+        const op = result.operation as {
+          senderEncryptedBalance: string
+          cryptographicFields: { senderEncryptedAmount: string }
+        }
+        expect(op.senderEncryptedBalance).toBe("0F1E")
+        expect(op.cryptographicFields.senderEncryptedAmount).toBe(
+          Buffer.from("0102", "hex").toString("base64"),
+        )
+      })
+
+      it("omits the fields left undefined", () => {
+        const [result] = batchToCustodyInnerTransactions(twoSenders, {
+          confidentialSends: { [SENDER_A]: { amount: "1000" } },
+        })
+        expect(result.operation).toHaveProperty("amount", "1000")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalance")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalanceVersion")
+      })
+
+      it("throws when a key is not a valid XRPL address", () => {
+        expect(() =>
+          batchToCustodyInnerTransactions(twoSenders, {
+            confidentialSends: { rSenderA: { amount: "1000" } },
+          }),
+        ).toThrow("not valid XRPL addresses: rSenderA")
+      })
+
+      it("throws when a valid address matches no inner transaction", () => {
+        expect(() =>
+          batchToCustodyInnerTransactions(twoSenders, {
+            confidentialSends: { [UNRELATED]: { amount: "1000" } },
+          }),
+        ).toThrow(`no matching inner transaction: ${UNRELATED}`)
+      })
+
+      it("throws when the matching inner transaction is not a ConfidentialMPTSend", () => {
+        const batch: Pick<Batch, "Account" | "RawTransactions"> = {
+          Account: SUBMITTER,
+          RawTransactions: [
+            {
+              RawTransaction: {
+                ...baseTx,
+                Account: SENDER_A,
+                TransactionType: "Payment",
+                Destination: "rDestinationXYZ",
+                Amount: "1000",
+              },
+            },
+          ],
+        }
+        expect(() =>
+          batchToCustodyInnerTransactions(batch, {
+            confidentialSends: { [SENDER_A]: { amount: "1000" } },
+          }),
+        ).toThrow(`confidentialSends["${SENDER_A}"] targets a Payment inner transaction`)
+      })
+
+      it("is forwarded by batchToCustodyBatchPayload", () => {
+        const payload = batchToCustodyBatchPayload(
+          {
+            ...baseTx,
+            TransactionType: "Batch",
+            Flags: BatchFlags.tfAllOrNothing,
+            RawTransactions: twoSenders.RawTransactions,
+          } as Batch,
+          { confidentialSends: { [SENDER_A]: { amount: "1000" } } },
+        )
+        expect(payload.entries[0]?.operation).toHaveProperty("amount", "1000")
+      })
+    })
   })
 
   describe("unsupported transaction type", () => {

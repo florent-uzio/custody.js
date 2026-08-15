@@ -138,6 +138,40 @@ export type Core_TransactionEstimate_XRPL = components["schemas"]["Core_Transact
 export type Core_IntentDryRunResponse_v0_CreateTransactionOrder =
   components["schemas"]["Core_IntentDryRunResponse_v0_CreateTransactionOrder"]
 
+export type Core_BatchInnerOperation_ConfidentialMPTSend =
+  components["schemas"]["Core_BatchInnerOperation_ConfidentialMPTSend"]
+
+/**
+ * The fields a Custody `ConfidentialMPTSend` batch entry carries that the XRPL
+ * wire format has no room for, so they cannot be read off an xrpl.js
+ * `ConfidentialMPTSend`.
+ *
+ * On the ledger the value only ever exists as ciphertext and the sender's
+ * encrypted balance is read from ledger state at apply time — but Harmonize
+ * needs all three on the entry to dry-run the Batch and re-derive the proofs.
+ */
+export type ConfidentialSendEntryFields = Pick<
+  Core_BatchInnerOperation_ConfidentialMPTSend,
+  "amount" | "senderEncryptedBalance" | "senderEncryptedBalanceVersion"
+>
+
+/**
+ * Extras for `batchToCustodyBatchPayload` / `batchToCustodyInnerTransactions`.
+ */
+export type BatchToCustodyOptions = {
+  /**
+   * Keyed by the inner transaction's `Account` (XRPL address). Applied to that
+   * account's `ConfidentialMPTSend` entry.
+   *
+   * Every key must be a valid XRPL address (checked with xrpl.js
+   * `isValidAddress`) and must match an inner transaction, and that inner
+   * transaction must be a `ConfidentialMPTSend` — otherwise the conversion
+   * throws, since a typo would otherwise silently produce an entry the
+   * platform rejects.
+   */
+  confidentialSends?: Record<string, ConfidentialSendEntryFields>
+}
+
 export type CustodyAccountSetFlag = CustodyAccountSet["setFlag"]
 
 // General
