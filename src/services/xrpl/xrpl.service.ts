@@ -26,6 +26,7 @@ import type {
   GetPublicKeyOptions,
   IntentContext,
   MptIssuanceIdLookup,
+  ProposeIntentResult,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   SignBatchPayloadHandle,
@@ -89,14 +90,15 @@ export class XrplService {
    *
    * @param params - The Account address and XRPL operation
    * @param options - Optional configuration for the intent
-   * @returns The proposed intent response
+   * @returns The proposed intent response, plus the transaction-order id it was
+   *   proposed under — pass it to {@link getMptIssuanceId} and friends
    * @throws {CustodyError} If the Account is not a valid XRPL address,
    *   validation fails, or the sender account is not found
    */
   public async proposeIntent(
     params: { Account: string; operation: Core_XrplOperation },
     options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
+  ): Promise<ProposeIntentResult> {
     assertValidAddress(params.Account)
 
     await this.guard.checkFeature(xrplOperationSchema(params.operation.type), "xrpl.proposeIntent")
@@ -106,13 +108,14 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
-    const intent = buildTransactionIntent({
+    const { body, payloadId } = buildTransactionIntent({
       operation: params.operation,
       context,
       options,
     })
 
-    return this.ports.submitIntent(intent)
+    const intentResponse = await this.ports.submitIntent(body)
+    return { ...intentResponse, payloadId }
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -516,14 +519,15 @@ export class XrplService {
    * Creates and proposes a raw sign intent for an XRPL transaction.
    * @param xrplTransaction - The XRPL transaction details
    * @param options - Optional configuration for the raw sign intent
-   * @returns The proposed intent response
+   * @returns The proposed intent response, plus the manifest (payload) id it was
+   *   proposed under
    * @throws {CustodyError} If the Account is not a valid XRPL address,
    *   validation fails, or the sender account is not found
    */
   public async rawSign(
     xrplTransaction: SubmittableTransaction,
     options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
+  ): Promise<ProposeIntentResult> {
     assertValidAddress(xrplTransaction.Account)
 
     const context = await this.ports.resolveContext(xrplTransaction.Account, {
@@ -534,8 +538,12 @@ export class XrplService {
     const encoded = encodeForSigning(xrplTransaction)
     const base64Encoded = Buffer.from(encoded, "hex").toString("base64")
 
-    const { intentResponse } = await this.proposeRawSignIntent(base64Encoded, context, options)
-    return intentResponse
+    const { intentResponse, payloadId } = await this.proposeRawSignIntent(
+      base64Encoded,
+      context,
+      options,
+    )
+    return { ...intentResponse, payloadId }
   }
 
   /**
@@ -873,7 +881,8 @@ export class XrplService {
    * @param payload - Same submitter, execution mode, and entries as the dry-run
    * @param batchSigners - Signatures collected in Step 2 (one per participant)
    * @param options - Optional configuration for the intent
-   * @returns The proposed intent response
+   * @returns The proposed intent response, plus the transaction-order id the
+   *   Batch was proposed under
    * @throws {CustodyError} If the submitter Account is not a valid XRPL address,
    *   validation fails, or the submitter account is not found
    */
@@ -881,7 +890,7 @@ export class XrplService {
     payload: BatchPayloadInput,
     batchSigners: Core_BatchSigner[],
     options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
+  ): Promise<ProposeIntentResult> {
     assertValidAddress(payload.Account)
 
     await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch")
@@ -893,9 +902,10 @@ export class XrplService {
     })
 
     const operation = buildBatchOperation(payload, batchSigners)
-    const body = buildTransactionIntent({ operation, context, options })
+    const { body, payloadId } = buildTransactionIntent({ operation, context, options })
 
-    return this.ports.submitIntent(body)
+    const intentResponse = await this.ports.submitIntent(body)
+    return { ...intentResponse, payloadId }
   }
 
   /**

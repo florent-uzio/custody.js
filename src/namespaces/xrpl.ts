@@ -8,6 +8,7 @@ import type {
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
   GetPublicKeyOptions,
+  ProposeIntentResult,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   SignBatchPayloadHandle,
@@ -38,12 +39,13 @@ export function createXrpl(getService: () => XrplService) {
      *
      * @param params - The Account address and XRPL operation
      * @param options - Optional configuration for the intent
-     * @returns The proposed intent response
+     * @returns The proposed intent response, plus the `payloadId` of the
+     *   transaction order it was proposed under
      */
     proposeIntent: async (
       params: { Account: string; operation: Core_XrplOperation },
       options?: XrplIntentOptions,
-    ): Promise<Core_IntentResponse> => getService().proposeIntent(params, options),
+    ): Promise<ProposeIntentResult> => getService().proposeIntent(params, options),
 
     /**
      * Provision the ElGamal key pair a confidential MPT (cMPT) account needs.
@@ -141,12 +143,13 @@ export function createXrpl(getService: () => XrplService) {
      * Create an XRPL raw sign.
      * @param xrplTransaction - The XRPL transaction details
      * @param options - Optional configuration for the raw sign intent
-     * @returns The proposed intent response
+     * @returns The proposed intent response, plus the `payloadId` of the
+     *   manifest it was proposed under
      */
     rawSign: async (
       xrplTransaction: SubmittableTransaction,
       options?: XrplIntentOptions,
-    ): Promise<Core_IntentResponse> => getService().rawSign(xrplTransaction, options),
+    ): Promise<ProposeIntentResult> => getService().rawSign(xrplTransaction, options),
 
     /**
      * Raw-signs an XRPL transaction and waits for the manifest signature.
@@ -238,13 +241,14 @@ export function createXrpl(getService: () => XrplService) {
      * @param payload - Same submitter, execution mode, and entries as the dry-run
      * @param batchSigners - Signatures collected in Step 2
      * @param options - Optional configuration for the intent
-     * @returns The proposed intent response
+     * @returns The proposed intent response, plus the `payloadId` of the
+     *   transaction order the Batch was proposed under
      */
     proposeBatch: async (
       payload: BatchPayloadInput,
       batchSigners: Core_BatchSigner[],
       options?: XrplIntentOptions,
-    ): Promise<Core_IntentResponse> => getService().proposeBatch(payload, batchSigners, options),
+    ): Promise<ProposeIntentResult> => getService().proposeBatch(payload, batchSigners, options),
 
     /**
      * Get the compressed secp256k1 public key for an XRPL account.

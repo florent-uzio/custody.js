@@ -220,6 +220,17 @@ export type XrplIntentOptions = {
 
 export type Core_XrplOperation = components["schemas"]["Core_XrplOperation"]
 
+/**
+ * A proposed intent, plus the transaction-order (payload) id it was proposed
+ * under.
+ *
+ * `Core_IntentResponse` carries only the *request* id, while lookups such as
+ * {@link XrplService.getMptIssuanceId} key off the *payload* id — which the SDK
+ * generates when `options.payloadId` is omitted. Returning it here means the
+ * caller no longer has to pre-generate a UUID to be able to follow the order up.
+ */
+export type ProposeIntentResult = Prettify<Core_IntentResponse & { payloadId: string }>
+
 // Confidential MPT (cMPT)
 
 /**
@@ -288,9 +299,9 @@ export type GetPublicKeyOptions = {
 
 /**
  * Identifies the transaction order whose resulting MPT issuance ID to read.
- * `payloadId` is the `v0_CreateTransactionOrder` payload ID — the value passed
- * as `options.payloadId` to `proposeIntent`, defaulted to a fresh UUID when
- * omitted, so pass an explicit one to look the issuance up afterwards.
+ * `payloadId` is the `v0_CreateTransactionOrder` payload ID — read it off the
+ * {@link ProposeIntentResult} `proposeIntent` returned, or pass your own through
+ * `options.payloadId`.
  */
 export type GetMptIssuanceIdParams = {
   /** Domain ID of the issuer account */

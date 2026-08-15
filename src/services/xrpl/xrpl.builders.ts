@@ -106,19 +106,26 @@ export function buildDryRunBody(
 }
 
 /**
- * Builds an XRPL intent body.
+ * Builds an XRPL intent body, returning the transaction-order id alongside it.
+ *
+ * The id is generated here when the caller did not supply one, and the intent
+ * response only carries the *request* id — so it is returned explicitly rather
+ * than left for the caller to dig out of the payload union.
  */
 export function buildTransactionIntent({
   operation,
   context,
   options,
-}: BuildTransactionIntentProps): Core_ProposeIntentBody {
+}: BuildTransactionIntentProps): { body: Core_ProposeIntentBody; payloadId: string } {
   const payload = buildTransactionOrderPayload(operation, context, options)
   return {
-    request: {
-      ...buildRequestEnvelope(context, options, payload),
-      type: "Propose",
+    body: {
+      request: {
+        ...buildRequestEnvelope(context, options, payload),
+        type: "Propose",
+      },
     },
+    payloadId: payload.id,
   }
 }
 

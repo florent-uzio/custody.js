@@ -445,6 +445,20 @@ webhook route is treated as a genuine Custody event.
 | `requestId`               | `string`                      | auto    | Override the auto-generated request ID                                                               |
 | `payloadId`               | `string`                      | auto    | Override the auto-generated payload ID                                                               |
 
+`proposeIntent()`, `rawSign()` and `proposeBatch()` return the intent response
+plus the `payloadId` the intent was proposed under, so follow-up lookups need no
+pre-generated UUID:
+
+```typescript
+const { requestId, payloadId } = await custody.xrpl.proposeIntent({
+  Account: "rIssuer...",
+  operation: { type: "MPTokenIssuanceCreate", assetScale: 2, maximumAmount: "1000", flags: [] },
+})
+
+await custody.intents.getAndWait({ domainId, intentId: requestId })
+const issuanceId = await custody.xrpl.getMptIssuanceIdAndWait({ domainId, payloadId })
+```
+
 ## Error Handling
 
 The SDK throws `CustodyError` instances for all API errors:
