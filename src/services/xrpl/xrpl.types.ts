@@ -267,7 +267,8 @@ export type ProposeIntentAndWaitOptions = XrplIntentOptions & {
  * two failure surfaces: an intent that never executes (rejected by policy,
  * expired, failed) produces no transaction at all, which at the top level is
  * indistinguishable from a transaction that was still in flight when the
- * attempts ran out. Read `intent.isSuccess` to tell those apart.
+ * attempts ran out. Read `intent.isSuccess` to tell those apart — or `reason`,
+ * which names whichever of the two stages failed.
  */
 export type ProposeIntentAndWaitResult = Prettify<
   WaitForTransactionResult & {
