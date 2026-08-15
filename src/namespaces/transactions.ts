@@ -149,9 +149,9 @@ export function createTransactions(t: Transport) {
      * depends on ledger state this one writes: an intent reporting `Executed`
      * only means custody accepted the order, not that the transaction landed.
      *
-     * The order ID is the intent payload ID, so pass an explicit
-     * `options.payloadId` to `xrpl.proposeIntent` — the default is a fresh UUID
-     * the caller never sees.
+     * The order ID is the intent payload ID — read it off the `payloadId`
+     * `xrpl.proposeIntent` returns, or pin it yourself with
+     * `options.payloadId`.
      *
      * @param params - Domain and the ID of the transaction order
      * @param options - Polling configuration (default: 10 attempts, 3s apart)
