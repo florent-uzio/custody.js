@@ -246,6 +246,21 @@ describe("createHttpPorts", () => {
     })
   })
 
+  describe("getIntent", () => {
+    it("gets URLs.getIntent with domainId and intentId", async () => {
+      mockTransport.get.mockResolvedValue({ data: { state: { status: "Executed" } } })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.getIntent("domain-1", "req-1")
+
+      expect(mockTransport.get).toHaveBeenCalledWith(URLs.getIntent, {
+        domainId: "domain-1",
+        intentId: "req-1",
+      })
+      expect(result).toEqual({ data: { state: { status: "Executed" } } })
+    })
+  })
+
   describe("dryRunIntent", () => {
     it("posts the body to URLs.intentsDryRun with sign: false and no path params", async () => {
       const body = { id: "intent-1" } as any as Core_IntentDryRunRequest

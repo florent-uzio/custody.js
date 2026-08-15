@@ -27,10 +27,14 @@ import {
  *
  * A 404 is treated as "not available yet" (e.g. when called immediately after proposing)
  * and is retried within the same polling loop rather than aborting the wait.
+ *
+ * Takes the lookup as a callback rather than a transport, so `XrplService` can
+ * drive the same loop through its ports instead of restating it. `intentId` is
+ * only used to name the intent in the not-found error.
  */
-async function waitForExecution(
-  t: Transport,
-  params: Core_GetIntentPathParams,
+export async function waitForExecution(
+  fetchIntent: () => Promise<Core_TrustedIntent>,
+  intentId: string,
   options: WaitForExecutionOptions = {},
 ): Promise<WaitForExecutionResult> {
   const { maxRetries = 10, intervalMs = 3000, onStatusCheck } = options
@@ -39,7 +43,7 @@ async function waitForExecution(
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const intent = await t.get<Core_TrustedIntent>(URLs.getIntent, params)
+      const intent = await fetchIntent()
       lastIntent = intent
       const status = intent.data.state.status
 
@@ -68,7 +72,7 @@ async function waitForExecution(
   // Retries exhausted. If the intent never materialized, surface that as a 404.
   if (!lastIntent) {
     throw new CustodyError(
-      { reason: `Intent ${params.intentId} not found after ${maxRetries} attempts` },
+      { reason: `Intent ${intentId} not found after ${maxRetries} attempts` },
       404,
     )
   }
@@ -115,6 +119,11 @@ export function createIntents(t: Transport) {
     getAndWait: (
       params: Core_GetIntentPathParams,
       options?: WaitForExecutionOptions,
-    ): Promise<WaitForExecutionResult> => waitForExecution(t, params, options),
+    ): Promise<WaitForExecutionResult> =>
+      waitForExecution(
+        () => t.get<Core_TrustedIntent>(URLs.getIntent, params),
+        params.intentId,
+        options,
+      ),
   } as const
 }

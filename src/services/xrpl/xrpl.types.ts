@@ -17,7 +17,15 @@ import type {
 import type { components } from "../../models/custody-types.js"
 import type { DomainUserReference } from "../../models/domain-resolver.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
-import type { Core_IntentResponse } from "../../namespaces/intents.types.js"
+import type {
+  Core_IntentResponse,
+  WaitForExecutionOptions,
+  WaitForExecutionResult,
+} from "../../namespaces/intents.types.js"
+import type {
+  WaitForTransactionOptions,
+  WaitForTransactionResult,
+} from "../../namespaces/transactions.types.js"
 import type { Prettify } from "../../type-utils/index.js"
 
 /**
@@ -230,6 +238,58 @@ export type Core_XrplOperation = components["schemas"]["Core_XrplOperation"]
  * caller no longer has to pre-generate a UUID to be able to follow the order up.
  */
 export type ProposeIntentResult = Prettify<Core_IntentResponse & { payloadId: string }>
+
+/**
+ * Options for {@link XrplService.proposeIntentAndWait} — the intent options
+ * {@link proposeIntent} takes, plus how long to wait for each of the two stages.
+ *
+ * They are separate bags because the two waits are for different things: the
+ * intent stage waits on custody accepting the order, the transaction stage on
+ * the ledger. Each defaults to 10 attempts 3s apart, as its standalone
+ * counterpart does.
+ */
+export type ProposeIntentAndWaitOptions = XrplIntentOptions & {
+  /** Polling options for the intent stage (`intents.getAndWait`) */
+  intent?: WaitForExecutionOptions
+  /** Polling options for the transaction stage (`transactions.byOrderAndWait`) */
+  transaction?: WaitForTransactionOptions
+}
+
+/**
+ * Outcome of proposing an XRPL intent and waiting it out to the ledger.
+ *
+ * The top level is {@link WaitForTransactionResult}, so anything written
+ * against `transactions.byOrderAndWait` reads the same here: `status`,
+ * `isTerminal`, `isSuccess` and `transaction` all describe the *transaction*
+ * the order produced.
+ *
+ * `intent` carries the other half. Both halves are needed because the flow has
+ * two failure surfaces: an intent that never executes (rejected by policy,
+ * expired, failed) produces no transaction at all, which at the top level is
+ * indistinguishable from a transaction that was still in flight when the
+ * attempts ran out. Read `intent.isSuccess` to tell those apart.
+ */
+export type ProposeIntentAndWaitResult = Prettify<
+  WaitForTransactionResult & {
+    /** The intent request id, as `proposeIntent` returns it */
+    requestId: string
+    /** The transaction-order (payload) id, as `proposeIntent` returns it */
+    payloadId: string
+    /**
+     * The domain the intent was proposed in — resolved from `Account` unless
+     * `options.domainId` pinned it. Returned so follow-ups that need it
+     * (`getMptIssuanceIdAndWait`, any transaction lookup) do not have to
+     * resolve it again.
+     */
+    domainId: string
+    /**
+     * Outcome of the intent stage. When `intent.isSuccess` is false no
+     * transaction was ever waited for, and the transaction fields are empty
+     * because none exists — not because one was slow.
+     */
+    intent: WaitForExecutionResult
+  }
+>
 
 // Confidential MPT (cMPT)
 

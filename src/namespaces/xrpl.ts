@@ -8,6 +8,8 @@ import type {
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
   GetPublicKeyOptions,
+  ProposeIntentAndWaitOptions,
+  ProposeIntentAndWaitResult,
   ProposeIntentResult,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
@@ -46,6 +48,33 @@ export function createXrpl(getService: () => XrplService) {
       params: { Account: string; operation: Core_XrplOperation },
       options?: XrplIntentOptions,
     ): Promise<ProposeIntentResult> => getService().proposeIntent(params, options),
+
+    /**
+     * Propose an XRPL transaction as a custody intent and wait it out to the
+     * ledger — the intent reaching a terminal status, then the transaction it
+     * produced.
+     *
+     * Collapses `proposeIntent` → `intents.getAndWait` →
+     * `transactions.byOrderAndWait`, which is what following a write through
+     * otherwise takes: an intent reporting `Executed` only means custody
+     * accepted the order, not that the transaction landed.
+     *
+     * Never throws on a failed intent or transaction. The result is a
+     * `WaitForTransactionResult` describing the transaction, plus `intent` for
+     * the stage before it — check `intent.isSuccess` to tell "the intent never
+     * executed, so there is no transaction" from "the transaction is still in
+     * flight".
+     *
+     * @param params - The Account address and XRPL operation
+     * @param options - Intent options, plus per-stage polling configuration
+     *   (`intent` / `transaction`, each defaulting to 10 attempts 3s apart)
+     * @returns The transaction and intent outcomes, and the `requestId`,
+     *   `payloadId` and `domainId` the intent was proposed under
+     */
+    proposeIntentAndWait: async (
+      params: { Account: string; operation: Core_XrplOperation },
+      options?: ProposeIntentAndWaitOptions,
+    ): Promise<ProposeIntentAndWaitResult> => getService().proposeIntentAndWait(params, options),
 
     /**
      * Provision the ElGamal key pair a confidential MPT (cMPT) account needs.
