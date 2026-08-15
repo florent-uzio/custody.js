@@ -19,6 +19,7 @@ import type { DomainUserReference } from "../../models/domain-resolver.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
 import type {
   Core_IntentResponse,
+  IntentEnvelopeOptions,
   WaitForExecutionOptions,
   WaitForExecutionResult,
 } from "../../namespaces/intents.types.js"
@@ -184,47 +185,34 @@ export type CustodyAccountSetFlag = CustodyAccountSet["setFlag"]
 
 // General
 
-export type XrplIntentOptions = {
-  /**
-   * Domain ID to use for the payment. If not provided and user has multiple domains, an error will be thrown.
-   */
-  domainId?: string
-  /**
-   * Ledger ID to disambiguate when the same address exists on multiple ledgers
-   * under the same login (e.g. "xrpl" vs "xrpl-testnet-august-2024"). Required when
-   * the address is registered on more than one ledger; otherwise optional.
-   * The auto-completion is loose, you can write any value.
-   */
-  ledgerId?: XrplLedgerId
-  /**
-   * Fee strategy priority. Defaults to "Low".
-   */
-  feePriority?: "Low" | "Medium" | "High"
-  /**
-   * Number of days until the intent expires. Defaults to 1.
-   */
-  expiryDays?: number
-  /**
-   * Human-readable description for the intent request (`request.description`).
-   */
-  description?: string
-  /**
-   * Custom properties to include in the intent request.
-   */
-  requestCustomProperties?: Record<string, string>
-  /**
-   * Custom properties to include in the intent payload.
-   */
-  payloadCustomProperties?: Record<string, string>
-  /**
-   * Request ID to use for the intent. If not provided, a new UUID will be generated.
-   */
-  requestId?: string
-  /**
-   * Payload ID to use for the intent. If not provided, a new UUID will be generated.
-   */
-  payloadId?: string
-}
+/**
+ * Intent options for an XRPL transaction order: the envelope fields every
+ * intent shares ({@link IntentEnvelopeOptions}), plus the transaction-order
+ * specifics.
+ */
+export type XrplIntentOptions = Prettify<
+  IntentEnvelopeOptions & {
+    /**
+     * Ledger ID to disambiguate when the same address exists on multiple ledgers
+     * under the same login (e.g. "xrpl" vs "xrpl-testnet-august-2024"). Required when
+     * the address is registered on more than one ledger; otherwise optional.
+     * The auto-completion is loose, you can write any value.
+     */
+    ledgerId?: XrplLedgerId
+    /**
+     * Fee strategy priority. Defaults to "Low".
+     */
+    feePriority?: "Low" | "Medium" | "High"
+    /**
+     * Custom properties to include in the intent payload.
+     */
+    payloadCustomProperties?: Record<string, string>
+    /**
+     * Payload ID to use for the intent. If not provided, a new UUID will be generated.
+     */
+    payloadId?: string
+  }
+>
 
 export type Core_XrplOperation = components["schemas"]["Core_XrplOperation"]
 

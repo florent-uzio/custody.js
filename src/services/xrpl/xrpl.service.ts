@@ -4,14 +4,13 @@ import { pollUntil } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
 import { CustodyError } from "../../models/index.js"
-import { waitForExecution } from "../../namespaces/intents.js"
+import { buildRequestEnvelope, waitForExecution } from "../../namespaces/intents.js"
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../../namespaces/intents.types.js"
 import { waitForOrderTransaction } from "../../namespaces/transactions.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
 import {
   buildBatchOperation,
   buildDryRunBody,
-  buildRequestEnvelope,
   buildSignBatchPayloadResult,
   buildTransactionIntent,
 } from "./xrpl.builders.js"
@@ -160,9 +159,7 @@ export class XrplService {
         // The transaction stage never ran, so `reason` has to come from this
         // one — otherwise the failure the caller logs would read as a missing
         // transaction rather than an intent that never executed.
-        reason: intent.isTerminal
-          ? `Intent ${requestId} did not execute (status: ${intent.status}).`
-          : `Intent ${requestId} was still ${intent.status} after the attempts ran out.`,
+        reason: intent.reason,
       }
     }
 

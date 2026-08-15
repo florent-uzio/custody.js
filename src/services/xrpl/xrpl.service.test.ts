@@ -82,7 +82,7 @@ const mockDryRunResponse: Core_IntentDryRunResponse_v0_CreateTransactionOrder = 
 
 /** Minimal intent shape for the polling tests — only the status is read. */
 function intentWithStatus(status: Core_IntentStatus) {
-  return { data: { state: { status } } } as any
+  return { data: { id: "intent-1", state: { status } } } as any
 }
 
 /**
@@ -746,7 +746,7 @@ describe("XrplService", () => {
       expect(result.intent.status).toBe("Open")
       expect(result.isTerminal).toBe(false)
       expect(result.isSuccess).toBe(false)
-      expect(result.reason).toContain("still Open after the attempts ran out")
+      expect(result.reason).toContain("still awaiting approval after 2 attempts")
     })
 
     it("reports an on-chain failure as terminal but not successful", async () => {
