@@ -110,4 +110,14 @@ export type WaitForTransactionResult = {
    * flight".
    */
   transaction?: Core_TransactionDetails
+  /**
+   * One sentence saying why `isSuccess` is false, `undefined` when it is true.
+   *
+   * A convenience for logs and thrown errors, composed from whichever of
+   * `processing.hint`, `processing.cause` / `processing.reason` and
+   * `ledgerTransactionData.failure` applies — the same assembly every caller
+   * was writing by hand. It is a message, not a contract: narrow on `status`
+   * and read the transaction for anything the code has to branch on.
+   */
+  reason?: string
 }

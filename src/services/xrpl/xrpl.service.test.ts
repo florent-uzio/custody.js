@@ -729,6 +729,9 @@ describe("XrplService", () => {
       expect(result.isTerminal).toBe(true)
       expect(result.isSuccess).toBe(false)
       expect(result.transaction).toBeUndefined()
+      // The transaction stage never ran, so the reason has to name the intent —
+      // reporting a missing transaction would point at the wrong stage.
+      expect(result.reason).toContain("did not execute (status: Rejected)")
     })
 
     it("is not terminal when the intent ran out of attempts short of a terminal status", async () => {
@@ -743,6 +746,7 @@ describe("XrplService", () => {
       expect(result.intent.status).toBe("Open")
       expect(result.isTerminal).toBe(false)
       expect(result.isSuccess).toBe(false)
+      expect(result.reason).toContain("still Open after the attempts ran out")
     })
 
     it("reports an on-chain failure as terminal but not successful", async () => {
@@ -757,6 +761,7 @@ describe("XrplService", () => {
       expect(result.isTerminal).toBe(true)
       expect(result.isSuccess).toBe(false)
       expect(result.transaction?.ledgerTransactionData?.failure).toBe("FailedOnChain")
+      expect(result.reason).toContain("rejected by the ledger (FailedOnChain)")
     })
 
     it("does not throw when the transaction never registers", async () => {
