@@ -647,8 +647,8 @@ async function constructConfidentialTransfer(
  * and the sender's encrypted balance is read from the ledger at apply time — so
  * neither the plaintext `amount` nor `senderEncryptedBalance` /
  * `senderEncryptedBalanceVersion` exists on the xrpl.js transaction. Harmonize
- * needs all three on the batch *entry* to dry-run and re-derive the proofs, and
- * `batchToCustodyBatchPayload` cannot invent what its input never held.
+ * needs all three on the batch *entry* to dry-run and re-derive the proofs, so
+ * they are passed to `batchToCustodyBatchPayload` via `confidentialSends`.
  */
 type ConfidentialSendLeg = {
   transaction: ConfidentialMPTSend & { TicketSequence: number }
@@ -722,28 +722,15 @@ async function atomicSettlement(
   // Second argument tells xrpl client how many signers to account for in calculation of the fee
   const autofilledBatch = await xrplClient.autofill(batch, 2)
 
-  // Convert the autofilled Batch to a custody payload, then graft on the three
-  // fields no xrpl.js Batch can carry (see `ConfidentialSendLeg`).
-  const batchPayload = batchToCustodyBatchPayload(autofilledBatch)
-  const custodyOnlyByAddress = new Map([
-    [mmf_sender.address, mmfLeg.custodyOnly],
-    [rlusd_sender.address, rlusdLeg.custodyOnly],
-  ])
-
-  for (const entry of batchPayload.entries) {
-    if (entry.type !== "ParticipantOperation" || entry.participant.type !== "Address")
-      throw new Error("Expected every batch entry to be a ParticipantOperation keyed by address.")
-    if (entry.operation.type !== "ConfidentialMPTSend")
-      throw new Error(`Unexpected inner operation ${entry.operation.type} in batch payload.`)
-
-    const custodyOnly = custodyOnlyByAddress.get(entry.participant.address)
-    if (custodyOnly === undefined)
-      throw new Error(`Unknown participant ${entry.participant.address} in batch payload.`)
-
-    entry.operation.amount = custodyOnly.amount
-    entry.operation.senderEncryptedBalance = custodyOnly.senderEncryptedBalance
-    entry.operation.senderEncryptedBalanceVersion = custodyOnly.senderEncryptedBalanceVersion
-  }
+  // Convert the autofilled Batch to a custody payload. `confidentialSends`
+  // carries the three fields no xrpl.js Batch can hold (see
+  // `ConfidentialSendLeg`), keyed by the sending account's address.
+  const batchPayload = batchToCustodyBatchPayload(autofilledBatch, {
+    confidentialSends: {
+      [mmf_sender.address]: mmfLeg.custodyOnly,
+      [rlusd_sender.address]: rlusdLeg.custodyOnly,
+    },
+  })
 
   // Dry-run to obtain the canonical signing payload
   const { signingPayload } = await custody.xrpl.dryRunBatch(batchPayload, {
