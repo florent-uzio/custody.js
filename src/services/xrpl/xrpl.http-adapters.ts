@@ -1,12 +1,13 @@
 import { URLs } from "../../constants/urls.js"
-import { CustodyError } from "../../models/index.js"
 import { findByAddressOrThrow } from "../../namespaces/accounts.js"
 import type { Core_ApiAccount, Core_ApiManifest } from "../../namespaces/accounts.types.js"
+import { resolveDomainAndUser } from "../../namespaces/domains.js"
 import type {
   Core_IntentDryRunRequest,
   Core_IntentDryRunResponse,
   Core_IntentResponse,
   Core_ProposeIntentBody,
+  Core_TrustedIntent,
 } from "../../namespaces/intents.types.js"
 import type {
   Core_TransactionDetails,
@@ -21,7 +22,7 @@ import type { XrplPorts } from "./xrpl.ports.js"
  * Production implementation of XrplPorts backed by TypedTransport (HTTP).
  *
  * Absorbs:
- * - DomainResolverService (GET /v1/me + validation + domain resolution)
+ * - DomainResolverService (GET /v1/me, reduced by `resolveDomainAndUser`)
  * - findByAddressOrThrow (GET /v1/addresses)
  * - intent submission (POST /v1/intents)
  * - manifest retrieval (GET /v1/domains/.../manifests/...)
@@ -49,6 +50,10 @@ export function createHttpPorts(transport: Transport): XrplPorts {
 
     submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse> {
       return transport.post<Core_IntentResponse>(URLs.intents, body)
+    },
+
+    getIntent(domainId: string, intentId: string): Promise<Core_TrustedIntent> {
+      return transport.get<Core_TrustedIntent>(URLs.getIntent, { domainId, intentId })
     },
 
     dryRunIntent(body: Core_IntentDryRunRequest): Promise<Core_IntentDryRunResponse> {
@@ -84,48 +89,4 @@ export function createHttpPorts(transport: Transport): XrplPorts {
       return transport.get<Core_TransactionDetails>(URLs.transaction, { domainId, transactionId })
     },
   }
-}
-
-// ── Inlined from DomainResolverService ─────────────────────────
-
-function resolveDomainAndUser(
-  me: Core_MeReference,
-  providedDomainId?: string,
-): { domainId: string; userId: string } {
-  if (!me.loginId?.id) {
-    throw new CustodyError({ reason: "User has no login ID" })
-  }
-
-  if (me.domains.length === 0) {
-    throw new CustodyError({ reason: "User has no domains" })
-  }
-
-  if (providedDomainId) {
-    const domain = me.domains.find((d) => d.id === providedDomainId)
-    if (!domain) {
-      throw new CustodyError({
-        reason: `Domain with ID ${providedDomainId} not found for user`,
-      })
-    }
-    if (!domain.userReference?.id) {
-      throw new CustodyError({ reason: `Domain ${providedDomainId} has no user reference` })
-    }
-    return { domainId: providedDomainId, userId: domain.userReference.id }
-  }
-
-  if (me.domains.length > 1) {
-    throw new CustodyError({
-      reason: "User has multiple domains. Please specify domainId in the options parameter.",
-    })
-  }
-
-  const domain = me.domains[0]
-  if (!domain?.id) {
-    throw new CustodyError({ reason: "User has no primary domain" })
-  }
-  if (!domain.userReference?.id) {
-    throw new CustodyError({ reason: "Primary domain has no user reference" })
-  }
-
-  return { domainId: domain.id, userId: domain.userReference.id }
 }

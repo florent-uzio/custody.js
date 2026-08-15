@@ -165,3 +165,38 @@ stay consistent.
   `GET /v1/properties` (`client.systemProperties.list()`), identified by a
   `Core_SystemPropertyId` (e.g. `NOTARY_API_KEY`, `STATE_REVIEW_AUTHORITY`).
   Returned as trusted (signed) entries in a `Core_TrustedSystemProperty`.
+
+- **Intent** — a signed request to change state, proposed to `POST /v1/intents`
+  and approved by policy before custody executes it. Every write goes through
+  one. The payload is one of ~45 `v0_*` types (`Core_ProposeUserIntentPayload`);
+  everything wrapped around it — `author`, `targetDomainId`, `expiryAt`, `id`,
+  `customProperties` — is the **request envelope**, built by
+  `buildRequestEnvelope`. Avoid "transaction" for an intent: on ledger-writing
+  intents the two are distinct objects with distinct ids and distinct failures.
+
+- **Request id vs payload id** — the two ids a ledger-writing propose generates,
+  not interchangeable. The **request id** identifies the _intent_: poll and
+  approve by it (`intents.getAndWait`, `intents.approve`). The **payload id**
+  identifies the _transaction order_ inside it: look the resulting transaction up
+  by it (`transactions.byOrderAndWait`, `xrpl.getMptIssuanceId`), where it
+  appears as `orderReference.Id`. Both default to a generated UUID v7 and are
+  returned by the propose methods; both can be pinned through `options`.
+  Non-transaction-order intents have only a request id.
+
+- **Terminal** — a status the work will not move on from. For an **intent**:
+  `Executed`, `Failed`, `Expired`, `Rejected` (`TERMINAL_STATUSES`); `Open`,
+  `Approved` and `Executing` are pending. For a **transaction**: a terminal
+  processing status, or any `ledgerTransactionData.failure`. A wait reporting
+  `isTerminal: false` ran out of attempts on work that was still in flight —
+  that means "not yet", **not** "failed".
+
+- **Executed ≠ landed** — an intent reaching `Executed` means custody accepted
+  the transaction order, not that the transaction reached the ledger. The
+  transaction is registered against the order afterwards and can still fail,
+  while custody prepares it (`processing.status: "Failed"`, carrying a `hint`
+  such as `InvalidUserPayload`) or on chain
+  (`ledgerTransactionData.failure: "FailedOnChain"`). Custody also reports
+  `Completed` for transactions the ledger rejected, so `isSuccess` on a
+  transaction wait requires both halves. This is why ledger-writing intents have
+  two waits, and why `xrpl.proposeIntentAndWait` covers both. See
+  [docs/intents.md](docs/intents.md).

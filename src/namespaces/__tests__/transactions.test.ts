@@ -92,6 +92,7 @@ describe("createTransactions", () => {
         isSuccess: true,
         transaction: completed,
       })
+      expect(result.reason).toBeUndefined()
     })
 
     it("should report a failed transaction as terminal but not successful, keeping the hint", async () => {
@@ -108,6 +109,9 @@ describe("createTransactions", () => {
         status: "Failed",
         hint: "InvalidUserPayload",
       })
+      expect(result.reason).toBe(
+        "Transaction t-1 failed before it reached the ledger (InvalidUserPayload).",
+      )
     })
 
     it("should report an interrupted transaction as terminal but not successful", async () => {
@@ -122,6 +126,7 @@ describe("createTransactions", () => {
       expect(result.isTerminal).toBe(true)
       expect(result.isSuccess).toBe(false)
       expect(result.status).toBe("Interrupted")
+      expect(result.reason).toBe("Transaction t-1 was interrupted (Cancelled): cancelled by user")
     })
 
     // Custody reports `Completed` once it is done with the transaction, which
@@ -137,6 +142,9 @@ describe("createTransactions", () => {
       expect(result.isTerminal).toBe(true)
       expect(result.isSuccess).toBe(false)
       expect(result.transaction?.ledgerTransactionData?.failure).toBe("FailedOnChain")
+      // The ledger rejection is reported, not the `Completed` custody status it
+      // sits next to.
+      expect(result.reason).toBe("Transaction t-1 was rejected by the ledger (FailedOnChain).")
     })
 
     it("should treat an on-chain failure as terminal even before processing catches up", async () => {
@@ -236,6 +244,7 @@ describe("createTransactions", () => {
         isTerminal: false,
         isSuccess: false,
         transaction: inFlight,
+        reason: "Transaction t-1 was still in flight after 2 attempts (status: Broadcasting).",
       })
     })
 
@@ -251,6 +260,7 @@ describe("createTransactions", () => {
         isTerminal: false,
         isSuccess: false,
         transaction: undefined,
+        reason: "No transaction was registered for the order after 2 attempts.",
       })
     })
 

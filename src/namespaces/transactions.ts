@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import { sleep } from "../helpers/index.js"
+import { isUndefined, sleep } from "../helpers/index.js"
 import type { Transport } from "../transport/index.js"
 import {
   TERMINAL_TRANSACTION_STATUSES,
@@ -45,6 +45,33 @@ function currentTransaction(items: Core_TransactionDetails[]): Core_TransactionD
 }
 
 /**
+ * Says in one sentence why a terminal transaction is not a success.
+ *
+ * The three surfaces a failure can surface on are mutually exclusive in
+ * practice but not in the types, so they are ordered most-specific first: the
+ * ledger rejecting the transaction says more than custody's `Completed`, and
+ * `Interrupted` carries a cause and a message where `Failed` carries a hint.
+ */
+function failureReason(transaction: Core_TransactionDetails): string {
+  const { id, processing, ledgerTransactionData } = transaction
+  const failure = ledgerTransactionData?.failure
+
+  if (!isUndefined(failure)) {
+    return `Transaction ${id} was rejected by the ledger (${failure}).`
+  }
+
+  if (processing?.status === "Interrupted") {
+    return `Transaction ${id} was interrupted (${processing.cause}): ${processing.reason}`
+  }
+
+  if (processing?.status === "Failed") {
+    return `Transaction ${id} failed before it reached the ledger (${processing.hint}).`
+  }
+
+  return `Transaction ${id} did not complete (status: ${processing?.status}).`
+}
+
+/**
  * Wait for the transaction a transaction order produced to reach a terminal
  * state, polling until it does or the attempts run out.
  *
@@ -58,11 +85,14 @@ function currentTransaction(items: Core_TransactionDetails[]): Core_TransactionD
  * Never throws on a failed transaction — the outcome is reported through
  * `isSuccess` / `isTerminal` so the caller can read `processing.hint`,
  * `processing.cause` and `ledgerTransactionData.failure` off the returned
- * transaction instead of parsing them out of a message.
+ * transaction instead of parsing them out of a message. `reason` says the same
+ * thing in one sentence, for the log line or the error the caller throws.
+ *
+ * Takes the lookup as a callback rather than a transport, so `XrplService` can
+ * drive the same loop through its ports instead of restating it.
  */
-async function waitForOrderTransaction(
-  t: Transport,
-  { domainId, transactionOrderId }: GetTransactionOrderDetailsPathParams,
+export async function waitForOrderTransaction(
+  listByOrder: () => Promise<Core_TransactionsCollection>,
   options: WaitForTransactionOptions = {},
 ): Promise<WaitForTransactionResult> {
   const { maxRetries = 10, intervalMs = 3000, onStatusCheck } = options
@@ -70,11 +100,7 @@ async function waitForOrderTransaction(
   let lastTransaction: Core_TransactionDetails | undefined
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const { items } = await t.get<Core_TransactionsCollection>(
-      URLs.transactions,
-      { domainId },
-      { "orderReference.Id": transactionOrderId },
-    )
+    const { items } = await listByOrder()
 
     const transaction = currentTransaction(items)
     const status = transaction?.processing?.status
@@ -89,12 +115,15 @@ async function waitForOrderTransaction(
     // An on-chain failure is terminal in its own right: custody has done its
     // part, so its processing status can read `Completed` on a transaction the
     // ledger threw out.
-    if (failure || (status && TERMINAL_TRANSACTION_STATUSES.includes(status))) {
+    if (transaction && (failure || (status && TERMINAL_TRANSACTION_STATUSES.includes(status)))) {
+      const isSuccess = status === "Completed" && !failure
+
       return {
         status,
         isTerminal: true,
-        isSuccess: status === "Completed" && !failure,
+        isSuccess,
         transaction,
+        reason: isSuccess ? undefined : failureReason(transaction),
       }
     }
 
@@ -110,6 +139,9 @@ async function waitForOrderTransaction(
     isTerminal: false,
     isSuccess: false,
     transaction: lastTransaction,
+    reason: isUndefined(lastTransaction)
+      ? `No transaction was registered for the order after ${maxRetries} attempts.`
+      : `Transaction ${lastTransaction.id} was still in flight after ${maxRetries} attempts (status: ${lastTransaction.processing?.status}).`,
   }
 }
 
@@ -149,20 +181,30 @@ export function createTransactions(t: Transport) {
      * depends on ledger state this one writes: an intent reporting `Executed`
      * only means custody accepted the order, not that the transaction landed.
      *
-     * The order ID is the intent payload ID, so pass an explicit
-     * `options.payloadId` to `xrpl.proposeIntent` — the default is a fresh UUID
-     * the caller never sees.
+     * The order ID is the intent payload ID — read it off the `payloadId`
+     * `xrpl.proposeIntent` returns, or pin it yourself with
+     * `options.payloadId`.
      *
      * @param params - Domain and the ID of the transaction order
      * @param options - Polling configuration (default: 10 attempts, 3s apart)
      * @returns The terminal state, or the last state observed before the
      *   attempts ran out (`isTerminal: false`); `transaction` is `undefined`
-     *   when no transaction was ever registered for the order
+     *   when no transaction was ever registered for the order, and `reason`
+     *   says in one sentence why `isSuccess` is false
      */
     byOrderAndWait: (
-      params: GetTransactionOrderDetailsPathParams,
+      { domainId, transactionOrderId }: GetTransactionOrderDetailsPathParams,
       options?: WaitForTransactionOptions,
-    ): Promise<WaitForTransactionResult> => waitForOrderTransaction(t, params, options),
+    ): Promise<WaitForTransactionResult> =>
+      waitForOrderTransaction(
+        () =>
+          t.get<Core_TransactionsCollection>(
+            URLs.transactions,
+            { domainId },
+            { "orderReference.Id": transactionOrderId },
+          ),
+        options,
+      ),
 
     dryRun: (
       params: DryRunTransactionPathParams,

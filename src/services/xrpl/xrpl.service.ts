@@ -4,12 +4,13 @@ import { pollUntil } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
 import { CustodyError } from "../../models/index.js"
+import { buildRequestEnvelope, waitForExecution } from "../../namespaces/intents.js"
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../../namespaces/intents.types.js"
+import { waitForOrderTransaction } from "../../namespaces/transactions.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
 import {
   buildBatchOperation,
   buildDryRunBody,
-  buildRequestEnvelope,
   buildSignBatchPayloadResult,
   buildTransactionIntent,
 } from "./xrpl.builders.js"
@@ -26,6 +27,9 @@ import type {
   GetPublicKeyOptions,
   IntentContext,
   MptIssuanceIdLookup,
+  ProposeIntentAndWaitOptions,
+  ProposeIntentAndWaitResult,
+  ProposeIntentResult,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   SignBatchPayloadHandle,
@@ -89,14 +93,97 @@ export class XrplService {
    *
    * @param params - The Account address and XRPL operation
    * @param options - Optional configuration for the intent
-   * @returns The proposed intent response
+   * @returns The proposed intent response, plus the transaction-order id it was
+   *   proposed under — pass it to {@link getMptIssuanceId} and friends
    * @throws {CustodyError} If the Account is not a valid XRPL address,
    *   validation fails, or the sender account is not found
    */
   public async proposeIntent(
     params: { Account: string; operation: Core_XrplOperation },
     options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
+  ): Promise<ProposeIntentResult> {
+    const { result } = await this.propose(params, options)
+    return result
+  }
+
+  /**
+   * Proposes an XRPL transaction intent and waits it out to the ledger — the
+   * intent reaching a terminal status, then the transaction it produced.
+   *
+   * The three-step shape it replaces (`proposeIntent` → `intents.getAndWait` →
+   * `transactions.byOrderAndWait`) is what every write has to do, because an
+   * intent reporting `Executed` only means custody accepted the order: the
+   * transaction can still fail while custody prepares it, or on chain. Reach
+   * for this whenever the next step depends on ledger state this one writes.
+   *
+   * Never throws on a failed intent or transaction — the outcome is reported
+   * through `isSuccess` / `isTerminal`, as {@link intents.getAndWait} and
+   * {@link transactions.byOrderAndWait} do. Propose-time errors (invalid
+   * address, rejected request) still throw.
+   *
+   * The transaction stage is skipped when the intent does not execute: no
+   * transaction is coming, so there is nothing to wait for.
+   *
+   * @param params - The Account address and XRPL operation
+   * @param options - Intent options, plus per-stage polling configuration
+   * @returns The transaction outcome ({@link WaitForTransactionResult}), the
+   *   intent outcome, and the ids and domain the intent was proposed under
+   * @throws {CustodyError} If the Account is not a valid XRPL address,
+   *   validation fails, the sender account is not found, or the intent was
+   *   never registered
+   */
+  public async proposeIntentAndWait(
+    params: { Account: string; operation: Core_XrplOperation },
+    options: ProposeIntentAndWaitOptions = {},
+  ): Promise<ProposeIntentAndWaitResult> {
+    const { result, context } = await this.propose(params, options)
+    const { requestId, payloadId } = result
+    const { domainId } = context
+
+    const intent = await waitForExecution(
+      () => this.ports.getIntent(domainId, requestId),
+      requestId,
+      options.intent,
+    )
+
+    if (!intent.isSuccess) {
+      return {
+        requestId,
+        payloadId,
+        domainId,
+        intent,
+        // An intent that reached a terminal status without executing ends the
+        // flow: no transaction will ever be registered for the order.
+        isTerminal: intent.isTerminal,
+        isSuccess: false,
+        // The transaction stage never ran, so `reason` has to come from this
+        // one — otherwise the failure the caller logs would read as a missing
+        // transaction rather than an intent that never executed.
+        reason: intent.reason,
+      }
+    }
+
+    const transaction = await waitForOrderTransaction(
+      () => this.ports.listTransactions(domainId, { "orderReference.Id": payloadId }),
+      options.transaction,
+    )
+
+    return { requestId, payloadId, domainId, intent, ...transaction }
+  }
+
+  /**
+   * Builds and submits a transaction-order intent, returning the resolved
+   * context alongside the response.
+   *
+   * Shared by `proposeIntent` and `proposeIntentAndWait`: the latter needs the
+   * domain the address resolved to, and resolving it a second time would cost
+   * another `/v1/me` and address lookup.
+   * @private
+   */
+  private async propose(
+    params: { Account: string; operation: Core_XrplOperation },
+    options: XrplIntentOptions,
+  ): Promise<{ result: ProposeIntentResult; context: IntentContext }> {
     assertValidAddress(params.Account)
 
     await this.guard.checkFeature(xrplOperationSchema(params.operation.type), "xrpl.proposeIntent")
@@ -106,13 +193,14 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
-    const intent = buildTransactionIntent({
+    const { body, payloadId } = buildTransactionIntent({
       operation: params.operation,
       context,
       options,
     })
 
-    return this.ports.submitIntent(intent)
+    const intentResponse = await this.ports.submitIntent(body)
+    return { result: { ...intentResponse, payloadId }, context }
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -516,14 +604,15 @@ export class XrplService {
    * Creates and proposes a raw sign intent for an XRPL transaction.
    * @param xrplTransaction - The XRPL transaction details
    * @param options - Optional configuration for the raw sign intent
-   * @returns The proposed intent response
+   * @returns The proposed intent response, plus the manifest (payload) id it was
+   *   proposed under
    * @throws {CustodyError} If the Account is not a valid XRPL address,
    *   validation fails, or the sender account is not found
    */
   public async rawSign(
     xrplTransaction: SubmittableTransaction,
     options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
+  ): Promise<ProposeIntentResult> {
     assertValidAddress(xrplTransaction.Account)
 
     const context = await this.ports.resolveContext(xrplTransaction.Account, {
@@ -534,8 +623,12 @@ export class XrplService {
     const encoded = encodeForSigning(xrplTransaction)
     const base64Encoded = Buffer.from(encoded, "hex").toString("base64")
 
-    const { intentResponse } = await this.proposeRawSignIntent(base64Encoded, context, options)
-    return intentResponse
+    const { intentResponse, payloadId } = await this.proposeRawSignIntent(
+      base64Encoded,
+      context,
+      options,
+    )
+    return { ...intentResponse, payloadId }
   }
 
   /**
@@ -873,7 +966,8 @@ export class XrplService {
    * @param payload - Same submitter, execution mode, and entries as the dry-run
    * @param batchSigners - Signatures collected in Step 2 (one per participant)
    * @param options - Optional configuration for the intent
-   * @returns The proposed intent response
+   * @returns The proposed intent response, plus the transaction-order id the
+   *   Batch was proposed under
    * @throws {CustodyError} If the submitter Account is not a valid XRPL address,
    *   validation fails, or the submitter account is not found
    */
@@ -881,7 +975,7 @@ export class XrplService {
     payload: BatchPayloadInput,
     batchSigners: Core_BatchSigner[],
     options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
+  ): Promise<ProposeIntentResult> {
     assertValidAddress(payload.Account)
 
     await this.guard.checkFeature("Core_XrplOperation_Batch", "xrpl.proposeBatch")
@@ -893,9 +987,10 @@ export class XrplService {
     })
 
     const operation = buildBatchOperation(payload, batchSigners)
-    const body = buildTransactionIntent({ operation, context, options })
+    const { body, payloadId } = buildTransactionIntent({ operation, context, options })
 
-    return this.ports.submitIntent(body)
+    const intentResponse = await this.ports.submitIntent(body)
+    return { ...intentResponse, payloadId }
   }
 
   /**
