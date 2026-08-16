@@ -205,6 +205,29 @@ async function waitForParametersCompute(
   }
 }
 
+/**
+ * Initiates a parameters computation and polls it to a terminal status.
+ *
+ * Lives at module scope rather than inside {@link createAccounts} because
+ * `XrplService` drives the same two calls through its ports to build a
+ * confidential send — see `xrpl.buildConfidentialSend`.
+ */
+export async function initiateParametersComputeAndWait(
+  t: Transport,
+  params: InitiateParametersComputePathParams,
+  body: InitiateParametersComputeBody,
+  options?: WaitForParametersComputeOptions,
+): Promise<WaitForParametersComputeResult> {
+  const { id } = await t.post<Core_ApiInitiateParametersComputeResponse>(
+    URLs.accountParametersCompute,
+    withParametersComputeType(body),
+    params,
+    { sign: false },
+  )
+
+  return waitForParametersCompute(t, { ...params, computeId: id }, options)
+}
+
 export function createAccounts(t: Transport) {
   return {
     list: (
@@ -330,19 +353,11 @@ export function createAccounts(t: Transport) {
      * gets the `cryptographicFields` needed to build a confidential transfer in
      * a single call.
      */
-    initiateParametersComputeAndWait: async (
+    initiateParametersComputeAndWait: (
       params: InitiateParametersComputePathParams,
       body: InitiateParametersComputeBody,
       options?: WaitForParametersComputeOptions,
-    ): Promise<WaitForParametersComputeResult> => {
-      const { id } = await t.post<Core_ApiInitiateParametersComputeResponse>(
-        URLs.accountParametersCompute,
-        withParametersComputeType(body),
-        params,
-        { sign: false },
-      )
-
-      return waitForParametersCompute(t, { ...params, computeId: id }, options)
-    },
+    ): Promise<WaitForParametersComputeResult> =>
+      initiateParametersComputeAndWait(t, params, body, options),
   } as const
 }

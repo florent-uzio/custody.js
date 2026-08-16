@@ -3,6 +3,7 @@ import type {
   Batch,
   BatchSigner,
   Clawback,
+  ConfidentialMPTSend,
   DepositPreauth,
   MPTokenAuthorize,
   MPTokenIssuanceCreate,
@@ -17,6 +18,7 @@ import type {
 import type { components } from "../../models/custody-types.js"
 import type { DomainUserReference } from "../../models/domain-resolver.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
+import type { WaitForParametersComputeOptions } from "../../namespaces/accounts.types.js"
 import type {
   Core_IntentResponse,
   IntentEnvelopeOptions,
@@ -295,6 +297,79 @@ export type Core_ApiParametersComputeCryptographicFields =
  * `parametersComputeToCryptographicFields`.
  */
 export type Core_CmptCryptographicFields = components["schemas"]["Core_CmptCryptographicFields"]
+
+/**
+ * What {@link XrplService.buildConfidentialSend} needs to build one
+ * confidential MPT Batch leg.
+ *
+ * `sender` and `destination` are XRPL addresses, as everywhere else in
+ * `custody.xrpl` — the sender's domain, account id and ledger are resolved from
+ * its address, and the destination is an address on the wire and in the compute
+ * request alike.
+ */
+export type BuildConfidentialSendParams = {
+  /** XRPL address of the sending account (must be managed by this custody instance) */
+  sender: string
+  /** XRPL address of the receiving account */
+  destination: string
+  /** The 192-bit MPT issuance ID, hex-encoded */
+  issuanceId: string
+  /**
+   * Amount to send, in the token's smallest unit. A string because the value
+   * can exceed what a JSON number holds without loss of precision.
+   */
+  amount: string
+  /**
+   * Ticket sequence to sequence the inner transaction with. Omit for a leg
+   * sequenced by account sequence instead — the field is then left off both the
+   * transaction and the compute request.
+   */
+  ticketSequence?: number
+}
+
+/**
+ * Options for {@link XrplService.buildConfidentialSend} — the same
+ * address-disambiguation the other `custody.xrpl` reads take, plus how long to
+ * wait for the computation.
+ */
+export type BuildConfidentialSendOptions = {
+  /** Domain ID of the sender. Required when the login has multiple domains. */
+  domainId?: string
+  /**
+   * Ledger ID to disambiguate when the sender's address exists on multiple
+   * ledgers under the same login. Also selects the ledger the computation runs
+   * against.
+   */
+  ledgerId?: XrplLedgerId
+  /**
+   * Polling configuration for the parameters computation (default: 10 attempts,
+   * 3s apart). A confidential compute regularly takes longer than that under
+   * load — raise `maxRetries` rather than catching the failure.
+   */
+  polling?: WaitForParametersComputeOptions
+}
+
+/**
+ * The two halves of one confidential leg: what goes on the XRPL wire, and what
+ * only the Custody batch entry carries.
+ *
+ * `ConfidentialMPTSend` on the ledger commits to the amount as ciphertext only,
+ * and the sender's encrypted balance is read from ledger state at apply time —
+ * so neither the plaintext `amount` nor `senderEncryptedBalance` /
+ * `senderEncryptedBalanceVersion` exists on the xrpl.js transaction. Harmonize
+ * needs all three on the batch *entry* to dry-run and re-derive the proofs, so
+ * they are passed to `batchToCustodyBatchPayload` through
+ * {@link BatchToCustodyOptions.confidentialSends}.
+ */
+export type ConfidentialSendLeg = {
+  /**
+   * The inner transaction, ready to push onto an xrpl.js `Batch`. Always
+   * carries `Flags: tfInnerBatchTxn` — this builder only produces Batch legs.
+   */
+  transaction: ConfidentialMPTSend
+  /** The three fields to hand to `confidentialSends`, keyed by the sender's address */
+  entryFields: ConfidentialSendEntryFields
+}
 
 /**
  * Disambiguation for {@link XrplService.getElGamalPublicKey} and

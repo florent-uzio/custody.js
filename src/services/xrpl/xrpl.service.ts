@@ -1,5 +1,5 @@
 import { v7 as uuidv7 } from "uuid"
-import { encodeForSigning, isValidAddress, type SubmittableTransaction } from "xrpl"
+import { encodeForSigning, GlobalFlags, isValidAddress, type SubmittableTransaction } from "xrpl"
 import { pollUntil } from "../../helpers/async/async.js"
 import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
@@ -8,6 +8,7 @@ import { buildRequestEnvelope, waitForExecution } from "../../namespaces/intents
 import type { Core_IntentResponse, Core_ProposeIntentBody } from "../../namespaces/intents.types.js"
 import { waitForOrderTransaction } from "../../namespaces/transactions.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
+import { isPresent, isSendCryptographicFields } from "./xrpl.adapters.js"
 import {
   buildBatchOperation,
   buildDryRunBody,
@@ -18,6 +19,9 @@ import { compressPublicKey } from "./xrpl.crypto.js"
 import type { XrplPorts } from "./xrpl.ports.js"
 import type {
   BatchPayloadInput,
+  BuildConfidentialSendOptions,
+  BuildConfidentialSendParams,
+  ConfidentialSendLeg,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
   Core_XrplOperation,
@@ -476,6 +480,131 @@ export class XrplService {
     }
 
     return compressPublicKey(key.publicKey.value)
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Confidential MPT (cMPT)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Builds one confidential MPT send as a Batch inner transaction, running the
+   * parameters computation the proofs come from.
+   *
+   * A confidential send inside a Batch is the one confidential operation the
+   * caller has to assemble: submitted on its own, the platform derives the
+   * cryptographic material server-side from `xrpl.proposeIntent({ type:
+   * "ConfidentialMPTSend" })`, but a Batch leg has to exist as a signed inner
+   * transaction *before* the Batch is dry-run, so the material has to be
+   * computed up front and spliced in by hand.
+   *
+   * This runs `accounts.initiateParametersComputeAndWait` for the sender,
+   * narrows the untagged response union to its `Send` variant, and splits the
+   * result in two — see {@link ConfidentialSendLeg} for why the halves exist:
+   *
+   * ```ts
+   * const leg = await xrpl.buildConfidentialSend({
+   *   sender: senderAddress,
+   *   destination: destinationAddress,
+   *   issuanceId,
+   *   amount: "1000",
+   *   ticketSequence,
+   * })
+   *
+   * batch.RawTransactions.push({ RawTransaction: leg.transaction })
+   *
+   * const payload = batchToCustodyBatchPayload(autofilled, {
+   *   confidentialSends: { [senderAddress]: leg.entryFields },
+   * })
+   * ```
+   *
+   * The computation is bound to the ticket sequence it was asked for, so a leg
+   * cannot be re-sequenced after the fact — build it after the ticket exists.
+   *
+   * @param params - Sender and destination addresses, issuance, amount and ticket sequence
+   * @param options - Domain / ledger disambiguation for the sender, and polling
+   *   configuration for the computation
+   * @returns The inner transaction and the custody batch entry's extra fields
+   * @throws {CustodyError} If either address is invalid, the sender's account is
+   *   not found, the computation does not complete, or it returns material for
+   *   an operation other than a send
+   */
+  public async buildConfidentialSend(
+    params: BuildConfidentialSendParams,
+    options: BuildConfidentialSendOptions = {},
+  ): Promise<ConfidentialSendLeg> {
+    const { sender, destination, issuanceId, amount, ticketSequence } = params
+
+    assertValidAddress(sender, "sender")
+    assertValidAddress(destination, "destination")
+
+    const context = await this.ports.resolveContext(sender, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
+    const result = await this.ports.initiateParametersComputeAndWait(
+      { domainId: context.domainId, accountId: context.accountId },
+      {
+        type: "cmpt-send",
+        tokenIdentifier: { issuanceId },
+        amount,
+        destination,
+        ledgerId: context.ledgerId,
+        ...(isUndefined(ticketSequence) ? {} : { ticketSequence }),
+      },
+      options.polling,
+    )
+
+    if (!result.isSuccess) {
+      throw new CustodyError({
+        reason:
+          `Confidential send computation for account ${context.accountId} (${sender}) ` +
+          `did not complete (status: ${result.status}).`,
+      })
+    }
+
+    const fields = result.compute.cryptographicFields
+
+    if (isUndefined(fields) || !isSendCryptographicFields(fields)) {
+      throw new CustodyError({
+        reason:
+          `Confidential send computation for account ${context.accountId} (${sender}) ` +
+          `returned no Send cryptographic fields: ${JSON.stringify(fields)}`,
+      })
+    }
+
+    return {
+      transaction: {
+        Account: sender,
+        TransactionType: "ConfidentialMPTSend",
+        Destination: destination,
+        MPTokenIssuanceID: issuanceId,
+        SenderEncryptedAmount: fields.senderEncryptedAmount,
+        DestinationEncryptedAmount: fields.destinationEncryptedAmount,
+        IssuerEncryptedAmount: fields.issuerEncryptedAmount,
+        AmountCommitment: fields.amountCommitment,
+        BalanceCommitment: fields.balanceCommitment,
+        ZKProof: fields.zkProof,
+        // The response sends an explicit `null` when no auditor key is
+        // registered, so the field has to be dropped rather than passed on.
+        ...(isPresent(fields.auditorEncryptedAmount) && {
+          AuditorEncryptedAmount: fields.auditorEncryptedAmount,
+        }),
+        ...(isUndefined(ticketSequence) ? {} : { TicketSequence: ticketSequence }),
+        Flags: GlobalFlags.tfInnerBatchTxn,
+      },
+      entryFields: {
+        amount,
+        // Deliberately hex, unlike the operation's base64 `cryptographicFields`
+        // — the batch entry's top-level fields are passed through as returned.
+        ...(isPresent(fields.senderEncryptedBalance) && {
+          senderEncryptedBalance: fields.senderEncryptedBalance,
+        }),
+        ...(isPresent(fields.senderEncryptedBalanceVersion) && {
+          senderEncryptedBalanceVersion: fields.senderEncryptedBalanceVersion,
+        }),
+      },
+    }
   }
 
   // ───────────────────────────────────────────────────────────────────────────
