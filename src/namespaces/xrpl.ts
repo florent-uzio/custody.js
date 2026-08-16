@@ -1,6 +1,9 @@
 import type { SubmittableTransaction } from "xrpl"
 import type {
   BatchPayloadInput,
+  BuildConfidentialSendOptions,
+  BuildConfidentialSendParams,
+  ConfidentialSendLeg,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
   Core_XrplOperation,
@@ -140,6 +143,30 @@ export function createXrpl(getService: () => XrplService) {
       address: string,
       options?: WaitForElGamalPublicKeyOptions,
     ): Promise<string> => getService().getElGamalPublicKeyAndWait(address, options),
+
+    /**
+     * Build one confidential MPT send as a Batch inner transaction, running the
+     * parameters computation its proofs come from.
+     *
+     * Submitted on its own, a confidential send needs no client-side compute —
+     * `proposeIntent({ type: "ConfidentialMPTSend" })` has the platform derive
+     * the material. A Batch leg has to exist as a signed inner transaction
+     * before the Batch is dry-run, so it has to be built here instead.
+     *
+     * The result comes in two halves: `transaction`, ready to push onto an
+     * xrpl.js `Batch`, and `entryFields`, the three fields the XRPL wire format
+     * has no room for — hand them to `batchToCustodyBatchPayload` through
+     * `confidentialSends`, keyed by the sender's address.
+     *
+     * @param params - Sender and destination addresses, issuance, amount and ticket sequence
+     * @param options - Domain / ledger disambiguation for the sender, and
+     *   polling configuration for the computation
+     * @returns The inner transaction and the custody batch entry's extra fields
+     */
+    buildConfidentialSend: async (
+      params: BuildConfidentialSendParams,
+      options?: BuildConfidentialSendOptions,
+    ): Promise<ConfidentialSendLeg> => getService().buildConfidentialSend(params, options),
 
     /**
      * Resolve the MPT issuance ID an executed `MPTokenIssuanceCreate` produced,

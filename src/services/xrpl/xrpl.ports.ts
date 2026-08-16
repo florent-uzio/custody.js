@@ -1,5 +1,12 @@
 import type { XrplLedgerId } from "../../models/ledger-ids.js"
-import type { Core_ApiAccount, Core_ApiManifest } from "../../namespaces/accounts.types.js"
+import type {
+  Core_ApiAccount,
+  Core_ApiManifest,
+  InitiateParametersComputeBody,
+  InitiateParametersComputePathParams,
+  WaitForParametersComputeOptions,
+  WaitForParametersComputeResult,
+} from "../../namespaces/accounts.types.js"
 import type {
   Core_IntentDryRunRequest,
   Core_IntentDryRunResponse,
@@ -55,6 +62,17 @@ export interface XrplPorts {
    * Wraps GET /v1/domains/{domainId}/accounts/{accountId}/manifests/{manifestId}.
    */
   getManifest(domainId: string, accountId: string, manifestId: string): Promise<Core_ApiManifest>
+
+  /**
+   * Initiates a confidential-MPT parameters computation and polls it to a
+   * terminal status, returning the cryptographic material it produced.
+   * Wraps POST + GET /v1/domains/.../accounts/.../parameters-compute.
+   */
+  initiateParametersComputeAndWait(
+    params: InitiateParametersComputePathParams,
+    body: InitiateParametersComputeBody,
+    options?: WaitForParametersComputeOptions,
+  ): Promise<WaitForParametersComputeResult>
 
   /**
    * Retrieves full account details (needed for public key retrieval).

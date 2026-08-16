@@ -13,6 +13,7 @@ import {
   batchSignersToCustodyBatchSigners,
   batchToCustodyBatchPayload,
   batchToCustodyInnerTransactions,
+  isSendCryptographicFields,
   parametersComputeToCryptographicFields,
 } from "./xrpl.adapters.js"
 
@@ -1094,6 +1095,38 @@ describe("batchToCustodyBatchPayload", () => {
       }),
     )
     expect(result).not.toHaveProperty("batchSigners")
+  })
+})
+
+describe("isSendCryptographicFields", () => {
+  it("narrows a Send response", () => {
+    expect(
+      isSendCryptographicFields({
+        senderEncryptedAmount: "aa01",
+        destinationEncryptedAmount: "bb02",
+        issuerEncryptedAmount: "cc03",
+        balanceCommitment: "dd04",
+        amountCommitment: "ee05",
+        zkProof: "ff06",
+      }),
+    ).toBe(true)
+  })
+
+  it("rejects the other three variants", () => {
+    expect(isSendCryptographicFields({ zkProof: "ff06", amount: 250 })).toBe(false)
+    expect(
+      isSendCryptographicFields({
+        holderEncryptedAmount: "aa01",
+        issuerEncryptedAmount: "bb02",
+        blindingFactor: "cc03",
+      }),
+    ).toBe(false)
+  })
+
+  // A null field must not select the variant — the response spells out `null`
+  // for material it has no value for.
+  it("rejects an explicitly null senderEncryptedAmount", () => {
+    expect(isSendCryptographicFields({ senderEncryptedAmount: null } as never)).toBe(false)
   })
 })
 
