@@ -1,92 +1,12 @@
-import {
-  batchToCustodyBatchPayload,
-  type Core_ApiParametersComputeCryptographicFields,
-  type RippleCustody,
-} from "@florent-uzio/custody"
-import { BatchFlags, GlobalFlags, type Batch, type Client, type ConfidentialMPTSend } from "xrpl"
+import { batchToCustodyBatchPayload, type RippleCustody } from "@florent-uzio/custody"
+import { BatchFlags, type Batch, type Client, type ConfidentialMPTSend } from "xrpl"
 import { DOMAIN_ID, LEDGER_ID, MMF_ID, RLUSD_ID, WALLET_SUBMITTER, working_data } from "./config.js"
 import { getTicket, mergeInbox, waitForIntentTransaction } from "./custody-helpers.js"
-import type { ConfidentialSendLeg, Wallet } from "./types.js"
+import type { Wallet } from "./types.js"
 
 //**** Atomic (DvP) Settlement ****/
-// constructConfidentialTransfer
 // atomicSettlement
 // checkBatchTransactionDetails
-
-async function constructConfidentialTransfer(
-  custody: RippleCustody,
-  sender: Wallet,
-  destination: Wallet,
-  issuanceId: string,
-  amount: string,
-  ticketsequence: number,
-) {
-  const res = await custody.accounts.initiateParametersComputeAndWait(
-    { domainId: DOMAIN_ID, accountId: sender.id },
-    {
-      type: "cmpt-send",
-      tokenIdentifier: { issuanceId },
-      amount: amount,
-      destination: destination.address,
-      ticketSequence: ticketsequence,
-      ledgerId: LEDGER_ID,
-    },
-    {
-      maxRetries: 20, // optional, default: 10
-      intervalMs: 5000, // optional, default: 3000ms
-    },
-  )
-
-  if (!res.isSuccess) {
-    console.dir(res, { depth: null })
-    throw new Error(`Confidential compute failed for account ${sender.name}: ${res.status}\n`)
-  }
-  const fields = res.compute.cryptographicFields
-  if (fields === undefined || !isSendFields(fields))
-    throw new Error(
-      `Expected Send cryptographic fields for account ${sender.name}, got: ${JSON.stringify(fields)}`,
-    )
-
-  const transaction: ConfidentialSendLeg["transaction"] = {
-    Account: sender.address,
-    TransactionType: "ConfidentialMPTSend",
-    Destination: destination.address,
-    MPTokenIssuanceID: issuanceId,
-    SenderEncryptedAmount: fields.senderEncryptedAmount,
-    DestinationEncryptedAmount: fields.destinationEncryptedAmount,
-    IssuerEncryptedAmount: fields.issuerEncryptedAmount,
-    ...(fields.auditorEncryptedAmount !== undefined &&
-      fields.auditorEncryptedAmount !== null && {
-        AuditorEncryptedAmount: fields.auditorEncryptedAmount,
-      }),
-    AmountCommitment: fields.amountCommitment,
-    BalanceCommitment: fields.balanceCommitment,
-    ZKProof: fields.zkProof,
-    TicketSequence: ticketsequence,
-    Flags: GlobalFlags.tfInnerBatchTxn,
-  }
-
-  return {
-    transaction,
-    // The three fields the XRPL wire format has no room for. They have to be
-    // carried alongside and grafted onto the custody batch entry below.
-    custodyOnly: {
-      amount,
-      senderEncryptedBalance: fields.senderEncryptedBalance,
-      senderEncryptedBalanceVersion: fields.senderEncryptedBalanceVersion,
-    },
-  }
-}
-
-/** Narrows a parameters-compute response to its `Send` variant. */
-function isSendFields(
-  fields: Core_ApiParametersComputeCryptographicFields,
-): fields is Extract<
-  Core_ApiParametersComputeCryptographicFields,
-  { senderEncryptedAmount: string }
-> {
-  return "senderEncryptedAmount" in fields
-}
 
 export async function atomicSettlement(
   custody: RippleCustody,
@@ -105,27 +25,42 @@ export async function atomicSettlement(
   // REDUCING CONCURRENCY TO ENSURE STABILITY - WILL ASSESS FOR LATER ENHANCEMENT
   // const [innerTrxn1, innerTrxn2] = await Promise.all([
   //     getTicket(custody, xrplClient, mmf_sender.address, true)
-  //     .then(function(ticketsequence) {return constructConfidentialTransfer(custody, mmf_sender, rlusd_sender, MMF_ID, mmfUnscaledAmount.toString(), ticketsequence)}),
+  //     .then(function(ticketSequence) {return custody.xrpl.buildConfidentialSend({sender: mmf_sender.address, destination: rlusd_sender.address, issuanceId: MMF_ID, amount: mmfUnscaledAmount.toString(), ticketSequence}, {domainId: DOMAIN_ID, ledgerId: LEDGER_ID})}),
   //     getTicket(custody, xrplClient, rlusd_sender.address, true)
-  //     .then(function(ticketsequence) {return constructConfidentialTransfer(custody, rlusd_sender, mmf_sender, RLUSD_ID, rlusdUnscaledAmount.toString(), ticketsequence)}),
+  //     .then(function(ticketSequence) {return custody.xrpl.buildConfidentialSend({sender: rlusd_sender.address, destination: mmf_sender.address, issuanceId: RLUSD_ID, amount: rlusdUnscaledAmount.toString(), ticketSequence}, {domainId: DOMAIN_ID, ledgerId: LEDGER_ID})}),
   // ]);
   const mmfTicket = await getTicket(custody, xrplClient, mmf_sender.address, true)
-  const mmfLeg = await constructConfidentialTransfer(
-    custody,
-    mmf_sender,
-    rlusd_sender,
-    MMF_ID,
-    mmfUnscaledAmount.toString(),
-    mmfTicket,
+  const mmfLeg = await custody.xrpl.buildConfidentialSend(
+    {
+      sender: mmf_sender.address,
+      destination: rlusd_sender.address,
+      issuanceId: MMF_ID,
+      amount: mmfUnscaledAmount.toString(),
+      ticketSequence: mmfTicket,
+    },
+    {
+      domainId: DOMAIN_ID,
+      ledgerId: LEDGER_ID,
+      polling: {
+        maxRetries: 20, // optional, default: 10
+        intervalMs: 5000, // optional, default: 3000ms
+      },
+    },
   )
   const rlusdTicket = await getTicket(custody, xrplClient, rlusd_sender.address, true)
-  const rlusdLeg = await constructConfidentialTransfer(
-    custody,
-    rlusd_sender,
-    mmf_sender,
-    RLUSD_ID,
-    rlusdUnscaledAmount.toString(),
-    rlusdTicket,
+  const rlusdLeg = await custody.xrpl.buildConfidentialSend(
+    {
+      sender: rlusd_sender.address,
+      destination: mmf_sender.address,
+      issuanceId: RLUSD_ID,
+      amount: rlusdUnscaledAmount.toString(),
+      ticketSequence: rlusdTicket,
+    },
+    {
+      domainId: DOMAIN_ID,
+      ledgerId: LEDGER_ID,
+      polling: { maxRetries: 20, intervalMs: 5000 },
+    },
   )
 
   console.log("Constructing batch transaction.")
@@ -146,8 +81,8 @@ export async function atomicSettlement(
   // `ConfidentialSendLeg`), keyed by the sending account's address.
   const batchPayload = batchToCustodyBatchPayload(autofilledBatch, {
     confidentialSends: {
-      [mmf_sender.address]: mmfLeg.custodyOnly,
-      [rlusd_sender.address]: rlusdLeg.custodyOnly,
+      [mmf_sender.address]: mmfLeg.entryFields,
+      [rlusd_sender.address]: rlusdLeg.entryFields,
     },
   })
 

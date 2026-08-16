@@ -114,7 +114,7 @@ account there holds a confidential balance. On the first re-run the
 | `custody-helpers.ts` | Ripple Custody calls: tickers, addresses, balances, tickets, ElGamal keys, conversions, intent/quarantine handling |
 | `settlement.ts`      | The DvP batch: proof computation, batch assembly, signing, submission, hash lookup                                 |
 | `output.ts`          | Section headers and the balance report                                                                             |
-| `types.ts`           | `Wallet`, balance shapes, `ConfidentialSendLeg`                                                                    |
+| `types.ts`           | `Wallet` and balance shapes                                                                                        |
 
 ## Troubleshooting
 
