@@ -140,12 +140,16 @@ export {
   batchSignersToCustodyBatchSigners,
   batchToCustodyBatchPayload,
   batchToCustodyInnerTransactions,
+  isSendCryptographicFields,
   parametersComputeToCryptographicFields,
 } from "./services/xrpl/index.js"
 export type {
   BatchPayloadInput,
   BatchToCustodyOptions,
+  BuildConfidentialSendOptions,
+  BuildConfidentialSendParams,
   ConfidentialSendEntryFields,
+  ConfidentialSendLeg,
   Core_ApiBatchSigningData,
   Core_ApiParametersComputeCryptographicFields,
   Core_BatchEntry,

@@ -181,8 +181,10 @@ const hexToBase64 = (hex: string) => Buffer.from(hex, "hex").toString("base64")
  * where the generated types only ever declare the field optional. An
  * `undefined`-only check lets that `null` through to `hexToBase64`, which turns
  * it into an empty string rather than leaving the field off.
+ *
+ * Exported for `XrplService` only — not part of the SDK's public surface.
  */
-const isPresent = <T>(value: T | null | undefined): value is T =>
+export const isPresent = <T>(value: T | null | undefined): value is T =>
   !isUndefined(value) && value !== null
 
 /**
@@ -196,6 +198,30 @@ const hasValue = <K extends string>(
   key: K,
 ): fields is Extract<Core_ApiParametersComputeCryptographicFields, Record<K, unknown>> =>
   key in fields && isPresent((fields as Record<string, unknown>)[key])
+
+/**
+ * Narrows the cryptographic material a parameters computation returned to its
+ * `Send` variant — the one a `ConfidentialMPTSend` is built from.
+ *
+ * The response carries no `type` discriminator, unlike the operation's union,
+ * so the variant has to be inferred from the fields present: only `Send` has a
+ * `senderEncryptedAmount`. Exported because reading `cryptographicFields`
+ * without narrowing them is otherwise a hand-written type guard in every
+ * consumer, and the fields are all hex strings, so a wrong guard fails at the
+ * ledger rather than at the call site.
+ *
+ * `xrpl.buildConfidentialSend` applies this internally — reach for it only when
+ * building a confidential send by hand.
+ *
+ * @param fields - `cryptographicFields` from a completed parameters computation
+ * @returns Whether the material is the `Send` variant
+ */
+export const isSendCryptographicFields = (
+  fields: Core_ApiParametersComputeCryptographicFields,
+): fields is Extract<
+  Core_ApiParametersComputeCryptographicFields,
+  { senderEncryptedAmount: string }
+> => hasValue(fields, "senderEncryptedAmount")
 
 const txToOperation = (tx: RawTx): CustodyOperation => {
   switch (tx.TransactionType) {
@@ -409,7 +435,7 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
 export const parametersComputeToCryptographicFields = (
   fields: Core_ApiParametersComputeCryptographicFields,
 ): Core_CmptCryptographicFields => {
-  if (hasValue(fields, "senderEncryptedAmount")) {
+  if (isSendCryptographicFields(fields)) {
     return {
       type: "Send",
       senderEncryptedAmount: hexToBase64(fields.senderEncryptedAmount),

@@ -1,6 +1,16 @@
 import { URLs } from "../../constants/urls.js"
-import { findByAddressOrThrow } from "../../namespaces/accounts.js"
-import type { Core_ApiAccount, Core_ApiManifest } from "../../namespaces/accounts.types.js"
+import {
+  findByAddressOrThrow,
+  initiateParametersComputeAndWait,
+} from "../../namespaces/accounts.js"
+import type {
+  Core_ApiAccount,
+  Core_ApiManifest,
+  InitiateParametersComputeBody,
+  InitiateParametersComputePathParams,
+  WaitForParametersComputeOptions,
+  WaitForParametersComputeResult,
+} from "../../namespaces/accounts.types.js"
 import { resolveDomainAndUser } from "../../namespaces/domains.js"
 import type {
   Core_IntentDryRunRequest,
@@ -27,6 +37,7 @@ import type { XrplPorts } from "./xrpl.ports.js"
  * - intent submission (POST /v1/intents)
  * - manifest retrieval (GET /v1/domains/.../manifests/...)
  * - account details (GET /v1/domains/.../accounts/...)
+ * - parameters computation (POST + GET /v1/domains/.../parameters-compute)
  */
 export function createHttpPorts(transport: Transport): XrplPorts {
   return {
@@ -72,6 +83,14 @@ export function createHttpPorts(transport: Transport): XrplPorts {
         accountId,
         manifestId,
       })
+    },
+
+    initiateParametersComputeAndWait(
+      params: InitiateParametersComputePathParams,
+      body: InitiateParametersComputeBody,
+      options?: WaitForParametersComputeOptions,
+    ): Promise<WaitForParametersComputeResult> {
+      return initiateParametersComputeAndWait(transport, params, body, options)
     },
 
     getAccount(domainId: string, accountId: string): Promise<Core_ApiAccount> {

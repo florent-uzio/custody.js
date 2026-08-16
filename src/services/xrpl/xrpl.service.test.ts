@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { SubmittableTransaction } from "xrpl"
+import { GlobalFlags, type SubmittableTransaction } from "xrpl"
 import { CustodyError } from "../../models/index.js"
 import type { Core_IntentStatus } from "../../namespaces/intents.types.js"
 import type {
@@ -26,6 +26,10 @@ vi.mock("xrpl", async (importOriginal) => {
   return {
     encodeForSigning: vi.fn().mockReturnValue("deadbeef01020304"),
     isValidAddress: actual.isValidAddress,
+    // Real enums — the service reads `GlobalFlags.tfInnerBatchTxn` when
+    // building a confidential send, and pulls in the adapters' ASF flag map.
+    GlobalFlags: actual.GlobalFlags,
+    AccountSetAsfFlags: actual.AccountSetAsfFlags,
     //TODO: restore Batch mocks once Batch is supported
     // encodeForSigningBatch: vi.fn().mockReturnValue("batchencoded0102"),
     // hashes: {
@@ -105,6 +109,32 @@ function transactionWithStatus(
   } as any
 }
 
+/**
+ * The hex cryptographic material a `cmpt-send` computation returns. Every field
+ * is hex on the response — `senderEncryptedBalance` stays hex on the batch
+ * entry too, unlike the operation's base64 `cryptographicFields`.
+ */
+const mockSendFields = {
+  senderEncryptedAmount: "AA01",
+  destinationEncryptedAmount: "BB02",
+  issuerEncryptedAmount: "CC03",
+  balanceCommitment: "DD04",
+  amountCommitment: "EE05",
+  zkProof: "FF06",
+  senderEncryptedBalance: "0F1E",
+  senderEncryptedBalanceVersion: 7,
+}
+
+/** A completed parameters computation carrying `fields`, as the port returns it. */
+function completedSendCompute(fields: Record<string, unknown> = mockSendFields) {
+  return {
+    status: "Completed",
+    isTerminal: true,
+    isSuccess: true,
+    compute: { cryptographicFields: fields },
+  } as any
+}
+
 function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
   return {
     resolveContext: overrides.resolveContext ?? (async () => mockContext),
@@ -134,6 +164,8 @@ function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
           },
         },
       })),
+    initiateParametersComputeAndWait:
+      overrides.initiateParametersComputeAndWait ?? (async () => completedSendCompute()),
     listTransactions:
       overrides.listTransactions ?? (async () => ({ items: [{ id: mockTransactionId }] }) as any),
     getTransaction:
@@ -1298,6 +1330,204 @@ describe("XrplService", () => {
         service.getElGamalPublicKeyAndWait(mockAddress, { maxRetries: 3, intervalMs: 0 }),
       ).rejects.toThrow("Unauthorized")
       expect(calls).toBe(1)
+    })
+  })
+
+  // ── buildConfidentialSend ─────────────────────────────────────
+
+  describe("buildConfidentialSend", () => {
+    const destination = "rP9jPyP5kyvFRb6ZiRghAGw5u8SGAmU4bd"
+    const params = {
+      sender: mockAddress,
+      destination,
+      issuanceId: mockIssuanceId,
+      amount: "1000",
+      ticketSequence: 42,
+    }
+
+    it("runs the computation for the sender's resolved account, domain and ledger", async () => {
+      const initiateParametersComputeAndWait = vi.fn(async () => completedSendCompute())
+      ports = createTestPorts({ initiateParametersComputeAndWait })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params)
+
+      expect(initiateParametersComputeAndWait).toHaveBeenCalledWith(
+        { domainId: mockDomainId, accountId: mockAccountId },
+        {
+          type: "cmpt-send",
+          tokenIdentifier: { issuanceId: mockIssuanceId },
+          amount: "1000",
+          destination,
+          ledgerId: mockLedgerId,
+          ticketSequence: 42,
+        },
+        undefined,
+      )
+    })
+
+    it("builds the inner transaction from the hex compute fields", async () => {
+      const { transaction } = await service.buildConfidentialSend(params)
+
+      expect(transaction).toEqual({
+        Account: mockAddress,
+        TransactionType: "ConfidentialMPTSend",
+        Destination: destination,
+        MPTokenIssuanceID: mockIssuanceId,
+        SenderEncryptedAmount: "AA01",
+        DestinationEncryptedAmount: "BB02",
+        IssuerEncryptedAmount: "CC03",
+        AmountCommitment: "EE05",
+        BalanceCommitment: "DD04",
+        ZKProof: "FF06",
+        TicketSequence: 42,
+        Flags: GlobalFlags.tfInnerBatchTxn,
+      })
+    })
+
+    it("splits the three custody-only fields out as entryFields, hex as returned", async () => {
+      const { entryFields } = await service.buildConfidentialSend(params)
+
+      expect(entryFields).toEqual({
+        amount: "1000",
+        senderEncryptedBalance: "0F1E",
+        senderEncryptedBalanceVersion: 7,
+      })
+    })
+
+    it("omits TicketSequence from both the transaction and the compute request when not given", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, body) => {
+          capturedBody = body
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      const { transaction } = await service.buildConfidentialSend({
+        sender: mockAddress,
+        destination,
+        issuanceId: mockIssuanceId,
+        amount: "1000",
+      })
+
+      expect(transaction).not.toHaveProperty("TicketSequence")
+      expect(capturedBody).not.toHaveProperty("ticketSequence")
+    })
+
+    it("carries AuditorEncryptedAmount when the computation returned one", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          completedSendCompute({ ...mockSendFields, auditorEncryptedAmount: "9911" }),
+      })
+      service = new XrplService(ports)
+
+      const { transaction } = await service.buildConfidentialSend(params)
+
+      expect(transaction.AuditorEncryptedAmount).toBe("9911")
+    })
+
+    it("drops an explicitly null AuditorEncryptedAmount rather than passing it on", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          completedSendCompute({ ...mockSendFields, auditorEncryptedAmount: null }),
+      })
+      service = new XrplService(ports)
+
+      const { transaction } = await service.buildConfidentialSend(params)
+
+      expect(transaction).not.toHaveProperty("AuditorEncryptedAmount")
+    })
+
+    it("passes the polling options through to the computation", async () => {
+      let capturedOptions: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, _body, options) => {
+          capturedOptions = options
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params, { polling: { maxRetries: 20, intervalMs: 5000 } })
+
+      expect(capturedOptions).toEqual({ maxRetries: 20, intervalMs: 5000 })
+    })
+
+    it("passes domainId and ledgerId to resolveContext", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({ resolveContext })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params, {
+        domainId: "domain-override",
+        ledgerId: "xrpl-testnet",
+      })
+
+      expect(resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: "domain-override",
+        ledgerId: "xrpl-testnet",
+      })
+    })
+
+    it("rejects an invalid sender before running the computation", async () => {
+      const initiateParametersComputeAndWait = vi.fn(async () => completedSendCompute())
+      ports = createTestPorts({ initiateParametersComputeAndWait })
+      service = new XrplService(ports)
+
+      await expect(
+        service.buildConfidentialSend({ ...params, sender: "not-an-address" }),
+      ).rejects.toThrow("Invalid sender: not-an-address")
+      expect(initiateParametersComputeAndWait).not.toHaveBeenCalled()
+    })
+
+    it("rejects an invalid destination before running the computation", async () => {
+      const initiateParametersComputeAndWait = vi.fn(async () => completedSendCompute())
+      ports = createTestPorts({ initiateParametersComputeAndWait })
+      service = new XrplService(ports)
+
+      await expect(
+        service.buildConfidentialSend({ ...params, destination: "not-an-address" }),
+      ).rejects.toThrow("Invalid destination: not-an-address")
+      expect(initiateParametersComputeAndWait).not.toHaveBeenCalled()
+    })
+
+    it("throws when the computation did not complete", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          ({ status: "Failed", isTerminal: true, isSuccess: false, compute: {} }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(service.buildConfidentialSend(params)).rejects.toThrow(
+        "did not complete (status: Failed)",
+      )
+    })
+
+    it("throws when the computation returned material for another operation", async () => {
+      ports = createTestPorts({
+        // Clawback fields — no senderEncryptedAmount, so not a Send.
+        initiateParametersComputeAndWait: async () =>
+          completedSendCompute({ zkProof: "FF06", amount: 5 }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.buildConfidentialSend(params)).rejects.toThrow(
+        "returned no Send cryptographic fields",
+      )
+    })
+
+    it("throws when a completed computation carries no cryptographic fields", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          ({ status: "Completed", isTerminal: true, isSuccess: true, compute: {} }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(service.buildConfidentialSend(params)).rejects.toThrow(
+        "returned no Send cryptographic fields",
+      )
     })
   })
 
