@@ -4,7 +4,7 @@
 
 Add `xrpl.buildConfidentialSend` — builds one confidential MPT Batch leg, proofs included, from a single call.
 
-A confidential send submitted on its own needs no client-side cryptography: `xrpl.proposeIntent({ type: "ConfidentialMPTSend" })` has the platform derive the material. A Batch leg cannot work that way — the inner transaction has to exist, fully formed and signed, *before* the Batch is dry-run — so the proofs have to be computed up front and spliced in by hand. That was roughly 90 lines of pure mechanism in every consumer: initiate the `cmpt-send` parameters computation, poll it, assert it completed, narrow an untagged response union, map nine camelCase fields onto their PascalCase transaction counterparts, remember `Flags: tfInnerBatchTxn`, and split off the three fields the XRPL wire format has no room for.
+A confidential send submitted on its own needs no client-side cryptography: `xrpl.proposeIntent({ type: "ConfidentialMPTSend" })` has the platform derive the material. A Batch leg cannot work that way — the inner transaction has to exist, fully formed and signed, _before_ the Batch is dry-run — so the proofs have to be computed up front and spliced in by hand. That was roughly 90 lines of pure mechanism in every consumer: initiate the `cmpt-send` parameters computation, poll it, assert it completed, narrow an untagged response union, map nine camelCase fields onto their PascalCase transaction counterparts, remember `Flags: tfInnerBatchTxn`, and split off the three fields the XRPL wire format has no room for.
 
 ```ts
 const leg = await custody.xrpl.buildConfidentialSend({
