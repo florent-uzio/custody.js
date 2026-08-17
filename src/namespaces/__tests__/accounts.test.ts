@@ -265,6 +265,66 @@ describe("findByAddress", () => {
 
     expect(result).toBeUndefined()
   })
+
+  it("should find a match on a later page instead of reporting it missing", async () => {
+    // Page one holds only deposit-instruction references for the same address:
+    // reading a single page would conclude the account does not exist.
+    const ref = makeRef()
+    mockTransport.get
+      .mockResolvedValueOnce({
+        items: [{ ...makeRef(), type: "DepositInstructionsReference" }],
+        nextStartingAfter: "cursor-1",
+      })
+      .mockResolvedValueOnce({ items: [ref] })
+
+    const result = await findByAddress(mockTransport, "rAddress123")
+
+    expect(result).toEqual(ref)
+    expect(mockTransport.get).toHaveBeenCalledTimes(2)
+    expect(mockTransport.get).toHaveBeenLastCalledWith("/v1/addresses", undefined, {
+      address: "rAddress123",
+      startingAfter: "cursor-1",
+    })
+  })
+
+  it("should throw on an ambiguity that only becomes visible across pages", async () => {
+    mockTransport.get
+      .mockResolvedValueOnce({
+        items: [makeRef({ ledgerId: "xrpl-mainnet" })],
+        nextStartingAfter: "cursor-1",
+      })
+      .mockResolvedValueOnce({ items: [makeRef({ ledgerId: "xrpl-testnet" })] })
+
+    await expect(findByAddress(mockTransport, "rAddress123")).rejects.toThrow(
+      "Multiple accounts found for address rAddress123",
+    )
+  })
+
+  it("should stop paging once two matches make the result ambiguous", async () => {
+    // Both matches sit on page one, so the third page must never be requested.
+    mockTransport.get
+      .mockResolvedValueOnce({
+        items: [makeRef({ ledgerId: "xrpl-mainnet" }), makeRef({ ledgerId: "xrpl-testnet" })],
+        nextStartingAfter: "cursor-1",
+      })
+      .mockResolvedValueOnce({ items: [makeRef({ ledgerId: "xrpl-devnet" })] })
+
+    await expect(findByAddress(mockTransport, "rAddress123")).rejects.toThrow(CustodyError)
+
+    expect(mockTransport.get).toHaveBeenCalledTimes(1)
+  })
+
+  it("should issue a single request when the server volunteers no cursor", async () => {
+    mockTransport.get.mockResolvedValue({ items: [makeRef()] })
+
+    await findByAddress(mockTransport, "rAddress123")
+
+    expect(mockTransport.get).toHaveBeenCalledTimes(1)
+    expect(mockTransport.get).toHaveBeenCalledWith("/v1/addresses", undefined, {
+      address: "rAddress123",
+      startingAfter: undefined,
+    })
+  })
 })
 
 describe("forceUpdateAccountBalances", () => {

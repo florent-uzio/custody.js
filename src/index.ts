@@ -19,6 +19,12 @@ export type {
 export { canonicalizeRequest } from "./helpers/canonicalize/index.js"
 export { prepareSigningInput } from "./services/keypairs/signing-scheme.js"
 
+// pagination: every list endpoint returns one page, so `paginate` walks the
+// `nextStartingAfter` cursor for you rather than leaving each call site to
+// notice the truncation on its own
+export { paginate } from "./helpers/paginate/index.js"
+export type { CursorPage } from "./helpers/paginate/index.js"
+
 // shared SDK-only types
 export type { LedgerId, NonXrplLedgerId, XrplLedgerId } from "./models/ledger-ids.js"
 
