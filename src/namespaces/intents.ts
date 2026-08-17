@@ -192,7 +192,8 @@ export function createIntents(t: Transport) {
      *
      * @param payload - The `v0_*` intent payload
      * @param options - Envelope fields; `domainId` pins the domain
-     * @returns The request id the intent was proposed under, and its domain
+     * @returns The intent id to poll or approve it by, the server's own
+     *   request id, and the domain it resolved
      * @throws {CustodyError} If the domain cannot be resolved, or the propose
      *   call is rejected
      */
@@ -201,13 +202,11 @@ export function createIntents(t: Transport) {
       options: IntentEnvelopeOptions = {},
     ): Promise<ProposePayloadResult> => {
       const context = await resolveContext(options.domainId)
-      const request: Core_ProposeIntentBody["request"] = {
-        ...buildRequestEnvelope(context, options, payload),
-        type: "Propose",
-      }
+      const requestEnvelope = buildRequestEnvelope(context, options, payload)
+      const request: Core_ProposeIntentBody["request"] = { ...requestEnvelope, type: "Propose" }
       const response = await t.post<Core_IntentResponse>(URLs.intents, { request })
 
-      return { ...response, domainId: context.domainId }
+      return { ...response, intentId: requestEnvelope.id, domainId: context.domainId }
     },
 
     /**
@@ -221,7 +220,7 @@ export function createIntents(t: Transport) {
      * reported rather than thrown, and `reason` says so in words.
      *
      * Raising `maxRetries` only moves the problem: no polling budget is right
-     * for a human. In production prefer `proposePayload`, keep the `requestId`,
+     * for a human. In production prefer `proposePayload`, keep the `intentId`,
      * and pick the intent up later from events or a webhook. Reserve this method
      * for development, auto-approved policies, and tests.
      *
@@ -231,8 +230,7 @@ export function createIntents(t: Transport) {
      *
      * @param payload - The `v0_*` intent payload
      * @param options - Envelope fields, plus polling configuration
-     * @returns The wait outcome, plus the request id and domain it was proposed
-     *   under
+     * @returns The wait outcome, plus the ids and domain it was proposed under
      * @throws {CustodyError} If the domain cannot be resolved, the propose call
      *   is rejected, or the intent is never registered
      */
@@ -241,20 +239,19 @@ export function createIntents(t: Transport) {
       options: ProposePayloadAndWaitOptions = {},
     ): Promise<ProposePayloadAndWaitResult> => {
       const context = await resolveContext(options.domainId)
-      const request: Core_ProposeIntentBody["request"] = {
-        ...buildRequestEnvelope(context, options, payload),
-        type: "Propose",
-      }
+      const requestEnvelope = buildRequestEnvelope(context, options, payload)
+      const request: Core_ProposeIntentBody["request"] = { ...requestEnvelope, type: "Propose" }
       const { requestId } = await t.post<Core_IntentResponse>(URLs.intents, { request })
       const { domainId } = context
+      const intentId = requestEnvelope.id
 
       const result = await waitForExecution(
-        () => t.get<Core_TrustedIntent>(URLs.getIntent, { domainId, intentId: requestId }),
-        requestId,
+        () => t.get<Core_TrustedIntent>(URLs.getIntent, { domainId, intentId }),
+        intentId,
         options,
       )
 
-      return { ...result, requestId, domainId }
+      return { ...result, intentId, requestId, domainId }
     },
 
     approve: (params: Core_ApproveIntentBody): Promise<Core_IntentResponse> =>

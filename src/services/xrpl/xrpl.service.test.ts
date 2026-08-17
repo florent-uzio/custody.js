@@ -274,8 +274,13 @@ describe("XrplService", () => {
         },
       })
 
-      expect(result).toEqual({ requestId: "request-123", payloadId: expect.any(String) })
+      expect(result).toEqual({
+        requestId: "request-123",
+        payloadId: expect.any(String),
+        intentId: expect.any(String),
+      })
       expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
     })
 
     it("returns the caller's payload id when one was supplied", async () => {
@@ -706,6 +711,7 @@ describe("XrplService", () => {
 
       expect(result.requestId).toBe("request-123")
       expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
       expect(result.domainId).toBe(mockDomainId)
     })
 
@@ -725,7 +731,9 @@ describe("XrplService", () => {
 
       await service.proposeIntentAndWait(payment, noWait)
 
-      expect(getIntent).toHaveBeenCalledWith(mockDomainId, "request-123")
+      // Polls the intent id the envelope was built with, not the server's
+      // own `requestId` — the two are distinct ids.
+      expect(getIntent).toHaveBeenCalledWith(mockDomainId, capturedBody.request.id)
       expect(listTransactions).toHaveBeenCalledWith(mockDomainId, {
         "orderReference.Id": capturedBody.request.payload.id,
       })
@@ -1753,8 +1761,13 @@ describe("XrplService", () => {
 
       const result = await service.rawSign(mockXrplTransaction)
 
-      expect(result).toEqual({ requestId: "request-123", payloadId: expect.any(String) })
+      expect(result).toEqual({
+        requestId: "request-123",
+        payloadId: expect.any(String),
+        intentId: expect.any(String),
+      })
       expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
       expect(capturedBody.request.author.domainId).toBe(mockDomainId)
       expect(capturedBody.request.author.id).toBe(mockUserId)
       expect(capturedBody.request.type).toBe("Propose")
@@ -2409,8 +2422,13 @@ describe("XrplService", () => {
       expect(op.type).toBe("Batch")
       expect(op.batchSigners).toEqual(batchSigners)
       expect(op.sequencing).toEqual({ type: "PlatformManaged" })
-      expect(result).toEqual({ requestId: "request-123", payloadId: expect.any(String) })
+      expect(result).toEqual({
+        requestId: "request-123",
+        payloadId: expect.any(String),
+        intentId: expect.any(String),
+      })
       expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
     })
 
     it("passes domainId and ledgerId to resolveContext", async () => {
