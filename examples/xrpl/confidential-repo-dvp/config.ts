@@ -11,8 +11,8 @@ import type { Wallet } from "./types.js"
 
 //**** TECHNICAL CONFIGURATION  ****/
 // Domain the accounts below belong to, and the ledger they are managed on.
-export const DOMAIN_ID = "9f425c77-6f77-41a6-85e9-e44975483efb"
-export const LEDGER_ID = "xrpl-custody-devnet"
+export const DOMAIN_ID = "00000000-0000-0000-0000-000000000000"
+export const LEDGER_ID = "xrpl-your-ledger"
 
 //**** KEY DEPENDENCIES  ****/
 
@@ -20,17 +20,17 @@ export const LEDGER_ID = "xrpl-custody-devnet"
 // [Ripple Custody ID]
 export const WALLET_MMF_ISSUER: Wallet = {
   name: "MMF Issuer",
-  id: "db884a4f-75f2-44df-8a91-1812d0f2c29e",
+  id: "00000000-0000-0000-0000-00000000000a",
   address: "",
 }
 
 // MMF - Security to be used as collateral
 // [XRPL MPT IssuanceID]
-export const MMF_ID = "000828DB03F840F28F8E8B9C728845B7A54226792AC235EC" // SEC2
+export const MMF_ID = "00000000000000000000000000000000000000000000000A"
 
 // RLUSD - Cash to be used for the repo
 // [XRPL MPT IssuanceID]
-export const RLUSD_ID = "000C26C5989D54A0722707111E47CCCEB57FBDFEF8E104F5"
+export const RLUSD_ID = "00000000000000000000000000000000000000000000000B"
 
 // Repo seller - receives RLUSD loan for MMF security collateral
 // It is assumed this account has onboarded with both the MMF and RLUSD MPTs
@@ -39,7 +39,7 @@ export const RLUSD_ID = "000C26C5989D54A0722707111E47CCCEB57FBDFEF8E104F5"
 // [Ripple Custody ID]
 export const WALLET_REPO_SELLER: Wallet = {
   name: "Repo Seller",
-  id: "62fa503d-8532-45cc-99f9-e99786b3aebd",
+  id: "00000000-0000-0000-0000-00000000000b",
   address: "",
 }
 
@@ -49,7 +49,7 @@ export const WALLET_REPO_SELLER: Wallet = {
 // [Ripple Custody ID]
 export const WALLET_REPO_BUYER: Wallet = {
   name: "Repo Buyer",
-  id: "11876315-61b6-4c55-8592-fa23f109c4a3",
+  id: "00000000-0000-0000-0000-00000000000c",
   address: "",
 }
 
@@ -57,15 +57,15 @@ export const WALLET_REPO_BUYER: Wallet = {
 // No requirements other than being active and managed on the Ripple Custody instance
 export const WALLET_SUBMITTER: Wallet = {
   name: "Batch Submitter",
-  id: "eb50dde2-5a78-4d70-858d-bfce3918bf16",
+  id: "00000000-0000-0000-0000-00000000000d",
   address: "",
 }
 
 //**** Repo Deal Terms  ****/
 // Note: all amounts are scaled (NOT XRPL stored integer amounts)
-export const MMF_UNITS = 19
-export const RLUSD_PRINCIPLE = 57
-export const RLUSD_REPAYMENT = 58
+export const MMF_UNITS = 5
+export const RLUSD_PRINCIPLE = 50
+export const RLUSD_REPAYMENT = 51
 export const TERM_PERIOD_MS = 60000 // 1 minute
 
 /** Polling budget for the transaction an order produces: 12 attempts, 5s apart. */
