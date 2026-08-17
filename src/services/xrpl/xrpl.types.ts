@@ -219,15 +219,21 @@ export type XrplIntentOptions = Prettify<
 export type Core_XrplOperation = components["schemas"]["Core_XrplOperation"]
 
 /**
- * A proposed intent, plus the transaction-order (payload) id it was proposed
- * under.
+ * A proposed intent, plus the transaction-order (payload) id and the intent
+ * id it was proposed under.
  *
- * `Core_IntentResponse` carries only the *request* id, while lookups such as
- * {@link XrplService.getMptIssuanceId} key off the *payload* id — which the SDK
- * generates when `options.payloadId` is omitted. Returning it here means the
- * caller no longer has to pre-generate a UUID to be able to follow the order up.
+ * `Core_IntentResponse` carries only `requestId` — a distinct, server-generated
+ * id for the request itself, not the id the intent is polled or approved by.
+ * That id (`intentId`) is the envelope's own `id` (`options.requestId`, or a
+ * generated one), captured before the request is sent. Lookups such as
+ * {@link XrplService.getMptIssuanceId} key off a third id, the *payload* one —
+ * which the SDK also generates when `options.payloadId` is omitted. Returning
+ * both here means the caller no longer has to pre-generate a UUID, or guess
+ * which response field to poll with, to follow the order up.
  */
-export type ProposeIntentResult = Prettify<Core_IntentResponse & { payloadId: string }>
+export type ProposeIntentResult = Prettify<
+  Core_IntentResponse & { payloadId: string; intentId: string }
+>
 
 /**
  * Options for {@link XrplService.proposeIntentAndWait} — the intent options
@@ -262,7 +268,9 @@ export type ProposeIntentAndWaitOptions = XrplIntentOptions & {
  */
 export type ProposeIntentAndWaitResult = Prettify<
   WaitForTransactionResult & {
-    /** The intent request id, as `proposeIntent` returns it */
+    /** The intent id the propose step polled by, as `proposeIntent` returns it */
+    intentId: string
+    /** The request id, as `proposeIntent` returns it — see {@link ProposeIntentResult} */
     requestId: string
     /** The transaction-order (payload) id, as `proposeIntent` returns it */
     payloadId: string
@@ -370,6 +378,17 @@ export type ConfidentialSendLeg = {
   /** The three fields to hand to `confidentialSends`, keyed by the sender's address */
   entryFields: ConfidentialSendEntryFields
 }
+
+/**
+ * Outcome of {@link XrplService.provisionElGamalKeyPair} — the proposed intent,
+ * plus the intent id it was proposed under.
+ *
+ * `Core_IntentResponse` carries only `requestId`, a distinct, server-generated
+ * id for the request itself — not the id the intent is polled or approved by.
+ * `intentId` is the envelope's own `id` (`options.requestId`, or a generated
+ * one), captured before the request is sent.
+ */
+export type ProvisionElGamalKeyPairResult = Prettify<Core_IntentResponse & { intentId: string }>
 
 /**
  * Disambiguation for {@link XrplService.getElGamalPublicKey} and

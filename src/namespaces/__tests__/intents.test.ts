@@ -248,7 +248,11 @@ describe("createIntents", () => {
     it("wraps the payload in an envelope built from the resolved context", async () => {
       const result = await intents.proposePayload(payload)
 
-      expect(result).toEqual({ requestId: "r-1", domainId: "d-1" })
+      expect(result).toEqual({
+        requestId: "r-1",
+        intentId: proposedRequest().id,
+        domainId: "d-1",
+      })
 
       expect(mockTransport.post.mock.calls[0]?.[0]).toBe("/v1/intents")
       expect(proposedRequest()).toMatchObject({
@@ -334,18 +338,20 @@ describe("createIntents", () => {
 
       expect(result).toMatchObject({
         requestId: "r-1",
+        intentId: proposedRequest().id,
         domainId: "d-1",
         status: "Executed",
         isTerminal: true,
         isSuccess: true,
       })
       expect(result.reason).toBeUndefined()
-      // The wait polls the request id, in the domain the propose resolved.
+      // The wait polls the intent id the envelope was built with — a
+      // different id from the server's own `requestId`.
       expect(mockTransport.get).toHaveBeenLastCalledWith(
         "/v1/domains/{domainId}/intents/{intentId}",
         {
           domainId: "d-1",
-          intentId: "r-1",
+          intentId: proposedRequest().id,
         },
       )
     })
