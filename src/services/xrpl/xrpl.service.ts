@@ -34,6 +34,7 @@ import type {
   ProposeIntentAndWaitOptions,
   ProposeIntentAndWaitResult,
   ProposeIntentResult,
+  ProvisionElGamalKeyPairResult,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
   SignBatchPayloadHandle,
@@ -97,8 +98,10 @@ export class XrplService {
    *
    * @param params - The Account address and XRPL operation
    * @param options - Optional configuration for the intent
-   * @returns The proposed intent response, plus the transaction-order id it was
-   *   proposed under — pass it to {@link getMptIssuanceId} and friends
+   * @returns The proposed intent response, plus the transaction-order id
+   *   (`payloadId`, pass it to {@link getMptIssuanceId} and friends) and the
+   *   intent id (`intentId`, pass it to `intents.getAndWait`) it was proposed
+   *   under
    * @throws {CustodyError} If the Account is not a valid XRPL address,
    *   validation fails, or the sender account is not found
    */
@@ -141,17 +144,18 @@ export class XrplService {
     options: ProposeIntentAndWaitOptions = {},
   ): Promise<ProposeIntentAndWaitResult> {
     const { result, context } = await this.propose(params, options)
-    const { requestId, payloadId } = result
+    const { requestId, payloadId, intentId } = result
     const { domainId } = context
 
     const intent = await waitForExecution(
-      () => this.ports.getIntent(domainId, requestId),
-      requestId,
+      () => this.ports.getIntent(domainId, intentId),
+      intentId,
       options.intent,
     )
 
     if (!intent.isSuccess) {
       return {
+        intentId,
         requestId,
         payloadId,
         domainId,
@@ -172,7 +176,7 @@ export class XrplService {
       options.transaction,
     )
 
-    return { requestId, payloadId, domainId, intent, ...transaction }
+    return { intentId, requestId, payloadId, domainId, intent, ...transaction }
   }
 
   /**
@@ -197,14 +201,14 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
-    const { body, payloadId } = buildTransactionIntent({
+    const { body, payloadId, intentId } = buildTransactionIntent({
       operation: params.operation,
       context,
       options,
     })
 
     const intentResponse = await this.ports.submitIntent(body)
-    return { result: { ...intentResponse, payloadId }, context }
+    return { result: { ...intentResponse, payloadId, intentId }, context }
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -257,14 +261,15 @@ export class XrplService {
    *
    * @param address - XRPL address of the account to provision
    * @param options - Optional configuration for the intent
-   * @returns The proposed intent response
+   * @returns The proposed intent response, plus the intent id it was proposed
+   *   under — pass it to `intents.getAndWait` to wait for it to execute
    * @throws {CustodyError} If the address is not a valid XRPL address, or the
    *   account is not found
    */
   public async provisionElGamalKeyPair(
     address: string,
     options: XrplIntentOptions = {},
-  ): Promise<Core_IntentResponse> {
+  ): Promise<ProvisionElGamalKeyPairResult> {
     assertValidAddress(address)
 
     await this.guard.checkFeature("Core_v0_ProvisionElGamalKeyPair", "xrpl.provisionElGamalKeyPair")
@@ -280,12 +285,15 @@ export class XrplService {
       type: "v0_ProvisionElGamalKeyPair",
     } satisfies components["schemas"]["Core_v0_ProvisionElGamalKeyPair"]
 
-    return this.ports.submitIntent({
+    const requestEnvelope = buildRequestEnvelope(context, options, payload)
+    const intentResponse = await this.ports.submitIntent({
       request: {
-        ...buildRequestEnvelope(context, options, payload),
+        ...requestEnvelope,
         type: "Propose",
       },
     })
+
+    return { ...intentResponse, intentId: requestEnvelope.id }
   }
 
   /**
@@ -733,8 +741,8 @@ export class XrplService {
    * Creates and proposes a raw sign intent for an XRPL transaction.
    * @param xrplTransaction - The XRPL transaction details
    * @param options - Optional configuration for the raw sign intent
-   * @returns The proposed intent response, plus the manifest (payload) id it was
-   *   proposed under
+   * @returns The proposed intent response, plus the manifest (payload) id and
+   *   the intent id it was proposed under
    * @throws {CustodyError} If the Account is not a valid XRPL address,
    *   validation fails, or the sender account is not found
    */
@@ -752,12 +760,12 @@ export class XrplService {
     const encoded = encodeForSigning(xrplTransaction)
     const base64Encoded = Buffer.from(encoded, "hex").toString("base64")
 
-    const { intentResponse, payloadId } = await this.proposeRawSignIntent(
+    const { intentResponse, payloadId, intentId } = await this.proposeRawSignIntent(
       base64Encoded,
       context,
       options,
     )
-    return { ...intentResponse, payloadId }
+    return { ...intentResponse, payloadId, intentId }
   }
 
   /**
@@ -826,7 +834,7 @@ export class XrplService {
     base64Bytes: string,
     context: IntentContext,
     options: XrplIntentOptions,
-  ): Promise<{ intentResponse: Core_IntentResponse; payloadId: string }> {
+  ): Promise<{ intentResponse: Core_IntentResponse; payloadId: string; intentId: string }> {
     const payloadId = options.payloadId ?? uuidv7()
 
     const payload = {
@@ -841,15 +849,16 @@ export class XrplService {
       type: "v0_SignManifest",
     } satisfies components["schemas"]["Core_v0_SignManifest"]
 
+    const requestEnvelope = buildRequestEnvelope(context, options, payload)
     const intent: Core_ProposeIntentBody = {
       request: {
-        ...buildRequestEnvelope(context, options, payload),
+        ...requestEnvelope,
         type: "Propose",
       },
     }
 
     const intentResponse = await this.ports.submitIntent(intent)
-    return { intentResponse, payloadId }
+    return { intentResponse, payloadId, intentId: requestEnvelope.id }
   }
 
   /**
@@ -1095,8 +1104,8 @@ export class XrplService {
    * @param payload - Same submitter, execution mode, and entries as the dry-run
    * @param batchSigners - Signatures collected in Step 2 (one per participant)
    * @param options - Optional configuration for the intent
-   * @returns The proposed intent response, plus the transaction-order id the
-   *   Batch was proposed under
+   * @returns The proposed intent response, plus the transaction-order id and
+   *   the intent id the Batch was proposed under
    * @throws {CustodyError} If the submitter Account is not a valid XRPL address,
    *   validation fails, or the submitter account is not found
    */
@@ -1116,10 +1125,10 @@ export class XrplService {
     })
 
     const operation = buildBatchOperation(payload, batchSigners)
-    const { body, payloadId } = buildTransactionIntent({ operation, context, options })
+    const { body, payloadId, intentId } = buildTransactionIntent({ operation, context, options })
 
     const intentResponse = await this.ports.submitIntent(body)
-    return { ...intentResponse, payloadId }
+    return { ...intentResponse, payloadId, intentId }
   }
 
   /**

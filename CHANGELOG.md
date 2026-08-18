@@ -1,5 +1,133 @@
 # custody
 
+## 2.13.0-beta.13
+
+### Minor Changes
+
+- 1a111c6: `batchToCustodyBatchPayload` and `batchToCustodyInnerTransactions` now accept an optional second argument, `{ confidentialSends }`, keyed by the inner transaction's `Account`. It carries the three fields a Custody `ConfidentialMPTSend` batch entry needs but an xrpl.js `ConfidentialMPTSend` cannot hold — the plaintext `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion`. The ledger needs none of them (the amount only ever exists as ciphertext, and the sender's encrypted balance is read from ledger state at apply time), but Harmonize needs all three on the entry to dry-run the Batch and re-derive the proofs — so converting an autofilled Batch previously produced a payload the platform rejected, and callers had to patch `payload.entries[].operation` by hand before `dryRunBatch`. `senderEncryptedBalance` is passed through as **hex**, unlike the operation's `cryptographicFields`, which are base64. A key that is not a valid XRPL address (checked with xrpl.js `isValidAddress`), matches no inner transaction, or whose inner transaction is not a `ConfidentialMPTSend`, throws a `CustodyError` rather than silently emitting an entry the platform would reject. Omitting the argument leaves the output unchanged. Exports the new `BatchToCustodyOptions`, `ConfidentialSendEntryFields` and `Core_BatchInnerOperation_ConfidentialMPTSend` types.
+- df2bb42: Add `intents.proposePayload` / `intents.proposeAndWait` and `domains.me()` — propose any intent without hand-assembling the request envelope.
+
+  `intents.propose` took a fully-formed request, so proposing anything that was not an XRPL transaction order meant rebuilding the same envelope every time: `type: "Propose"`, `targetDomainId`, `author`, `expiryAt` date arithmetic, `customProperties`, and a hand-minted UUID. The SDK already built exactly that envelope internally for XRPL; it was just not reachable from the `intents` namespace. It is now.
+
+  ```ts
+  const { requestId, domainId } = await client.intents.proposePayload(
+    { type: "v0_ReleaseQuarantinedTransfers", accountId, transferIds },
+    { description: "Release the transfers held for review", expiryDays: 7 },
+  )
+  ```
+
+  `author.id` also forced a bootstrap on the caller — `users.me()`, then find the domain, then read `userReference.id`, usually cached in a module-level mutable. Both propose methods absorb it, and `domains.me()` exposes the same resolution as `{ domainId, userId }` for anyone who needs the ids directly. `users.me()` still returns the raw reference for callers who want the public key, aliases or roles.
+
+  `proposeAndWait` polls to a terminal status, mirroring `intents.getAndWait`'s `isSuccess` / `isTerminal` convention rather than throwing. **It is not the right method for most production flows:** the default budget is 10 attempts 3s apart, and a custodian approving an intent by hand can take minutes, so it will honestly return `{ isTerminal: false, status: "Open" }` — "still waiting on a human", not a failure. Raising `maxRetries` only moves the problem; no polling budget is right for a person. Use `proposePayload`, keep the `requestId`, and pick the intent up from events or a webhook. Both the JSDoc and the new `examples/intents/release-quarantined-transfers` example say so.
+
+  The payload type is the full `Core_ProposeUserIntentPayload` union, transaction orders included — those are not XRPL-specific, and this is the only path for the other ledgers' transaction orders. XRPL callers should still prefer `xrpl.proposeIntent`, which additionally resolves the address to an account, applies a fee strategy, and returns the payload id.
+
+  Also adds `reason?: string` to `WaitForExecutionResult`, matching what `WaitForTransactionResult` already carries: one sentence saying why a wait did not succeed, `undefined` exactly when `isSuccess` is true. It prefers `state.error`, which carries a rejection code and a message from the policy engine and which nothing in the SDK surfaced before:
+
+  ```ts
+  "Intent 1e9… was Rejected (PolicyViolation): approval threshold not met"
+  "Intent 1e9… was still awaiting approval after 10 attempts."
+  "Intent 1e9… did not execute (status: Expired)."
+  ```
+
+  `intents.getAndWait` gains it too, and `xrpl.proposeIntentAndWait`'s intent-stage reason now comes from this one composition rather than a second hand-rolled one. As with the transaction `reason`, it is a message and not a contract — narrow on `status` and read `intent.data.state.error` for anything the code has to branch on.
+
+  Additive throughout: `intents.propose` is unchanged and remains the raw escape hatch, existing results gain a field, and nothing changes shape. Internally `buildRequestEnvelope` and `resolveDomainAndUser` moved to the `intents` and `domains` namespaces so both namespaces and `XrplService` can share one definition of each — only code importing those from `src/services/xrpl/` directly is affected.
+
+- 4cef9db: Add `client.xrpl.proposeIntentAndWait`, which proposes an XRPL transaction intent and waits it out to the ledger.
+
+  Following a write through took three calls — `xrpl.proposeIntent`, then `intents.getAndWait`, then `transactions.byOrderAndWait` — plus a `users.me()` bootstrap to learn the domain id. The sequencing is SDK knowledge, not application knowledge: an intent reporting `Executed` only means custody accepted the transaction order, and the transaction can still fail while custody prepares it or once it is on chain. Every consumer following a write was rewriting the same loop.
+
+  ```ts
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+
+  if (result.isSuccess) {
+    // The transaction completed and the ledger accepted it
+    console.log(result.transaction)
+  } else if (!result.intent.isSuccess) {
+    // Rejected by policy, expired, or still open when the attempts ran out —
+    // no transaction was ever created
+    console.log(result.intent.status)
+  }
+  ```
+
+  The result is a `WaitForTransactionResult` — `status`, `isTerminal`, `isSuccess` and `transaction` all describe the transaction, exactly as `transactions.byOrderAndWait` reports them — plus `intent` for the stage before it, and the `requestId`, `payloadId` and `domainId` the intent was proposed under. Both halves are returned because the flow has two failure surfaces: an intent that never executes produces no transaction at all, which at the top level would otherwise be indistinguishable from a transaction still in flight. `domainId` is the domain resolved from `Account`, so follow-ups such as `getMptIssuanceIdAndWait({ domainId, payloadId })` no longer need the `users.me()` bootstrap.
+
+  It never throws on a failed intent or transaction, matching `intents.getAndWait` and `transactions.byOrderAndWait`; propose-time errors (invalid address, a rejected request) still throw. The transaction stage is skipped entirely when the intent does not execute, and the polling stages are configured separately through `options.intent` and `options.transaction`, each defaulting to 10 attempts 3s apart. The address is resolved once for both stages.
+
+  Internally the two polling loops are now shared rather than restated: `waitForExecution` and `waitForOrderTransaction` take the lookup as a callback, so the namespaces drive them through the transport and `XrplService` through its ports (`XrplPorts` gains `getIntent`). Only relevant to code implementing `XrplPorts` directly.
+
+- 8f4c1ec: Return the payload ID from `client.xrpl.proposeIntent`, `rawSign` and `proposeBatch` instead of hiding it.
+
+  All three generate a `payloadId` when `options.payloadId` is omitted, but returned a bare `Core_IntentResponse`, which carries only `requestId`. The generated ID was therefore unrecoverable, and every follow-up keyed on the payload ID — `getMptIssuanceId`, `getMptIssuanceIdAndWait`, and any transaction lookup by `orderReference.Id` — forced the caller to pre-generate a UUID and pass it in just to learn what the SDK was about to generate anyway. The examples in this repo all did exactly that.
+
+  They now return `ProposeIntentResult` — `Core_IntentResponse & { payloadId: string }` — so `const { requestId, payloadId } = await client.xrpl.proposeIntent(...)` feeds straight into `getMptIssuanceIdAndWait({ domainId, payloadId })`. The field is added, not replaced: `requestId` is still there and existing callers keep working, so the only case that changes is exact-shape assertions on the response object. `options.payloadId` still overrides the generated value and is echoed back unchanged, which stays the way to correlate a `dryRunBatch` with its `proposeBatch`.
+
+  `provisionElGamalKeyPair` is unchanged: it proposes its own intent type rather than a transaction order, so it has no payload ID to surface.
+
+  Internally, `buildTransactionIntent` now returns `{ body, payloadId }` rather than the body alone — relevant only to code importing that builder directly.
+
+- 3f7038d: Add `reason` to `WaitForTransactionResult` — one sentence saying why a wait did not succeed.
+
+  `transactions.byOrderAndWait` and `xrpl.proposeIntentAndWait` deliberately never throw, so every caller that wanted to log or re-throw the failure was writing the same assembly: dig `hint` out of `processing` with an `in` check because the union only carries it on some statuses, pull `reason` and `cause` off an `Interrupted` one, then append `ledgerTransactionData.failure` for the on-chain case. The SDK is the only place that knows which of those three surfaces applies.
+
+  ```ts
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+
+  if (!result.isSuccess) {
+    throw new Error(result.reason)
+    // "Transaction 6f0… was rejected by the ledger (FailedOnChain)."
+    // "Transaction 6f0… failed before it reached the ledger (InvalidUserPayload)."
+    // "No transaction was registered for the order after 10 attempts."
+  }
+  ```
+
+  It is `undefined` exactly when `isSuccess` is true, and set on every other outcome, including the non-terminal ones — a wait that ran out of attempts is still a caller-visible failure, and "still in flight after 10 attempts" is the sentence to log for it. On `proposeIntentAndWait` it covers both stages: when the intent never executes there is no transaction to describe, so the reason names the intent and its status instead of reporting a missing transaction.
+
+  `reason` is a message, not a contract — its wording will change. Narrow on `status` and read `processing` / `ledgerTransactionData` off the returned transaction for anything the code has to branch on.
+
+  Additive: existing results gain a field, nothing changes shape.
+
+- 6aee26d: Add `xrpl.buildConfidentialSend` — builds one confidential MPT Batch leg, proofs included, from a single call.
+
+  A confidential send submitted on its own needs no client-side cryptography: `xrpl.proposeIntent({ type: "ConfidentialMPTSend" })` has the platform derive the material. A Batch leg cannot work that way — the inner transaction has to exist, fully formed and signed, _before_ the Batch is dry-run — so the proofs have to be computed up front and spliced in by hand. That was roughly 90 lines of pure mechanism in every consumer: initiate the `cmpt-send` parameters computation, poll it, assert it completed, narrow an untagged response union, map nine camelCase fields onto their PascalCase transaction counterparts, remember `Flags: tfInnerBatchTxn`, and split off the three fields the XRPL wire format has no room for.
+
+  ```ts
+  const leg = await custody.xrpl.buildConfidentialSend({
+    sender: senderAddress,
+    destination: destinationAddress,
+    issuanceId,
+    amount: "1000",
+    ticketSequence,
+  })
+
+  batch.RawTransactions.push({ RawTransaction: leg.transaction })
+
+  const payload = batchToCustodyBatchPayload(autofilled, {
+    confidentialSends: { [senderAddress]: leg.entryFields },
+  })
+  ```
+
+  `sender` and `destination` are XRPL addresses, as everywhere else in `custody.xrpl` — the sender's domain, account id and ledger are resolved from its address through the same `resolveContext` the other methods use, so callers no longer have to carry custody account ids alongside addresses. Pass `domainId` / `ledgerId` only when the address is registered more than once, and `polling` to raise the computation's default budget of 10 attempts 3s apart.
+
+  The result is the `ConfidentialSendLeg` the pairing needs: `transaction` is the xrpl.js `ConfidentialMPTSend`, ready to push onto a `Batch`; `entryFields` is the already-exported `ConfidentialSendEntryFields` — the plaintext `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion` — which feeds straight into the `confidentialSends` option shipped alongside `batchToCustodyBatchPayload`. `senderEncryptedBalance` stays **hex**, as that option expects, unlike the operation's base64 `cryptographicFields`. `ticketSequence` is optional: omit it for a leg sequenced by account sequence and it is left off both the transaction and the compute request. `AuditorEncryptedAmount` is carried when present and dropped when the response spells it out as `null`, which it does whenever no auditor key is registered.
+
+  The builder only ever produces Batch legs, so it always stamps `Flags: tfInnerBatchTxn`. A computation that does not complete, or that returns material for some other confidential operation, throws a `CustodyError` naming the account and the status rather than yielding a half-built transaction.
+
+  Also exports `isSendCryptographicFields`, the type guard that narrows `Core_ApiParametersComputeCryptographicFields` to its `Send` variant. The parameters-compute response carries no `type` discriminator, unlike the operation union, so the variant has to be inferred from the fields present — which left every consumer hand-writing a guard over a generated union, where a wrong one fails at the ledger rather than at the call site. `buildConfidentialSend` applies it internally; reach for it directly only when building a confidential send by hand.
+
+  Internally, `accounts.initiateParametersComputeAndWait` moved to module scope in the `accounts` namespace so both that namespace and `XrplService` (through a new port) drive one definition of the initiate-then-poll pair. The `accounts` method is unchanged.
+
+### Patch Changes
+
+- b6202d6: Fix `client.xrpl.proposeIntentAndWait` polling the wrong id, and add `intentId` to every propose result that was missing it.
+
+  `Core_IntentResponse.requestId` is a distinct, server-generated id for the request itself — not the id the resulting intent is polled or approved by. The actual intent id is the envelope's own `id` (`options.requestId`, or a fresh UUID v7 when omitted), which the SDK generates client-side before sending and the server then assigns to the intent it creates. `proposeIntentAndWait` was polling `getIntent` with the response's `requestId` instead of that envelope id, so once the two diverge (they are independently generated and not guaranteed to match), the wait 404-loops until it times out and reports the intent as never registered — even when it executed successfully.
+
+  `client.xrpl.proposeIntent`, `proposeIntentAndWait`, `proposeBatch`, `rawSign` and `provisionElGamalKeyPair`, and `client.intents.proposePayload` / `proposeAndWait`, now all return `intentId` alongside the existing `requestId` (and `payloadId`, where applicable) — the id to pass to `intents.getAndWait` / `getIntent`, or to poll and approve the intent by. `proposeIntentAndWait` and `intents.proposeAndWait` now poll with `intentId` internally instead of `requestId`. Additive: `requestId` is unchanged and still returned, so only exact-shape assertions on the response object are affected.
+
+  Internally, `buildTransactionIntent` and `buildRequestEnvelope`'s callers now capture the envelope before it is sent, rather than relying on the response to carry an id it never did.
+
 ## 2.13.0-beta.12
 
 ### Patch Changes
