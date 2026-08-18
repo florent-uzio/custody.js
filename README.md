@@ -21,6 +21,7 @@ A comprehensive JavaScript/Typescript SDK for interacting with the Ripple Custod
 - **Omnibus Accounting**: Omnibus accounts with nested tenant sub-ledgers, deposit wallets, and withdrawals (`client.omnibus.*`)
 - **Virtual Ledgers**: Virtual ledger accounting with nested virtual accounts, operations, transfers, and balances (`client.virtualLedgers.*`)
 - **System Signing**: Retrieve system-signing info (`client.systemSigning.*`)
+- **Pagination**: Every `.list()` returns one page — `paginate()` walks the whole collection for you, so client-side filtering never reports a record as missing because it sat on page two. See [Pagination](#pagination)
 - **Type Safety**: Full TypeScript support with types derived from the OpenAPI specification
 - **Ledger ID Autocomplete**: `LedgerId`, `XrplLedgerId`, and `NonXrplLedgerId` exports give IDE autocomplete for the supported ledgers (e.g. `"ethereum"`, `"xrpl"`, `"solana"`, …) while still accepting any string — so newly added ledgers never break the SDK
 - **XRPL Intent Proposal**: Single `proposeIntent()` method for all XRPL transaction types (Payment, TrustSet, DepositPreauth, Clawback, OfferCreate, AccountSet, TicketCreate, Batch, MPToken operations) using a type-safe discriminated union — or `proposeIntentAndWait()` to follow it all the way to the ledger in one call
@@ -398,6 +399,77 @@ instead of the customer-facing one. They are meant for internal tooling: not
 covered by the public API's compatibility promises, and only version-gated on
 instances that serve the internal OpenAPI document. See [Internal
 namespaces](./docs/namespaces.md#internal-namespaces).
+
+## Pagination
+
+**Every `.list()`-style method returns exactly one page.** Nothing in the
+response makes that obvious at the call site, so code that lists a collection and
+filters `.items` itself will silently conclude a record does not exist as soon as
+the collection outgrows one page — no error, no warning, just a `.find()` that
+returns `undefined`.
+
+`paginate` closes that gap. It follows the `nextStartingAfter` cursor until the
+server stops issuing one, and yields items:
+
+```ts
+import { paginate } from "@florent-uzio/custody"
+
+const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+
+// find one, stop early — no further requests go out after the break
+for await (const ticker of paginate(fetchTickers)) {
+  if (ticker.ledgerId === "xrpl-testnet") {
+    console.log("found", ticker.id)
+    break
+  }
+}
+```
+
+It takes a callback rather than a method reference, because it has to inject the
+cursor into a query the caller owns — and list methods differ in arity
+(`tickers.list(query)` vs `accounts.getAccountBalances(params, query)`). The same
+callback shape works for both:
+
+```ts
+const fetchBalances = (startingAfter) =>
+  custody.accounts.getAccountBalances({ domainId, accountId }, { limit: 100, startingAfter })
+
+for await (const balance of paginate(fetchBalances)) {
+  console.log(balance)
+}
+```
+
+To collect everything, drain it:
+
+```ts
+const allTickers: Core_ApiTicker[] = []
+for await (const ticker of paginate(fetchTickers)) {
+  allTickers.push(ticker)
+}
+```
+
+(`await Array.fromAsync(paginate(…))` does the same in one line if your
+`tsconfig` `lib` includes it — it is `esnext` in TypeScript's layout, so it is not
+available under a plain `es2024` target even though Node ≥ 22 implements it.)
+
+Notes:
+
+- **Pass `limit` yourself.** `paginate` only ever sets `startingAfter`, because
+  the documented maximum varies by endpoint (100 on most, 1000 on a couple).
+  `limit: 100` cuts round trips substantially.
+- **Pages are fetched lazily** — the request for the next page only goes out once
+  the current page's items are exhausted, so `break` and `return` cost nothing.
+- **Draining is unbounded.** Collecting a large collection pulls all of it into
+  memory; prefer `for await` with an early exit when you can.
+- **A stalled cursor throws.** If the server returns the same cursor it was
+  given, `paginate` raises a `CustodyError` rather than looping forever.
+- Not every list is cursor-paginated: `omnibus.tenants.list` and
+  `domains.sweepThresholds` page by offset, and `channels.*` / `requests.*`
+  return plain arrays. `paginate` does not apply to those, and will not typecheck
+  against them.
+
+Design rationale, including why there is no `custody.tickers.paginate()` and no
+`listAll()`, is in [ADR-0008](./docs/adr/0008-cursor-pagination.md).
 
 ## XRPL Service
 

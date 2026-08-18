@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import { isUndefined, sleep } from "../helpers/index.js"
+import { isUndefined, paginate, sleep } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
 import type { Transport } from "../transport/index.js"
 import type {
@@ -71,19 +71,33 @@ export async function findByAddress(
   opts: FindByAddressOptions = {},
 ): Promise<Core_AccountAddressReference | undefined> {
   const { ledgerId, domainId } = opts
-  const addressAcrossDomains = await t.get<Core_AddressReferenceCollection>(
-    URLs.addresses,
-    undefined,
-    { address },
-  )
 
-  const matches = addressAcrossDomains.items.filter(
-    (item): item is Core_AccountAddressReference =>
+  // Paginated rather than single-page: `/v1/addresses` narrows server-side on
+  // `address` only, so the `AccountAddressReference` this is after shares the
+  // collection with every `DepositInstructionsReference` for the same address.
+  // Reading one page could push a real match off the end and report the account
+  // as missing. The first request is unchanged — `startingAfter` is `undefined`
+  // and dropped — so this only costs extra calls when the server volunteers a
+  // cursor.
+  const matches: Core_AccountAddressReference[] = []
+
+  const fetchPage = (startingAfter: string | undefined) =>
+    t.get<Core_AddressReferenceCollection>(URLs.addresses, undefined, { address, startingAfter })
+
+  for await (const item of paginate(fetchPage)) {
+    const isMatch =
       item.type === "AccountAddressReference" &&
       item.address === address &&
       (isUndefined(ledgerId) || item.ledgerId === ledgerId) &&
-      (isUndefined(domainId) || item.domainId === domainId),
-  )
+      (isUndefined(domainId) || item.domainId === domainId)
+
+    if (isMatch) {
+      matches.push(item)
+      // Two is all the ambiguity check below needs, so stop rather than walking
+      // the rest of the collection to count matches nobody reads.
+      if (matches.length > 1) break
+    }
+  }
 
   if (matches.length === 0) {
     return undefined

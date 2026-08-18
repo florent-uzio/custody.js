@@ -161,6 +161,25 @@ stay consistent.
   (`client.accounts.initiateParametersCompute`), which prepares the cryptographic
   fields of a confidential MPT transaction on the public surface.
 
+- **Cursor collection** — a list response that pages with an opaque cursor: the
+  32 generated `Core_*Collection` and `VirtualAccounting_*PagedCollectionResponse`
+  schemas, all shaped `{ items, count, currentStartingAfter?, nextStartingAfter? }`.
+  `count` is the size of _this page_, never a total, and there is no `hasMore` —
+  the collection is exhausted when `nextStartingAfter` is absent. Not every list
+  is one: `Omnibus_*PageResponse` (`omnibus.tenants.list`,
+  `domains.sweepThresholds`) pages by offset, and `channels.*` / `requests.*`
+  return bare arrays.
+
+- **Cursor page** — one page of a cursor collection, and the SDK type
+  (`CursorPage<TItem>`) that names the two fields pagination needs: `items` and
+  `nextStartingAfter`. Every `.list()`-style method returns exactly **one** page
+  and never reveals that at the call site, which is why client-side filtering over
+  `.items` silently reports records as missing. Walk the whole collection with
+  `paginate`, the root-exported helper that follows the cursor and yields items;
+  drain it with `Array.fromAsync`. Avoid "offset" and "page number" for this — the
+  cursor is opaque and unordered. See
+  [ADR-0008](docs/adr/0008-cursor-pagination.md).
+
 - **System property** — an instance-wide configuration value listed by
   `GET /v1/properties` (`client.systemProperties.list()`), identified by a
   `Core_SystemPropertyId` (e.g. `NOTARY_API_KEY`, `STATE_REVIEW_AUTHORITY`).
