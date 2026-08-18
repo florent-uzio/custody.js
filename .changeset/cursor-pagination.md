@@ -9,9 +9,9 @@ Every `.list()`-style method in this SDK returns **exactly one page**, and nothi
 ```ts
 import { paginate } from "@florent-uzio/custody"
 
-for await (const ticker of paginate((startingAfter) =>
-  custody.tickers.list({ limit: 100, startingAfter }),
-)) {
+const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+
+for await (const ticker of paginate(fetchTickers)) {
   if (ticker.ledgerId === "xrpl-testnet") return ticker
 }
 ```

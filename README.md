@@ -414,10 +414,10 @@ server stops issuing one, and yields items:
 ```ts
 import { paginate } from "@florent-uzio/custody"
 
+const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+
 // find one, stop early — no further requests go out after the break
-for await (const ticker of paginate((startingAfter) =>
-  custody.tickers.list({ limit: 100, startingAfter }),
-)) {
+for await (const ticker of paginate(fetchTickers)) {
   if (ticker.ledgerId === "xrpl-testnet") {
     console.log("found", ticker.id)
     break
@@ -431,9 +431,10 @@ cursor into a query the caller owns — and list methods differ in arity
 callback shape works for both:
 
 ```ts
-for await (const balance of paginate((startingAfter) =>
-  custody.accounts.getAccountBalances({ domainId, accountId }, { limit: 100, startingAfter }),
-)) {
+const fetchBalances = (startingAfter) =>
+  custody.accounts.getAccountBalances({ domainId, accountId }, { limit: 100, startingAfter })
+
+for await (const balance of paginate(fetchBalances)) {
   console.log(balance)
 }
 ```
@@ -442,9 +443,7 @@ To collect everything, drain it:
 
 ```ts
 const allTickers: Core_ApiTicker[] = []
-for await (const ticker of paginate((startingAfter) =>
-  custody.tickers.list({ limit: 100, startingAfter }),
-)) {
+for await (const ticker of paginate(fetchTickers)) {
   allTickers.push(ticker)
 }
 ```
