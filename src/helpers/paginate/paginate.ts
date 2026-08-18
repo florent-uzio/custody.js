@@ -108,9 +108,10 @@ type _VirtualAddressesIsCursorPage = Assert<
  * the request shape invisibly. Pass `limit: 100` yourself to cut round trips.
  *
  * ```ts
- * for await (const ticker of paginate((startingAfter) =>
- *   custody.tickers.list({ limit: 100, startingAfter }),
- * )) {
+ * const fetchPage = (startingAfter?: string) =>
+ *   custody.tickers.list({ limit: 100, startingAfter })
+ *
+ * for await (const ticker of paginate(fetchPage)) {
  *   if (ticker.ledgerId === "xrpl-testnet") return ticker
  * }
  * ```
@@ -124,9 +125,7 @@ type _VirtualAddressesIsCursorPage = Assert<
  *
  * ```ts
  * const all: Core_ApiTicker[] = []
- * for await (const ticker of paginate((startingAfter) =>
- *   custody.tickers.list({ limit: 100, startingAfter }),
- * )) {
+ * for await (const ticker of paginate(fetchPage)) {
  *   all.push(ticker)
  * }
  * ```

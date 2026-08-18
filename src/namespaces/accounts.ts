@@ -81,9 +81,10 @@ export async function findByAddress(
   // cursor.
   const matches: Core_AccountAddressReference[] = []
 
-  for await (const item of paginate((startingAfter) =>
-    t.get<Core_AddressReferenceCollection>(URLs.addresses, undefined, { address, startingAfter }),
-  )) {
+  const fetchPage = (startingAfter: string | undefined) =>
+    t.get<Core_AddressReferenceCollection>(URLs.addresses, undefined, { address, startingAfter })
+
+  for await (const item of paginate(fetchPage)) {
     const isMatch =
       item.type === "AccountAddressReference" &&
       item.address === address &&
