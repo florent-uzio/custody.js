@@ -70,3 +70,6 @@ main.helpers.ts
 
 # Ralph
 ralph
+
+# Personal Claude Code overrides (not shared with the team)
+CLAUDE.local.md
