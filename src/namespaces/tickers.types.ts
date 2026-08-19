@@ -32,23 +32,24 @@ export type Core_ApiTickerData = components["schemas"]["Core_ApiTickerData"]
  * Both halves are optional and independent, and **neither is implied by the
  * other**:
  *
- * - Most MPT issuances are not confidential at all, so `confidential` is absent
- *   permanently — not pending. Nothing will make it appear, and code that waits
- *   for it waits forever.
+ * - `confidential` is absent whenever the issuance is not confidential, which
+ *   is most of them. Whether it ever exists is the issuer's call and can change
+ *   after this lookup — but it will not appear on its own, so waiting on it is
+ *   waiting on someone else to act.
  * - `public` is absent when custody tracks no plain ticker for the issuance,
  *   which a confidential-only issuance is free to be.
  * - Both are absent when the issuance is unknown to this ledger — the lookup
  *   reports that by returning `{}`, not by throwing.
  *
  * So check the half you need before using it; the pair is not a guarantee that
- * either exists.
+ * either exists, and each answer describes the moment of the call.
  */
 export type XrplMptIssuanceTickers = {
   /** The `MultiPurposeToken` ticker, absent if custody tracks no plain ticker. */
   public?: Core_ApiTickerData
   /**
-   * The `ConfidentialMultiPurposeToken` ticker. Absent unless the issuance is
-   * confidential — for a plain MPT there is never one to find.
+   * The `ConfidentialMultiPurposeToken` ticker. Absent unless the issuer has
+   * made the issuance confidential.
    */
   confidential?: Core_ApiTickerData
 }

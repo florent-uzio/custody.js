@@ -76,8 +76,8 @@ describe("findByXrplMptIssuanceId", () => {
   })
 
   it("should omit the confidential half for a plain MPT issuance", async () => {
-    // The common case, and a permanent one: most issuances are not confidential,
-    // so `confidential` is the answer rather than a value still to arrive.
+    // The common case: most issuances are not confidential, so absence is the
+    // answer as of this call rather than a value still to arrive on its own.
     mockTransport.get.mockResolvedValue({ items: [makeTicker()] })
 
     const result = await findByXrplMptIssuanceId(mockTransport, ISSUANCE, { ledgerId: LEDGER })
@@ -150,7 +150,7 @@ describe("findByXrplMptIssuanceId", () => {
   it("should find a half on a later page instead of reporting it missing", async () => {
     // The confidential ticker sorts onto a later page than the public one, so
     // reading a single page would report a confidential issuance as public-only
-    // — indistinguishable from the plain MPT that legitimately has no second half.
+    // — indistinguishable from an issuance that is genuinely not confidential.
     const conf = confidential()
     mockTransport.get
       .mockResolvedValueOnce({ items: [makeTicker()], nextStartingAfter: "cursor-1" })

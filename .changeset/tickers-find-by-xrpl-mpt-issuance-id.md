@@ -18,7 +18,7 @@ const scale = mmf.decimals ?? 0
 
 It takes the ID `xrpl.getMptIssuanceId` produces, and the names match so the pairing is visible.
 
-**Both halves are optional, and neither implies the other.** Most MPT issuances are not confidential, so `confidential` is usually absent _permanently_ — not pending; nothing will make it appear, and code that polls for it polls forever. `public` is likewise absent when custody tracks no plain ticker. An issuance the ledger does not know comes back as `{}` rather than throwing, so absence reads the same way for every reason.
+**Both halves are optional, and neither implies the other.** Most MPT issuances are not confidential, so `confidential` is usually absent — and whether it ever exists is the issuer's call, not a step already underway. It will not appear on its own, so branch on `undefined` rather than polling for it. `public` is likewise absent when custody tracks no plain ticker. An issuance the ledger does not know comes back as `{}` rather than throwing, so absence reads the same way for every reason.
 
 That hand-rolled scan reads **one page**. A ledger carrying more tickers than a page holds reports the ticker as missing — no error, the `.find()` just returns `undefined`. For the confidential half that failure is especially quiet, because "truncated off page one" and "this issuance simply isn't confidential" look identical at the call site. `findByXrplMptIssuanceId` walks every page instead, narrowed server-side to `ledgerId` (the only filter the endpoint applies) and reading `limit: 100` at a time.
 

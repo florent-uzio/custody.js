@@ -13,16 +13,18 @@ import type {
 
 /**
  * Finds the tickers custody holds for one XRPL MPT issuance ID — the public
- * one, and the confidential one if the issuance has it.
+ * one, and the confidential one if the issuance currently has it.
  *
  * This is the fundamental lookup for confidential MPT work: the confidential
  * ticker id is the only way to read a confidential balance, and neither id is
  * derivable from the issuance ID. Pairs with `xrpl.getMptIssuanceId`, which
  * produces the ID this takes.
  *
- * **Both halves are optional, and `confidential` is usually absent for good.**
- * A plain MPT issuance has no confidential counterpart and never will, so treat
- * `undefined` as an answer rather than as "not yet":
+ * **Both halves are optional.** `confidential` is absent whenever the issuance
+ * is not confidential, which is most of them — the issuer decides, and can
+ * decide later, so a half missing today may exist tomorrow. What `undefined`
+ * does not mean is "already on its way": nothing arrives without the issuer
+ * acting, so it is an answer to branch on rather than something to poll for.
  *
  * ```ts
  * const { public: mmf, confidential: mmfConf } = await custody.tickers.findByXrplMptIssuanceId(
@@ -31,7 +33,8 @@ import type {
  * )
  * if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
  * if (mmfConf === undefined) {
- *   // Not confidential on this ledger — set it up, or carry on with the public ticker.
+ *   // Not confidential as of this call — carry on with the public ticker, or
+ *   // have the issuer enable it and look again.
  * }
  * ```
  *
