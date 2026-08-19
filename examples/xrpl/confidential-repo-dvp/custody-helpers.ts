@@ -8,7 +8,7 @@ import {
   TRANSACTION_POLLING,
   working_data,
 } from "./config.js"
-import type { Wallet } from "./types.js"
+import type { MptTickerType, Wallet } from "./types.js"
 
 //**** RC Helper Functions ****/
 // refreshTickers
@@ -28,10 +28,7 @@ export async function refreshTickers(custody: RippleCustody) {
   // tickers than one page holds, paginate with `startingAfter`.
   const { items } = await custody.tickers.list({ ledgerId: [LEDGER_ID] })
 
-  const findXrplTicker = (
-    tokenType: "MultiPurposeToken" | "ConfidentialMultiPurposeToken",
-    issuanceId: string,
-  ) =>
+  const findXrplTicker = (tokenType: MptTickerType, issuanceId: string) =>
     // The top-level ticker fields are deprecated (deletion target Mar. 2027);
     // `data` carries the same shape and is the one to read.
     items.find(({ data }) => {
@@ -78,21 +75,21 @@ export async function getBalances(custody: RippleCustody, accountId: string) {
     mmfPublic: 0,
     mmfConfidentialSpendable: 0,
     mmfConfidentialInbox: 0,
-    bMMFConfidential: false,
+    isMmfConfidential: false,
     rlusdPublic: 0,
     rlusdConfidentialSpendable: 0,
     rlusdConfidentialInbox: 0,
-    bRLUSDConfidential: false,
+    isRlusdConfidential: false,
   }
 
-  // const [balances, cbin_mmf, cbin_rlusd] = await Promise.all([
+  // const [balances, mmfInbox, rlusdInbox] = await Promise.all([
   //   custody.accounts.getAccountBalances({ accountId, domainId: DOMAIN_ID }),
   //   getInbox(custody, accountId, MMF_ID),
   //   getInbox(custody, accountId, RLUSD_ID),
   // ])
   const balances = await custody.accounts.getAccountBalances({ accountId, domainId: DOMAIN_ID })
-  const cbin_mmf = await getInbox(custody, accountId, MMF_ID)
-  const cbin_rlusd = await getInbox(custody, accountId, RLUSD_ID)
+  const mmfInbox = await getInbox(custody, accountId, MMF_ID)
+  const rlusdInbox = await getInbox(custody, accountId, RLUSD_ID)
 
   // A ticker id is only ever held once per account, so the first match is the
   // balance. The confidential ticker ids stay "" until the ledger has minted
@@ -105,7 +102,7 @@ export async function getBalances(custody: RippleCustody, accountId: string) {
   const mmfConf = balanceOf(working_data.tickerMMFConf)
   if (mmfConf !== undefined) {
     ret.mmfConfidentialSpendable = parseInt(mmfConf.totalAmount)
-    ret.bMMFConfidential = true
+    ret.isMmfConfidential = true
   }
 
   const rlusd = balanceOf(working_data.tickerRLUSD)
@@ -113,17 +110,17 @@ export async function getBalances(custody: RippleCustody, accountId: string) {
   const rlusdConf = balanceOf(working_data.tickerRLUSDConf)
   if (rlusdConf !== undefined) {
     ret.rlusdConfidentialSpendable = parseInt(rlusdConf.totalAmount)
-    ret.bRLUSDConfidential = true
+    ret.isRlusdConfidential = true
   }
 
-  if (cbin_mmf !== null) {
-    ret.bMMFConfidential = true
-    ret.mmfConfidentialInbox = cbin_mmf
+  if (mmfInbox !== null) {
+    ret.isMmfConfidential = true
+    ret.mmfConfidentialInbox = mmfInbox
   }
 
-  if (cbin_rlusd !== null) {
-    ret.bRLUSDConfidential = true
-    ret.rlusdConfidentialInbox = cbin_rlusd
+  if (rlusdInbox !== null) {
+    ret.isRlusdConfidential = true
+    ret.rlusdConfidentialInbox = rlusdInbox
   }
 
   return ret
@@ -150,7 +147,7 @@ export async function getTicket(
   custody: RippleCustody,
   xrplClient: Client,
   accountAddress: string,
-  bCreate: boolean,
+  shouldCreate: boolean,
 ): Promise<number> {
   // Note: creates 10 tickets if none exist
   // Does not handle concurrency... just returns the first ticket, if two processes request one it will likely be the same
@@ -166,7 +163,7 @@ export async function getTicket(
   if (ticket !== undefined) {
     return ticket.TicketSequence
   } else {
-    if (!bCreate)
+    if (!shouldCreate)
       throw new Error(`[Get Ticket] No tickets found for account address ${accountAddress}`)
     console.log(`Creating tickets for account address ${accountAddress}.`)
     await proposeAndWait(custody, `TicketCreate (${accountAddress})`, {
@@ -181,15 +178,15 @@ export async function getTicket(
   }
 }
 
-export async function createElGammal(custody: RippleCustody, wallet: Wallet, txtAccount: string) {
+export async function createElGammal(custody: RippleCustody, wallet: Wallet, accountLabel: string) {
   let publicKey = await custody.xrpl.findElGamalPublicKey(wallet.address, {
     domainId: DOMAIN_ID,
     ledgerId: LEDGER_ID,
   })
   if (publicKey !== undefined && publicKey !== "") {
-    console.log(`${txtAccount} has existing ElGamal key registered: ${publicKey}`)
+    console.log(`${accountLabel} has existing ElGamal key registered: ${publicKey}`)
   } else {
-    console.log(`Generating ${txtAccount} ElGamal Key.`)
+    console.log(`Generating ${accountLabel} ElGamal Key.`)
     await custody.xrpl.provisionElGamalKeyPair(wallet.address, { domainId: DOMAIN_ID })
     // The vault writes the key *after* the provisioning intent executes, so
     // read it back with the polling variant rather than a bare get.
@@ -197,25 +194,26 @@ export async function createElGammal(custody: RippleCustody, wallet: Wallet, txt
       domainId: DOMAIN_ID,
       ledgerId: LEDGER_ID,
     })
-    console.log(`${txtAccount} ElGamal Key created: ${publicKey}`)
+    console.log(`${accountLabel} ElGamal Key created: ${publicKey}`)
   }
   return publicKey
 }
 
-export async function setupHolder(custody: RippleCustody, wallet: Wallet, txtAccount: string) {
+export async function setupHolder(custody: RippleCustody, wallet: Wallet, accountLabel: string) {
   const bal = await getBalances(custody, wallet.id)
-  if (bal.bMMFConfidential) console.log(`${txtAccount} already has confidential MMF balances.`)
+  if (bal.isMmfConfidential) console.log(`${accountLabel} already has confidential MMF balances.`)
   else {
-    console.log(`Setting up ${txtAccount} confidential MMF balances.`)
-    await createElGammal(custody, wallet, txtAccount)
+    console.log(`Setting up ${accountLabel} confidential MMF balances.`)
+    await createElGammal(custody, wallet, accountLabel)
     await confidentialConvert(custody, wallet, MMF_ID, "MMF", "0")
-    console.log(`Setup of ${txtAccount} confidential MMF balances complete.`)
+    console.log(`Setup of ${accountLabel} confidential MMF balances complete.`)
   }
-  if (bal.bRLUSDConfidential) console.log(`${txtAccount} already has confidential RLUSD balances.`)
+  if (bal.isRlusdConfidential)
+    console.log(`${accountLabel} already has confidential RLUSD balances.`)
   else {
-    console.log(`Setting up ${txtAccount} confidential RLUSD balances.`)
+    console.log(`Setting up ${accountLabel} confidential RLUSD balances.`)
     await confidentialConvert(custody, wallet, RLUSD_ID, "RLUSD", "0")
-    console.log(`Setup of ${txtAccount} confidential RLUSD balances complete.`)
+    console.log(`Setup of ${accountLabel} confidential RLUSD balances complete.`)
   }
 }
 
@@ -251,12 +249,12 @@ async function confidentialConvert(
   custody: RippleCustody,
   wallet: Wallet,
   mptId: string,
-  txtMPT: string,
+  tokenLabel: string,
   amount: string,
 ) {
   const transaction = await proposeAndWait(
     custody,
-    `ConfidentialMPTConvert ${amount} ${txtMPT} (${wallet.name})`,
+    `ConfidentialMPTConvert ${amount} ${tokenLabel} (${wallet.name})`,
     {
       Account: wallet.address,
       operation: {
@@ -269,16 +267,16 @@ async function confidentialConvert(
 
   // we now need to ensure we release funds from quarantine
   console.log(
-    `MPT confidential convert of ${amount} units of asset ${txtMPT} held by ${wallet.name} processed (transaction: ${transaction.id}).`,
+    `MPT confidential convert of ${amount} units of asset ${tokenLabel} held by ${wallet.name} processed (transaction: ${transaction.id}).`,
   )
   // NOTE: Perform quarantine in parallel with merge inbox
   // REDUCING CONCURRENCY TO ENSURE STABILITY - WILL ASSESS FOR LATER ENHANCEMENT
   // await Promise.all([
   //     performQuarantineRelease(custody, wallet.id, transaction.id, amount !== "0"),
-  //     mergeInbox(custody, wallet, mptId, txtMPT)
+  //     mergeInbox(custody, wallet, mptId, tokenLabel)
   // ]);
   await performQuarantineRelease(custody, wallet.id, transaction.id, amount !== "0")
-  await mergeInbox(custody, wallet, mptId, txtMPT)
+  await mergeInbox(custody, wallet, mptId, tokenLabel)
   console.log(`Quarantine release and inbox merged for Confidential Convert for ${wallet.name}`)
   return
 }
@@ -287,10 +285,10 @@ export async function mergeInbox(
   custody: RippleCustody,
   wallet: Wallet,
   mptId: string,
-  txtMPT: string,
+  tokenLabel: string,
 ) {
   // `proposeAndWait` only returns once the transaction is on the ledger.
-  await proposeAndWait(custody, `ConfidentialMPTMergeInbox ${txtMPT} (${wallet.name})`, {
+  await proposeAndWait(custody, `ConfidentialMPTMergeInbox ${tokenLabel} (${wallet.name})`, {
     Account: wallet.address,
     operation: {
       type: "ConfidentialMPTMergeInbox",
@@ -360,17 +358,17 @@ async function performQuarantineRelease(
   custody: RippleCustody,
   accountId: string,
   transactionId: string,
-  bQuarantine: boolean,
+  expectQuarantine: boolean,
 ) {
   // Filter on the server: `quarantineStatus` is also set to "Released" and
   // "Skipped", both of which a truthy client-side check would wrongly pick up
   // and re-submit for release.
-  const { items: qtransfers } = await custody.transactions.transfers(
+  const { items: quarantinedTransfers } = await custody.transactions.transfers(
     { domainId: DOMAIN_ID },
     { transactionId, quarantineStatus: "Quarantined" },
   )
-  if (qtransfers.length === 0) {
-    if (bQuarantine)
+  if (quarantinedTransfers.length === 0) {
+    if (expectQuarantine)
       console.log(
         `[Quarantine Release] Warning: no quarantined transfers found for Transaction ${transactionId}.`,
       )
@@ -388,7 +386,7 @@ async function performQuarantineRelease(
       {
         type: "v0_ReleaseQuarantinedTransfers",
         accountId,
-        transferIds: qtransfers.map((x) => x.id),
+        transferIds: quarantinedTransfers.map((x) => x.id),
       },
       { domainId: DOMAIN_ID },
     )

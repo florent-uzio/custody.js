@@ -100,32 +100,33 @@ const setupHolders = async (custody: RippleCustody) => {
 
 //**** Fund Confidential Positions ****/
 const fundConfidential = async (custody: RippleCustody, bals: Balances) => {
-  const mmf_amount = MMF_UNITS * Math.pow(10, working_data.scaleMMF)
-  const rlusd_principal = RLUSD_PRINCIPLE * Math.pow(10, working_data.scaleRLUSD)
-  const rlusd_interest = (RLUSD_REPAYMENT - RLUSD_PRINCIPLE) * Math.pow(10, working_data.scaleRLUSD)
-  const [changed1, changed2] = await Promise.all([
+  const mmfAmount = MMF_UNITS * Math.pow(10, working_data.scaleMMF)
+  const rlusdPrincipalAmount = RLUSD_PRINCIPLE * Math.pow(10, working_data.scaleRLUSD)
+  const rlusdInterestAmount =
+    (RLUSD_REPAYMENT - RLUSD_PRINCIPLE) * Math.pow(10, working_data.scaleRLUSD)
+  const [sellerChanged, buyerChanged] = await Promise.all([
     // The seller's two fundings run sequentially to avoid sequence number
     // clashes; the buyer is a different account, so it runs alongside them.
     (async () => {
-      const bChange1 = await fundConfidentialBalance(
+      const mmfChanged = await fundConfidentialBalance(
         custody,
         WALLET_REPO_SELLER,
         MMF_ID,
         "MMF",
         bals.sellerBalances.mmfConfidentialSpendable,
         bals.sellerBalances.mmfConfidentialInbox,
-        mmf_amount,
+        mmfAmount,
       )
-      const bChange2 = await fundConfidentialBalance(
+      const rlusdChanged = await fundConfidentialBalance(
         custody,
         WALLET_REPO_SELLER,
         RLUSD_ID,
         "RLUSD",
         bals.sellerBalances.rlusdConfidentialSpendable,
         bals.sellerBalances.rlusdConfidentialInbox,
-        rlusd_interest,
+        rlusdInterestAmount,
       )
-      return bChange1 || bChange2
+      return mmfChanged || rlusdChanged
     })(),
     fundConfidentialBalance(
       custody,
@@ -134,11 +135,11 @@ const fundConfidential = async (custody: RippleCustody, bals: Balances) => {
       "RLUSD",
       bals.buyerBalances.rlusdConfidentialSpendable,
       bals.buyerBalances.rlusdConfidentialInbox,
-      rlusd_principal,
+      rlusdPrincipalAmount,
     ),
   ])
 
-  return changed1 || changed2
+  return sellerChanged || buyerChanged
 }
 
 const repoNearLeg = async (custody: RippleCustody, xrplClient: Client) => {
@@ -192,8 +193,8 @@ const main = async () => {
     console.log()
     const bals = await printBalances(custody)
     console.log()
-    const bChange = await fundConfidential(custody, bals)
-    if (bChange) {
+    const fundingChanged = await fundConfidential(custody, bals)
+    if (fundingChanged) {
       // Adding a pause to ensure data consistency
       await new Promise((resolve) => setTimeout(resolve, 3000))
       console.log("Post-funding balances (scaled):")

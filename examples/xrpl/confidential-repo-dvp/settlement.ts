@@ -11,29 +11,29 @@ import type { Wallet } from "./types.js"
 export async function atomicSettlement(
   custody: RippleCustody,
   xrplClient: Client,
-  mmf_sender: Wallet,
-  rlusd_sender: Wallet,
-  mmf_units: number,
-  rlusd_units: number,
+  mmfSender: Wallet,
+  rlusdSender: Wallet,
+  mmfUnits: number,
+  rlusdUnits: number,
 ) {
   console.log(
-    `Atomic Settlement: ${mmf_sender.name} sending ${mmf_units} MMF units, ${rlusd_sender.name} sending ${rlusd_units} RLUSD.`,
+    `Atomic Settlement: ${mmfSender.name} sending ${mmfUnits} MMF units, ${rlusdSender.name} sending ${rlusdUnits} RLUSD.`,
   )
   console.log("Constructing inner transactions for batch.")
-  const mmfUnscaledAmount = mmf_units * Math.pow(10, working_data.scaleMMF)
-  const rlusdUnscaledAmount = rlusd_units * Math.pow(10, working_data.scaleRLUSD)
+  const mmfUnscaledAmount = mmfUnits * Math.pow(10, working_data.scaleMMF)
+  const rlusdUnscaledAmount = rlusdUnits * Math.pow(10, working_data.scaleRLUSD)
   // REDUCING CONCURRENCY TO ENSURE STABILITY - WILL ASSESS FOR LATER ENHANCEMENT
   // const [innerTrxn1, innerTrxn2] = await Promise.all([
-  //     getTicket(custody, xrplClient, mmf_sender.address, true)
-  //     .then(function(ticketSequence) {return custody.xrpl.buildConfidentialSend({sender: mmf_sender.address, destination: rlusd_sender.address, issuanceId: MMF_ID, amount: mmfUnscaledAmount.toString(), ticketSequence}, {domainId: DOMAIN_ID, ledgerId: LEDGER_ID})}),
-  //     getTicket(custody, xrplClient, rlusd_sender.address, true)
-  //     .then(function(ticketSequence) {return custody.xrpl.buildConfidentialSend({sender: rlusd_sender.address, destination: mmf_sender.address, issuanceId: RLUSD_ID, amount: rlusdUnscaledAmount.toString(), ticketSequence}, {domainId: DOMAIN_ID, ledgerId: LEDGER_ID})}),
+  //     getTicket(custody, xrplClient, mmfSender.address, true)
+  //     .then(function(ticketSequence) {return custody.xrpl.buildConfidentialSend({sender: mmfSender.address, destination: rlusdSender.address, issuanceId: MMF_ID, amount: mmfUnscaledAmount.toString(), ticketSequence}, {domainId: DOMAIN_ID, ledgerId: LEDGER_ID})}),
+  //     getTicket(custody, xrplClient, rlusdSender.address, true)
+  //     .then(function(ticketSequence) {return custody.xrpl.buildConfidentialSend({sender: rlusdSender.address, destination: mmfSender.address, issuanceId: RLUSD_ID, amount: rlusdUnscaledAmount.toString(), ticketSequence}, {domainId: DOMAIN_ID, ledgerId: LEDGER_ID})}),
   // ]);
-  const mmfTicket = await getTicket(custody, xrplClient, mmf_sender.address, true)
+  const mmfTicket = await getTicket(custody, xrplClient, mmfSender.address, true)
   const mmfLeg = await custody.xrpl.buildConfidentialSend(
     {
-      sender: mmf_sender.address,
-      destination: rlusd_sender.address,
+      sender: mmfSender.address,
+      destination: rlusdSender.address,
       issuanceId: MMF_ID,
       amount: mmfUnscaledAmount.toString(),
       ticketSequence: mmfTicket,
@@ -47,11 +47,11 @@ export async function atomicSettlement(
       },
     },
   )
-  const rlusdTicket = await getTicket(custody, xrplClient, rlusd_sender.address, true)
+  const rlusdTicket = await getTicket(custody, xrplClient, rlusdSender.address, true)
   const rlusdLeg = await custody.xrpl.buildConfidentialSend(
     {
-      sender: rlusd_sender.address,
-      destination: mmf_sender.address,
+      sender: rlusdSender.address,
+      destination: mmfSender.address,
       issuanceId: RLUSD_ID,
       amount: rlusdUnscaledAmount.toString(),
       ticketSequence: rlusdTicket,
@@ -81,8 +81,8 @@ export async function atomicSettlement(
   // `ConfidentialSendLeg`), keyed by the sending account's address.
   const batchPayload = batchToCustodyBatchPayload(autofilledBatch, {
     confidentialSends: {
-      [mmf_sender.address]: mmfLeg.entryFields,
-      [rlusd_sender.address]: rlusdLeg.entryFields,
+      [mmfSender.address]: mmfLeg.entryFields,
+      [rlusdSender.address]: rlusdLeg.entryFields,
     },
   })
 
@@ -94,10 +94,10 @@ export async function atomicSettlement(
 
   console.log("Retrieving participant signatures for batch.")
   const [signer1, signer2] = await Promise.all([
-    custody.xrpl.signBatchPayloadAndWait(signingPayload, mmf_sender.address, {
+    custody.xrpl.signBatchPayloadAndWait(signingPayload, mmfSender.address, {
       domainId: DOMAIN_ID,
     }),
-    custody.xrpl.signBatchPayloadAndWait(signingPayload, rlusd_sender.address, {
+    custody.xrpl.signBatchPayloadAndWait(signingPayload, rlusdSender.address, {
       domainId: DOMAIN_ID,
     }),
   ])
@@ -143,18 +143,18 @@ export async function atomicSettlement(
   console.log("Merging Inboxes.")
   // REDUCING CONCURRENCY TO ENSURE STABILITY - WILL ASSESS FOR LATER ENHANCEMENT
   // await Promise.all([
-  //     mergeInbox(custody, mmf_sender, RLUSD_ID, "RLUSD"),
-  //     mergeInbox(custody, rlusd_sender, MMF_ID, "MMF")
+  //     mergeInbox(custody, mmfSender, RLUSD_ID, "RLUSD"),
+  //     mergeInbox(custody, rlusdSender, MMF_ID, "MMF")
   // ]);
-  await mergeInbox(custody, mmf_sender, RLUSD_ID, "RLUSD")
-  await mergeInbox(custody, rlusd_sender, MMF_ID, "MMF")
+  await mergeInbox(custody, mmfSender, RLUSD_ID, "RLUSD")
+  await mergeInbox(custody, rlusdSender, MMF_ID, "MMF")
   console.log("Inboxes Successfully Merged.")
 }
 
-async function checkBatchTransactionDetails(client: Client, batchhash: string) {
+async function checkBatchTransactionDetails(client: Client, batchHash: string) {
   const tx = await client.request({
     command: "tx",
-    transaction: batchhash,
+    transaction: batchHash,
   })
   const ledger = tx.result.ledger_index
   // The `tx` response types the inner transactions loosely; this batch is known
@@ -164,28 +164,29 @@ async function checkBatchTransactionDetails(client: Client, batchhash: string) {
   }[]
 
   // Only need one account as both transactions will be associated to both accounts
-  const mmf_sender = rawTransactions.find((t) => t.RawTransaction.MPTokenIssuanceID === MMF_ID)
-    ?.RawTransaction.Account
-  if (mmf_sender === undefined)
-    throw new Error(`No MMF leg found in batch transaction ${batchhash}.`)
+  const mmfSenderAddress = rawTransactions.find(
+    (t) => t.RawTransaction.MPTokenIssuanceID === MMF_ID,
+  )?.RawTransaction.Account
+  if (mmfSenderAddress === undefined)
+    throw new Error(`No MMF leg found in batch transaction ${batchHash}.`)
 
   const { result } = await client.request({
     command: "account_tx",
-    account: mmf_sender,
+    account: mmfSenderAddress,
     ledger_index: ledger,
   })
   // Inner transactions point back at their batch through ParentBatchID, which
   // xrpl.js does not carry on its metadata type yet.
   const itx = result.transactions.filter(
-    (t) => (t.meta as { ParentBatchID?: string } | undefined)?.ParentBatchID === batchhash,
+    (t) => (t.meta as { ParentBatchID?: string } | undefined)?.ParentBatchID === batchHash,
   )
 
   const hashOf = (issuanceId: string, label: string) => {
     const hash = itx.find((t) => t.tx_json?.MPTokenIssuanceID === issuanceId)?.hash
     if (hash === undefined)
-      throw new Error(`No ${label} leg found for batch transaction ${batchhash}.`)
+      throw new Error(`No ${label} leg found for batch transaction ${batchHash}.`)
     return hash
   }
 
-  return { batch: batchhash, mmf: hashOf(MMF_ID, "MMF"), rlusd: hashOf(RLUSD_ID, "RLUSD") }
+  return { batch: batchHash, mmf: hashOf(MMF_ID, "MMF"), rlusd: hashOf(RLUSD_ID, "RLUSD") }
 }
