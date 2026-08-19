@@ -8,7 +8,7 @@ import {
   TRANSACTION_POLLING,
   working_data,
 } from "./config.js"
-import type { Wallet } from "./types.js"
+import type { MptTickerType, Wallet } from "./types.js"
 
 //**** RC Helper Functions ****/
 // refreshTickers
@@ -28,10 +28,7 @@ export async function refreshTickers(custody: RippleCustody) {
   // tickers than one page holds, paginate with `startingAfter`.
   const { items } = await custody.tickers.list({ ledgerId: [LEDGER_ID] })
 
-  const findXrplTicker = (
-    tokenType: "MultiPurposeToken" | "ConfidentialMultiPurposeToken",
-    issuanceId: string,
-  ) =>
+  const findXrplTicker = (tokenType: MptTickerType, issuanceId: string) =>
     // The top-level ticker fields are deprecated (deletion target Mar. 2027);
     // `data` carries the same shape and is the one to read.
     items.find(({ data }) => {
