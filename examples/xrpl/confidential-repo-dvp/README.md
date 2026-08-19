@@ -119,7 +119,10 @@ account there holds a confidential balance. On the first re-run the
 ## Troubleshooting
 
 - **`MMF not found in Ripple Custody.`** — `MMF_ID` / `RLUSD_ID` do not match a
-  ticker on `LEDGER_ID`, or the ticker list is paginated past the first page.
+  ticker on `LEDGER_ID`. The lookup (`tickers.findByXrplMptIssuanceId`) walks
+  every page of that ledger's tickers, so this is not a pagination artifact.
+- **`Multiple … tickers found for XRPL MPT issuance …`** — Custody holds two
+  tickers of the same kind for one issuance; the ids of both are in the message.
 - **`Could not find XRPL address for account <id>`** — the account id is wrong,
   or it has no external XRPL address on that ledger.
 - **`tecNO_PERMISSION` on `MPTokenIssuanceSet`** — confidential transfers were

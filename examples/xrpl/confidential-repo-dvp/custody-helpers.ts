@@ -8,7 +8,7 @@ import {
   TRANSACTION_POLLING,
   working_data,
 } from "./config.js"
-import type { MptTickerType, Wallet } from "./types.js"
+import type { Wallet } from "./types.js"
 
 //**** RC Helper Functions ****/
 // refreshTickers
@@ -23,38 +23,29 @@ import type { MptTickerType, Wallet } from "./types.js"
 // mergeInbox
 
 export async function refreshTickers(custody: RippleCustody) {
-  // `ledgerId` is a server-side filter, so the ledger is narrowed before the
-  // page limit applies rather than after. If the ledger itself carries more
-  // tickers than one page holds, paginate with `startingAfter`.
-  const { items } = await custody.tickers.list({ ledgerId: [LEDGER_ID] })
-
-  const findXrplTicker = (tokenType: MptTickerType, issuanceId: string) =>
-    // The top-level ticker fields are deprecated (deletion target Mar. 2027);
-    // `data` carries the same shape and is the one to read.
-    items.find(({ data }) => {
-      if (data.ledgerDetails.type !== "XRPL") return false
-      const properties = data.ledgerDetails.properties
-      return (
-        properties.type === tokenType &&
-        "issuanceId" in properties &&
-        properties.issuanceId === issuanceId
-      )
-    })?.data
-
-  const mmf = findXrplTicker("MultiPurposeToken", MMF_ID)
+  // One call per issuance returns both halves — the public ticker and the
+  // confidential one if the issuance currently has it. It walks every page of
+  // the ledger's tickers, so a ticker sitting past the first page is still
+  // found.
+  const { public: mmf, confidential: mmfConf } = await custody.tickers.findByXrplMptIssuanceId(
+    MMF_ID,
+    { ledgerId: LEDGER_ID },
+  )
   if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
   working_data.tickerMMF = mmf.id
   working_data.scaleMMF = mmf.decimals ?? 0
-
-  const mmfConf = findXrplTicker("ConfidentialMultiPurposeToken", MMF_ID)
+  // Absent until the issuer has made the issuance confidential, which the rest
+  // of the script treats as "not set up yet" rather than an error.
   if (mmfConf !== undefined) working_data.tickerMMFConf = mmfConf.id
 
-  const rlusd = findXrplTicker("MultiPurposeToken", RLUSD_ID)
+  const { public: rlusd, confidential: rlusdConf } = await custody.tickers.findByXrplMptIssuanceId(
+    RLUSD_ID,
+    { ledgerId: LEDGER_ID },
+  )
   if (rlusd === undefined) throw new Error("RLUSD not found in Ripple Custody.")
   working_data.tickerRLUSD = rlusd.id
   working_data.scaleRLUSD = rlusd.decimals ?? 0
 
-  const rlusdConf = findXrplTicker("ConfidentialMultiPurposeToken", RLUSD_ID)
   if (rlusdConf !== undefined) working_data.tickerRLUSDConf = rlusdConf.id
 }
 
