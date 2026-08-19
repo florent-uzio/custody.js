@@ -8,11 +8,11 @@ export type HolderBalance = {
   mmfPublic: number
   mmfConfidentialSpendable: number
   mmfConfidentialInbox: number
-  bMMFConfidential: boolean
+  isMmfConfidential: boolean
   rlusdPublic: number
   rlusdConfidentialSpendable: number
   rlusdConfidentialInbox: number
-  bRLUSDConfidential: boolean
+  isRlusdConfidential: boolean
 }
 
 export type Balances = {
