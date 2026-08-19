@@ -10,6 +10,7 @@
     "before-sign-signature-hint",
     "cmpt-compute-unsigned-post",
     "confidential-mpt-cmpt-compute",
+    "cursor-pagination",
     "debug-http-logging",
     "elgamal-key-lookup-and-wait",
     "elgamal-public-key-by-address",
@@ -25,10 +26,12 @@
     "propose-returns-payload-id",
     "public-key-by-address",
     "quarantine-status-500-hint",
+    "tickers-find-by-xrpl-mpt-issuance-id",
     "transaction-failure-reason",
     "transaction-order-confirmation",
     "vendor-xrpl-confidential-mpts-031913c",
     "xrpl-build-confidential-send",
+    "xrpl-custody-devnet-ledger-id",
     "xrpl-elgamal-and-issuance-helpers",
     "xrpl-service-guards-and-structure"
   ]

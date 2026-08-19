@@ -1,5 +1,73 @@
 # custody
 
+## 2.13.0-beta.14
+
+### Minor Changes
+
+- 2f6fdb6: Add `paginate` — walk every page of a list endpoint instead of silently reading the first one.
+
+  Every `.list()`-style method in this SDK returns **exactly one page**, and nothing in the response says so at the call site. Roughly 40 methods across 20 namespaces are affected — `tickers.list`, `accounts.getAccountBalances`, `transactions.transfers`, `events.list`, `users.list`, every `virtualLedgers.*` list, and the rest. `startingAfter` has been in the generated types all along and nothing in `src/` ever passed it. So code that lists a collection and filters `items` itself gets `undefined` from a `.find()` and concludes the record does not exist — no error, no warning, no truncation signal of any kind.
+
+  ```ts
+  import { paginate } from "@florent-uzio/custody"
+
+  const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+
+  for await (const ticker of paginate(fetchTickers)) {
+    if (ticker.ledgerId === "xrpl-testnet") return ticker
+  }
+  ```
+
+  It takes a callback rather than a method reference because it has to inject the cursor into a query the caller owns, and list methods disagree on arity — `tickers.list(query)` against `accounts.getAccountBalances(params, query)`. One callback shape covers both. Pages are fetched lazily: the request for page N+1 only goes out once page N's items are exhausted, so `break` and `return` cost nothing. `paginate` sets `startingAfter` and **never** `limit`, because the documented maximum varies by endpoint (100 on most, 1000 on a couple, unspecified elsewhere) — pass `limit: 100` yourself to cut round trips.
+
+  To drain a whole collection, accumulate in the loop. There is deliberately no `listAll`: the memory and request cost of pulling everything is real, and it should be visible in the code that pays it rather than hidden behind a name that reads as free.
+
+  Two things fail loudly rather than quietly. A cursor that does not advance — a page returning the same `nextStartingAfter` it was given — throws a `CustodyError` instead of looping forever issuing requests. And `paginate` will not typecheck against the endpoints that are not cursor-paginated (`omnibus.tenants.list` and `domains.sweepThresholds` page by offset; `channels.*` and `requests.*` return plain arrays), so it cannot be misapplied.
+
+  Also exports `CursorPage<TItem>`, the structural constraint on a cursor-paginated response, for annotating your own `fetchPage` closures. It is generic over both response families the API returns — `Core_*Collection` spells the cursor `string | undefined`, `VirtualAccounting_*PagedCollectionResponse` spells it `string | null` — and `paginate.ts` carries type-level assertions that real generated collections from both still satisfy it, so a regenerated spec that renames `items` or `nextStartingAfter` fails the build rather than rotting silently.
+
+  **`accounts.findByAddress` now reads every page, and can throw where it previously returned.** It filters client-side for an `AccountAddressReference`, but `/v1/addresses` returns those mixed in with every `DepositInstructionsReference` for the same address — so a real match could sit past the page boundary and the lookup would report the account as missing. That matters more than it sounds: `findByAddress` gates `resolveContext`, which every `custody.xrpl.*` method calls.
+
+  The behaviour change is in the ambiguity check. `findByAddress` throws `"Multiple accounts found for address …"` on more than one match, but it could only ever see page one — so a genuine duplicate hiding on a later page returned one arbitrary match and succeeded. It now raises. That is the function's documented contract finally holding rather than a new contract: pass `ledgerId` or `domainId` to disambiguate, as the error has always instructed. The first request is unchanged (`startingAfter` is `undefined` and dropped), so the single-page case costs exactly what it did before, and paging stops as soon as a second match appears rather than counting matches nobody reads.
+
+  One caveat worth knowing: `/v1/addresses` declares no cursor parameters in the spec, only `address`, yet returns a collection type carrying `nextStartingAfter`. If the server never populates it, nothing changes. If it populates it and honours `startingAfter`, the truncation bug is fixed. If it populates it and ignores `startingAfter`, you get the "Pagination stalled" error — a loud failure in place of a silent wrong answer, which is the trade throughout.
+
+  The other ~39 list methods are untouched and still return one page; `paginate` is opt-in per call site and nothing is deprecated. There is no `custody.tickers.paginate()`, no truncation warning, and no `maxPages` knob — [ADR-0008](../docs/adr/0008-cursor-pagination.md) records why each was rejected, and the README gains a Pagination section.
+
+- 12e8beb: Add `tickers.findByXrplMptIssuanceId` — the tickers custody holds for one XRPL MPT issuance ID, in one call.
+
+  "Given an MPT issuance ID, what are my tickers?" is the first question any confidential-MPT flow asks: the confidential ticker id is the only way to read a confidential balance, and neither id is derivable from the issuance ID. `getTickers` has no `issuanceId` query parameter, so answering it meant listing a ledger's tickers and scanning `data.ledgerDetails.properties` client-side — twice per asset, once for `MultiPurposeToken` and once for `ConfidentialMultiPurposeToken`.
+
+  ```ts
+  const { public: mmf, confidential: mmfConf } = await custody.tickers.findByXrplMptIssuanceId(
+    MMF_ISSUANCE_ID,
+    { ledgerId: "xrpl-testnet-august-2024" },
+  )
+
+  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
+  const scale = mmf.decimals ?? 0
+  ```
+
+  It takes the ID `xrpl.getMptIssuanceId` produces, and the names match so the pairing is visible.
+
+  **Both halves are optional, and neither implies the other.** Most MPT issuances are not confidential, so `confidential` is usually absent — and whether it ever exists is the issuer's call, not a step already underway. It will not appear on its own, so branch on `undefined` rather than polling for it. `public` is likewise absent when custody tracks no plain ticker. An issuance the ledger does not know comes back as `{}` rather than throwing, so absence reads the same way for every reason.
+
+  That hand-rolled scan reads **one page**. A ledger carrying more tickers than a page holds reports the ticker as missing — no error, the `.find()` just returns `undefined`. For the confidential half that failure is especially quiet, because "truncated off page one" and "this issuance simply isn't confidential" look identical at the call site. `findByXrplMptIssuanceId` walks every page instead, narrowed server-side to `ledgerId` (the only filter the endpoint applies) and reading `limit: 100` at a time.
+
+  `ledgerId` is required: an MPT issuance ID only identifies a token within one XRPL network, and it is what keeps the walk from becoming an unfiltered sweep of every ticker on the instance.
+
+  Both halves come back as `Core_ApiTickerData` — the `data` payload of the collection item, not the item itself. The item's top-level twins (`id`, `ledgerId`, `decimals`, `ledgerDetails`, …) are all `@deprecated` with a Mar. 2027 deletion target, so returning `data` keeps callers off a surface that is going away. The result type is exported as `XrplMptIssuanceTickers`, along with `Core_ApiTickerData` and `FindByXrplMptIssuanceIdOptions`.
+
+  Two tickers of the same kind claiming one issuance ID throw a `CustodyError` naming both. Custody should never hold two, and returning an arbitrary one would make every balance read after it a coin flip — so every page is walked even once both halves are found, since a duplicate can only be ruled out by looking at the rest of the collection. That is one pass over the ledger's tickers: the same cost as the single `list()` call it replaces, plus a request per extra page.
+
+  This is the second internal call site for `paginate` after `accounts.findByAddress`, and follows it in shape — a semantic lookup that owns its own paging, not a `tickers.paginate()` / `listAll()` on the collection method, which [ADR-0008](../docs/adr/0008-cursor-pagination.md) rejects.
+
+### Patch Changes
+
+- 4a2ce71: Add `xrpl-custody-devnet` to the known `XrplLedgerId` values.
+
+  Autocomplete only. `XrplLedgerId` ends in `(string & {})`, so the ledger already worked everywhere a `ledgerId` is accepted — it just had to be typed out from memory, with a silent lookup failure as the penalty for a typo. Nothing else changes: no existing id is renamed or removed, and the type is as assignable from arbitrary strings as it was before.
+
 ## 2.13.0-beta.13
 
 ### Minor Changes
