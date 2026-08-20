@@ -31,7 +31,10 @@ export async function refreshTickers(custody: RippleCustody) {
     MMF_ID,
     { ledgerId: LEDGER_ID },
   )
-  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody (note: this may be due to no wallet holding a >0 balance, that is a prerequisite for this example).")
+  if (mmf === undefined)
+    throw new Error(
+      "MMF not found in Ripple Custody (note: this may be due to no wallet holding a >0 balance, that is a prerequisite for this example).",
+    )
   working_data.tickerMMF = mmf.id
   working_data.scaleMMF = mmf.decimals ?? 0
   // Absent until the issuer has made the issuance confidential, which the rest

@@ -109,10 +109,14 @@ export async function atomicSettlement(
   // `proposeBatch` returns the payload id it generated, which is the
   // transaction order id — no need to mint UUIDs up front just to learn what
   // the SDK was about to generate.
-  const { requestId, payloadId, intentId } = await custody.xrpl.proposeBatch(batchPayload, batchSigners, {
-    domainId: DOMAIN_ID,
-    ledgerId: LEDGER_ID,
-  })
+  const { requestId, payloadId, intentId } = await custody.xrpl.proposeBatch(
+    batchPayload,
+    batchSigners,
+    {
+      domainId: DOMAIN_ID,
+      ledgerId: LEDGER_ID,
+    },
+  )
   console.log(`Batch submitted (IntentId: ${intentId}, OrderId: ${payloadId}).`)
   const transaction = await waitForIntentTransaction(
     custody,
@@ -149,7 +153,7 @@ export async function atomicSettlement(
   await mergeInbox(custody, mmfSender, RLUSD_ID, "RLUSD")
   await mergeInbox(custody, rlusdSender, MMF_ID, "MMF")
   // Add a wait to ensure balances are updated within Ripple Custody
-  await new Promise(resolve => setTimeout(resolve, 10000));
+  await new Promise((resolve) => setTimeout(resolve, 10000))
   console.log("Inboxes Successfully Merged.")
 }
 

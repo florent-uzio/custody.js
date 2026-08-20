@@ -8,15 +8,10 @@ import {
   WALLET_REPO_BUYER,
   WALLET_REPO_SELLER,
   WALLET_SUBMITTER,
-  requireEnv
+  requireEnv,
 } from "./config.js"
-import {
-  getXRPLAddress,
-  mergeInbox,
-  proposeAndWait,
-  refreshTickers
-} from "./custody-helpers.js"
-import { printBalances, sectionHeader } from "./output.js"
+import { getXRPLAddress, mergeInbox, proposeAndWait, refreshTickers } from "./custody-helpers.js"
+import { printBalances } from "./output.js"
 import type { Wallet } from "./types.js"
 
 /**
@@ -47,38 +42,60 @@ const main = async () => {
       debug: process.env.DEBUG === "true",
     })
 
-    await prepare(custody);
-    
-    console.log("Starting Positions:");
-    const balStart = await printBalances(custody);
+    await prepare(custody)
+
+    console.log("Starting Positions:")
+    const balStart = await printBalances(custody)
 
     // Clear inboxes
-    if(balStart.sellerBalances.mmfConfidentialInbox > 0) await mergeInbox(custody, WALLET_REPO_SELLER, MMF_ID, "MMF");
-    if(balStart.sellerBalances.rlusdConfidentialInbox > 0) await mergeInbox(custody, WALLET_REPO_SELLER, RLUSD_ID, "RLUSD");
-    if(balStart.buyerBalances.mmfConfidentialInbox > 0) await mergeInbox(custody, WALLET_REPO_BUYER, MMF_ID, "MMF");
-    if(balStart.buyerBalances.rlusdConfidentialInbox > 0) await mergeInbox(custody, WALLET_REPO_BUYER, RLUSD_ID, "RLUSD");
-    
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    // Convert everything back
-    const sellerMMF = balStart.sellerBalances.mmfConfidentialSpendable + balStart.sellerBalances.mmfConfidentialInbox
-     , sellerRLUSD = balStart.sellerBalances.rlusdConfidentialSpendable + balStart.sellerBalances.rlusdConfidentialInbox
-     , buyerMMF = balStart.buyerBalances.mmfConfidentialSpendable + balStart.buyerBalances.mmfConfidentialInbox
-     , buyerRLUSD = balStart.buyerBalances.rlusdConfidentialSpendable + balStart.buyerBalances.rlusdConfidentialInbox;
-    if(sellerMMF > 0) await convertBack(custody, WALLET_REPO_SELLER, MMF_ID, "MMF", sellerMMF.toString());
-    if(sellerRLUSD > 0) await convertBack(custody, WALLET_REPO_SELLER, RLUSD_ID, "RLUSD", sellerRLUSD.toString());
-    if(buyerMMF > 0) await convertBack(custody, WALLET_REPO_BUYER, MMF_ID, "MMF", buyerMMF.toString());
-    if(buyerRLUSD > 0) await convertBack(custody, WALLET_REPO_BUYER, RLUSD_ID, "RLUSD", buyerRLUSD.toString());
+    if (balStart.sellerBalances.mmfConfidentialInbox > 0)
+      await mergeInbox(custody, WALLET_REPO_SELLER, MMF_ID, "MMF")
+    if (balStart.sellerBalances.rlusdConfidentialInbox > 0)
+      await mergeInbox(custody, WALLET_REPO_SELLER, RLUSD_ID, "RLUSD")
+    if (balStart.buyerBalances.mmfConfidentialInbox > 0)
+      await mergeInbox(custody, WALLET_REPO_BUYER, MMF_ID, "MMF")
+    if (balStart.buyerBalances.rlusdConfidentialInbox > 0)
+      await mergeInbox(custody, WALLET_REPO_BUYER, RLUSD_ID, "RLUSD")
 
-    console.log("Cleared Positions:");
-    await printBalances(custody);
+    await new Promise((resolve) => setTimeout(resolve, 5000))
+
+    // Convert everything back
+    const sellerMMF =
+        balStart.sellerBalances.mmfConfidentialSpendable +
+        balStart.sellerBalances.mmfConfidentialInbox,
+      sellerRLUSD =
+        balStart.sellerBalances.rlusdConfidentialSpendable +
+        balStart.sellerBalances.rlusdConfidentialInbox,
+      buyerMMF =
+        balStart.buyerBalances.mmfConfidentialSpendable +
+        balStart.buyerBalances.mmfConfidentialInbox,
+      buyerRLUSD =
+        balStart.buyerBalances.rlusdConfidentialSpendable +
+        balStart.buyerBalances.rlusdConfidentialInbox
+    if (sellerMMF > 0)
+      await convertBack(custody, WALLET_REPO_SELLER, MMF_ID, "MMF", sellerMMF.toString())
+    if (sellerRLUSD > 0)
+      await convertBack(custody, WALLET_REPO_SELLER, RLUSD_ID, "RLUSD", sellerRLUSD.toString())
+    if (buyerMMF > 0)
+      await convertBack(custody, WALLET_REPO_BUYER, MMF_ID, "MMF", buyerMMF.toString())
+    if (buyerRLUSD > 0)
+      await convertBack(custody, WALLET_REPO_BUYER, RLUSD_ID, "RLUSD", buyerRLUSD.toString())
+
+    console.log("Cleared Positions:")
+    await printBalances(custody)
   } catch (error) {
     console.log(error)
   }
 }
 
-async function convertBack(custody: RippleCustody, wallet: Wallet, mptId: string, txtMPT: string, amount: string) {
-  console.log(`ConfidentialMPTConvertBack ${amount} ${txtMPT} (${wallet.name})`);
+async function convertBack(
+  custody: RippleCustody,
+  wallet: Wallet,
+  mptId: string,
+  txtMPT: string,
+  amount: string,
+) {
+  console.log(`ConfidentialMPTConvertBack ${amount} ${txtMPT} (${wallet.name})`)
   const transaction = await proposeAndWait(
     custody,
     `ConfidentialMPTConvertBack ${amount} ${txtMPT} (${wallet.name})`,

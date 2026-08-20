@@ -22,8 +22,8 @@ export async function printBalances(custody: RippleCustody): Promise<Balances> {
   //   getBalances(custody, WALLET_REPO_SELLER.id),
   //   getBalances(custody, WALLET_REPO_BUYER.id),
   // ])
-  const sellerBalances = await getBalances(custody, WALLET_REPO_SELLER.id);
-  const buyerBalances = await getBalances(custody, WALLET_REPO_BUYER.id);
+  const sellerBalances = await getBalances(custody, WALLET_REPO_SELLER.id)
+  const buyerBalances = await getBalances(custody, WALLET_REPO_BUYER.id)
 
   if (isNaN(buyerBalances.rlusdConfidentialInbox / rlusdDenom)) console.log("NAN!")
 

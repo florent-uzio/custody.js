@@ -1,22 +1,17 @@
-import 'dotenv/config';
-import { RippleCustody } from "@florent-uzio/custody";
+import { RippleCustody } from "@florent-uzio/custody"
+import "dotenv/config"
 import {
   DOMAIN_ID,
   WALLET_MMF_ISSUER,
   WALLET_REPO_BUYER,
   WALLET_REPO_SELLER,
   WALLET_SUBMITTER,
-  working_data
 } from "./config.js"
-import {
-  getXRPLAddress,
-  refreshTickers
-} from "./custody-helpers.js"
+import { getXRPLAddress, refreshTickers } from "./custody-helpers.js"
 import { printBalances } from "./output.js"
 
 //**** SUMMARY  ****/
 // Get balances for the wallets related to the repo e2e example
-
 
 //**** Preparation ****/
 const prepare = async (custody: RippleCustody) => {
@@ -31,26 +26,24 @@ const prepare = async (custody: RippleCustody) => {
   await refreshTickers(custody)
 }
 
-
 //**** MAIN E2E PROCESS ****/
 const main = async () => {
-    try {
-        const custody = new RippleCustody({
-              apiUrl: requireEnv("API_URL"),
-              authUrl: requireEnv("AUTH_URL"),
-              privateKey: requireEnv("PRIVATE_KEY"),
-              publicKey: requireEnv("PUBLIC_KEY"),
-              debug: process.env.DEBUG === "true",
-            })
+  try {
+    const custody = new RippleCustody({
+      apiUrl: requireEnv("API_URL"),
+      authUrl: requireEnv("AUTH_URL"),
+      privateKey: requireEnv("PRIVATE_KEY"),
+      publicKey: requireEnv("PUBLIC_KEY"),
+      debug: process.env.DEBUG === "true",
+    })
 
-        await prepare(custody);
-        console.log();
-        await printBalances(custody);
-        console.log();
-    
-    } catch (error) {
-        console.log(error)
-    }
+    await prepare(custody)
+    console.log()
+    await printBalances(custody)
+    console.log()
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 main()
