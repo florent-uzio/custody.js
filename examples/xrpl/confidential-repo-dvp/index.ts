@@ -104,11 +104,42 @@ const fundConfidential = async (custody: RippleCustody, bals: Balances) => {
   const rlusdPrincipalAmount = RLUSD_PRINCIPLE * Math.pow(10, working_data.scaleRLUSD)
   const rlusdInterestAmount =
     (RLUSD_REPAYMENT - RLUSD_PRINCIPLE) * Math.pow(10, working_data.scaleRLUSD)
-  const [sellerChanged, buyerChanged] = await Promise.all([
-    // The seller's two fundings run sequentially to avoid sequence number
-    // clashes; the buyer is a different account, so it runs alongside them.
-    (async () => {
-      const mmfChanged = await fundConfidentialBalance(
+  // REDUCING CONCURRENCY TO ENSURE STABILITY - WILL ASSESS FOR LATER ENHANCEMENT
+  // const [sellerChanged, buyerChanged] = await Promise.all([
+  //   // The seller's two fundings run sequentially to avoid sequence number
+  //   // clashes; the buyer is a different account, so it runs alongside them.
+  //   (async () => {
+  //     const mmfChanged = await fundConfidentialBalance(
+  //       custody,
+  //       WALLET_REPO_SELLER,
+  //       MMF_ID,
+  //       "MMF",
+  //       bals.sellerBalances.mmfConfidentialSpendable,
+  //       bals.sellerBalances.mmfConfidentialInbox,
+  //       mmfAmount,
+  //     )
+  //     const rlusdChanged = await fundConfidentialBalance(
+  //       custody,
+  //       WALLET_REPO_SELLER,
+  //       RLUSD_ID,
+  //       "RLUSD",
+  //       bals.sellerBalances.rlusdConfidentialSpendable,
+  //       bals.sellerBalances.rlusdConfidentialInbox,
+  //       rlusdInterestAmount,
+  //     )
+  //     return mmfChanged || rlusdChanged
+  //   })(),
+  //   fundConfidentialBalance(
+  //     custody,
+  //     WALLET_REPO_BUYER,
+  //     RLUSD_ID,
+  //     "RLUSD",
+  //     bals.buyerBalances.rlusdConfidentialSpendable,
+  //     bals.buyerBalances.rlusdConfidentialInbox,
+  //     rlusdPrincipalAmount,
+  //   ),
+  // ])
+const sellerChangedMMF = await fundConfidentialBalance(
         custody,
         WALLET_REPO_SELLER,
         MMF_ID,
@@ -116,8 +147,8 @@ const fundConfidential = async (custody: RippleCustody, bals: Balances) => {
         bals.sellerBalances.mmfConfidentialSpendable,
         bals.sellerBalances.mmfConfidentialInbox,
         mmfAmount,
-      )
-      const rlusdChanged = await fundConfidentialBalance(
+      );
+  const sellerChangedRLUSD = await fundConfidentialBalance(
         custody,
         WALLET_REPO_SELLER,
         RLUSD_ID,
@@ -125,10 +156,8 @@ const fundConfidential = async (custody: RippleCustody, bals: Balances) => {
         bals.sellerBalances.rlusdConfidentialSpendable,
         bals.sellerBalances.rlusdConfidentialInbox,
         rlusdInterestAmount,
-      )
-      return mmfChanged || rlusdChanged
-    })(),
-    fundConfidentialBalance(
+      );
+  const buyerChanged = await fundConfidentialBalance(
       custody,
       WALLET_REPO_BUYER,
       RLUSD_ID,
@@ -136,10 +165,8 @@ const fundConfidential = async (custody: RippleCustody, bals: Balances) => {
       bals.buyerBalances.rlusdConfidentialSpendable,
       bals.buyerBalances.rlusdConfidentialInbox,
       rlusdPrincipalAmount,
-    ),
-  ])
-
-  return sellerChanged || buyerChanged
+    );
+  return sellerChangedMMF || sellerChangedRLUSD || buyerChanged
 }
 
 const repoNearLeg = async (custody: RippleCustody, xrplClient: Client) => {
