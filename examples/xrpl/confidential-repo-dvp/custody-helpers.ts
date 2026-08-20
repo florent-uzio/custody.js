@@ -42,7 +42,7 @@ export async function refreshTickers(custody: RippleCustody) {
     })?.data
 
   const mmf = findXrplTicker("MultiPurposeToken", MMF_ID)
-  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
+  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody (note: this may be due to no wallet holding a >0 balance, that is a prerequisite for this example).")
   working_data.tickerMMF = mmf.id
   working_data.scaleMMF = mmf.decimals ?? 0
 
@@ -365,7 +365,7 @@ async function performQuarantineRelease(
   // and re-submit for release.
   const { items: quarantinedTransfers } = await custody.transactions.transfers(
     { domainId: DOMAIN_ID },
-    { transactionId, quarantineStatus: "Quarantined" },
+    { transactionId, quarantined: true },
   )
   if (quarantinedTransfers.length === 0) {
     if (expectQuarantine)
@@ -382,7 +382,7 @@ async function performQuarantineRelease(
     // payload is written here, and the author no longer has to be looked up.
     // Waiting is separate because this script treats a release that does not
     // execute as fatal, which `proposeAndWait` would report rather than throw.
-    const { requestId } = await custody.intents.proposePayload(
+    const { requestId, intentId } = await custody.intents.proposePayload(
       {
         type: "v0_ReleaseQuarantinedTransfers",
         accountId,
@@ -390,7 +390,7 @@ async function performQuarantineRelease(
       },
       { domainId: DOMAIN_ID },
     )
-    const intent = await custody.intents.getAndWait({ domainId: DOMAIN_ID, intentId: requestId })
+    const intent = await custody.intents.getAndWait({ domainId: DOMAIN_ID, intentId: intentId })
     if (!intent.isSuccess) throw new Error(`[Quarantine Release] ${intent.reason}`)
     console.log(`[Quarantine Release] Quarantined funds released for Transaction ${transactionId}.`)
   }
