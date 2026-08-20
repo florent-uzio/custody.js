@@ -68,8 +68,8 @@ export const RLUSD_PRINCIPLE = 50
 export const RLUSD_REPAYMENT = 51
 export const TERM_PERIOD_MS = 60000 // 1 minute
 
-/** Polling budget for the transaction an order produces: 12 attempts, 5s apart. */
-export const TRANSACTION_POLLING = { maxRetries: 12, intervalMs: 5000 }
+/** Polling budget for the transaction an order produces: 20 attempts, 5s apart. */
+export const TRANSACTION_POLLING = { maxRetries: 20, intervalMs: 5000 }
 
 /**
  * Ticker ids and scales resolved from Ripple Custody at startup by
