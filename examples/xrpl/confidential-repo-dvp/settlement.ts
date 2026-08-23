@@ -1,5 +1,13 @@
 import { batchToCustodyBatchPayload, type RippleCustody } from "@florent-uzio/custody"
-import { BatchFlags, type Batch, type Client, type ConfidentialMPTSend } from "xrpl"
+import {
+  BatchFlags,
+  decode,
+  encode,
+  hashes,
+  type Batch,
+  type Client,
+  type ConfidentialMPTSend,
+} from "xrpl"
 import { DOMAIN_ID, LEDGER_ID, MMF_ID, RLUSD_ID, WALLET_SUBMITTER, working_data } from "./config.js"
 import { getTicket, mergeInbox, waitForIntentTransaction } from "./custody-helpers.js"
 import type { Wallet } from "./types.js"
@@ -125,14 +133,15 @@ export async function atomicSettlement(
     payloadId,
   )
 
-  if (transaction.ledgerTransactionData === undefined)
+  const { ledgerTransactionData } = transaction
+  if (ledgerTransactionData?.rawTransaction === undefined)
     throw new Error(
-      `XRPL Transaction Hash not found for completed batch transaction order ${payloadId}.`,
+      `XRPL raw transaction not found for completed batch transaction order ${payloadId}.`,
     )
   try {
-    const batchHashes = await checkBatchTransactionDetails(
-      xrplClient,
-      transaction.ledgerTransactionData.ledgerTransactionId,
+    const batchHashes = checkBatchTransactionDetails(
+      ledgerTransactionData.rawTransaction,
+      ledgerTransactionData.ledgerTransactionId,
     )
     console.log("Batch transaction successfully processed - XRPL Hashes:")
     console.log(`  Batch:     ${batchHashes.batch}`)
@@ -157,41 +166,31 @@ export async function atomicSettlement(
   console.log("Inboxes Successfully Merged.")
 }
 
-async function checkBatchTransactionDetails(client: Client, batchHash: string) {
-  const tx = await client.request({
-    command: "tx",
-    transaction: batchHash,
-  })
-  const ledger = tx.result.ledger_index
-  // The `tx` response types the inner transactions loosely; this batch is known
-  // to hold nothing but confidential sends.
-  const rawTransactions = (tx.result.tx_json as Batch).RawTransactions as {
-    RawTransaction: ConfidentialMPTSend
-  }[]
-
-  // Only need one account as both transactions will be associated to both accounts
-  const mmfSenderAddress = rawTransactions.find(
-    (t) => t.RawTransaction.MPTokenIssuanceID === MMF_ID,
-  )?.RawTransaction.Account
-  if (mmfSenderAddress === undefined)
-    throw new Error(`No MMF leg found in batch transaction ${batchHash}.`)
-
-  const { result } = await client.request({
-    command: "account_tx",
-    account: mmfSenderAddress,
-    ledger_index: ledger,
-  })
-  // Inner transactions point back at their batch through ParentBatchID, which
-  // xrpl.js does not carry on its metadata type yet.
-  const itx = result.transactions.filter(
-    (t) => (t.meta as { ParentBatchID?: string } | undefined)?.ParentBatchID === batchHash,
-  )
+/**
+ * Derives the two inner transaction ids from the batch blob Custody reports for
+ * the settled transaction.
+ *
+ * An inner batch transaction is never signed on its own — it carries
+ * `tfInnerBatchTxn`, an empty `SigningPubKey` and no `TxnSignature` — but its id
+ * is still the ordinary transaction id, `SHA512Half(0x54584E00 || bytes)`. That
+ * is exactly what `hashes.hashSignedTx` computes, so the ids can be worked out
+ * from the blob alone with no round trip to the ledger.
+ *
+ * Note it is `hashSignedTx` and not the similarly named `hashTx`: the latter
+ * prefixes with `TRANSACTION_SIGN` (`0x53545800`) and yields the signing hash,
+ * not the transaction id.
+ */
+function checkBatchTransactionDetails(rawTransaction: string, batchHash: string) {
+  // `decode` types the inner transactions loosely; this batch is known to hold
+  // nothing but confidential sends.
+  const { RawTransactions } = decode(rawTransaction) as unknown as Batch
+  const legs = RawTransactions as { RawTransaction: ConfidentialMPTSend }[]
 
   const hashOf = (issuanceId: string, label: string) => {
-    const hash = itx.find((t) => t.tx_json?.MPTokenIssuanceID === issuanceId)?.hash
-    if (hash === undefined)
-      throw new Error(`No ${label} leg found for batch transaction ${batchHash}.`)
-    return hash
+    const leg = legs.find((t) => t.RawTransaction.MPTokenIssuanceID === issuanceId)
+    if (leg === undefined)
+      throw new Error(`No ${label} leg found in batch transaction ${batchHash}.`)
+    return hashes.hashSignedTx(encode(leg.RawTransaction))
   }
 
   return { batch: batchHash, mmf: hashOf(MMF_ID, "MMF"), rlusd: hashOf(RLUSD_ID, "RLUSD") }
