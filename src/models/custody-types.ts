@@ -4679,6 +4679,7 @@ export interface components {
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       amount: string
       paysFee?: boolean
+      tag?: components["schemas"]["Core_TransferDestinationTag"]
     }
     /** @description A list of all entities created during genesis. */
     Core_CreatedEntitiesReferences: {
@@ -4824,7 +4825,11 @@ export interface components {
        */
       type: "EndpointCreated"
     }
-    Core_EndpointLedgerParameters: components["schemas"]["Core_EndpointLedgerParameters_Ethereum"]
+    Core_EndpointLedgerParameters:
+      | components["schemas"]["Core_EndpointLedgerParameters_Ethereum"]
+      | components["schemas"]["Core_EndpointLedgerParameters_Hedera"]
+      | components["schemas"]["Core_EndpointLedgerParameters_Stellar"]
+      | components["schemas"]["Core_EndpointLedgerParameters_XRPL"]
     Core_EndpointLedgerParameters_Ethereum: {
       /** @description This field can be used to provide an Application Binary Interface (ABI) for EVM-based smart contracts, Ripple Custody's front-end uses the field to provide an extended support when interacting with smart contracts, therefore it is not recommended to submit invalid ABIs in this field but Ripple Custody will not prevent the submission of invalid ABIs to tolerate use cases outside of Ripple Custody's front-end. */
       ABI?: string
@@ -8026,6 +8031,8 @@ export interface components {
        * @enum {string}
        */
       type: "Hedera"
+      /** @description String encoded using UTF-8, up to 100-bytes long */
+      memo?: string
     }
     Core_TransferMetadata_Solana: {
       /**
@@ -8040,6 +8047,7 @@ export interface components {
        * @enum {string}
        */
       type: "Stellar"
+      memo?: components["schemas"]["Core_StellarMemo"]
     }
     Core_TransferMetadata_Substrate: {
       /**
@@ -8471,6 +8479,7 @@ export interface components {
       | "SystemSignedProcessingDisabled"
       | "UnsupportedTrustedPublicKeyPurpose"
       | "TrustedPublicKeyAlreadyActive"
+      | "ConflictingDestinationTag"
     Core_UserReference: {
       /** Format: uuid */
       id: string
@@ -12370,6 +12379,62 @@ export interface components {
       content: components["schemas"]["Omnibus_SweepThresholdConfig"][]
       page: components["schemas"]["Omnibus_PageMetadata"]
     }
+    Core_EndpointLedgerParameters_Hedera: {
+      /** @description String encoded using UTF-8, up to 100-bytes long */
+      memo?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Hedera"
+    }
+    Core_EndpointLedgerParameters_Stellar: {
+      memo?: components["schemas"]["Core_StellarMemo"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Stellar"
+    }
+    Core_EndpointLedgerParameters_XRPL: {
+      /** Format: int64 */
+      destinationTag?: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "XRPL"
+    }
+    Core_TransferDestinationTag:
+      | components["schemas"]["Core_TransferDestinationTag_Hedera"]
+      | components["schemas"]["Core_TransferDestinationTag_Stellar"]
+      | components["schemas"]["Core_TransferDestinationTag_XRPL"]
+    Core_TransferDestinationTag_Hedera: {
+      /** @description String encoded using UTF-8, up to 100-bytes long */
+      memo: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Hedera"
+    }
+    Core_TransferDestinationTag_Stellar: {
+      memo: components["schemas"]["Core_StellarMemo"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Stellar"
+    }
+    Core_TransferDestinationTag_XRPL: {
+      /** Format: int64 */
+      destinationTag: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "XRPL"
+    }
     Core_ApiBatchSigningData: {
       /** @description Hex encoded string. */
       signingPayload: string
@@ -15993,7 +16058,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_IntentResponse"]
         }
       }
-      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid intent (InvalidIntentError); Invalid intent body discriminator (InvalidDiscriminator); Invalid request (InvalidRequestError); Missing system-signed fields (MissingSystemSignedFields); Missing user-signed fields (MissingUserSignedFields); Requester locked (RequesterLockedError); Unexpected system-signed fields (UnexpectedSystemSignedFields) */
+      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid endpoint address (InvalidEndpointAddressError); Invalid intent (InvalidIntentError); Invalid intent body discriminator (InvalidDiscriminator); Invalid request (InvalidRequestError); Missing system-signed fields (MissingSystemSignedFields); Missing user-signed fields (MissingUserSignedFields); Requester locked (RequesterLockedError); Unexpected system-signed fields (UnexpectedSystemSignedFields) */
       400: {
         headers: {
           [name: string]: unknown
