@@ -1370,8 +1370,38 @@ describe("XrplService", () => {
           ledgerId: mockLedgerId,
           ticketSequence: 42,
         },
-        undefined,
+        { maxRetries: 40, intervalMs: 3000 },
       )
+    })
+
+    it("defaults the computation to a longer budget than the other polls", async () => {
+      let capturedOptions: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, _body, options) => {
+          capturedOptions = options
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params)
+
+      expect(capturedOptions).toEqual({ maxRetries: 40, intervalMs: 3000 })
+    })
+
+    it("keeps the default interval when only maxRetries is overridden", async () => {
+      let capturedOptions: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, _body, options) => {
+          capturedOptions = options
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params, { polling: { maxRetries: 100 } })
+
+      expect(capturedOptions).toEqual({ maxRetries: 100, intervalMs: 3000 })
     })
 
     it("builds the inner transaction from the hex compute fields", async () => {
