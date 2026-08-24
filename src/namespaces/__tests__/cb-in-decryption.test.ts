@@ -150,7 +150,27 @@ describe("internal.cbInDecryption.getStatusAndWait", () => {
     })
   })
 
-  it("should throw non-404 errors immediately", async () => {
+  it("should keep polling through 400s raised by concurrent decryptions", async () => {
+    mockTransport.get
+      .mockRejectedValueOnce(new CustodyError({ reason: "Bad request" }, 400))
+      .mockResolvedValueOnce({ id: "r-1", status: "Completed", decryptedAmount: "100" })
+
+    const result = await cbInDecryption.getStatusAndWait(params, { maxRetries: 10 })
+
+    expect(result.isSuccess).toBe(true)
+    expect(mockTransport.get).toHaveBeenCalledTimes(2)
+  })
+
+  it("should rethrow the last transient error with its own status when retries are exhausted", async () => {
+    mockTransport.get.mockRejectedValue(new CustodyError({ reason: "Bad request" }, 400))
+
+    await expect(cbInDecryption.getStatusAndWait(params, { maxRetries: 2 })).rejects.toMatchObject({
+      statusCode: 400,
+      reason: "Bad request",
+    })
+  })
+
+  it("should throw non-transient errors immediately", async () => {
     mockTransport.get.mockRejectedValue(new CustodyError({ reason: "Server error" }, 500))
 
     await expect(cbInDecryption.getStatusAndWait(params)).rejects.toThrow("Server error")
