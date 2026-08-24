@@ -550,6 +550,11 @@ export class XrplService {
       ledgerId: options.ledgerId,
     })
 
+    // A confidential compute is queued server-side, so N sends built
+    // concurrently each wait behind the others — the generic 10-attempt budget
+    // the other polls use runs out well before the last one is picked up.
+    const polling = { maxRetries: 40, intervalMs: 3000, ...options.polling }
+
     const result = await this.ports.initiateParametersComputeAndWait(
       { domainId: context.domainId, accountId: context.accountId },
       {
@@ -560,14 +565,16 @@ export class XrplService {
         ledgerId: context.ledgerId,
         ...(isUndefined(ticketSequence) ? {} : { ticketSequence }),
       },
-      options.polling,
+      polling,
     )
 
     if (!result.isSuccess) {
       throw new CustodyError({
         reason:
           `Confidential send computation for account ${context.accountId} (${sender}) ` +
-          `did not complete (status: ${result.status}).`,
+          `did not complete (status: ${result.status}) after ${polling.maxRetries} attempts ` +
+          `${polling.intervalMs}ms apart. A non-terminal status here means the computation is ` +
+          "still running — raise `options.polling.maxRetries`.",
       })
     }
 

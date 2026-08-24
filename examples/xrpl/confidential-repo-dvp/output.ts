@@ -17,13 +17,10 @@ export async function printBalances(custody: RippleCustody): Promise<Balances> {
   const mmfDenom = Math.pow(10, working_data.scaleMMF)
   const rlusdDenom = Math.pow(10, working_data.scaleRLUSD)
 
-  // REDUCING CONCURRENCY TO ENSURE STABILITY - WILL ASSESS FOR LATER ENHANCEMENT
-  // const [sellerBalances, buyerBalances] = await Promise.all([
-  //   getBalances(custody, WALLET_REPO_SELLER.id),
-  //   getBalances(custody, WALLET_REPO_BUYER.id),
-  // ])
-  const sellerBalances = await getBalances(custody, WALLET_REPO_SELLER.id)
-  const buyerBalances = await getBalances(custody, WALLET_REPO_BUYER.id)
+  const [sellerBalances, buyerBalances] = await Promise.all([
+    getBalances(custody, WALLET_REPO_SELLER.id),
+    getBalances(custody, WALLET_REPO_BUYER.id),
+  ])
 
   if (isNaN(buyerBalances.rlusdConfidentialInbox / rlusdDenom)) console.log("NAN!")
 

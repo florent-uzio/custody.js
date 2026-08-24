@@ -350,9 +350,12 @@ export type BuildConfidentialSendOptions = {
    */
   ledgerId?: XrplLedgerId
   /**
-   * Polling configuration for the parameters computation (default: 10 attempts,
-   * 3s apart). A confidential compute regularly takes longer than that under
-   * load — raise `maxRetries` rather than catching the failure.
+   * Polling configuration for the parameters computation (default: 40
+   * attempts, 3s apart — two minutes). Deliberately more generous than the
+   * 10-attempt budget the other `custody.xrpl` polls use: confidential computes
+   * are queued server-side, so building several sends concurrently makes each
+   * one wait behind the others. Raise `maxRetries` further rather than catching
+   * the failure.
    */
   polling?: WaitForParametersComputeOptions
 }
