@@ -95,10 +95,12 @@ export async function atomicSettlement(
   console.log("Retrieving participant signatures for batch.")
   const [signer1, signer2] = await Promise.all([
     custody.xrpl.signBatchPayloadAndWait(signingPayload, mmfSender.address, {
-      domainId: DOMAIN_ID, polling : {maxRetries: 10}
+      domainId: DOMAIN_ID,
+      polling: { maxRetries: 10 },
     }),
     custody.xrpl.signBatchPayloadAndWait(signingPayload, rlusdSender.address, {
-      domainId: DOMAIN_ID, polling : {maxRetries: 10}
+      domainId: DOMAIN_ID,
+      polling: { maxRetries: 10 },
     }),
   ])
 
