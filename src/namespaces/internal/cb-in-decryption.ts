@@ -62,7 +62,7 @@ async function waitForCbInDecryption(
         }
       }
     } catch (error) {
-      if (!(error instanceof CustodyError && error.statusCode === 404)) {
+      if (!(error instanceof CustodyError && [400,404].includes(error.statusCode ?? 0))) {
         throw error
       }
       // 404 → the decryption is not available yet, keep polling.
