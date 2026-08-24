@@ -1,5 +1,50 @@
 # custody
 
+## 2.13.0-beta.15
+
+### Minor Changes
+
+- 6fe358d: `client.internal.cbInDecryption.getStatusAndWait` / `initiateAndWait` now treat
+  a `400` from the CB_IN status endpoint as transient and keep polling, alongside
+  the `404` they already retried. Instances return `400` while several CB_IN
+  decryptions are in flight concurrently, which made concurrent inbox reads
+  (`Promise.all` over several issuances) fail for reasons unrelated to the
+  request.
+
+  Retries exhausting no longer relabels the failure: previously the wait threw a
+  synthesized `404 "…not found after N attempts"` regardless of what the status
+  checks actually returned. It now rethrows the last transient error with the
+  server's own `reason` and `statusCode`, with the attempt count carried in the
+  `hint` and the original error as `cause` — so a genuinely malformed request id
+  surfaces as the `400` it is instead of a misleading "not found".
+
+- 66089ca: Bundle the official OpenAPI specs for `1.34.14`, `1.34.15`, `1.40.0`, `1.40.1` and `1.40.2`, and regenerate the types. None of these releases adds, removes or renames an endpoint — the path/operation set of `1.40.2` is identical to `1.39.2` (163 operations), and the two `1.34.x` patches are byte-identical to `1.34.13` apart from `info.x-app-version` — so there are no new namespaces or methods. `client.capabilities` now recognises the five versions.
+
+  The type changes all come from `1.40.0` and revolve around per-ledger destination tags / memos:
+
+  - `Core_EndpointLedgerParameters` is no longer an alias for `Core_EndpointLedgerParameters_Ethereum`; it is now a discriminated union (on `type`) over `Ethereum | Hedera | Stellar | XRPL`, with the new `Core_EndpointLedgerParameters_Hedera` (`memo?: string`), `Core_EndpointLedgerParameters_Stellar` (`memo?: Core_StellarMemo`) and `Core_EndpointLedgerParameters_XRPL` (`destinationTag?: number`) members. Code that read Ethereum-specific fields (for example `ABI`) off an endpoint's `ledgerParameters` without first narrowing on `type` now has to narrow.
+  - New `Core_TransferDestinationTag` union (`Hedera` / `Stellar` / `XRPL` members, `memo` / `destinationTag` required on each), surfaced as the optional `tag` field on `Core_CreateTransferOrderOutput`.
+  - `Core_TransferMetadata_Hedera` gained an optional `memo` (UTF-8, up to 100 bytes) and `Core_TransferMetadata_Stellar` an optional `memo: Core_StellarMemo`.
+  - `Core_UserOperationRejectionCode` gained `ConflictingDestinationTag`.
+
+  `1.40.1` is API-identical to `1.40.0`; `1.40.2` only adds `Invalid endpoint address (InvalidEndpointAddressError)` to the documented 400 cases of `POST /v1/intents`.
+
+### Patch Changes
+
+- 0a05c8d: Give `xrpl.buildConfidentialSend` a compute budget that survives concurrency: the parameters computation now defaults to 40 attempts 3s apart (two minutes) instead of the 10 attempts 3s apart (thirty seconds) it inherited from the generic polling defaults.
+
+  Several `buildConfidentialSend` calls issued at once commonly failed, while the same calls made one after another succeeded. The cause is not a race in the SDK — it is the budget. A confidential parameters computation is queued and processed server-side, so N concurrent sends do not each take as long as one send does: the last one picked up waits behind all the others. Thirty seconds is a comfortable budget for a single compute and a tight one for the third or fourth in a burst, which is why the failure looked load-dependent and intermittent rather than deterministic.
+
+  The budget was always configurable through `options.polling` — the defaults were applied by `waitForParametersCompute`, not missing — but the failure gave the caller nothing to act on. It surfaced as `Confidential send computation for account … did not complete (status: Pending)`, which reads like the computation was rejected rather than still running. The error now names the budget it exhausted and says what to do about it:
+
+  ```
+  Confidential send computation for account <id> (<address>) did not complete
+  (status: Pending) after 40 attempts 3000ms apart. A non-terminal status here
+  means the computation is still running — raise `options.polling.maxRetries`.
+  ```
+
+  Only `buildConfidentialSend`'s default moves. `accounts.initiateParametersComputeAndWait` and every other `custody.xrpl` poll keep their 10-attempt default, and an explicit `options.polling` still wins field by field — passing `{ maxRetries: 100 }` alone keeps the 3s interval rather than resetting it.
+
 ## 2.13.0-beta.14
 
 ### Minor Changes
