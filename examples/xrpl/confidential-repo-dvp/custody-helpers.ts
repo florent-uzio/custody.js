@@ -76,14 +76,11 @@ export async function getBalances(custody: RippleCustody, accountId: string) {
     isRlusdConfidential: false,
   }
 
-  // const [balances, mmfInbox, rlusdInbox] = await Promise.all([
-  //   custody.accounts.getAccountBalances({ accountId, domainId: DOMAIN_ID }),
-  //   getInbox(custody, accountId, MMF_ID),
-  //   getInbox(custody, accountId, RLUSD_ID),
-  // ])
-  const balances = await custody.accounts.getAccountBalances({ accountId, domainId: DOMAIN_ID })
-  const mmfInbox = await getInbox(custody, accountId, MMF_ID)
-  const rlusdInbox = await getInbox(custody, accountId, RLUSD_ID)
+  const [balances, mmfInbox, rlusdInbox] = await Promise.all([
+    custody.accounts.getAccountBalances({ accountId, domainId: DOMAIN_ID }),
+    getInbox(custody, accountId, MMF_ID),
+    getInbox(custody, accountId, RLUSD_ID),
+  ])
 
   // A ticker id is only ever held once per account, so the first match is the
   // balance. The confidential ticker ids stay "" until the ledger has minted
