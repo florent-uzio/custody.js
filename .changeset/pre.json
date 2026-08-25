@@ -33,6 +33,7 @@
     "transaction-failure-reason",
     "transaction-order-confirmation",
     "vendor-xrpl-confidential-mpts-031913c",
+    "xrpl-5-1-0-drop-vendor",
     "xrpl-build-confidential-send",
     "xrpl-custody-devnet-ledger-id",
     "xrpl-elgamal-and-issuance-helpers",
