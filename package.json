@@ -58,11 +58,7 @@
     "dayjs": "^1.11.21",
     "qs": "^6.15.3",
     "uuid": "^14.0.1",
-    "xrpl": "file:vendor/xrpl-5.0.0-confidential-mpts.031913c.tgz"
-  },
-  "overrides": {
-    "ripple-binary-codec": "file:vendor/ripple-binary-codec-2.8.0-confidential-mpts.031913c.tgz",
-    "@xrplf/mpt-crypto": "file:vendor/xrplf-mpt-crypto-0.1.0-confidential-mpts.031913c.tgz"
+    "xrpl": "^5.1.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
@@ -80,10 +76,5 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.63.0",
     "vitest": "^4.1.10"
-  },
-  "bundleDependencies": [
-    "xrpl",
-    "ripple-binary-codec",
-    "@xrplf/mpt-crypto"
-  ]
+  }
 }

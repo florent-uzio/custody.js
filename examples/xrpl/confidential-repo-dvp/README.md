@@ -27,7 +27,7 @@ Balances are printed before and after each stage.
 - A Ripple Custody instance that supports confidential MPTs, and an API user
   with access to the domain you configure.
 - An XRPL node exposing the confidential-MPT amendments (the `xrpl` dependency
-  is a vendored build — see `vendor/README.md`).
+  must be `^5.1.0` or later).
 - Four accounts managed on that instance, each with an XRPL external address:
   the MMF issuer, the repo seller, the repo buyer, and a batch submitter.
 - The MMF and RLUSD MPTs already issued, with **seller and buyer onboarded

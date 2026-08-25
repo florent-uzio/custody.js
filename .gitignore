@@ -45,8 +45,6 @@ temp/
 
 # Output of 'npm pack'
 *.tgz
-# ...except the vendored unreleased xrpl.js builds (see vendor/README.md)
-!vendor/*.tgz
 
 # Yarn Integrity file
 .yarn-integrity
