@@ -6725,6 +6725,7 @@ export interface components {
        * @enum {string}
        */
       type: "CreateNonceAccount"
+      nonceAuthority?: components["schemas"]["Core_TransactionDestination"]
     }
     Core_SolanaOperation_FundAtaAccount: {
       destination?: components["schemas"]["Core_TransactionDestination"]
@@ -7843,6 +7844,8 @@ export interface components {
        * @enum {string}
        */
       type: "Solana"
+      /** Format: uuid */
+      nonceAuthority?: string
     }
     Core_TransactionOrderParameters_Stellar: {
       operation: components["schemas"]["Core_StellarOperation"]
@@ -11775,7 +11778,7 @@ export interface components {
        * Format: uuid
        * @description Entity ID of the Gas Station account that sponsors fees for this omnibus account
        */
-      sponsoringGasStationId?: string
+      sponsoringGasStationId?: components["schemas"]["Omnibus_JsonNullableUUID"]
       /** @description Balances of the host tenant per ticker/ledger combination */
       balances?: components["schemas"]["Omnibus_TenantBalanceEntry"][]
       /** @enum {string} */
@@ -12434,6 +12437,9 @@ export interface components {
        * @enum {string}
        */
       type: "XRPL"
+    }
+    Omnibus_JsonNullableUUID: {
+      present?: boolean
     }
     Core_ApiBatchSigningData: {
       /** @description Hex encoded string. */
@@ -16058,7 +16064,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_IntentResponse"]
         }
       }
-      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid endpoint address (InvalidEndpointAddressError); Invalid intent (InvalidIntentError); Invalid intent body discriminator (InvalidDiscriminator); Invalid request (InvalidRequestError); Missing system-signed fields (MissingSystemSignedFields); Missing user-signed fields (MissingUserSignedFields); Requester locked (RequesterLockedError); Unexpected system-signed fields (UnexpectedSystemSignedFields) */
+      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid intent (InvalidIntentError); Invalid intent body discriminator (InvalidDiscriminator); Invalid request (InvalidRequestError); Missing system-signed fields (MissingSystemSignedFields); Missing user-signed fields (MissingUserSignedFields); Requester locked (RequesterLockedError); Unexpected system-signed fields (UnexpectedSystemSignedFields) */
       400: {
         headers: {
           [name: string]: unknown
