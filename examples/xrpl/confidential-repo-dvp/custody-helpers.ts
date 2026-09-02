@@ -1,4 +1,4 @@
-import type { RippleCustody } from "@florent-uzio/custody"
+import { type RippleCustody, CustodyError } from "@florent-uzio/custody"
 import type { Client } from "xrpl"
 import {
   DOMAIN_ID,
@@ -123,14 +123,17 @@ async function getInbox(custody: RippleCustody, accountId: string, issuanceId: s
       accountId,
       domainId: DOMAIN_ID,
       ledgerId: LEDGER_ID,
-      issuanceId,
-    })
+      issuanceId
+    },
+    {maxRetries: 20} // Increased as the default 30 sec resulted in failures
+  )
     if (cbin.decryption.decryptedAmount !== undefined) {
       return parseInt(cbin.decryption.decryptedAmount)
     } else return null
   } catch (e) {
     // (no confidential inbox)
-    return null
+    if (e instanceof CustodyError && e.reason === "EntityNotFoundError") return null
+    else throw e
   }
 }
 
@@ -256,17 +259,10 @@ async function confidentialConvert(
     },
   )
 
-  // we now need to ensure we release funds from quarantine
+  // functionality changed so that funds are no longer held in quarantine (this is an internal movement) hence this has been removed
   console.log(
     `MPT confidential convert of ${amount} units of asset ${tokenLabel} held by ${wallet.name} processed (transaction: ${transaction.id}).`,
   )
-  // NOTE: Perform quarantine in parallel with merge inbox
-  // REDUCING CONCURRENCY TO ENSURE STABILITY - WILL ASSESS FOR LATER ENHANCEMENT
-  // await Promise.all([
-  //     performQuarantineRelease(custody, wallet.id, transaction.id, amount !== "0"),
-  //     mergeInbox(custody, wallet, mptId, tokenLabel)
-  // ]);
-  await performQuarantineRelease(custody, wallet.id, transaction.id, amount !== "0")
   await mergeInbox(custody, wallet, mptId, tokenLabel)
   console.log(`Quarantine release and inbox merged for Confidential Convert for ${wallet.name}`)
   return

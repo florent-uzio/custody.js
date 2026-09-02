@@ -196,7 +196,8 @@ export type {
 export type * from "./namespaces/genesis.types.js"
 
 // errors types
-export type { Core_ErrorMessage, CustodyError } from "./models/index.js"
+export type { Core_ErrorMessage } from "./models/index.js"
+export { CustodyError } from "./models/index.js"
 
 // versioning (multi-version capability gating)
 export type { KnownAppVersion } from "./models/capabilities.generated.js"
