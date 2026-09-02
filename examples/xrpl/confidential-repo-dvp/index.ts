@@ -192,19 +192,22 @@ const main = async () => {
     console.log()
     const bals = await printBalances(custody)
     console.log()
+    if(isNaN(bals.buyerBalances.mmfConfidentialInbox) || isNaN(bals.buyerBalances.rlusdConfidentialInbox) || isNaN(bals.sellerBalances.mmfConfidentialInbox) || isNaN(bals.sellerBalances.rlusdConfidentialInbox)) throw new Error("Confidential Inbox amount could not be determined.") // Terminating as otherwise this causes incorrect funding actions
     const fundingChanged = await fundConfidential(custody, bals)
     if (fundingChanged) {
-      // Adding a pause to ensure data consistency
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      // Adding a pause to ensure data consistency in Ripple Custody balances
+      await new Promise((resolve) => setTimeout(resolve, 5000))
       console.log("Post-funding balances (scaled):")
       console.log()
-      await printBalances(custody)
+      const balsFunded = await printBalances(custody)
       console.log()
     } else console.log("No funding changes needed.")
     console.log()
 
     sectionHeader("4. Repo Near Leg (DvP)")
     await repoNearLeg(custody, client)
+    // Adding a pause to ensure data consistency in Ripple Custody balances
+    await new Promise((resolve) => setTimeout(resolve, 5000))
     console.log("Repo Active, Balances (scaled):")
     console.log()
     await printBalances(custody)
@@ -216,10 +219,13 @@ const main = async () => {
 
     sectionHeader("6. Repo Far Leg (DvP)")
     await repoFarLeg(custody, client)
+    // Adding a pause to ensure data consistency in Ripple Custody balances
+    await new Promise((resolve) => setTimeout(resolve, 5000))
     console.log("Repo Closed, Balances (scaled):")
     console.log()
     await printBalances(custody)
     console.log()
+
   } catch (error) {
     console.log(error)
   } finally {
