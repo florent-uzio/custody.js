@@ -3,6 +3,8 @@ import type { Transport } from "../../transport/index.js"
 import type {
   CreateOmnibusPathParams,
   GetOmnibusByIdPathParams,
+  GetOmnibusHierarchyPathParams,
+  GetOmnibusHierarchyQueryParams,
   GetOmnibusInternalTransferPathParams,
   GetOmnibusPathParams,
   ListOmnibusDepositWalletsPathParams,
@@ -15,6 +17,7 @@ import type {
   Omnibus_DepositWalletSummaryPageResponse,
   Omnibus_InternalTransferPageResponse,
   Omnibus_InternalTransferResponse,
+  Omnibus_OmnibusHierarchyResponse,
   Omnibus_OmnibusResponse,
   Omnibus_UpdateOmnibusRequest,
   UnlockOmnibusPathParams,
@@ -51,6 +54,16 @@ export function createOmnibus(t: Transport) {
 
     unlock: (params: UnlockOmnibusPathParams): Promise<Omnibus_OmnibusResponse> =>
       t.post(URLs.omnibusUnlock, undefined, params, { sign: false }),
+
+    /**
+     * One consistent, paginated snapshot of the omnibus header, its tenants and
+     * their embedded deposit wallets. Never includes balances —
+     * `omnibus.balances` is always an empty list here.
+     */
+    getHierarchy: (
+      params: GetOmnibusHierarchyPathParams,
+      query?: GetOmnibusHierarchyQueryParams,
+    ): Promise<Omnibus_OmnibusHierarchyResponse> => t.get(URLs.omnibusHierarchy, params, query),
 
     listInternalTransfers: (
       params: ListOmnibusInternalTransfersPathParams,

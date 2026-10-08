@@ -212,6 +212,7 @@ export const URLs = createURLs({
   omnibusItem: "/v1/domains/{domainId}/omnibus/{omnibusId}",
   omnibusLock: "/v1/domains/{domainId}/omnibus/{omnibusId}/lock",
   omnibusUnlock: "/v1/domains/{domainId}/omnibus/{omnibusId}/unlock",
+  omnibusHierarchy: "/v1/domains/{domainId}/omnibus/{omnibusId}/hierarchy",
   omnibusInternalTransfers: "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers",
   omnibusInternalTransfer:
     "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers/{operationId}",
@@ -230,6 +231,7 @@ export const URLs = createURLs({
   // Exports
   exportsMovement: "/v1/exports/movement",
   exportsPosition: "/v1/exports/position",
+  exportsOmnibusPosition: "/v1/exports/position/omnibus",
 
   // Sweep Thresholds
   sweepThresholds: "/v1/domains/{domainId}/sweep-thresholds",

@@ -3533,6 +3533,43 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/hierarchy": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get the full omnibus structure hierarchy (header + tenants + embedded deposit wallets) as one consistent, paginated snapshot
+     * @description Serves bulk/enumeration consumers (e.g. Portfolio Data Export) that would otherwise compose GET .../omnibus, GET .../tenants, and GET .../deposit-wallets and join the latter two themselves. Totals are always populated (no cursor/Slice mode) and results are sorted by (createdAt, id) for stable pagination across concurrent writes. This endpoint never returns balances; balances remain sourced from the Accounting Service. omnibus.balances is never fetched by this endpoint and appears as an empty list; consumers must not interpret it as host tenant balances.
+     */
+    get: operations["getOmnibusHierarchy"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/exports/position/omnibus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Generate an Omnibus Position Report (a domain's omnibus pool and its breakdown) */
+    post: operations["OmnibusPositionReportController_generateOmnibusPositionReport"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute": {
     parameters: {
       query?: never
@@ -4651,7 +4688,7 @@ export interface components {
       lock: components["schemas"]["Core_IntentLockStatus"]
       description?: string
       customProperties: components["schemas"]["Core_StringsMap"]
-      /** @description Domain-unique `loginId`-`loginProviderId` pairs. Must be specified for login and match pre-configured values. */
+      /** @description Domain-unique `loginId`-`loginProviderId` pairs. Must be specified for login and match pre-configured values. Required when proposing or dry-running the intent; absent only on intents created before login ids existed. */
       loginIds?: components["schemas"]["Core_LoginId"][]
     }
     Core_CreateDomainsPayload: {
@@ -4919,6 +4956,7 @@ export interface components {
       | components["schemas"]["Core_EthereumFeeStrategy_Priority"]
       | components["schemas"]["Core_EthereumFeeStrategy_SpecifiedRate"]
       | components["schemas"]["Core_EthereumFeeStrategy_SpecifiedRateEIP1559"]
+      | components["schemas"]["Core_EthereumFeeStrategy_Sponsored"]
     Core_EthereumFeeStrategy_Priority: {
       priority: components["schemas"]["Core_FeePriority"]
       /**
@@ -5044,6 +5082,7 @@ export interface components {
       ledgers?: components["schemas"]["Core_CreateLedgerGenesis"][]
       /** Format: base64 */
       systemSignaturesPublicKey?: string
+      antiRewindMode?: components["schemas"]["Core_AntiRewindMode"]
     }
     Core_GenesisRequest: {
       rootDomainSetup: components["schemas"]["Core_RootDomainSetup"]
@@ -5053,6 +5092,7 @@ export interface components {
       ledgers?: components["schemas"]["Core_CreateLedgerGenesis"][]
       /** Format: base64 */
       systemSignaturesPublicKey?: string
+      antiRewindMode: components["schemas"]["Core_AntiRewindMode"]
     }
     Core_GenesisSucceeded: {
       /** Format: base64 */
@@ -5867,6 +5907,8 @@ export interface components {
       | components["schemas"]["Core_LedgerParameters_Tron"]
       | components["schemas"]["Core_LedgerParameters_XRPL"]
       | components["schemas"]["Core_LedgerParameters_External"]
+      | components["schemas"]["Core_LedgerParameters_Canton"]
+      | components["schemas"]["Core_LedgerParameters_Sui"]
     Core_LedgerParameters_Algorand: {
       genesisId: string
       genesisHash: string
@@ -6009,6 +6051,7 @@ export interface components {
       /** Format: date-time */
       providerStatusLastUpdatedAt?: string
       ledgerData?: components["schemas"]["Core_OnLedgerData"]
+      sponsoringTransactionHash?: string
     }
     /** @enum {string} */
     Core_LedgerTransactionFailure: "FailedOnChain" | "PartiallyFailedOnChain"
@@ -6051,6 +6094,7 @@ export interface components {
       content: components["schemas"]["Core_ManifestContent"]
       value?: components["schemas"]["Core_ManifestValue"]
       metadata: components["schemas"]["Core_EntityMetadata"]
+      address?: string
     }
     Core_ManifestAdditionalDetails: {
       processing: components["schemas"]["Core_ManifestProcessingDetails"]
@@ -6261,6 +6305,7 @@ export interface components {
       | components["schemas"]["Core_OnLedgerData_Ethereum"]
       | components["schemas"]["Core_OnLedgerData_Xrpl"]
       | components["schemas"]["Core_OnLedgerData_External"]
+      | components["schemas"]["Core_OnLedgerData_Canton"]
     Core_OnLedgerData_Bitcoin: {
       inputs: components["schemas"]["Core_BitcoinOnLedgerDataInput"][]
       outputs: components["schemas"]["Core_BitcoinOnLedgerDataOutput"][]
@@ -6430,6 +6475,8 @@ export interface components {
       | components["schemas"]["Core_TransactionOrderParameters_Tron"]
       | components["schemas"]["Core_TransactionOrderParameters_XRPL"]
       | components["schemas"]["Core_TransactionOrderParameters_External"]
+      | components["schemas"]["Core_TransactionOrderParameters_Canton"]
+      | components["schemas"]["Core_TransactionOrderParameters_Sui"]
     Core_ProposeUserIntentPayload:
       | components["schemas"]["Core_Propose_v0_CreateTransactionOrder"]
       | components["schemas"]["Core_v0_AcknowledgeBackup"]
@@ -6530,6 +6577,7 @@ export interface components {
     Core_ReadWriteSystemPropertyKeyValue:
       | components["schemas"]["Core_ReadWriteSystemPropertyKeyValue_StateReviewAuthorityProperty"]
       | components["schemas"]["Core_ReadWriteSystemPropertyKeyValue_NotarySystemSignedIntentsEnabledProperty"]
+      | components["schemas"]["Core_ReadWriteSystemPropertyKeyValue_AntiRewindModeProperty"]
     Core_ReadWriteSystemPropertyKeyValue_StateReviewAuthorityProperty: {
       value: components["schemas"]["Core_StateReviewAuthorityValue"]
       /**
@@ -7202,6 +7250,7 @@ export interface components {
       | components["schemas"]["Core_SystemProperty_StateReviewAuthoritySystemProperty"]
       | components["schemas"]["Core_SystemProperty_NotarySystemSignedIntentsEnabledSystemProperty"]
       | components["schemas"]["Core_SystemProperty_NotarySystemSigningKeySystemProperty"]
+      | components["schemas"]["Core_SystemProperty_AntiRewindModeSystemProperty"]
     /** @enum {string} */
     Core_SystemPropertyId:
       | "NOTARY_COMMUNICATION_KEY"
@@ -7210,6 +7259,7 @@ export interface components {
       | "STATE_REVIEW_AUTHORITY"
       | "NOTARY_SYSTEM_SIGNING_KEY"
       | "NOTARY_SYSTEM_SIGNED_INTENTS_ENABLED"
+      | "ANTI_REWIND_MODE"
     Core_SystemPropertySet: {
       id: components["schemas"]["Core_SystemPropertyId"]
       /**
@@ -7317,6 +7367,8 @@ export interface components {
       | components["schemas"]["Core_TickerLedgerDetails_Tron"]
       | components["schemas"]["Core_TickerLedgerDetails_XRPL"]
       | components["schemas"]["Core_TickerLedgerDetails_External"]
+      | components["schemas"]["Core_TickerLedgerDetails_Canton"]
+      | components["schemas"]["Core_TickerLedgerDetails_Sui"]
     Core_TickerLedgerDetails_Algorand: {
       properties: components["schemas"]["Core_AlgorandTickerProperties"]
       /**
@@ -7594,6 +7646,8 @@ export interface components {
       | components["schemas"]["Core_TransactionEstimate_Tron"]
       | components["schemas"]["Core_TransactionEstimate_XRPL"]
       | components["schemas"]["Core_TransactionEstimate_External"]
+      | components["schemas"]["Core_TransactionEstimate_Canton"]
+      | components["schemas"]["Core_TransactionEstimate_Sui"]
     Core_TransactionEstimate_Algorand: {
       /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
       fee: string
@@ -7742,6 +7796,8 @@ export interface components {
       | "Stellar"
       | "Tron"
       | "External"
+      | "Canton"
+      | "Sui"
     Core_TransactionOrderParameters:
       | components["schemas"]["Core_TransactionOrderParameters_Algorand"]
       | components["schemas"]["Core_TransactionOrderParameters_Bitcoin"]
@@ -7756,6 +7812,8 @@ export interface components {
       | components["schemas"]["Core_TransactionOrderParameters_Tron"]
       | components["schemas"]["Core_TransactionOrderParameters_XRPL"]
       | components["schemas"]["Core_TransactionOrderParameters_External"]
+      | components["schemas"]["Core_TransactionOrderParameters_Canton"]
+      | components["schemas"]["Core_TransactionOrderParameters_Sui"]
     Core_TransactionOrderParameters_Algorand: {
       operation: components["schemas"]["Core_AlgorandOperation"]
       note?: string
@@ -7818,6 +7876,7 @@ export interface components {
        * @enum {string}
        */
       type: "Ethereum"
+      operation?: components["schemas"]["Core_EthereumOperation"]
     }
     Core_TransactionOrderParameters_Hedera: {
       operation: components["schemas"]["Core_HederaOperation"]
@@ -7998,6 +8057,8 @@ export interface components {
       | components["schemas"]["Core_TransferMetadata_Tron"]
       | components["schemas"]["Core_TransferMetadata_XRPL"]
       | components["schemas"]["Core_TransferMetadata_External"]
+      | components["schemas"]["Core_TransferMetadata_Canton"]
+      | components["schemas"]["Core_TransferMetadata_Sui"]
     Core_TransferMetadata_Algorand: {
       /**
        * @description discriminator enum property added by openapi-typescript
@@ -8483,6 +8544,7 @@ export interface components {
       | "UnsupportedTrustedPublicKeyPurpose"
       | "TrustedPublicKeyAlreadyActive"
       | "ConflictingDestinationTag"
+      | "SignManifestAddressResolutionFailure"
     Core_UserReference: {
       /** Format: uuid */
       id: string
@@ -8548,9 +8610,14 @@ export interface components {
       | components["schemas"]["Core_VaultAccountProviderInformation_Key_VaultDerived"]
       | components["schemas"]["Core_VaultAccountProviderInformation_Key_VaultDerivedNonExtended"]
       | components["schemas"]["Core_VaultAccountProviderInformation_Key_VaultRandom"]
+      | components["schemas"]["Core_VaultAccountProviderInformation_Key_VaultReserved"]
     /** @enum {string} */
     Core_VaultAccountProviderInformation_KeyId:
-      "SECP256K1_CUSTODY_1" | "ED25519_CUSTODY_1" | "ED25519_CUSTODY_2" | "ED25519_STAKING_1"
+      | "SECP256K1_CUSTODY_1"
+      | "ED25519_CUSTODY_1"
+      | "ED25519_CUSTODY_2"
+      | "ED25519_STAKING_1"
+      | "ED25519_CANTON_PARTY_1"
     Core_VaultAccountProviderInformation_Key_VaultDerived: {
       id: components["schemas"]["Core_VaultAccountProviderInformation_KeyId"]
       derivationPath: string
@@ -9261,6 +9328,11 @@ export interface components {
        * @enum {string}
        */
       type: "v0_CreateEndpoint"
+      /**
+       * @deprecated
+       * @description Whether an endpoint duplicating the address, ledger and tag of an existing one is accepted. Defaults to true. Deletion target: Oct. 1st 2027 — after this date such an endpoint is always rejected.
+       */
+      allowDuplicate?: boolean
     }
     Core_v0_CreateLedger: {
       id: string
@@ -9355,7 +9427,7 @@ export interface components {
       lock: components["schemas"]["Core_IntentLockStatus"]
       description?: string
       customProperties: components["schemas"]["Core_StringsMap"]
-      /** @description Domain-unique `loginId`-`loginProviderId` pairs. Must be specified for login and match pre-configured values. */
+      /** @description Domain-unique `loginId`-`loginProviderId` pairs. Must be specified for login and match pre-configured values. Required when proposing or dry-running the intent; absent only on intents created before login ids existed. */
       loginIds?: components["schemas"]["Core_LoginId"][]
       /**
        * @description discriminator enum property added by openapi-typescript
@@ -9510,6 +9582,7 @@ export interface components {
        * @enum {string}
        */
       type: "v0_SignManifest"
+      address?: string
     }
     Core_v0_UnlockAccount: {
       reference: components["schemas"]["Core_EntityIdAndRevision"]
@@ -9617,6 +9690,11 @@ export interface components {
        * @enum {string}
        */
       type: "v0_UpdateEndpoint"
+      /**
+       * @deprecated
+       * @description Whether an endpoint duplicating the address, ledger and tag of an existing one is accepted. Defaults to true. Deletion target: Oct. 1st 2027 — after this date such an endpoint is always rejected.
+       */
+      allowDuplicate?: boolean
     }
     Core_v0_UpdateLedger: {
       reference: components["schemas"]["Core_EntityStringIdAndRevision"]
@@ -9669,7 +9747,7 @@ export interface components {
       roles: string[]
       description?: string
       customProperties: components["schemas"]["Core_StringsMap"]
-      /** @description Domain-unique `loginId`-`loginProviderId` pairs. Must be specified for login and match pre-configured values. */
+      /** @description Domain-unique `loginId`-`loginProviderId` pairs. Must be specified for login and match pre-configured values. Required when proposing or dry-running the intent; absent only on intents created before login ids existed. */
       loginIds?: components["schemas"]["Core_LoginId"][]
       /**
        * @description discriminator enum property added by openapi-typescript
@@ -12440,6 +12518,831 @@ export interface components {
     }
     Omnibus_JsonNullableUUID: {
       present?: boolean
+    }
+    Omnibus_JsonNullableOmnibusHierarchyTenant_depositWallet: {
+      present?: boolean
+    }
+    /** @description Full omnibus structure hierarchy: structure header repeated on every page, one element per tenant (including Host) with its deposit wallet embedded, and always-populated pagination totals. */
+    Omnibus_OmnibusHierarchyResponse: {
+      omnibus: components["schemas"]["Omnibus_OmnibusResponse"]
+      hostTenantId?: components["schemas"]["Omnibus_JsonNullableUUID"]
+      /** @description One element per tenant, including the Host tenant */
+      content: components["schemas"]["Omnibus_OmnibusHierarchyTenant"][]
+      page: components["schemas"]["Omnibus_PageMetadata"]
+    }
+    Omnibus_OmnibusHierarchyTenant: {
+      /**
+       * Format: uuid
+       * @description Unique identifier of the tenant
+       */
+      id: string
+      /** @description Alias of the tenant */
+      alias: string
+      /** @description Whether this tenant is the host tenant of the omnibus structure */
+      isHost: boolean
+      /** @enum {string} */
+      status: "LOCKED" | "UNLOCKED"
+      /**
+       * Format: date-time
+       * @description Timestamp when the tenant was created
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Timestamp when the tenant was last updated
+       */
+      updatedAt: string
+      depositWallet?: components["schemas"]["Omnibus_JsonNullableOmnibusHierarchyTenant_depositWallet"]
+    }
+    Export_ExportErrorDto: {
+      /** @description HTTP status code. */
+      statusCode: number
+      /** @description Client-safe error message. Validation errors (400) return an array of messages. */
+      message: string | string[]
+      /** @description HTTP error name. */
+      error?: string
+    }
+    Export_ExportControlTotalsDto: {
+      /**
+       * @description Sum of all totalBalance values (Position Report only). BigNumber-formatted string.
+       * @example 429.04029589
+       */
+      balanceTotalAmount?: string
+      /**
+       * @description Sum of all reservedBalance values (Position Report only). BigNumber-formatted string.
+       * @example 2.0033804
+       */
+      balanceReservedAmount?: string
+      /**
+       * @description Sum of all quarantineBalance values (Position Report only). BigNumber-formatted string.
+       * @example 122.2
+       */
+      balanceQuarantinedAmount?: string
+      /**
+       * @description Sum of all enrichedTransactionValue values (Movement Report only). BigNumber-formatted string.
+       * @example 154.54
+       */
+      valueSum?: string
+    }
+    Export_ExportMetadataDto: {
+      /**
+       * @description Unique identifier of this export. Also returned in the X-Export-Id header.
+       * @example cef02796-daca-425f-91ed-f670eb8ec99f
+       */
+      exportId: string
+      /**
+       * @description Identity that requested the export.
+       * @example harmonize:hmz@metaco.com
+       */
+      requestAuthor: string
+      /**
+       * @description Generation timestamp (ISO-8601).
+       * @example 2026-08-27T09:15:00Z
+       */
+      generatedAt: string
+      /**
+       * @description Echo of the request filter parameters.
+       * @example {
+       *       "domainId": "5cd224fe-193e-8bce-c94c-c6c05245e2d1",
+       *       "asOfTimestamp": "2026-08-21T16:32:03.9740000+00:00",
+       *       "includeZeroBalances": true
+       *     }
+       */
+      filters: Record<string, never>
+      /**
+       * @description Echoed from the request — Position Report only (ISO-8601).
+       * @example 2026-08-27T00:00:00Z
+       */
+      asOfTimestamp?: string
+      /**
+       * @description Echoed from the request — Movement Report only (ISO-8601).
+       * @example 2026-07-25T00:00:00Z
+       */
+      dateRangeStart?: string
+      /**
+       * @description Echoed from the request — Movement Report only (ISO-8601).
+       * @example 2026-08-27T00:00:00Z
+       */
+      dateRangeEnd?: string
+      /**
+       * @description Number of data rows. Position: one row per (account, ticker). Movement: one row per transfer.
+       * @example 22
+       */
+      recordCount: number
+      /** @description Reconciliation control totals across all rows. */
+      controlTotals: components["schemas"]["Export_ExportControlTotalsDto"]
+    }
+    Export_PositionReportRowDto: {
+      /** @description Domain UUID owning the account. */
+      domainId: string
+      /**
+       * @description Domain display name.
+       * @example My root domain
+       */
+      domainName: string
+      /**
+       * @description Vault backing type passed through from the core system, such as 'MPC' or 'HSM'. Empty for accounts without a vault (external).
+       * @example HSM
+       */
+      vaultType: string
+      /** @description Vault UUID. Empty for accounts without a vault (external). */
+      vaultId: string
+      /** @description Vault display name. Empty for accounts without a vault (external). */
+      vaultName: string
+      /** @description Account UUID. */
+      accountId: string
+      /**
+       * @description Account display name.
+       * @example omnibus
+       */
+      accountName: string
+      /**
+       * @description One of 'vault', 'gas station', 'external', 'omnibus', 'deposit wallet'. 'external' identifies an account held at a subcustodian Provider — its vault columns are empty. 'omnibus' (a domain's omnibus wallet) and 'deposit wallet' (an omnibus tenant's deposit wallet) are emitted only when omnibus support is enabled for the environment.
+       * @example omnibus
+       */
+      accountType: string
+      /**
+       * @description Blockchain network name as configured by the operator.
+       * @example XRPL Testnet August 2024
+       */
+      ledgerName: string
+      /** @description On-chain address of the account on this ledger. */
+      addressOnLedger: string
+      /** @description Asset UUID. */
+      tickerId: string
+      /**
+       * @description Asset kind.
+       * @example Native
+       */
+      tickerKind: string
+      /**
+       * @description Asset display name.
+       * @example XRP Testnet August 2024
+       */
+      tickerName: string
+      /**
+       * @description Asset symbol.
+       * @example tXRP
+       */
+      tickerSymbol: string
+      /**
+       * @description Reserved balance. BigNumber-formatted string in display units.
+       * @example 0.000000
+       */
+      reservedBalance: string
+      /**
+       * @description Quarantined balance. BigNumber-formatted string in display units.
+       * @example 0.000000
+       */
+      quarantineBalance: string
+      /**
+       * @description Total balance. BigNumber-formatted string in display units.
+       * @example 51.994800
+       */
+      totalBalance: string
+      /**
+       * @description DB write time of the latest contributing accounting entry (ISO-8601) — not on-chain block time.
+       * @example 2026-08-21T14:27:15.03518Z
+       */
+      ledgerBalanceTimestamp: string
+    }
+    Export_PositionReportResponseDto: {
+      /** @description File-level metadata and reconciliation control totals. */
+      metadata: components["schemas"]["Export_ExportMetadataDto"]
+      /** @description One row per (account, ticker). With omnibus support enabled, contains on-chain custody accounts only — virtual (tenant) balances are excluded and control totals represent on-chain holdings. */
+      data: components["schemas"]["Export_PositionReportRowDto"][]
+    }
+    Export_MovementReportRowDto: {
+      /** @description Domain UUID the report row belongs to. */
+      domainId: string
+      /**
+       * @description Domain display name.
+       * @example My root domain
+       */
+      domainName: string
+      /** @description Transfer registration time (ISO-8601). */
+      registeredAt: string
+      /** @description Transaction UUID. Repeats across rows of the same transaction. */
+      transactionId: string
+      /** @description On-ledger transaction identifier (hash). */
+      onLedgerTransactionId: string
+      /** @description Transfer UUID — one row per transfer. */
+      transferId: string
+      /**
+       * @description Transfer kind.
+       * @example Transfer
+       */
+      transferKind: string
+      /**
+       * @description Transfer value in display units. BigNumber-formatted string.
+       * @example 3.999800
+       */
+      enrichedTransactionValue: string
+      /**
+       * @description Transfer value in raw base units.
+       * @example 3999800
+       */
+      rawTransactionValue: string
+      /**
+       * @description Blockchain network name as configured by the operator.
+       * @example XRPL Testnet August 2024
+       */
+      ledgerName: string
+      /** @description Asset UUID. */
+      tickerId: string
+      /**
+       * @description Asset display name.
+       * @example XRP Testnet August 2024
+       */
+      tickerName: string
+      /**
+       * @description Asset symbol.
+       * @example tXRP
+       */
+      tickerSymbol: string
+      /** @description Whether the transfer is currently quarantined. */
+      quarantined: boolean
+      /**
+       * @description Custody-side status. One of 'Broadcasting', 'Completed', 'Failed', 'Interrupted', 'Pending', 'Prepared', 'Preparing', 'Reserved'.
+       * @example Completed
+       */
+      custodyStatus: string
+      /**
+       * @description Ledger-side status. One of 'Detected', 'Confirmed', 'Expired', 'Replaced'.
+       * @example Confirmed
+       */
+      ledgerStatus: string
+      /** @description Ledger status last-updated time (ISO-8601). */
+      ledgerTimestamp: string
+      /** @description On-chain block time (ISO-8601). Empty until on-chain confirmation. */
+      blockTime: string
+      /** @description Sender address. Pipe-separated when a transfer has multiple sender addresses (e.g. UTXO multi-input). */
+      senderAddress: string
+      /** @description Sender account domain UUID. Empty for off-platform senders. */
+      senderDomainId: string
+      /** @description Sender memo/destination tag. Empty when not applicable. */
+      senderMemoTag: string
+      /** @description True if the sender is within the platform — including senders whose identity columns are redacted because their domain is outside the requester's access. */
+      senderInternal: boolean
+      /** @description Sender account display name. Empty for off-platform senders and when the sender's domain is outside the requester's access. */
+      senderName: string
+      /** @description Sender account UUID. Empty for off-platform senders and when the sender's domain is outside the requester's access. */
+      senderId: string
+      /**
+       * @description One of 'vault', 'gas station', 'external', 'omnibus', 'deposit wallet'. 'external' identifies an account held at a subcustodian Provider — its vault columns are empty. 'omnibus' (a domain's omnibus wallet) and 'deposit wallet' (an omnibus tenant's deposit wallet) are emitted only when omnibus support is enabled for the environment. Empty for off-platform senders and when the sender's domain is outside the requester's access; pipe-separated for multi-sender transfers.
+       * @example deposit wallet
+       */
+      senderAccountType: string
+      /** @description Sender vault backing type ('MPC', 'HSM', …), or 'external' when the sender is off-platform. Empty when the sender's domain is outside the requester's access. */
+      senderVaultType: string
+      /** @description Sender vault UUID. Empty for off-platform senders and when the sender's domain is outside the requester's access. */
+      senderVaultId: string
+      /** @description Sender vault display name. Empty for off-platform senders and when the sender's domain is outside the requester's access. */
+      senderVaultName: string
+      /** @description Recipient address. */
+      recipientAddress: string
+      /** @description Recipient account domain UUID. Empty for off-platform recipients. */
+      recipientDomainId: string
+      /** @description Memo type for Stellar/Hedera ('Text', 'Id', 'Hash', 'Return'). Empty for XRPL and when no memo. */
+      recipientMemoType: string
+      /** @description Recipient memo/destination tag. Empty when not applicable. */
+      recipientMemoTag: string
+      /** @description True if the recipient is within the platform — including recipients whose identity columns are redacted because their domain is outside the requester's access. */
+      recipientInternal: boolean
+      /** @description Recipient account display name. Empty for off-platform recipients and when the recipient's domain is outside the requester's access. */
+      recipientName: string
+      /** @description Recipient account UUID. Empty for off-platform recipients and when the recipient's domain is outside the requester's access. */
+      recipientId: string
+      /**
+       * @description One of 'vault', 'gas station', 'external', 'omnibus', 'deposit wallet'. 'external' identifies an account held at a subcustodian Provider — its vault columns are empty. 'omnibus' (a domain's omnibus wallet) and 'deposit wallet' (an omnibus tenant's deposit wallet) are emitted only when omnibus support is enabled for the environment. Empty for off-platform recipients and when the recipient's domain is outside the requester's access.
+       * @example omnibus
+       */
+      recipientAccountType: string
+      /** @description Recipient vault backing type ('MPC', 'HSM', …), or 'external' when the recipient is off-platform. Empty when the recipient's domain is outside the requester's access. */
+      recipientVaultType: string
+      /** @description Recipient vault UUID. Empty for off-platform recipients and when the recipient's domain is outside the requester's access. */
+      recipientVaultId: string
+      /** @description Recipient vault display name. Empty for off-platform recipients and when the recipient's domain is outside the requester's access. */
+      recipientVaultName: string
+    }
+    Export_MovementReportResponseDto: {
+      /** @description File-level metadata and reconciliation control totals. */
+      metadata: components["schemas"]["Export_ExportMetadataDto"]
+      /** @description One row per transfer within the requested date range. Virtual (tenant-to-tenant) omnibus movements settle off-chain and never appear here. */
+      data: components["schemas"]["Export_MovementReportRowDto"][]
+    }
+    Export_OmnibusAccountTypeTotalsDto: {
+      /**
+       * @description Number of rows of this accountType.
+       * @example 2
+       */
+      recordCount: number
+      /**
+       * @description Signed BigNumber sum across all tickers.
+       * @example 18.9998
+       */
+      availableBalance: string
+      /**
+       * @description Signed BigNumber sum across all tickers.
+       * @example 0
+       */
+      reservedBalance: string
+      /**
+       * @description Signed BigNumber sum across all tickers.
+       * @example 0
+       */
+      quarantineBalance: string
+      /**
+       * @description Signed BigNumber sum across all tickers.
+       * @example 1.0002
+       */
+      feeBalance: string
+      /**
+       * @description Signed BigNumber sum across all tickers.
+       * @example 0
+       */
+      confiscationBalance: string
+      /**
+       * @description Signed BigNumber sum across all tickers.
+       * @example 18.9998
+       */
+      totalBalance: string
+    }
+    Export_OmnibusControlTotalsDto: {
+      /** @description Totals over the 'omnibus' (pool wallet) rows. */
+      omnibus: components["schemas"]["Export_OmnibusAccountTypeTotalsDto"]
+      /** @description Totals over the 'deposit wallet' rows. */
+      depositWallet: components["schemas"]["Export_OmnibusAccountTypeTotalsDto"]
+      /** @description Totals over the 'virtual account' (tenant) rows. */
+      virtualAccount: components["schemas"]["Export_OmnibusAccountTypeTotalsDto"]
+    }
+    Export_OmnibusExportMetadataDto: {
+      /**
+       * @description Unique identifier of this export. Also returned in the X-Export-Id header.
+       * @example ecca7eb1-a2f3-4351-bf46-e4f9e8f55272
+       */
+      exportId: string
+      /**
+       * @description Identity that requested the export.
+       * @example harmonize:hmz@metaco.com
+       */
+      requestAuthor: string
+      /**
+       * @description Generation timestamp (ISO-8601).
+       * @example 2026-08-31T08:28:26.767Z
+       */
+      generatedAt: string
+      /**
+       * @description Echo of the request filter parameters.
+       * @example {
+       *       "domainId": "c73e9e5e-e803-4dc0-93c5-be71c3396ae9",
+       *       "asOfTimestamp": "2026-08-31T08:27:21.2980000+00:00",
+       *       "includeZeroBalances": true
+       *     }
+       */
+      filters: Record<string, never>
+      /** @description Echoed from the request (ISO-8601). */
+      asOfTimestamp: string
+      /**
+       * @description Number of data rows — one per (account, ticker).
+       * @example 4
+       */
+      recordCount: number
+      /** @description Reconciliation control totals, strictly per accountType — never summed across types (the omnibus wallet's balance IS the pool backing the virtual rows; a grand total would double-count by construction). Sums span all tickers, so they are integrity checksums rather than balances; per-ticker reconciliation is done from the rows. */
+      controlTotals: components["schemas"]["Export_OmnibusControlTotalsDto"]
+    }
+    Export_OmnibusPositionReportRowDto: {
+      /** @description Domain UUID owning the omnibus structure. */
+      domainId: string
+      /**
+       * @description Domain display name.
+       * @example TEST_SG_SUB_DOMAIN
+       */
+      domainName: string
+      /**
+       * @description Row kind: 'omnibus' (the pool wallet), 'deposit wallet' (a tenant's on-chain deposit wallet), or 'virtual account' (a tenant's off-chain claim on the pool).
+       * @example virtual account
+       */
+      accountType: string
+      /** @description Unified row identity together with accountType: the custody accountId on 'omnibus' and 'deposit wallet' rows, the tenantId on 'virtual account' rows — identical to the Accounting Service account identity. Joining to custody data requires filtering accountType IN ('omnibus','deposit wallet'); virtual-row ids resolve only in the Accounting/Omnibus services. */
+      accountId: string
+      /**
+       * @description Custody account alias on on-chain rows; tenant alias on virtual rows.
+       * @example SG_OMNIBUS-host
+       */
+      accountName: string
+      /** @description Owning tenantId — populated on 'deposit wallet' rows only (the deposit-wallet → virtual-account ownership edge). Empty on omnibus and virtual rows. */
+      mappedVirtualAccountId: string
+      /** @description True on the host tenant row — the catch-all tenant absorbing untagged direct deposits and pool-side costs; its balance may be negative (fee debt) and is never filtered. */
+      isHost: boolean
+      /** @description Omnibus wallet custody accountId; empty on the 'omnibus' row itself. */
+      parentOmnibusAccountId: string
+      /** @description Asset UUID. */
+      tickerId: string
+      /**
+       * @description Asset kind.
+       * @example Native
+       */
+      tickerKind: string
+      /**
+       * @description Asset display name.
+       * @example XRP Testnet August 2024
+       */
+      tickerName: string
+      /**
+       * @description Asset symbol.
+       * @example tXRP
+       */
+      tickerSymbol: string
+      /**
+       * @description Blockchain network name as configured by the operator.
+       * @example XRPL Testnet August 2024
+       */
+      ledgerName: string
+      /**
+       * @description Available balance — the headline number for virtual rows. Signed BigNumber string in display units, passed through from Accounting unmodified.
+       * @example -1.000200
+       */
+      availableBalance: string
+      /**
+       * @description Reserved balance (in-flight outbound on custody rows). Passed through from Accounting; 0 in practice on virtual rows (Accounting carries no tenant holds).
+       * @example 0.000000
+       */
+      reservedBalance: string
+      /**
+       * @description Quarantined balance (compliance holds on custody rows). Passed through from Accounting; 0 in practice on virtual rows.
+       * @example 0.000000
+       */
+      quarantineBalance: string
+      /**
+       * @description Cumulative fees bucket (informational — not a component of totalBalance). Itemizes the host tenant's absorbed network fees and reserves.
+       * @example 1.000200
+       */
+      feeBalance: string
+      /**
+       * @description Cumulative confiscation bucket (informational — not a component of totalBalance).
+       * @example 0.000000
+       */
+      confiscationBalance: string
+      /**
+       * @description Total balance = available + reserved + quarantine. Signed; the host tenant may be negative.
+       * @example -1.000200
+       */
+      totalBalance: string
+      /**
+       * @description DB write time of the latest contributing accounting entry (ISO-8601) — not on-chain block time.
+       * @example 2026-08-25T10:57:46.932669Z
+       */
+      ledgerBalanceTimestamp: string
+    }
+    Export_OmnibusPositionReportResponseDto: {
+      /** @description File-level metadata and per-accountType control totals. */
+      metadata: components["schemas"]["Export_OmnibusExportMetadataDto"]
+      /** @description One row per (account, ticker) across the three row kinds. Rows are Accounting-driven: never-funded tenants produce no rows; funded-then-drained tenants appear with total 0 under includeZeroBalances. Per-ticker reconciliation: Σ virtual-account availableBalance equals the omnibus wallet row's totalBalance (net of in-flight sweeps). */
+      data: components["schemas"]["Export_OmnibusPositionReportRowDto"][]
+    }
+    Export_OmnibusPositionExportDto: {
+      /** @description Domain UUID whose omnibus structure to export */
+      domainId: string
+      /** @description Point-in-time timestamp for balance snapshot (ISO-8601) */
+      asOfTimestamp: string
+      /** @description Filter by virtual account (tenant) UUIDs. Filters virtual-account rows and their deposit wallets; the omnibus wallet row is always kept. */
+      tenantIds?: string[]
+      /** @description Filter by ticker UUIDs */
+      tickerIds?: string[]
+      /** @description Include accounts with zero balances */
+      includeZeroBalances?: boolean
+      /**
+       * @description Output format
+       * @enum {string}
+       */
+      format: "CSV" | "JSON"
+    }
+    /** @enum {string} */
+    Core_AntiRewindMode: "STRICT" | "BALANCED" | "DISABLED"
+    Core_AntiRewindModeValue: {
+      mode: components["schemas"]["Core_AntiRewindMode"]
+    }
+    Core_AuthorizationReference: {
+      /** Format: uuid */
+      transactionOrderId: string
+    }
+    Core_CantonOperation:
+      | components["schemas"]["Core_CantonOperation_Accept"]
+      | components["schemas"]["Core_CantonOperation_CreateNativeTransferPreapproval"]
+      | components["schemas"]["Core_CantonOperation_CreateParty"]
+      | components["schemas"]["Core_CantonOperation_CreateTokenTransferPreapproval"]
+      | components["schemas"]["Core_CantonOperation_NativeTransfer"]
+      | components["schemas"]["Core_CantonOperation_Reject"]
+      | components["schemas"]["Core_CantonOperation_TokenTransfer"]
+      | components["schemas"]["Core_CantonOperation_Withdraw"]
+    Core_CantonOperation_Accept: {
+      contractId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Accept"
+    }
+    Core_CantonOperation_CreateNativeTransferPreapproval: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "CreateNativeTransferPreapproval"
+    }
+    Core_CantonOperation_CreateParty: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "CreateParty"
+    }
+    Core_CantonOperation_CreateTokenTransferPreapproval: {
+      /** Format: uuid */
+      tickerId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "CreateTokenTransferPreapproval"
+    }
+    Core_CantonOperation_NativeTransfer: {
+      destination: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /** Format: date-time */
+      executeBefore?: string
+      memo?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "NativeTransfer"
+    }
+    Core_CantonOperation_Reject: {
+      contractId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Reject"
+    }
+    Core_CantonOperation_TokenTransfer: {
+      destination: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /** Format: uuid */
+      tickerId: string
+      /** Format: date-time */
+      executeBefore?: string
+      memo?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "TokenTransfer"
+    }
+    Core_CantonOperation_Withdraw: {
+      contractId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Withdraw"
+    }
+    Core_CantonTickerProperties:
+      | components["schemas"]["Core_CantonTickerProperties_Instrument"]
+      | components["schemas"]["Core_CantonTickerProperties_Native"]
+    Core_CantonTickerProperties_Instrument: {
+      instrumentAdmin: string
+      instrumentId: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Instrument"
+    }
+    Core_CantonTickerProperties_Native: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Native"
+    }
+    Core_EthereumFeeStrategy_Sponsored: {
+      /** Format: uuid */
+      sponsor?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Sponsored"
+    }
+    Core_EthereumOperation:
+      | components["schemas"]["Core_EthereumOperation_SetDelegation"]
+      | components["schemas"]["Core_EthereumOperation_SubmitAuthorization"]
+    Core_EthereumOperation_SetDelegation: {
+      delegationContract: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "SetDelegation"
+    }
+    Core_EthereumOperation_SubmitAuthorization: {
+      authorizations: components["schemas"]["Core_AuthorizationReference"][]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "SubmitAuthorization"
+    }
+    Core_LedgerParameters_Canton: {
+      synchronizerId: string
+      operatorId: string
+      dsoPartyId: string
+      daRegistryOperator: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Canton"
+    }
+    Core_LedgerParameters_Sui: {
+      nativeTickerSymbol: string
+      nativeTickerName: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Sui"
+    }
+    Core_OnLedgerData_Canton: {
+      contractId?: string
+      sender?: string
+      receiver?: string
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount?: string
+      instrumentId?: string
+      /** Format: date-time */
+      executeBefore?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Canton"
+    }
+    Core_ReadWriteSystemPropertyKeyValue_AntiRewindModeProperty: {
+      value: components["schemas"]["Core_AntiRewindModeValue"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "AntiRewindModeProperty"
+    }
+    Core_SuiFeeStrategy: components["schemas"]["Core_SuiFeeStrategy_Priority"]
+    Core_SuiFeeStrategy_Priority: {
+      priority: components["schemas"]["Core_FeePriority"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Priority"
+    }
+    Core_SuiOperation:
+      | components["schemas"]["Core_SuiOperation_CoinTransfer"]
+      | components["schemas"]["Core_SuiOperation_NativeTransfer"]
+    Core_SuiOperation_CoinTransfer: {
+      destination: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /** @description Move coin type tag, e.g. 0x2::sui::SUI (no generic type parameters). */
+      coinType: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "CoinTransfer"
+    }
+    Core_SuiOperation_NativeTransfer: {
+      destination: components["schemas"]["Core_TransactionDestination"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      amount: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "NativeTransfer"
+    }
+    Core_SuiTickerProperties:
+      | components["schemas"]["Core_SuiTickerProperties_Coin"]
+      | components["schemas"]["Core_SuiTickerProperties_Native"]
+    Core_SuiTickerProperties_Coin: {
+      /** @description Move coin type tag, e.g. 0x2::sui::SUI (no generic type parameters). */
+      coinType: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Coin"
+    }
+    Core_SuiTickerProperties_Native: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Native"
+    }
+    Core_SystemProperty_AntiRewindModeSystemProperty: {
+      id: components["schemas"]["Core_SystemPropertyId"]
+      value: components["schemas"]["Core_AntiRewindModeValue"]
+      metadata: components["schemas"]["Core_EntityMetadata"]
+    }
+    Core_TickerLedgerDetails_Canton: {
+      properties: components["schemas"]["Core_CantonTickerProperties"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Canton"
+    }
+    Core_TickerLedgerDetails_Sui: {
+      properties: components["schemas"]["Core_SuiTickerProperties"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Sui"
+    }
+    Core_TransactionEstimate_Canton: {
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      fee: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Canton"
+    }
+    Core_TransactionEstimate_Sui: {
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      fee: string
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      storageRebate?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Sui"
+    }
+    Core_TransactionOrderParameters_Canton: {
+      operation: components["schemas"]["Core_CantonOperation"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      maximumFee?: string
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Canton"
+    }
+    Core_TransactionOrderParameters_Sui: {
+      operation: components["schemas"]["Core_SuiOperation"]
+      feeStrategy: components["schemas"]["Core_SuiFeeStrategy"]
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      maximumFee?: string
+      /**
+       * Format: int32
+       * @description Expiry window in whole Sui epochs (approximately 24 hours each) from preparation; omit for the platform default.
+       */
+      validityEpochs?: number
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Sui"
+    }
+    Core_TransferMetadata_Canton: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Canton"
+    }
+    Core_TransferMetadata_Sui: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "Sui"
+    }
+    Core_VaultAccountProviderInformation_Key_VaultReserved: {
+      id: components["schemas"]["Core_VaultAccountProviderInformation_KeyId"]
+      publicKey?: components["schemas"]["Core_AccountPublicKeyOnly"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "VaultReserved"
     }
     Core_ApiBatchSigningData: {
       /** @description Hex encoded string. */
@@ -16064,7 +16967,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_IntentResponse"]
         }
       }
-      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid intent (InvalidIntentError); Invalid intent body discriminator (InvalidDiscriminator); Invalid request (InvalidRequestError); Missing system-signed fields (MissingSystemSignedFields); Missing user-signed fields (MissingUserSignedFields); Requester locked (RequesterLockedError); Unexpected system-signed fields (UnexpectedSystemSignedFields) */
+      /** @description One of: Domain locked (DomainLockedError); Intent expired (ExpiredRequestError); Invalid endpoint address (InvalidEndpointAddressError); Invalid intent (InvalidIntentError); Invalid intent body discriminator (InvalidDiscriminator); Invalid request (InvalidRequestError); Missing system-signed fields (MissingSystemSignedFields); Missing user-signed fields (MissingUserSignedFields); Requester locked (RequesterLockedError); Unexpected system-signed fields (UnexpectedSystemSignedFields) */
       400: {
         headers: {
           [name: string]: unknown
@@ -16661,6 +17564,30 @@ export interface operations {
          *     ]
          */
         lock?: components["schemas"]["Core_LockStatus"][]
+        /**
+         * @description Return tickers issued by one of the given issuing addresses. Only set for assets whose ledger identifies them by an issuer, in which case it must be combined with assetCode to identify a single asset. Combine with ledgerId to keep the result unambiguous across ledgers.
+         * @example [
+         *       "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"
+         *     ]
+         */
+        issuer?: string[]
+        /**
+         * @description Return tickers whose asset code in the ledger matches one of the given codes. Only set for assets whose ledger identifies them by an issuer and a code, in which case it must be combined with issuer to identify a single asset. Combine with ledgerId to keep the result unambiguous across ledgers.
+         * @example [
+         *       "USD",
+         *       "4558414D504C452D544F4B454E00000000000000"
+         *     ]
+         */
+        assetCode?: string[]
+        /**
+         * @description Return tickers whose asset reference in the ledger matches one of the given references. Set for assets that a ledger identifies without an issuer, such as an issuance id, a contract address or a mint. Assets that need two values join them with a dash: <contractAddress>-<tokenId> for ERC721 and ERC1155, <tokenId>-<serialNumber> for a Hedera NFT. Combine with ledgerId to keep the result unambiguous across ledgers.
+         * @example [
+         *       "0000012C1EA5B6D9C0E5A2F4B8D7C36A1F0E9B8D7C6A5F4E",
+         *       "0x6b175474e89094c44da98b954eedeac495271d0f",
+         *       "0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb-7804"
+         *     ]
+         */
+        assetReference?: string[]
       }
       header?: never
       path?: never
@@ -16676,7 +17603,7 @@ export interface operations {
           "application/json": components["schemas"]["Core_TickersCollection"]
         }
       }
-      /** @description Invalid value for: query parameter limit, Invalid value for: query parameter startingAfter, Invalid value for: query parameter sortBy, Invalid value for: query parameter sortOrder, Invalid value for: query parameter ledgerId, Invalid value for: query parameter kind, Invalid value for: query parameter name, Invalid value for: query parameter symbol, Invalid value for: query parameter validationStatus, Invalid value for: query parameter lock */
+      /** @description Invalid value for: query parameter limit, Invalid value for: query parameter startingAfter, Invalid value for: query parameter sortBy, Invalid value for: query parameter sortOrder, Invalid value for: query parameter ledgerId, Invalid value for: query parameter kind, Invalid value for: query parameter name, Invalid value for: query parameter symbol, Invalid value for: query parameter validationStatus, Invalid value for: query parameter lock, Invalid value for: query parameter issuer, Invalid value for: query parameter assetCode, Invalid value for: query parameter assetReference */
       400: {
         headers: {
           [name: string]: unknown
@@ -21597,11 +22524,121 @@ export interface operations {
       }
     }
     responses: {
+      /** @description Report generated. */
       201: {
+        headers: {
+          /** @description Attachment filename. */
+          "Content-Disposition"?: string
+          /** @description Export UUID (same value as metadata.exportId). */
+          "X-Export-Id"?: string
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Export_PositionReportResponseDto"]
+          /**
+           * @example # metadata: {"exportId":"cef02796-daca-425f-91ed-f670eb8ec99f","recordCount":22,...}
+           *     "domainId","domainName","vaultType","vaultId","vaultName","accountId","accountName","accountType","ledgerName","addressOnLedger","tickerId","tickerKind","tickerName","tickerSymbol","reservedBalance","quarantineBalance","totalBalance","ledgerBalanceTimestamp"
+           *     "5cd224fe-193e-8bce-c94c-c6c05245e2d1","My root domain","HSM",...
+           */
+          "text/csv": string
+        }
+      }
+      /** @description Invalid value for: domainId, asOfTimestamp (must be ISO-8601, not in the future), format, vaultIds, tickerIds, accountIds, includeChildDomains, includeZeroBalances. Or 'Invalid query parameters for balance lookup' (single string message) when the accounting service rejects the query. */
+      400: {
         headers: {
           [name: string]: unknown
         }
-        content?: never
+        content: {
+          /**
+           * @example {
+           *       "message": [
+           *         "domainId must be a valid UUID"
+           *       ],
+           *       "error": "Bad Request",
+           *       "statusCode": 400
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: missing bearer token; invalid or expired JWT. */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Authentication required",
+           *       "error": "Unauthorized",
+           *       "statusCode": 401
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description User has no profile in the target domain with read access to 'accounts'. With includeChildDomains, each child domain is verified individually. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Access denied",
+           *       "error": "Forbidden",
+           *       "statusCode": 403
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: 'Export spans {n} domains, exceeding the maximum of 100. Remove includeChildDomains or narrow the scope.'; 'Export exceeds maximum of 100000 balance records. Add ticker or account filters to narrow the result set.' */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Export exceeds maximum of 100000 balance records. Add ticker or account filters to narrow the result set.",
+           *       "error": "Payload Too Large",
+           *       "statusCode": 413
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: Export already in progress (same parameters within 60s); Maximum concurrent exports reached (2 per user). */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "statusCode": 429,
+           *       "message": "Export already in progress"
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: 'Upstream accounting service is unavailable. Please retry.'; 'Gas station service is unavailable'; 'Omnibus service is unavailable' / 'Omnibus service returned inconsistent data' (when omnibus support is enabled). The export fails rather than returning rows with incorrect classification — retry once the upstream is reachable. */
+      502: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Upstream accounting service is unavailable. Please retry.",
+           *       "error": "Bad Gateway",
+           *       "statusCode": 502
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
       }
     }
   }
@@ -21618,11 +22655,121 @@ export interface operations {
       }
     }
     responses: {
+      /** @description Report generated. */
       201: {
+        headers: {
+          /** @description Attachment filename. */
+          "Content-Disposition"?: string
+          /** @description Export UUID (same value as metadata.exportId). */
+          "X-Export-Id"?: string
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Export_MovementReportResponseDto"]
+          /**
+           * @example # metadata: {"exportId":"d394fae4-9d6b-4ab7-a3fa-c66e7a6caf56","recordCount":16,...}
+           *     "domainId","domainName","registeredAt","transactionId","onLedgerTransactionId","transferId","transferKind","enrichedTransactionValue","rawTransactionValue","ledgerName",...(39 columns)
+           *     "5cd224fe-193e-8bce-c94c-c6c05245e2d1","My root domain","2026-08-17T10:54:04.130Z",...
+           */
+          "text/csv": string
+        }
+      }
+      /** @description Invalid value for: domainId, dateRange (start/end must be ISO-8601), format, vaultIds, tickerIds, accountIds, includeChildDomains, custodyStatus, ledgerStatus. */
+      400: {
         headers: {
           [name: string]: unknown
         }
-        content?: never
+        content: {
+          /**
+           * @example {
+           *       "message": [
+           *         "domainId must be a valid UUID"
+           *       ],
+           *       "error": "Bad Request",
+           *       "statusCode": 400
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: missing bearer token; invalid or expired JWT. */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Authentication required",
+           *       "error": "Unauthorized",
+           *       "statusCode": 401
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description User has no profile in the target domain with read access to 'transactions'. With includeChildDomains, each child domain is verified individually. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Access denied",
+           *       "error": "Forbidden",
+           *       "statusCode": 403
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: 'Export spans {n} domains, exceeding the maximum of 100. Remove includeChildDomains or narrow the scope.'; 'Export exceeds maximum of 100000 transfers. Narrow the date range or filter by ticker, account, vault, or status.' */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Export exceeds maximum of 100000 transfers. Narrow the date range or filter by ticker, account, vault, or status.",
+           *       "error": "Payload Too Large",
+           *       "statusCode": 413
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: Export already in progress (same parameters within 60s); Maximum concurrent exports reached (2 per user). */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "statusCode": 429,
+           *       "message": "Maximum concurrent exports reached"
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: 'Gas station service is unavailable'; 'Omnibus service is unavailable' / 'Omnibus service returned inconsistent data' (when omnibus support is enabled). The export fails rather than returning rows with incorrect classification — retry once the upstream is reachable. */
+      502: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Omnibus service is unavailable",
+           *       "error": "Bad Gateway",
+           *       "statusCode": 502
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
       }
     }
   }
@@ -21774,6 +22921,211 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["Omnibus_InternalTransferResponse"]
+        }
+      }
+    }
+  }
+  getOmnibusHierarchy: {
+    parameters: {
+      query?: {
+        page?: number
+        /** @description Page size. Absent means the server's configured default applies (currently 20; runtime-configurable, not a fixed contract value). */
+        size?: number
+        /** @description Filter tenants by status. Absent means no status filtering — export consumers must always fetch unfiltered. */
+        status?: "LOCKED" | "UNLOCKED"
+        /** @description Only include tenants created at or before this timestamp (inclusive). Enables as-of enumeration for backdated reports; tenants are never deleted, so this filter is exact. */
+        createdBefore?: string
+        /** @description Restricts results to these tenant IDs (additive filter, combined with other filters using AND semantics). An empty list is treated as absent. */
+        tenantIds?: string[]
+      }
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusHierarchyResponse"]
+        }
+      }
+      /** @description Domain or omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusHierarchyResponse"]
+        }
+      }
+    }
+  }
+  OmnibusPositionReportController_generateOmnibusPositionReport: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Export_OmnibusPositionExportDto"]
+      }
+    }
+    responses: {
+      /** @description Report generated. */
+      201: {
+        headers: {
+          /** @description Attachment filename. */
+          "Content-Disposition"?: string
+          /** @description Export UUID (same value as metadata.exportId). */
+          "X-Export-Id"?: string
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Export_OmnibusPositionReportResponseDto"]
+          /**
+           * @example # metadata: {"exportId":"916a5c78-6be0-4b99-9365-b75bf9833297","recordCount":4,...}
+           *     "domainId","domainName","accountType","accountId","accountName","mappedVirtualAccountId","isHost","parentOmnibusAccountId","tickerId","tickerKind","tickerName","tickerSymbol","ledgerName","availableBalance","reservedBalance","quarantineBalance","feeBalance","confiscationBalance","totalBalance","ledgerBalanceTimestamp"
+           *     "c73e9e5e-e803-4dc0-93c5-be71c3396ae9","TEST_SG_SUB_DOMAIN","omnibus",...
+           */
+          "text/csv": string
+        }
+      }
+      /** @description Invalid value for: domainId, asOfTimestamp (must be ISO-8601, not in the future), format, tenantIds, tickerIds, includeZeroBalances. Or 'Invalid query parameters for balance lookup' (single string message) when the accounting service rejects the query. */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": [
+           *         "domainId must be a valid UUID"
+           *       ],
+           *       "error": "Bad Request",
+           *       "statusCode": 400
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: missing bearer token; invalid or expired JWT. */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Authentication required",
+           *       "error": "Unauthorized",
+           *       "statusCode": 401
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description User has no profile in the target domain with read access to 'accounts'. */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Access denied",
+           *       "error": "Forbidden",
+           *       "statusCode": 403
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description Omnibus support is not enabled for this environment. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Omnibus support is not enabled",
+           *       "error": "Not Found",
+           *       "statusCode": 404
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description Export exceeds the maximum of 100000 balance records. Add ticker or tenant filters to narrow the result set. */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Export exceeds maximum of 100000 balance records. Add ticker or tenant filters to narrow the result set.",
+           *       "error": "Payload Too Large",
+           *       "statusCode": 413
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description The domain has no omnibus structure. An empty file is indistinguishable from all-zero balances and is never returned. */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Domain has no omnibus structure",
+           *       "error": "Unprocessable Entity",
+           *       "statusCode": 422
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: Export already in progress (same parameters within 60s); Maximum concurrent exports reached (2 per user). */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "statusCode": 429,
+           *       "message": "Export already in progress"
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+      /** @description One of: 'Omnibus service is unavailable'; 'Omnibus service returned inconsistent data'; 'Omnibus structure changed during export. Please retry.' (a tenant was created while the hierarchy was being read — retry sees the settled state); 'Upstream accounting service is unavailable. Please retry.'. The export fails rather than returning rows with incorrect classification. */
+      502: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "message": "Omnibus service is unavailable",
+           *       "error": "Bad Gateway",
+           *       "statusCode": 502
+           *     }
+           */
+          "application/json": components["schemas"]["Export_ExportErrorDto"]
         }
       }
     }
