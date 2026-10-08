@@ -29,8 +29,12 @@ export async function printBalances(custody: RippleCustody): Promise<Balances> {
     `  MMF Total: ${(sellerBalances.mmfPublic + sellerBalances.mmfConfidentialSpendable + sellerBalances.mmfConfidentialInbox) / mmfDenom}`,
   )
   console.log(`    Public: ${sellerBalances.mmfPublic / mmfDenom}`)
-  console.log(`    Confidential Spendable: ${sellerBalances.isMmfConfidential ? sellerBalances.mmfConfidentialSpendable / mmfDenom : "-"}`)
-  console.log(`    Confidential Inbox: ${sellerBalances.isMmfConfidential ? sellerBalances.mmfConfidentialInbox / mmfDenom : "-"}`)
+  console.log(
+    `    Confidential Spendable: ${sellerBalances.isMmfConfidential ? sellerBalances.mmfConfidentialSpendable / mmfDenom : "-"}`,
+  )
+  console.log(
+    `    Confidential Inbox: ${sellerBalances.isMmfConfidential ? sellerBalances.mmfConfidentialInbox / mmfDenom : "-"}`,
+  )
   console.log(
     `  RLUSD Total: ${(sellerBalances.rlusdPublic + sellerBalances.rlusdConfidentialSpendable + sellerBalances.rlusdConfidentialInbox) / rlusdDenom}`,
   )
@@ -38,15 +42,21 @@ export async function printBalances(custody: RippleCustody): Promise<Balances> {
   console.log(
     `    Confidential Spendable: ${sellerBalances.isRlusdConfidential ? sellerBalances.rlusdConfidentialSpendable / rlusdDenom : "-"}`,
   )
-  console.log(`    Confidential Inbox: ${sellerBalances.isRlusdConfidential ? sellerBalances.rlusdConfidentialInbox / rlusdDenom : "-"}`)
+  console.log(
+    `    Confidential Inbox: ${sellerBalances.isRlusdConfidential ? sellerBalances.rlusdConfidentialInbox / rlusdDenom : "-"}`,
+  )
 
   console.log(`Repo Buyer (${WALLET_REPO_BUYER.id} / ${WALLET_REPO_BUYER.address}):`)
   console.log(
     `  MMF Total: ${(buyerBalances.mmfPublic + buyerBalances.mmfConfidentialSpendable + buyerBalances.mmfConfidentialInbox) / mmfDenom}`,
   )
   console.log(`    Public: ${buyerBalances.mmfPublic / mmfDenom}`)
-  console.log(`    Confidential Spendable: ${buyerBalances.isMmfConfidential ? buyerBalances.mmfConfidentialSpendable / mmfDenom : "-"}`)
-  console.log(`    Confidential Inbox: ${buyerBalances.isMmfConfidential ? buyerBalances.mmfConfidentialInbox / mmfDenom : "-"}`)
+  console.log(
+    `    Confidential Spendable: ${buyerBalances.isMmfConfidential ? buyerBalances.mmfConfidentialSpendable / mmfDenom : "-"}`,
+  )
+  console.log(
+    `    Confidential Inbox: ${buyerBalances.isMmfConfidential ? buyerBalances.mmfConfidentialInbox / mmfDenom : "-"}`,
+  )
   console.log(
     `  RLUSD Total: ${(buyerBalances.rlusdPublic + buyerBalances.rlusdConfidentialSpendable + buyerBalances.rlusdConfidentialInbox) / rlusdDenom}`,
   )
@@ -54,7 +64,9 @@ export async function printBalances(custody: RippleCustody): Promise<Balances> {
   console.log(
     `    Confidential Spendable: ${buyerBalances.isRlusdConfidential ? buyerBalances.rlusdConfidentialSpendable / rlusdDenom : "-"}`,
   )
-  console.log(`    Confidential Inbox: ${buyerBalances.isRlusdConfidential ? buyerBalances.rlusdConfidentialInbox / rlusdDenom : "-"}`)
+  console.log(
+    `    Confidential Inbox: ${buyerBalances.isRlusdConfidential ? buyerBalances.rlusdConfidentialInbox / rlusdDenom : "-"}`,
+  )
 
   return { sellerBalances, buyerBalances }
 }

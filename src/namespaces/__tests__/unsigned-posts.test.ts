@@ -125,6 +125,18 @@ describe("non-intent POST methods pass sign: false", () => {
     )
   })
 
+  it("exports.generateOmnibusPositionReport", async () => {
+    const exports = createExports(mockTransport)
+    await exports.generateOmnibusPositionReport({} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
   it("accounts.initiateParametersCompute", async () => {
     const accounts = createAccounts(mockTransport)
     await accounts.initiateParametersCompute({} as any, {} as any)

@@ -119,14 +119,15 @@ export async function getBalances(custody: RippleCustody, accountId: string) {
 
 async function getInbox(custody: RippleCustody, accountId: string, issuanceId: string) {
   try {
-    const cbin = await custody.internal.cbInDecryption.initiateAndWait({
-      accountId,
-      domainId: DOMAIN_ID,
-      ledgerId: LEDGER_ID,
-      issuanceId
-    },
-    {maxRetries: 20} // Increased as the default 30 sec resulted in failures
-  )
+    const cbin = await custody.internal.cbInDecryption.initiateAndWait(
+      {
+        accountId,
+        domainId: DOMAIN_ID,
+        ledgerId: LEDGER_ID,
+        issuanceId,
+      },
+      { maxRetries: 20 }, // Increased as the default 30 sec resulted in failures
+    )
     if (cbin.decryption.decryptedAmount !== undefined) {
       return parseInt(cbin.decryption.decryptedAmount)
     } else return null
