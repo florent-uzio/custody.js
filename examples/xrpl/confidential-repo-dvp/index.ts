@@ -192,7 +192,13 @@ const main = async () => {
     console.log()
     const bals = await printBalances(custody)
     console.log()
-    if(isNaN(bals.buyerBalances.mmfConfidentialInbox) || isNaN(bals.buyerBalances.rlusdConfidentialInbox) || isNaN(bals.sellerBalances.mmfConfidentialInbox) || isNaN(bals.sellerBalances.rlusdConfidentialInbox)) throw new Error("Confidential Inbox amount could not be determined.") // Terminating as otherwise this causes incorrect funding actions
+    if (
+      isNaN(bals.buyerBalances.mmfConfidentialInbox) ||
+      isNaN(bals.buyerBalances.rlusdConfidentialInbox) ||
+      isNaN(bals.sellerBalances.mmfConfidentialInbox) ||
+      isNaN(bals.sellerBalances.rlusdConfidentialInbox)
+    )
+      throw new Error("Confidential Inbox amount could not be determined.") // Terminating as otherwise this causes incorrect funding actions
     const fundingChanged = await fundConfidential(custody, bals)
     if (fundingChanged) {
       // Adding a pause to ensure data consistency in Ripple Custody balances
@@ -225,7 +231,6 @@ const main = async () => {
     console.log()
     await printBalances(custody)
     console.log()
-
   } catch (error) {
     console.log(error)
   } finally {
