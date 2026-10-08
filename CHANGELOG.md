@@ -1,5 +1,36 @@
 # custody
 
+## 2.13.0-beta.17
+
+### Minor Changes
+
+- cf3a3c0: Bundle the official OpenAPI specs for `1.34.18`, `1.42.0`, `1.43.0` and `1.43.2`, regenerate the types, and add the two new endpoints. `client.capabilities` now recognises all four versions. (`1.34.19`–`1.34.22` publish no OpenAPI asset, and the `1.41.0` asset's CI artifact has expired, so those versions are not bundled.)
+
+  New methods (`1.42.0`):
+
+  - `client.omnibus.getHierarchy(params, query?)` — `GET /v1/domains/{domainId}/omnibus/{omnibusId}/hierarchy`. Returns `Omnibus_OmnibusHierarchyResponse`: the omnibus header, its tenants and their embedded deposit wallets as one paginated snapshot (`page`, `size`, `status`, `createdBefore`, `tenantIds`). It never returns balances; `omnibus.balances` is always an empty list.
+  - `client.exports.generateOmnibusPositionReport(body)` — `POST /v1/exports/position/omnibus` (unsigned). Takes `Export_OmnibusPositionExportDto` (`domainId`, `asOfTimestamp`, `format`, plus optional `tenantIds`, `tickerIds`, `includeZeroBalances`) and resolves to `Export_OmnibusPositionReportResponseDto` for `format: "JSON"` or the CSV string for `format: "CSV"`.
+
+  Breaking type change:
+
+  - **`client.genesis.run` now requires `antiRewindMode`** (`1.43.0`): `Core_GenesisRequest` lists it as required, typed `Core_AntiRewindMode` (`"STRICT" | "BALANCED" | "DISABLED"`). The same mode is also exposed as a new `ANTI_REWIND_MODE` system property (`Core_SystemProperty_AntiRewindModeSystemProperty`).
+
+  Additive (`1.43.0`), all reached through existing generic methods (`intents.proposePayload`, `tickers`, `ledgers`, `systemProperties`), so no new SDK methods:
+
+  - **Canton and Sui ledgers**: new `Canton` and `Sui` variants of the order-parameter, estimate, transfer-metadata, ledger-parameter and ticker-detail unions, plus `Core_CantonOperation_*` (create party, transfer preapprovals, native/token transfer, accept, reject, withdraw) and `Core_SuiOperation_*` (native/coin transfer). A new `ED25519_CANTON_PARTY_1` vault key id is added.
+  - **Ethereum**: `Core_TransactionOrderParameters_Ethereum` gains an optional `operation` (`SetDelegation` / `SubmitAuthorization`, i.e. EIP-7702), and `Core_EthereumFeeStrategy` a new `Sponsored` variant with an optional `sponsor` uuid.
+  - `Core_LedgerTransactionData.sponsoringTransactionHash`; an optional `address` on `Core_Manifest` / `Core_v0_SignManifest`, with the new rejection code `SignManifestAddressResolutionFailure`; and a deprecated `allowDuplicate` flag on endpoint create/update (deletion target Oct 1st 2027).
+
+  Removed: the `Omnibus_HelloWorldResponse` schema (`1.42.0`), which no SDK method used. `1.43.2` differs from `1.43.0` only in comment text, and `1.34.18` has the same operation and schema set as `1.34.15`.
+
+- f2a4659: Bundle the official OpenAPI specs for `1.40.4` and `1.40.5`, and regenerate the types. Neither release adds, removes or renames an endpoint — the path/operation set is identical to `1.40.2` (138 paths, 163 operations) — so there are no new namespaces or methods. `1.40.5` is byte-identical to `1.40.4` apart from `info.x-app-version`, so every change below comes from `1.40.4`. `client.capabilities` now recognises both versions.
+
+  - **Solana durable nonce** (additive): `Core_SolanaOperation_CreateNonceAccount` gained an optional `nonceAuthority: Core_TransactionDestination`, and `Core_TransactionOrderParameters_Solana` an optional `nonceAuthority` (uuid). Both are optional, and Solana orders travel through the generic `intents.proposePayload` path, so no SDK method changes.
+  - **`Omnibus_OmnibusResponse.sponsoringGasStationId` changed shape** (breaking for readers of that field): it was a `uuid` string and is now the new `Omnibus_JsonNullableUUID` object, whose only property is `present?: boolean` — the uuid value is gone entirely. This affects `omnibus.get`, `omnibus.getById`, `omnibus.update`, `omnibus.lock` and `omnibus.unlock`, which all return `Omnibus_OmnibusResponse`. The shape looks like a server-side `JsonNullable<UUID>` serialization wrapper leaking into the published spec rather than an intended contract change; the SDK reflects the spec as published rather than hand-patching it.
+  - `1.40.4` drops `Invalid endpoint address (InvalidEndpointAddressError)` from the documented 400 cases of `POST /v1/intents`, reverting the note `1.40.2` added. Comment text only.
+
+  Generated-code fix: `capabilities.generated.ts` is now emitted with an explicit `KnownAppVersion` union and a `Record<KnownAppVersion, CapabilityEntry>` annotation instead of `as const` + `keyof typeof`. Adding two more versions pushed the inferred literal type of the ~27k-line object past TypeScript's declaration-serialization limit, failing the build with TS7056. The public API is unchanged: `KnownAppVersion` is still the exact literal union of bundled versions, and the `endpoints` / `schemas` / `surfaces` arrays are only ever read into `Set`s, so their element literal types were never observable. This was latent and would have fired on the next bundled spec regardless.
+
 ## 2.13.0-beta.16
 
 ### Patch Changes
