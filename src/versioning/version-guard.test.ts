@@ -185,3 +185,50 @@ describe("resolveExplicitCapabilities", () => {
     expect(message).toContain("1.35.4")
   })
 })
+
+// --- ADR-0007: per-surface gating ---
+
+describe("VersionGuard surfaces", () => {
+  const caps = (surfaces: Array<"public" | "internal">) => ({
+    appVersion: "1.36.2",
+    endpoints: new Set(["GET /v1/users"]),
+    schemas: new Set<string>(),
+    surfaces: new Set(surfaces),
+  })
+
+  it("gates the public surface as before", () => {
+    const guard = new VersionGuard(caps(["public"]))
+
+    expect(() => guard.assertEndpoint("GET", "/v1/users")).not.toThrow()
+    expect(() => guard.assertEndpoint("GET", "/v1/gone")).toThrow(UnsupportedInVersionError)
+  })
+
+  it("fails open for an internal call when no internal capabilities were resolved", () => {
+    const guard = new VersionGuard(caps(["public"]))
+
+    expect(() =>
+      guard.assertEndpoint("GET", "/internal/v1/users", "internal.users.list", "internal"),
+    ).not.toThrow()
+  })
+
+  it("gates the internal surface once its capabilities are resolved", () => {
+    const resolved = caps(["public", "internal"])
+    resolved.endpoints.add("GET /internal/v1/users")
+    const guard = new VersionGuard(resolved)
+
+    expect(() =>
+      guard.assertEndpoint("GET", "/internal/v1/users", "internal.users.list", "internal"),
+    ).not.toThrow()
+    expect(() =>
+      guard.assertEndpoint("GET", "/internal/v1/gone", "internal.gone", "internal"),
+    ).toThrow(UnsupportedInVersionError)
+  })
+
+  it("still fails open entirely when no version resolved at all", async () => {
+    const guard = new VersionGuard(undefined)
+
+    await expect(
+      guard.checkEndpoint("GET", "/internal/v1/users", "internal.users.list", "internal"),
+    ).resolves.toBeUndefined()
+  })
+})

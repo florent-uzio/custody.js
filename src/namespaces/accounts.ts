@@ -1,5 +1,5 @@
 import { URLs } from "../constants/urls.js"
-import { isUndefined } from "../helpers/index.js"
+import { isUndefined, paginate, sleep } from "../helpers/index.js"
 import { CustodyError } from "../models/index.js"
 import type { Transport } from "../transport/index.js"
 import type {
@@ -9,7 +9,9 @@ import type {
   Core_AddressesCollection,
   Core_AddressReferenceCollection,
   Core_ApiAccount,
+  Core_ApiInitiateParametersComputeResponse,
   Core_ApiManifest,
+  Core_ApiParametersComputeStatusResponse,
   Core_BalancesCollection,
   Core_BalanceWithConfirmedAmount,
   Core_ComplianceConfiguration,
@@ -42,15 +44,21 @@ import type {
   GetManifestPathParams,
   GetManifestsPathParams,
   GetManifestsQueryParams,
+  GetParametersComputeStatusPathParams,
   GetTransferabilityPathParams,
   GetTransferabilityQueryParams,
+  InitiateParametersComputeBody,
+  InitiateParametersComputePathParams,
   ListComplianceConfigurationsPathParams,
   ListComplianceConfigurationsQueryParams,
   ListDepositInstructionsPathParams,
   ListDepositInstructionsQueryParams,
   UpsertComplianceConfigurationBody,
   UpsertComplianceConfigurationPathParams,
+  WaitForParametersComputeOptions,
+  WaitForParametersComputeResult,
 } from "./accounts.types.js"
+import { TERMINAL_PARAMETERS_COMPUTE_STATUSES } from "./accounts.types.js"
 
 /**
  * Finds an account by its blockchain address across all domains.
@@ -63,19 +71,33 @@ export async function findByAddress(
   opts: FindByAddressOptions = {},
 ): Promise<Core_AccountAddressReference | undefined> {
   const { ledgerId, domainId } = opts
-  const addressAcrossDomains = await t.get<Core_AddressReferenceCollection>(
-    URLs.addresses,
-    undefined,
-    { address },
-  )
 
-  const matches = addressAcrossDomains.items.filter(
-    (item): item is Core_AccountAddressReference =>
+  // Paginated rather than single-page: `/v1/addresses` narrows server-side on
+  // `address` only, so the `AccountAddressReference` this is after shares the
+  // collection with every `DepositInstructionsReference` for the same address.
+  // Reading one page could push a real match off the end and report the account
+  // as missing. The first request is unchanged — `startingAfter` is `undefined`
+  // and dropped — so this only costs extra calls when the server volunteers a
+  // cursor.
+  const matches: Core_AccountAddressReference[] = []
+
+  const fetchPage = (startingAfter: string | undefined) =>
+    t.get<Core_AddressReferenceCollection>(URLs.addresses, undefined, { address, startingAfter })
+
+  for await (const item of paginate(fetchPage)) {
+    const isMatch =
       item.type === "AccountAddressReference" &&
       item.address === address &&
       (isUndefined(ledgerId) || item.ledgerId === ledgerId) &&
-      (isUndefined(domainId) || item.domainId === domainId),
-  )
+      (isUndefined(domainId) || item.domainId === domainId)
+
+    if (isMatch) {
+      matches.push(item)
+      // Two is all the ambiguity check below needs, so stop rather than walking
+      // the rest of the collection to count matches nobody reads.
+      if (matches.length > 1) break
+    }
+  }
 
   if (matches.length === 0) {
     return undefined
@@ -113,6 +135,111 @@ function notFoundSuffix({ ledgerId, domainId }: FindByAddressOptions): string {
   if (ledgerId) parts.push(`on ledger ${ledgerId}`)
   if (domainId) parts.push(`in domain ${domainId}`)
   return parts.length > 0 ? ` ${parts.join(" ")}` : ""
+}
+
+/**
+ * Fills in the `type` discriminator the API requires but the generated body
+ * type omits, so callers never have to restate the union's only legal value.
+ * A caller-supplied `type` wins, which is what makes this forward-compatible if
+ * the union gains a second member.
+ */
+function withParametersComputeType(
+  body: InitiateParametersComputeBody,
+): InitiateParametersComputeBody {
+  return { ...body, type: body.type ?? "cmpt-send" }
+}
+
+/**
+ * Wait for a parameters computation to reach a terminal status (Completed or Failed).
+ * Polls the compute status at regular intervals until it finishes or max retries
+ * is reached. `cryptographicFields` is populated on the returned `compute` once
+ * the status is `Completed`.
+ *
+ * A 404 is treated as "not available yet" (e.g. when called immediately after
+ * initiating) and is retried within the same polling loop rather than aborting
+ * the wait.
+ */
+async function waitForParametersCompute(
+  t: Transport,
+  params: GetParametersComputeStatusPathParams,
+  options: WaitForParametersComputeOptions = {},
+): Promise<WaitForParametersComputeResult> {
+  const { maxRetries = 10, intervalMs = 3000, onStatusCheck } = options
+
+  let lastCompute: Core_ApiParametersComputeStatusResponse | undefined
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const compute = await t.get<Core_ApiParametersComputeStatusResponse>(
+        URLs.accountParametersComputeStatus,
+        params,
+      )
+      lastCompute = compute
+      const { status } = compute
+
+      onStatusCheck?.(status, attempt)
+
+      if (TERMINAL_PARAMETERS_COMPUTE_STATUSES.includes(status)) {
+        return {
+          status,
+          isTerminal: true,
+          isSuccess: status === "Completed",
+          compute,
+        }
+      }
+    } catch (error) {
+      if (!(error instanceof CustodyError && error.statusCode === 404)) {
+        throw error
+      }
+      // 404 → the computation is not available yet, keep polling.
+    }
+
+    if (attempt < maxRetries) {
+      await sleep(intervalMs)
+    }
+  }
+
+  // Retries exhausted. If the computation never materialized, surface that as a 404.
+  if (isUndefined(lastCompute)) {
+    throw new CustodyError(
+      {
+        reason: `parameters computation ${params.computeId} not found after ${maxRetries} attempts`,
+      },
+      404,
+    )
+  }
+
+  // The loop returns early on any terminal status, so the last observed
+  // computation is necessarily non-terminal here.
+  return {
+    status: lastCompute.status,
+    isTerminal: false,
+    isSuccess: false,
+    compute: lastCompute,
+  }
+}
+
+/**
+ * Initiates a parameters computation and polls it to a terminal status.
+ *
+ * Lives at module scope rather than inside {@link createAccounts} because
+ * `XrplService` drives the same two calls through its ports to build a
+ * confidential send — see `xrpl.buildConfidentialSend`.
+ */
+export async function initiateParametersComputeAndWait(
+  t: Transport,
+  params: InitiateParametersComputePathParams,
+  body: InitiateParametersComputeBody,
+  options?: WaitForParametersComputeOptions,
+): Promise<WaitForParametersComputeResult> {
+  const { id } = await t.post<Core_ApiInitiateParametersComputeResponse>(
+    URLs.accountParametersCompute,
+    withParametersComputeType(body),
+    params,
+    { sign: false },
+  )
+
+  return waitForParametersCompute(t, { ...params, computeId: id }, options)
 }
 
 export function createAccounts(t: Transport) {
@@ -216,5 +343,35 @@ export function createAccounts(t: Transport) {
     getDepositInstruction: (
       params: GetDepositInstructionPathParams,
     ): Promise<Core_TrustedDepositInstructions> => t.get(URLs.accountDepositInstruction, params),
+
+    initiateParametersCompute: (
+      params: InitiateParametersComputePathParams,
+      body: InitiateParametersComputeBody,
+    ): Promise<Core_ApiInitiateParametersComputeResponse> =>
+      t.post(URLs.accountParametersCompute, withParametersComputeType(body), params, {
+        sign: false,
+      }),
+
+    getParametersComputeStatus: (
+      params: GetParametersComputeStatusPathParams,
+    ): Promise<Core_ApiParametersComputeStatusResponse> =>
+      t.get(URLs.accountParametersComputeStatus, params),
+
+    getParametersComputeStatusAndWait: (
+      params: GetParametersComputeStatusPathParams,
+      options?: WaitForParametersComputeOptions,
+    ): Promise<WaitForParametersComputeResult> => waitForParametersCompute(t, params, options),
+
+    /**
+     * Initiates a parameters computation and waits for it to finish, so the caller
+     * gets the `cryptographicFields` needed to build a confidential transfer in
+     * a single call.
+     */
+    initiateParametersComputeAndWait: (
+      params: InitiateParametersComputePathParams,
+      body: InitiateParametersComputeBody,
+      options?: WaitForParametersComputeOptions,
+    ): Promise<WaitForParametersComputeResult> =>
+      initiateParametersComputeAndWait(t, params, body, options),
   } as const
 }

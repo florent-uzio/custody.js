@@ -1,12 +1,13 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios"
+import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios"
 import crypto from "crypto"
 import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
-import { canonicalizeRequest, isObject } from "../../helpers/index.js"
+import { canonicalizeRequest, isObject, isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
-import type { CustodySignContext } from "../../ripple-custody.types.js"
+import type { BeforeSignHook, CustodySignContext } from "../../ripple-custody.types.js"
 import { AuthService } from "../auth/auth.service.js"
+import { attachDebugInterceptors } from "../debug/index.js"
 import { KeypairService } from "../keypairs/index.js"
 import {
   assertValidRawSignature,
@@ -15,6 +16,8 @@ import {
   signRawWithPrivateKey,
 } from "../keypairs/signing-scheme.js"
 import { type ApiServiceOptions, type PartialAuthFormData } from "./api.service.types.js"
+import { quarantineStatusHint } from "./quarantine-status-hint.js"
+import { signatureMismatchHint } from "./signature-hint.js"
 
 /**
  * ApiService handles authenticated API requests and token management
@@ -24,7 +27,6 @@ export class ApiService {
   private readonly authFormData: PartialAuthFormData
   private readonly authService: AuthService
   private readonly apiUrl: string
-  private challenge: string
   /**
    * Signs a message for the given context and returns the base64 signature the
    * server expects. Built once from either the provided `privateKey` or the
@@ -32,6 +34,8 @@ export class ApiService {
    * primitive → encode), differing only in where the raw primitive executes.
    */
   private readonly sign: (message: string, context: CustodySignContext) => Promise<string>
+  /** Optional caller hook applied to a request body just before it is signed. */
+  private readonly beforeSign?: BeforeSignHook
   /**
    * In-flight token refresh, shared across concurrent callers so an expired
    * token triggers a single sign + token request (matters for metered signers).
@@ -42,6 +46,7 @@ export class ApiService {
     this.authService = options.authService
     this.apiUrl = options.apiUrl
     this.authFormData = options.authFormData
+    this.beforeSign = options.beforeSign
 
     const { privateKey, signer } = options
 
@@ -70,6 +75,13 @@ export class ApiService {
     // Set params serializer to handle arrays the way Ripple Custody expects
     this.apiClient.defaults.paramsSerializer = (params) =>
       qs.stringify(params, { arrayFormat: "repeat" })
+
+    // Registered before every other interceptor so the debug logger observes
+    // the final request (Authorization included) and sees a failure before the
+    // 401 retry below can absorb it. See attachDebugInterceptors.
+    if (options.debug) {
+      attachDebugInterceptors(this.apiClient, options.debug, "api")
+    }
 
     // Add request interceptor to inject JWT token into headers
     this.apiClient.interceptors.request.use(
@@ -163,9 +175,6 @@ export class ApiService {
         return encodeSignature(algorithm, rawSignature)
       }
     }
-
-    // Use provided challenge or generate a new one
-    this.challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
   }
 
   /**
@@ -185,12 +194,19 @@ export class ApiService {
     }
 
     const refresh = (async () => {
-      // Generate a fresh challenge for each token refresh to avoid stale challenge rejection
-      this.challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
+      // Generate a fresh challenge for each token refresh to avoid stale challenge
+      // rejection. It stays a local: forced refreshes deliberately sign concurrently
+      // here (see above), so a shared field would be overwritten by a sibling refresh
+      // while the signer is awaited, and this refresh would post its own signature
+      // against the sibling's challenge — which the API rejects with a
+      // `401 InvalidSignatureError`. Signing concurrently is not the same as posting
+      // concurrently: `AuthService.getToken` still collapses a forced refresh onto an
+      // in-flight one and drops this signature on the floor (#243).
+      const challenge = this.authFormData.challenge ? this.authFormData.challenge : uuidv4()
 
       const authData = {
-        signature: await this.sign(this.challenge, "auth-challenge"),
-        challenge: this.challenge,
+        signature: await this.sign(challenge, "auth-challenge"),
+        challenge,
         publicKey: this.authFormData.publicKey,
       }
       return this.authService.getToken(authData, forceRefresh)
@@ -208,22 +224,77 @@ export class ApiService {
   }
 
   /**
+   * Returns the set-reordering diagnostic when a signed request body was
+   * rejected with a 401 signature failure, so a mismatch caused by the backend
+   * re-serializing set-typed array fields is named rather than left to be
+   * investigated. Returns `undefined` for any other 401 (e.g. token issues).
+   */
+  private signatureFailureHint(
+    error: AxiosError<Core_ErrorMessage>,
+    signedRequest: unknown,
+  ): string | undefined {
+    if (isUndefined(signedRequest) || error.response?.status !== 401) return undefined
+
+    const errorData = error.response.data
+    const errorText = isString(errorData)
+      ? errorData
+      : `${errorData?.reason ?? ""} ${errorData?.message ?? ""}`
+    if (!/signature/i.test(errorText)) return undefined
+
+    return signatureMismatchHint(signedRequest)
+  }
+
+  /**
+   * Returns the diagnostic for the query parameters a `500` was sent with, so a
+   * server-side failure a specific filter is known to cause is named rather than
+   * reported as a bare internal error. Returns `undefined` for any other status.
+   *
+   * The parameters are read back off the axios error rather than threaded in,
+   * since axios keeps the request config on the error it throws.
+   */
+  private queryFailureHint(error: AxiosError<Core_ErrorMessage>): string | undefined {
+    if (error.response?.status !== 500) return undefined
+
+    return quarantineStatusHint(error.config?.params)
+  }
+
+  /**
    * Maps a failed request error into a CustodyError and throws it.
    * Shared by all HTTP verb methods.
+   *
+   * @param signedRequest - The `request` payload that was signed, when the call
+   * signed one. Used only to build the 401 signature-failure hint.
    */
-  private handleRequestError(error: unknown, verb: string): never {
+  private handleRequestError(error: unknown, verb: string, signedRequest?: unknown): never {
     // Already a CustodyError (e.g. a signer failure thrown inside post()) — don't
     // re-wrap it in another CustodyError.
     if (error instanceof CustodyError) throw error
     if (axios.isAxiosError<Core_ErrorMessage>(error)) {
       const errorData = error.response?.data
+      // The two hints are mutually exclusive by status (401 vs 500), so at most
+      // one of them ever has something to say about a given failure.
+      const hint = this.signatureFailureHint(error, signedRequest) ?? this.queryFailureHint(error)
       if (isObject(errorData)) {
-        throw new CustodyError(errorData, error.response?.status, error)
+        throw new CustodyError(errorData, error.response?.status, error, hint)
+      }
+      // Several endpoints declare their validation errors as `text/plain`, so the
+      // only description of what went wrong is a bare string body — the axios
+      // generic types it as the JSON error shape, hence the widening. Keep the verb
+      // prefix and append it rather than falling through to axios's generic message.
+      const errorText: unknown = errorData
+      if (isString(errorText) && errorText.trim()) {
+        throw new CustodyError(
+          { reason: `${verb} API request failed: ${errorText.trim()}` },
+          error.response?.status,
+          error,
+          hint,
+        )
       }
       throw new CustodyError(
         { reason: `${verb} API request failed: ${error.message}` },
         error.response?.status,
         error,
+        hint,
       )
     }
     throw new CustodyError(
@@ -268,11 +339,18 @@ export class ApiService {
     const { sign, ...rest } = config ?? {}
     // Preserve `undefined` when no config was passed so axios receives its own default
     const axiosConfig: AxiosRequestConfig | undefined = config ? rest : undefined
+    // The payload that ends up signed, if any — kept for the 401 signature hint
+    let signedRequest: unknown
     try {
       // Sign the request (default) unless the caller opted out
       if (sign !== false && body && (!body.signature || body.signature === "")) {
+        // Let the caller reshape the payload first; whatever it returns is both
+        // signed and sent, so the signed bytes stay the bytes on the wire
+        if (this.beforeSign) body.request = this.beforeSign(body.request)
+        signedRequest = body.request
+
         // Canonicalize the request body
-        const canonicalizedRequest = canonicalizeRequest(body.request)
+        const canonicalizedRequest = canonicalizeRequest(signedRequest)
 
         // Sign the canonicalized request
         body.signature = await this.sign(canonicalizedRequest, "request-body")
@@ -281,7 +359,7 @@ export class ApiService {
       const response = await this.apiClient.post<T>(url, body, axiosConfig)
       return response.data
     } catch (error) {
-      this.handleRequestError(error, "POST")
+      this.handleRequestError(error, "POST", signedRequest)
     }
   }
 

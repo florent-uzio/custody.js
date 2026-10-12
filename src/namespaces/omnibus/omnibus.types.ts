@@ -14,6 +14,10 @@ export type LockOmnibusPathParams = operations["lockOmnibus"]["parameters"]["pat
 
 export type UnlockOmnibusPathParams = operations["unlockOmnibus"]["parameters"]["path"]
 
+export type GetOmnibusHierarchyPathParams = operations["getOmnibusHierarchy"]["parameters"]["path"]
+export type GetOmnibusHierarchyQueryParams =
+  operations["getOmnibusHierarchy"]["parameters"]["query"]
+
 export type ListOmnibusInternalTransfersPathParams =
   operations["getInternalTransfers"]["parameters"]["path"]
 export type ListOmnibusInternalTransfersQueryParams =
@@ -54,6 +58,8 @@ export type CreateOmnibusWithdrawalPathParams = operations["createWithdrawal"]["
 // Response / body types
 
 export type Omnibus_OmnibusResponse = components["schemas"]["Omnibus_OmnibusResponse"]
+export type Omnibus_OmnibusHierarchyResponse =
+  components["schemas"]["Omnibus_OmnibusHierarchyResponse"]
 export type Omnibus_CreateOmnibusRequest = components["schemas"]["Omnibus_CreateOmnibusRequest"]
 export type Omnibus_CreateOmnibusResponse = components["schemas"]["Omnibus_CreateOmnibusResponse"]
 export type Omnibus_UpdateOmnibusRequest = components["schemas"]["Omnibus_UpdateOmnibusRequest"]

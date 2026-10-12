@@ -12,6 +12,7 @@ import {
   createGenesis,
   createHealth,
   createIntents,
+  createInternal,
   createLedgers,
   createOmnibus,
   createPolicies,
@@ -32,6 +33,7 @@ import {
 import type { RippleCustodyClientOptions } from "./ripple-custody.types.js"
 import { ApiService } from "./services/apis/index.js"
 import { AuthService } from "./services/auth/index.js"
+import { resolveDebugLogger } from "./services/debug/index.js"
 import { createHttpPorts, XrplService } from "./services/xrpl/index.js"
 import { TypedTransport } from "./transport/index.js"
 import { buildOpenApiUrl, createHttpSpecSource, detectCapabilities } from "./versioning/detect.js"
@@ -82,6 +84,8 @@ export class RippleCustody {
   public readonly virtualLedgers: ReturnType<typeof createVirtualLedgers>
   public readonly auth: ReturnType<typeof createAuth>
   public readonly xrpl: ReturnType<typeof createXrpl>
+  /** Namespaces served by the instance's internal API (ADR-0007). */
+  public readonly internal: ReturnType<typeof createInternal>
 
   constructor(options: RippleCustodyClientOptions) {
     const {
@@ -95,7 +99,13 @@ export class RippleCustody {
       autoDetectVersion = true,
       openApiUrl,
       specSource,
+      beforeSign,
+      debug,
     } = options
+
+    // Resolve `true` into the built-in console sink once, so both HTTP clients
+    // report through the same logger.
+    const debugLogger = resolveDebugLogger(debug)
 
     // Fires once if the guard ever passes calls through because no backend
     // version could be resolved (detection failed, or gating is disabled).
@@ -115,20 +125,31 @@ export class RippleCustody {
       // Auto-detect: lazily fetch the live instance spec on first use.
       const source =
         specSource ?? createHttpSpecSource(openApiUrl ?? buildOpenApiUrl(apiUrl), timeout)
-      this.guard = VersionGuard.deferred(() => detectCapabilities(source), warnGatingDisabled)
+      // The internal surface has its own document (ADR-0007), fetched
+      // best-effort alongside the public one. A custom `specSource` replaces
+      // spec fetching wholesale, so we don't go behind it with an HTTP call.
+      const internalSource = specSource
+        ? undefined
+        : createHttpSpecSource(buildOpenApiUrl(apiUrl, "internal"), timeout)
+      this.guard = VersionGuard.deferred(
+        () => detectCapabilities(source, internalSource),
+        warnGatingDisabled,
+      )
     } else {
       // Detection disabled and no explicit version: gating off (pass-through).
       this.guard = new VersionGuard(undefined, undefined, warnGatingDisabled)
     }
 
     // Only initialize core services eagerly
-    this.authService = new AuthService({ authUrl, timeout })
+    this.authService = new AuthService({ authUrl, debug: debugLogger, timeout })
     this.apiService = new ApiService({
       apiUrl,
       authFormData: {
         publicKey,
       },
       authService: this.authService,
+      beforeSign,
+      debug: debugLogger,
       privateKey,
       signer,
       timeout,
@@ -164,6 +185,7 @@ export class RippleCustody {
     this.virtualLedgers = createVirtualLedgers(this.transport)
     this.auth = createAuth(this.authService)
     this.xrpl = createXrpl(() => this.xrplService)
+    this.internal = createInternal(this.transport)
   }
 
   /**

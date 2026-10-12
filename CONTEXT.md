@@ -51,7 +51,7 @@ stay consistent.
   internal `info.x-app-version`. Bundled specs feed the type generator and serve
   as the offline / explicit-`apiVersion` capability fallback. They are **not**
   the primary runtime capability source. Every bundled spec belongs to a
-  **channel** (see below).
+  **channel** and a **surface** (see below).
 
 - **Channel** — the provenance of a bundled spec, given by its subdirectory
   under `openapi/`: **official** (`openapi/official/`) or **devbox**
@@ -74,11 +74,40 @@ stay consistent.
   against a real devbox instance via auto-detection, but blocked by any offline
   `apiVersion` pin until an official release ships it.
 
-- **Superset types** — the single merged type universe in
-  `src/models/custody-types.ts`, the union of every bundled spec's `paths`,
-  `operations`, and `components`. The SDK's own code compiles against this and
-  nothing else. Grows with the number of _distinct_ endpoints/schemas (bounded),
-  not with the number of versions.
+- **Surface** — which of the two APIs an instance serves a bundled spec
+  describes: **public** or **internal**. Orthogonal to channel — both channels
+  can carry both surfaces. Given by the spec's folder: `openapi/<channel>/` is
+  public, `openapi/<channel>/internal/` is internal. Each surface merges into
+  its own types file. See
+  [ADR-0007](docs/adr/0007-public-vs-internal-surfaces.md).
+
+- **Public spec** — a bundled spec at a channel root, describing the customer-
+  facing API (`/v1/…`, `Core_*` schemas). Generates
+  `src/models/custody-types.ts`.
+
+- **Internal spec** — a bundled spec under `openapi/<channel>/internal/`,
+  describing the internal API (`/internal/v1/…` and `/api/notifications/…`,
+  `Internal_*` / `Notification_*` schemas) used by internal tooling. An instance
+  serves it live at `<apiUrl>/api/OpenAPI?scope=internal&layout=`. Disjoint from
+  the public spec in paths and schemas, but
+  reuses some of its `operationId`s, so it generates its own
+  `src/models/custody-internal-types.ts`. Shares its release's
+  `x-app-version`, and unions into that version's capability entry.
+
+- **Internal namespace** — an SDK namespace whose endpoints live on the internal
+  surface. All of them hang off `client.internal.*` (so the two surfaces'
+  `operationId`s cannot collide on the client), import
+  `src/models/custody-internal-types.ts`, name their paths in
+  `src/constants/internal-urls.ts` (`InternalURLs`, deliberately non-exhaustive,
+  unlike the public `URLs`), and pass `surface: "internal"` — plus `sign: false`
+  on writes, since no internal body carries a signed envelope.
+
+- **Superset types** — the merged type universe for one surface — public in
+  `src/models/custody-types.ts`, internal in
+  `src/models/custody-internal-types.ts` — the union of every bundled spec of
+  that surface's `paths`, `operations`, and `components`. The SDK's own code
+  compiles against these and nothing else. Grows with the number of _distinct_
+  endpoints/schemas (bounded), not with the number of versions.
 
 - **Capability** — a unit the guard can check for presence in a version. Two
   kinds:
@@ -122,7 +151,71 @@ stay consistent.
   `RippleCustody.ready()` (which resolves the version guard, an unrelated
   concept). Available on app versions ≥ 1.36.1.
 
+- **CB_IN decryption** — recovering the cleartext amount of a confidential MPT
+  account's CB_IN (inbox) balance. Asynchronous: `POST /internal/v1/cmpt-cb-in`
+  accepts a `(domainId, accountId, ledgerId, issuanceId)` request and returns
+  `202` with a request id, and `GET /internal/v1/cmpt-cb-in/{requestId}` carries
+  the `decryptedAmount` once the request reaches `Completed` (`error` on
+  `Failed`). Exposed as `client.internal.cbInDecryption.*`, the first internal
+  namespace. Same request-state machine as a **parameters compute**
+  (`client.accounts.initiateParametersCompute`), which prepares the cryptographic
+  fields of a confidential MPT transaction on the public surface.
+
+- **Cursor collection** — a list response that pages with an opaque cursor: the
+  32 generated `Core_*Collection` and `VirtualAccounting_*PagedCollectionResponse`
+  schemas, all shaped `{ items, count, currentStartingAfter?, nextStartingAfter? }`.
+  `count` is the size of _this page_, never a total, and there is no `hasMore` —
+  the collection is exhausted when `nextStartingAfter` is absent. Not every list
+  is one: `Omnibus_*PageResponse` (`omnibus.tenants.list`,
+  `domains.sweepThresholds`) pages by offset, and `channels.*` / `requests.*`
+  return bare arrays.
+
+- **Cursor page** — one page of a cursor collection, and the SDK type
+  (`CursorPage<TItem>`) that names the two fields pagination needs: `items` and
+  `nextStartingAfter`. Every `.list()`-style method returns exactly **one** page
+  and never reveals that at the call site, which is why client-side filtering over
+  `.items` silently reports records as missing. Walk the whole collection with
+  `paginate`, the root-exported helper that follows the cursor and yields items;
+  drain it with `Array.fromAsync`. Avoid "offset" and "page number" for this — the
+  cursor is opaque and unordered. See
+  [ADR-0008](docs/adr/0008-cursor-pagination.md).
+
 - **System property** — an instance-wide configuration value listed by
   `GET /v1/properties` (`client.systemProperties.list()`), identified by a
   `Core_SystemPropertyId` (e.g. `NOTARY_API_KEY`, `STATE_REVIEW_AUTHORITY`).
   Returned as trusted (signed) entries in a `Core_TrustedSystemProperty`.
+
+- **Intent** — a signed request to change state, proposed to `POST /v1/intents`
+  and approved by policy before custody executes it. Every write goes through
+  one. The payload is one of ~45 `v0_*` types (`Core_ProposeUserIntentPayload`);
+  everything wrapped around it — `author`, `targetDomainId`, `expiryAt`, `id`,
+  `customProperties` — is the **request envelope**, built by
+  `buildRequestEnvelope`. Avoid "transaction" for an intent: on ledger-writing
+  intents the two are distinct objects with distinct ids and distinct failures.
+
+- **Request id vs payload id** — the two ids a ledger-writing propose generates,
+  not interchangeable. The **request id** identifies the _intent_: poll and
+  approve by it (`intents.getAndWait`, `intents.approve`). The **payload id**
+  identifies the _transaction order_ inside it: look the resulting transaction up
+  by it (`transactions.byOrderAndWait`, `xrpl.getMptIssuanceId`), where it
+  appears as `orderReference.Id`. Both default to a generated UUID v7 and are
+  returned by the propose methods; both can be pinned through `options`.
+  Non-transaction-order intents have only a request id.
+
+- **Terminal** — a status the work will not move on from. For an **intent**:
+  `Executed`, `Failed`, `Expired`, `Rejected` (`TERMINAL_STATUSES`); `Open`,
+  `Approved` and `Executing` are pending. For a **transaction**: a terminal
+  processing status, or any `ledgerTransactionData.failure`. A wait reporting
+  `isTerminal: false` ran out of attempts on work that was still in flight —
+  that means "not yet", **not** "failed".
+
+- **Executed ≠ landed** — an intent reaching `Executed` means custody accepted
+  the transaction order, not that the transaction reached the ledger. The
+  transaction is registered against the order afterwards and can still fail,
+  while custody prepares it (`processing.status: "Failed"`, carrying a `hint`
+  such as `InvalidUserPayload`) or on chain
+  (`ledgerTransactionData.failure: "FailedOnChain"`). Custody also reports
+  `Completed` for transactions the ledger rejected, so `isSuccess` on a
+  transaction wait requires both halves. This is why ledger-writing intents have
+  two waits, and why `xrpl.proposeIntentAndWait` covers both. See
+  [docs/intents.md](docs/intents.md).

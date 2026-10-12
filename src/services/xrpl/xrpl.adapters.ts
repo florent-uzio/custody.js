@@ -9,17 +9,23 @@ import {
   MPTokenIssuanceSetFlags,
   OfferCreateFlags,
   TrustSetFlags,
+  isValidAddress,
 } from "xrpl"
 import { isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type {
   BatchPayloadInput,
+  BatchToCustodyOptions,
+  ConfidentialSendEntryFields,
+  Core_ApiParametersComputeCryptographicFields,
   Core_BatchExecutionMode,
+  Core_CmptCryptographicFields,
   Core_ParticipantSequencing,
   CustodyAccountSetFlag,
   CustodyBatchSigner,
   CustodyInnerTransaction,
   CustodyMpTokenIssuanceCreate,
+  CustodyMpTokenIssuanceSet,
   CustodyOperation,
 } from "./xrpl.types.js"
 
@@ -142,6 +148,80 @@ const mpTokenIssuanceSetFlagsToStrings = (
   if (flags & MPTokenIssuanceSetFlags.tfMPTUnlock) result.push("tfMPTUnlock")
   return result
 }
+
+type MPTokenIssuanceMutableFlag = CustodyMpTokenIssuanceSet["mutableFlags"][number]
+
+// The confidential-amount capability sits in different places in the two models:
+// xrpl.js carries it as the `tfMPTSetCanHoldConfidentialBalance` bit on `Flags`,
+// while the Custody API exposes it as the sole member of `mutableFlags`. It is
+// arguably not a mutable flag at all, but until the two converge we read the
+// xrpl.js `Flags` bit and emit it on the Custody `mutableFlags` array.
+const mpTokenIssuanceSetMutableFlagsToStrings = (
+  flags?: number | object,
+): MPTokenIssuanceMutableFlag[] => {
+  if (!flags) return []
+  if (typeof flags === "object") {
+    const f = flags as Record<string, boolean>
+    return f.tfMPTSetCanHoldConfidentialBalance ? ["MPTSetCanConfidentialAmount"] : []
+  }
+  return flags & MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance
+    ? ["MPTSetCanConfidentialAmount"]
+    : []
+}
+
+// Confidential MPT ciphertexts, commitments and proofs are hex-encoded Blob
+// fields on the XRPL wire (and so on the xrpl.js models), but the Custody API
+// types every member of `Core_CmptCryptographicFields` as `format: base64`.
+const hexToBase64 = (hex: string) => Buffer.from(hex, "hex").toString("base64")
+
+/**
+ * Treats `null` as absent alongside `undefined`. The parameters-compute
+ * response sends an explicit `null` — not an omitted key — for material it has
+ * no value for (`auditorEncryptedAmount` when no auditor key is registered),
+ * where the generated types only ever declare the field optional. An
+ * `undefined`-only check lets that `null` through to `hexToBase64`, which turns
+ * it into an empty string rather than leaving the field off.
+ *
+ * Exported for `XrplService` only — not part of the SDK's public surface.
+ */
+export const isPresent = <T>(value: T | null | undefined): value is T =>
+  !isUndefined(value) && value !== null
+
+/**
+ * Narrows a parameters-compute union member by a discriminating key, requiring
+ * the key to carry a value rather than merely exist — a `null` field must not
+ * select a variant. `0` counts as present, so a Clawback of zero still
+ * discriminates on `amount`.
+ */
+const hasValue = <K extends string>(
+  fields: Core_ApiParametersComputeCryptographicFields,
+  key: K,
+): fields is Extract<Core_ApiParametersComputeCryptographicFields, Record<K, unknown>> =>
+  key in fields && isPresent((fields as Record<string, unknown>)[key])
+
+/**
+ * Narrows the cryptographic material a parameters computation returned to its
+ * `Send` variant — the one a `ConfidentialMPTSend` is built from.
+ *
+ * The response carries no `type` discriminator, unlike the operation's union,
+ * so the variant has to be inferred from the fields present: only `Send` has a
+ * `senderEncryptedAmount`. Exported because reading `cryptographicFields`
+ * without narrowing them is otherwise a hand-written type guard in every
+ * consumer, and the fields are all hex strings, so a wrong guard fails at the
+ * ledger rather than at the call site.
+ *
+ * `xrpl.buildConfidentialSend` applies this internally — reach for it only when
+ * building a confidential send by hand.
+ *
+ * @param fields - `cryptographicFields` from a completed parameters computation
+ * @returns Whether the material is the `Send` variant
+ */
+export const isSendCryptographicFields = (
+  fields: Core_ApiParametersComputeCryptographicFields,
+): fields is Extract<
+  Core_ApiParametersComputeCryptographicFields,
+  { senderEncryptedAmount: string }
+> => hasValue(fields, "senderEncryptedAmount")
 
 const txToOperation = (tx: RawTx): CustodyOperation => {
   switch (tx.TransactionType) {
@@ -270,13 +350,154 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
         type: "MPTokenIssuanceSet",
         tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
         flags: mpTokenIssuanceSetFlagsToStrings(tx.Flags),
+        mutableFlags: mpTokenIssuanceSetMutableFlagsToStrings(tx.Flags),
         ...(tx.Holder !== undefined && {
           holder: { type: "Address" as const, address: tx.Holder },
         }),
+        ...(tx.IssuerEncryptionKey !== undefined && {
+          issuerEncryptionKey: tx.IssuerEncryptionKey,
+        }),
+        ...(tx.AuditorEncryptionKey !== undefined && {
+          auditorEncryptionKey: tx.AuditorEncryptionKey,
+        }),
+      }
+    // The Convert / ConvertBack / MergeInbox inner operations carry no
+    // cryptographic material: the Custody service derives it server-side from
+    // the plaintext amount, so only the issuance and the amount cross over.
+    case "ConfidentialMPTConvert":
+      return {
+        type: "ConfidentialMPTConvert",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+        amount: tx.MPTAmount,
+      }
+    case "ConfidentialMPTConvertBack":
+      return {
+        type: "ConfidentialMPTConvertBack",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+        amount: tx.MPTAmount,
+      }
+    case "ConfidentialMPTMergeInbox":
+      return {
+        type: "ConfidentialMPTMergeInbox",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+      }
+    // ConfidentialMPTSend is the one type that carries the full proof bundle.
+    // The Custody operation has no plaintext `amount` counterpart on an
+    // xrpl.js Send (the value only exists as ciphertext), and `DestinationTag`
+    // / `CredentialIDs` have no counterpart at all, so all three are dropped.
+    // `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion`
+    // are supplied out of band via `BatchToCustodyOptions.confidentialSends`.
+    case "ConfidentialMPTSend":
+      return {
+        type: "ConfidentialMPTSend",
+        tokenIdentifier: { type: "MPTokenIssuanceId" as const, issuanceId: tx.MPTokenIssuanceID },
+        destination: { type: "Address" as const, address: tx.Destination },
+        cryptographicFields: {
+          type: "Send" as const,
+          senderEncryptedAmount: hexToBase64(tx.SenderEncryptedAmount),
+          destinationEncryptedAmount: hexToBase64(tx.DestinationEncryptedAmount),
+          issuerEncryptedAmount: hexToBase64(tx.IssuerEncryptedAmount),
+          balanceCommitment: hexToBase64(tx.BalanceCommitment),
+          amountCommitment: hexToBase64(tx.AmountCommitment),
+          zkProof: hexToBase64(tx.ZKProof),
+          ...(tx.AuditorEncryptedAmount !== undefined && {
+            auditorEncryptedAmount: hexToBase64(tx.AuditorEncryptedAmount),
+          }),
+        },
       }
     default:
       throw new Error(`Unsupported transaction type: ${tx.TransactionType}`)
   }
+}
+
+/**
+ * Re-encodes the cryptographic material a parameters computation returns into
+ * the form a confidential MPT operation carries.
+ *
+ * `GET .../parameters-compute/{computeId}` returns every field **hex**-encoded,
+ * while `Core_CmptCryptographicFields` on the operation is **base64** — so the
+ * compute response cannot be spliced into a `ConfidentialMPTSend` as-is.
+ *
+ * The response also carries no `type` discriminator, unlike the operation's
+ * union, so the variant is inferred from the fields present: a
+ * `senderEncryptedAmount` means `Send`, a numeric `amount` means `Clawback`, a
+ * `balanceCommitment` alongside `holderEncryptedAmount` means `ConvertBack`,
+ * and `holderEncryptedAmount` alone means `Convert`.
+ *
+ * One field deliberately has no counterpart here: a Batch entry's **top-level**
+ * `senderEncryptedBalance` stays hex, so pass `fields.senderEncryptedBalance`
+ * straight through rather than reading it off the result of this call.
+ *
+ * @param fields - `cryptographicFields` from a completed parameters computation
+ * @returns The same material, base64-encoded and tagged with its operation type
+ * @throws {CustodyError} If the shape matches none of the four known variants
+ */
+export const parametersComputeToCryptographicFields = (
+  fields: Core_ApiParametersComputeCryptographicFields,
+): Core_CmptCryptographicFields => {
+  if (isSendCryptographicFields(fields)) {
+    return {
+      type: "Send",
+      senderEncryptedAmount: hexToBase64(fields.senderEncryptedAmount),
+      destinationEncryptedAmount: hexToBase64(fields.destinationEncryptedAmount),
+      issuerEncryptedAmount: hexToBase64(fields.issuerEncryptedAmount),
+      balanceCommitment: hexToBase64(fields.balanceCommitment),
+      amountCommitment: hexToBase64(fields.amountCommitment),
+      zkProof: hexToBase64(fields.zkProof),
+      ...(isPresent(fields.senderEncryptedBalance) && {
+        senderEncryptedBalance: hexToBase64(fields.senderEncryptedBalance),
+      }),
+      ...(isPresent(fields.senderEncryptedBalanceVersion) && {
+        senderEncryptedBalanceVersion: fields.senderEncryptedBalanceVersion,
+      }),
+      ...(isPresent(fields.auditorEncryptedAmount) && {
+        auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
+      }),
+    }
+  }
+
+  if (hasValue(fields, "amount")) {
+    return {
+      type: "Clawback",
+      zkProof: hexToBase64(fields.zkProof),
+      amount: fields.amount,
+    }
+  }
+
+  if (hasValue(fields, "holderEncryptedAmount")) {
+    // Only ConvertBack commits to the resulting balance; Convert has no such
+    // field, and its zkProof is optional where ConvertBack's is required.
+    if (hasValue(fields, "balanceCommitment")) {
+      return {
+        type: "ConvertBack",
+        holderEncryptedAmount: hexToBase64(fields.holderEncryptedAmount),
+        issuerEncryptedAmount: hexToBase64(fields.issuerEncryptedAmount),
+        blindingFactor: hexToBase64(fields.blindingFactor),
+        balanceCommitment: hexToBase64(fields.balanceCommitment),
+        zkProof: hexToBase64(fields.zkProof),
+        ...(isPresent(fields.auditorEncryptedAmount) && {
+          auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
+        }),
+      }
+    }
+
+    return {
+      type: "Convert",
+      holderEncryptedAmount: hexToBase64(fields.holderEncryptedAmount),
+      issuerEncryptedAmount: hexToBase64(fields.issuerEncryptedAmount),
+      blindingFactor: hexToBase64(fields.blindingFactor),
+      ...(isPresent(fields.zkProof) && { zkProof: hexToBase64(fields.zkProof) }),
+      ...(isPresent(fields.auditorEncryptedAmount) && {
+        auditorEncryptedAmount: hexToBase64(fields.auditorEncryptedAmount),
+      }),
+    }
+  }
+
+  throw new CustodyError({
+    reason:
+      "Unrecognized parameters-compute cryptographicFields shape: " +
+      `[${Object.keys(fields).join(", ")}]`,
+  })
 }
 
 /**
@@ -335,6 +556,32 @@ const batchFlagsToExecutionMode = (flags: number | object | undefined): Core_Bat
   return matches[0]!
 }
 
+// Splices the custody-only entry fields onto a ConfidentialMPTSend operation.
+// Fields left undefined are omitted rather than emitted as `undefined`.
+const withConfidentialSendFields = (
+  operation: CustodyOperation,
+  address: string,
+  fields: ConfidentialSendEntryFields,
+): CustodyOperation => {
+  if (operation.type !== "ConfidentialMPTSend") {
+    throw new CustodyError({
+      reason:
+        `confidentialSends["${address}"] targets a ${operation.type} inner transaction; ` +
+        "only ConfidentialMPTSend entries carry these fields",
+    })
+  }
+  return {
+    ...operation,
+    ...(!isUndefined(fields.amount) && { amount: fields.amount }),
+    ...(!isUndefined(fields.senderEncryptedBalance) && {
+      senderEncryptedBalance: fields.senderEncryptedBalance,
+    }),
+    ...(!isUndefined(fields.senderEncryptedBalanceVersion) && {
+      senderEncryptedBalanceVersion: fields.senderEncryptedBalanceVersion,
+    }),
+  }
+}
+
 /**
  * Converts an autofilled xrpl.js Batch into a `BatchPayloadInput` for
  * `dryRunBatch` / `proposeBatch`.
@@ -347,12 +594,19 @@ const batchFlagsToExecutionMode = (flags: number | object | undefined): Core_Bat
  * - `LastLedgerSequence` is passed through when present
  * - `BatchSigners` on the input is ignored — collect signatures separately
  *   and pass them to `proposeBatch`
+ *
+ * `options.confidentialSends` supplies the three `ConfidentialMPTSend` entry
+ * fields the XRPL wire format has no room for — see
+ * {@link batchToCustodyInnerTransactions}.
  */
-export const batchToCustodyBatchPayload = (batch: Batch): BatchPayloadInput => {
+export const batchToCustodyBatchPayload = (
+  batch: Batch,
+  options?: BatchToCustodyOptions,
+): BatchPayloadInput => {
   return {
     Account: batch.Account,
     executionMode: batchFlagsToExecutionMode(batch.Flags),
-    entries: batchToCustodyInnerTransactions(batch),
+    entries: batchToCustodyInnerTransactions(batch, options),
     ...(!isUndefined(batch.Sequence) && {
       sequencing: { type: "AccountSequence" as const, value: batch.Sequence },
     }),
@@ -369,26 +623,77 @@ export const batchToCustodyBatchPayload = (batch: Batch): BatchPayloadInput => {
  * Each inner transaction is emitted as a `SubmitterOperation` when its
  * `Account` matches the outer `Batch.Account` (the submitter), and as a
  * `ParticipantOperation` otherwise.
+ *
+ * `options.confidentialSends` exists because a `ConfidentialMPTSend` entry
+ * needs three fields an xrpl.js transaction cannot carry: the plaintext
+ * `amount`, and the sender's `senderEncryptedBalance` /
+ * `senderEncryptedBalanceVersion`. The ledger needs none of them — the amount
+ * only ever exists as ciphertext and the balance is read from ledger state at
+ * apply time — but Harmonize needs all three to dry-run the Batch and
+ * re-derive the proofs, so they have to be passed in alongside the Batch.
+ *
+ * `senderEncryptedBalance` is passed through as **hex**, unlike the
+ * `cryptographicFields` on the operation, which are base64 (see
+ * {@link parametersComputeToCryptographicFields}).
+ *
+ * @throws {CustodyError} If a `confidentialSends` key is not a valid XRPL
+ * address, matches no inner transaction, or matches one that is not a
+ * `ConfidentialMPTSend`
  */
 export const batchToCustodyInnerTransactions = (
   batch: Pick<Batch, "Account" | "RawTransactions">,
+  options?: BatchToCustodyOptions,
 ): CustodyInnerTransaction[] => {
-  return batch.RawTransactions.map(({ RawTransaction: tx }): CustodyInnerTransaction => {
+  const { confidentialSends } = options ?? {}
+  const addresses = Object.keys(confidentialSends ?? {})
+
+  // Checked before the conversion runs: a malformed key can never match an
+  // inner transaction, so it would otherwise surface as the far less specific
+  // "no matching inner transaction" below.
+  const invalidAddresses = addresses.filter((address) => !isValidAddress(address))
+  if (invalidAddresses.length > 0) {
+    throw new CustodyError({
+      reason:
+        "confidentialSends contains keys that are not valid XRPL addresses: " +
+        `${invalidAddresses.join(", ")}`,
+    })
+  }
+
+  const unmatchedAddresses = new Set(addresses)
+
+  const entries = batch.RawTransactions.map(({ RawTransaction: tx }): CustodyInnerTransaction => {
     const sequencing: Core_ParticipantSequencing = !isUndefined(tx.TicketSequence)
       ? { type: "Ticket", value: tx.TicketSequence }
       : { type: "AccountSequence", value: tx.Sequence ?? 0 }
+
+    const extras = confidentialSends?.[tx.Account]
+    unmatchedAddresses.delete(tx.Account)
+    const operation = isUndefined(extras)
+      ? txToOperation(tx)
+      : withConfidentialSendFields(txToOperation(tx), tx.Account, extras)
+
     if (tx.Account === batch.Account) {
       return {
         type: "SubmitterOperation",
         sequencing,
-        operation: txToOperation(tx),
+        operation,
       }
     }
     return {
       type: "ParticipantOperation",
       participant: { type: "Address", address: tx.Account },
       sequencing,
-      operation: txToOperation(tx),
+      operation,
     }
   })
+
+  if (unmatchedAddresses.size > 0) {
+    throw new CustodyError({
+      reason:
+        "confidentialSends contains addresses with no matching inner transaction: " +
+        `${[...unmatchedAddresses].join(", ")}`,
+    })
+  }
+
+  return entries
 }

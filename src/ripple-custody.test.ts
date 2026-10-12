@@ -62,7 +62,11 @@ describe("RippleCustody live-spec auto-detection", () => {
 
   const fakeSource = (spec: unknown): SpecSource => ({ fetchSpec: vi.fn(async () => spec) })
 
-  const batchPayload = { Account: "rSubmitter", executionMode: "AllOrNothing", entries: [] } as any
+  const batchPayload = {
+    Account: "rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w",
+    executionMode: "AllOrNothing",
+    entries: [],
+  } as any
 
   it("auto-detects on first call and gates xrpl.proposeBatch against the live spec", async () => {
     const specSource = fakeSource(noBatchSpec)
@@ -121,7 +125,7 @@ describe("RippleCustody fail-open (unresolved version)", () => {
   // version guard runs but *before* any network — so we observe guard behavior
   // without a real backend.
   const mixedSequencingPayload = {
-    Account: "rSubmitter",
+    Account: "rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w",
     executionMode: "AllOrNothing",
     entries: [
       {

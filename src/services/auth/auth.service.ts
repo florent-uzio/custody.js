@@ -1,11 +1,18 @@
 import axios, { type AxiosInstance } from "axios"
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"
+import type { CustodyDebugLogger } from "../../ripple-custody.types.js"
+import { attachDebugInterceptors } from "../debug/index.js"
 import { type AuthFormData, type AuthResponse } from "./auth.service.types.js"
 
 export type AuthServiceOptions = {
   /** The full authentication token endpoint URL (e.g., https://auth.example.com/token) */
   authUrl: string
+  /**
+   * Logger for every exchange on the auth client. Already resolved from the
+   * client's `debug` option; `undefined` means debugging is off.
+   */
+  debug?: CustodyDebugLogger
   /**
    * Request timeout in milliseconds.
    * @default 30000 (30 seconds)
@@ -27,7 +34,7 @@ export class AuthService {
   private tokenRefreshPromise: Promise<string> | null = null
 
   constructor(options: AuthServiceOptions) {
-    const { authUrl, timeout = DEFAULT_TIMEOUT_MS } = options
+    const { authUrl, debug, timeout = DEFAULT_TIMEOUT_MS } = options
 
     // Initialize Axios client for auth requests
     this.authClient = axios.create({
@@ -37,6 +44,12 @@ export class AuthService {
         "Content-Type": "application/x-www-form-urlencoded",
       },
     })
+
+    // The token request is where signature failures surface, so it is logged
+    // alongside API calls rather than left invisible.
+    if (debug) {
+      attachDebugInterceptors(this.authClient, debug, "auth")
+    }
   }
 
   /**

@@ -13,6 +13,8 @@ import {
   batchSignersToCustodyBatchSigners,
   batchToCustodyBatchPayload,
   batchToCustodyInnerTransactions,
+  isSendCryptographicFields,
+  parametersComputeToCryptographicFields,
 } from "./xrpl.adapters.js"
 
 type RawTx = Batch["RawTransactions"][number]["RawTransaction"]
@@ -556,6 +558,7 @@ describe("batchToCustodyInnerTransactions", () => {
         type: "MPTokenIssuanceSet",
         tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000003SET" },
         flags: ["tfMPTLock"],
+        mutableFlags: [],
       })
     })
 
@@ -594,6 +597,291 @@ describe("batchToCustodyInnerTransactions", () => {
       const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
       const op = result.operation as { holder: unknown }
       expect(op.holder).toEqual({ type: "Address", address: "rHolderXYZ" })
+    })
+
+    it("maps the tfMPTSetCanHoldConfidentialBalance bit onto mutableFlags", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags:
+          MPTokenIssuanceSetFlags.tfMPTLock |
+          MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance,
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as { flags: string[]; mutableFlags: string[] }
+      expect(op.flags).toEqual(["tfMPTLock"])
+      expect(op.mutableFlags).toEqual(["MPTSetCanConfidentialAmount"])
+    })
+
+    it("maps the confidential flag from the object form too", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags: { tfMPTSetCanHoldConfidentialBalance: true },
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as { flags: string[]; mutableFlags: string[] }
+      expect(op.flags).toEqual([])
+      expect(op.mutableFlags).toEqual(["MPTSetCanConfidentialAmount"])
+    })
+
+    it("passes through the issuer and auditor encryption keys", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags: 0,
+        IssuerEncryptionKey: `02${"AB".repeat(32)}`,
+        AuditorEncryptionKey: `03${"CD".repeat(32)}`,
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as {
+        issuerEncryptionKey: string
+        auditorEncryptionKey: string
+      }
+      expect(op.issuerEncryptionKey).toBe(`02${"AB".repeat(32)}`)
+      expect(op.auditorEncryptionKey).toBe(`03${"CD".repeat(32)}`)
+    })
+
+    it("omits the encryption keys when absent", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "MPTokenIssuanceSet",
+        MPTokenIssuanceID: "00000003SET",
+        Flags: 0,
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).not.toHaveProperty("issuerEncryptionKey")
+      expect(result.operation).not.toHaveProperty("auditorEncryptionKey")
+    })
+  })
+
+  describe("ConfidentialMPTConvert", () => {
+    it("maps the issuance and the plaintext amount", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "ConfidentialMPTConvert",
+        MPTokenIssuanceID: "00000004CVT",
+        MPTAmount: "1000",
+        HolderEncryptedAmount: "AA",
+        IssuerEncryptedAmount: "BB",
+        BlindingFactor: "CC",
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTConvert",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000004CVT" },
+        amount: "1000",
+      })
+    })
+  })
+
+  describe("ConfidentialMPTConvertBack", () => {
+    it("maps the issuance and the plaintext amount", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "ConfidentialMPTConvertBack",
+        MPTokenIssuanceID: "00000005CVB",
+        MPTAmount: "250",
+        HolderEncryptedAmount: "AA",
+        IssuerEncryptedAmount: "BB",
+        BlindingFactor: "CC",
+        ZKProof: "DD",
+        BalanceCommitment: "EE",
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTConvertBack",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000005CVB" },
+        amount: "250",
+      })
+    })
+  })
+
+  describe("ConfidentialMPTMergeInbox", () => {
+    it("maps the issuance only", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "ConfidentialMPTMergeInbox",
+        MPTokenIssuanceID: "00000006MRG",
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTMergeInbox",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000006MRG" },
+      })
+    })
+  })
+
+  describe("ConfidentialMPTSend", () => {
+    const sendTx: RawTx = {
+      ...baseTx,
+      TransactionType: "ConfidentialMPTSend",
+      MPTokenIssuanceID: "00000007SND",
+      Destination: "rDestinationXYZ",
+      SenderEncryptedAmount: "0102",
+      DestinationEncryptedAmount: "0304",
+      IssuerEncryptedAmount: "0506",
+      ZKProof: "0708",
+      AmountCommitment: "090A",
+      BalanceCommitment: "0B0C",
+    }
+
+    it("maps the destination and base64-encodes the cryptographic fields", () => {
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(sendTx))
+      expect(result.operation).toEqual({
+        type: "ConfidentialMPTSend",
+        tokenIdentifier: { type: "MPTokenIssuanceId", issuanceId: "00000007SND" },
+        destination: { type: "Address", address: "rDestinationXYZ" },
+        cryptographicFields: {
+          type: "Send",
+          senderEncryptedAmount: Buffer.from("0102", "hex").toString("base64"),
+          destinationEncryptedAmount: Buffer.from("0304", "hex").toString("base64"),
+          issuerEncryptedAmount: Buffer.from("0506", "hex").toString("base64"),
+          balanceCommitment: Buffer.from("0B0C", "hex").toString("base64"),
+          amountCommitment: Buffer.from("090A", "hex").toString("base64"),
+          zkProof: Buffer.from("0708", "hex").toString("base64"),
+        },
+      })
+    })
+
+    it("includes the auditor ciphertext when present", () => {
+      const tx: RawTx = { ...sendTx, AuditorEncryptedAmount: "0D0E" }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      const op = result.operation as { cryptographicFields: { auditorEncryptedAmount: string } }
+      expect(op.cryptographicFields.auditorEncryptedAmount).toBe(
+        Buffer.from("0D0E", "hex").toString("base64"),
+      )
+    })
+
+    it("drops the DestinationTag and CredentialIDs, which have no Custody counterpart", () => {
+      const tx: RawTx = { ...sendTx, DestinationTag: 42, CredentialIDs: ["ABC"] }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).not.toHaveProperty("destinationTag")
+      expect(result.operation).not.toHaveProperty("credentialIds")
+    })
+
+    describe("confidentialSends", () => {
+      // Keys are validated with xrpl.js `isValidAddress`, so these have to be
+      // real addresses rather than the readable placeholders used elsewhere.
+      const SENDER_A = "rMoRUj5W3vt73dKygv2goMfY6NuqXwLw1Z"
+      const SENDER_B = "rfqtyHLUt9jSerqFhthvmxTAtfNZdSiASQ"
+      const UNRELATED = "rJXboNLh4S8ZKfjqHDzepdD63tb5Unxo2e"
+
+      const twoSenders: Pick<Batch, "Account" | "RawTransactions"> = {
+        Account: SUBMITTER,
+        RawTransactions: [
+          { RawTransaction: { ...sendTx, Account: SENDER_A } },
+          { RawTransaction: { ...sendTx, Account: SENDER_B } },
+        ],
+      }
+
+      it("leaves the output untouched when no options are passed", () => {
+        expect(batchToCustodyInnerTransactions(twoSenders)).toEqual(
+          batchToCustodyInnerTransactions(twoSenders, {}),
+        )
+        const [result] = batchToCustodyInnerTransactions(twoSenders)
+        expect(result.operation).not.toHaveProperty("amount")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalance")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalanceVersion")
+      })
+
+      it("applies the three fields to the matching entry only", () => {
+        const [a, b] = batchToCustodyInnerTransactions(twoSenders, {
+          confidentialSends: {
+            [SENDER_A]: {
+              amount: "1000",
+              senderEncryptedBalance: "0F1E",
+              senderEncryptedBalanceVersion: 7,
+            },
+          },
+        })
+        expect(a.operation).toMatchObject({
+          type: "ConfidentialMPTSend",
+          amount: "1000",
+          senderEncryptedBalance: "0F1E",
+          senderEncryptedBalanceVersion: 7,
+        })
+        expect(b.operation).not.toHaveProperty("amount")
+        expect(b.operation).not.toHaveProperty("senderEncryptedBalance")
+        expect(b.operation).not.toHaveProperty("senderEncryptedBalanceVersion")
+      })
+
+      it("passes senderEncryptedBalance through as hex, unlike the base64 cryptographicFields", () => {
+        const [result] = batchToCustodyInnerTransactions(twoSenders, {
+          confidentialSends: { [SENDER_A]: { senderEncryptedBalance: "0F1E" } },
+        })
+        const op = result.operation as {
+          senderEncryptedBalance: string
+          cryptographicFields: { senderEncryptedAmount: string }
+        }
+        expect(op.senderEncryptedBalance).toBe("0F1E")
+        expect(op.cryptographicFields.senderEncryptedAmount).toBe(
+          Buffer.from("0102", "hex").toString("base64"),
+        )
+      })
+
+      it("omits the fields left undefined", () => {
+        const [result] = batchToCustodyInnerTransactions(twoSenders, {
+          confidentialSends: { [SENDER_A]: { amount: "1000" } },
+        })
+        expect(result.operation).toHaveProperty("amount", "1000")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalance")
+        expect(result.operation).not.toHaveProperty("senderEncryptedBalanceVersion")
+      })
+
+      it("throws when a key is not a valid XRPL address", () => {
+        expect(() =>
+          batchToCustodyInnerTransactions(twoSenders, {
+            confidentialSends: { rSenderA: { amount: "1000" } },
+          }),
+        ).toThrow("not valid XRPL addresses: rSenderA")
+      })
+
+      it("throws when a valid address matches no inner transaction", () => {
+        expect(() =>
+          batchToCustodyInnerTransactions(twoSenders, {
+            confidentialSends: { [UNRELATED]: { amount: "1000" } },
+          }),
+        ).toThrow(`no matching inner transaction: ${UNRELATED}`)
+      })
+
+      it("throws when the matching inner transaction is not a ConfidentialMPTSend", () => {
+        const batch: Pick<Batch, "Account" | "RawTransactions"> = {
+          Account: SUBMITTER,
+          RawTransactions: [
+            {
+              RawTransaction: {
+                ...baseTx,
+                Account: SENDER_A,
+                TransactionType: "Payment",
+                Destination: "rDestinationXYZ",
+                Amount: "1000",
+              },
+            },
+          ],
+        }
+        expect(() =>
+          batchToCustodyInnerTransactions(batch, {
+            confidentialSends: { [SENDER_A]: { amount: "1000" } },
+          }),
+        ).toThrow(`confidentialSends["${SENDER_A}"] targets a Payment inner transaction`)
+      })
+
+      it("is forwarded by batchToCustodyBatchPayload", () => {
+        const payload = batchToCustodyBatchPayload(
+          {
+            ...baseTx,
+            TransactionType: "Batch",
+            Flags: BatchFlags.tfAllOrNothing,
+            RawTransactions: twoSenders.RawTransactions,
+          } as Batch,
+          { confidentialSends: { [SENDER_A]: { amount: "1000" } } },
+        )
+        expect(payload.entries[0]?.operation).toHaveProperty("amount", "1000")
+      })
     })
   })
 
@@ -807,5 +1095,196 @@ describe("batchToCustodyBatchPayload", () => {
       }),
     )
     expect(result).not.toHaveProperty("batchSigners")
+  })
+})
+
+describe("isSendCryptographicFields", () => {
+  it("narrows a Send response", () => {
+    expect(
+      isSendCryptographicFields({
+        senderEncryptedAmount: "aa01",
+        destinationEncryptedAmount: "bb02",
+        issuerEncryptedAmount: "cc03",
+        balanceCommitment: "dd04",
+        amountCommitment: "ee05",
+        zkProof: "ff06",
+      }),
+    ).toBe(true)
+  })
+
+  it("rejects the other three variants", () => {
+    expect(isSendCryptographicFields({ zkProof: "ff06", amount: 250 })).toBe(false)
+    expect(
+      isSendCryptographicFields({
+        holderEncryptedAmount: "aa01",
+        issuerEncryptedAmount: "bb02",
+        blindingFactor: "cc03",
+      }),
+    ).toBe(false)
+  })
+
+  // A null field must not select the variant — the response spells out `null`
+  // for material it has no value for.
+  it("rejects an explicitly null senderEncryptedAmount", () => {
+    expect(isSendCryptographicFields({ senderEncryptedAmount: null } as never)).toBe(false)
+  })
+})
+
+describe("parametersComputeToCryptographicFields", () => {
+  const hex = {
+    senderEncryptedAmount: "aa01",
+    destinationEncryptedAmount: "bb02",
+    issuerEncryptedAmount: "cc03",
+    balanceCommitment: "dd04",
+    amountCommitment: "ee05",
+    zkProof: "ff06",
+  }
+  const b64 = (value: string) => Buffer.from(value, "hex").toString("base64")
+
+  it("re-encodes Send fields from hex to base64 and tags the variant", () => {
+    const result = parametersComputeToCryptographicFields(hex)
+
+    expect(result).toEqual({
+      type: "Send",
+      senderEncryptedAmount: b64("aa01"),
+      destinationEncryptedAmount: b64("bb02"),
+      issuerEncryptedAmount: b64("cc03"),
+      balanceCommitment: b64("dd04"),
+      amountCommitment: b64("ee05"),
+      zkProof: b64("ff06"),
+    })
+  })
+
+  it("carries the optional Send fields through when present", () => {
+    const result = parametersComputeToCryptographicFields({
+      ...hex,
+      senderEncryptedBalance: "1122",
+      senderEncryptedBalanceVersion: 3,
+      auditorEncryptedAmount: "3344",
+    })
+
+    expect(result).toMatchObject({
+      // The nested copy is base64 like its siblings — it is the Batch entry's
+      // separate top-level field that stays hex, and that one is not produced here.
+      senderEncryptedBalance: b64("1122"),
+      senderEncryptedBalanceVersion: 3,
+      auditorEncryptedAmount: b64("3344"),
+    })
+  })
+
+  it("omits optional Send fields that are absent rather than emitting undefined", () => {
+    const result = parametersComputeToCryptographicFields(hex)
+
+    expect(result).not.toHaveProperty("senderEncryptedBalance")
+    expect(result).not.toHaveProperty("senderEncryptedBalanceVersion")
+    expect(result).not.toHaveProperty("auditorEncryptedAmount")
+  })
+
+  // The API sends `null` — not an absent key — for material it has no value
+  // for, which the generated types do not model.
+  it("omits optional Send fields the API returned as null", () => {
+    const result = parametersComputeToCryptographicFields({
+      ...hex,
+      senderEncryptedBalance: null,
+      senderEncryptedBalanceVersion: null,
+      auditorEncryptedAmount: null,
+    } as never)
+
+    expect(result).not.toHaveProperty("senderEncryptedBalance")
+    expect(result).not.toHaveProperty("senderEncryptedBalanceVersion")
+    expect(result).not.toHaveProperty("auditorEncryptedAmount")
+  })
+
+  it("omits a null auditorEncryptedAmount on Convert and ConvertBack", () => {
+    const convert = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      zkProof: null,
+      auditorEncryptedAmount: null,
+    } as never)
+    const convertBack = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      balanceCommitment: "dd04",
+      zkProof: "ff06",
+      auditorEncryptedAmount: null,
+    } as never)
+
+    expect(convert).toEqual({
+      type: "Convert",
+      holderEncryptedAmount: b64("aa01"),
+      issuerEncryptedAmount: b64("bb02"),
+      blindingFactor: b64("cc03"),
+    })
+    expect(convertBack).not.toHaveProperty("auditorEncryptedAmount")
+  })
+
+  // A null discriminator must not select a variant: a Convert response that
+  // spells out `balanceCommitment: null` is still a Convert.
+  it("ignores null-valued keys when inferring the variant", () => {
+    const result = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      balanceCommitment: null,
+      senderEncryptedAmount: null,
+      amount: null,
+    } as never)
+
+    expect(result).toMatchObject({ type: "Convert" })
+  })
+
+  it("detects Clawback from the numeric amount and leaves it unencoded", () => {
+    const result = parametersComputeToCryptographicFields({ zkProof: "ff06", amount: 250 })
+
+    expect(result).toEqual({ type: "Clawback", zkProof: b64("ff06"), amount: 250 })
+  })
+
+  it("detects Clawback even when the amount is zero", () => {
+    const result = parametersComputeToCryptographicFields({ zkProof: "ff06", amount: 0 })
+
+    expect(result).toEqual({ type: "Clawback", zkProof: b64("ff06"), amount: 0 })
+  })
+
+  it("detects Convert from holderEncryptedAmount without a balance commitment", () => {
+    const result = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+    })
+
+    expect(result).toEqual({
+      type: "Convert",
+      holderEncryptedAmount: b64("aa01"),
+      issuerEncryptedAmount: b64("bb02"),
+      blindingFactor: b64("cc03"),
+    })
+  })
+
+  it("detects ConvertBack when a balance commitment is present", () => {
+    const result = parametersComputeToCryptographicFields({
+      holderEncryptedAmount: "aa01",
+      issuerEncryptedAmount: "bb02",
+      blindingFactor: "cc03",
+      balanceCommitment: "dd04",
+      zkProof: "ff06",
+    })
+
+    expect(result).toEqual({
+      type: "ConvertBack",
+      holderEncryptedAmount: b64("aa01"),
+      issuerEncryptedAmount: b64("bb02"),
+      blindingFactor: b64("cc03"),
+      balanceCommitment: b64("dd04"),
+      zkProof: b64("ff06"),
+    })
+  })
+
+  it("throws naming the observed keys when the shape matches no variant", () => {
+    expect(() => parametersComputeToCryptographicFields({ zkProof: "ff06" } as never)).toThrow(
+      "Unrecognized parameters-compute cryptographicFields shape: [zkProof]",
+    )
   })
 })

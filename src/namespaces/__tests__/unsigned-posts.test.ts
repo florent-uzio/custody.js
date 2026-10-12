@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { createFakeTransport } from "../../testing/fake-transport.js"
+import { createAccounts } from "../accounts.js"
 import { createExports } from "../exports.js"
 import { createGenesis } from "../genesis.js"
 import { createIntents } from "../intents.js"
+import { createCbInDecryption } from "../internal/cb-in-decryption.js"
 import { createLedgers } from "../ledgers.js"
 import { createTransactions } from "../transactions.js"
 import { createUserInvitations } from "../user-invitations.js"
@@ -114,6 +116,72 @@ describe("non-intent POST methods pass sign: false", () => {
   it("exports.generatePositionReport", async () => {
     const exports = createExports(mockTransport)
     await exports.generatePositionReport({} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("exports.generateOmnibusPositionReport", async () => {
+    const exports = createExports(mockTransport)
+    await exports.generateOmnibusPositionReport({} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("accounts.initiateParametersCompute", async () => {
+    const accounts = createAccounts(mockTransport)
+    await accounts.initiateParametersCompute({} as any, {} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("accounts.initiateParametersComputeAndWait", async () => {
+    const accounts = createAccounts(mockTransport)
+    mockTransport.post.mockResolvedValueOnce({ id: "compute-1" })
+    mockTransport.get.mockResolvedValueOnce({ status: "Completed" })
+
+    await accounts.initiateParametersComputeAndWait({} as any, {} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("internal.cbInDecryption.initiate", async () => {
+    const cbInDecryption = createCbInDecryption(mockTransport)
+    await cbInDecryption.initiate({} as any)
+
+    expect(mockTransport.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+      expect.objectContaining({ sign: false }),
+    )
+  })
+
+  it("internal.cbInDecryption.initiateAndWait", async () => {
+    const cbInDecryption = createCbInDecryption(mockTransport)
+    mockTransport.post.mockResolvedValueOnce({ id: "r-1" })
+    mockTransport.get.mockResolvedValueOnce({ status: "Completed" })
+
+    await cbInDecryption.initiateAndWait({} as any)
 
     expect(mockTransport.post).toHaveBeenCalledWith(
       expect.anything(),

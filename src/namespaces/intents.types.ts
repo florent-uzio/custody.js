@@ -41,6 +41,16 @@ export type WaitForExecutionResult = {
   isSuccess: boolean
   /** The full intent object */
   intent: Core_TrustedIntent
+  /**
+   * Why the wait did not succeed, in one sentence — `undefined` exactly when
+   * `isSuccess` is true. Set on non-terminal outcomes too: an intent still
+   * `Open` when the attempts ran out is waiting on a human approval, which is
+   * the most confusing outcome to be left without an explanation.
+   *
+   * A message, not a contract — the wording will change. Narrow on `status`
+   * and read `intent.data.state.error` for anything the code has to branch on.
+   */
+  reason?: string
 }
 
 /**
@@ -65,6 +75,79 @@ export type Core_RejectIntentBody = Prettify<
 >
 
 export type Core_IntentResponse = components["schemas"]["Core_IntentResponse"]
+
+/** The `v0_*` payload an intent proposes. */
+export type Core_ProposeUserIntentPayload = components["schemas"]["Core_ProposeUserIntentPayload"]
+
+/**
+ * The envelope fields every intent request carries, whatever its payload.
+ *
+ * `XrplIntentOptions` extends this with the transaction-order specifics
+ * (`ledgerId`, `feePriority`, `payloadId`, `payloadCustomProperties`), which
+ * mean nothing to the other 40-odd payload types.
+ */
+export type IntentEnvelopeOptions = {
+  /**
+   * Domain to propose the intent in. Required when the login has more than one
+   * domain; otherwise the single domain is used.
+   */
+  domainId?: string
+  /** Number of days until the intent expires. Defaults to 1. */
+  expiryDays?: number
+  /** Human-readable description for the intent request (`request.description`). */
+  description?: string
+  /** Custom properties to include in the intent request. */
+  requestCustomProperties?: Record<string, string>
+  /**
+   * Id to propose the intent under. Defaults to a fresh UUID v7. This becomes
+   * the intent's own id — the one `getAndWait`/`getIntent` poll by — returned
+   * as `intentId`, not to be confused with `Core_IntentResponse.requestId`,
+   * a separate id the server mints for the request itself.
+   */
+  requestId?: string
+}
+
+/**
+ * Outcome of proposing a payload: the ids the SDK proposed it under, and the
+ * domain it resolved.
+ *
+ * `intentId` is the id the envelope was built with (`options.requestId`, or a
+ * generated one) — this is what the server assigns as the intent's own id,
+ * and what `getAndWait`/`getIntent` poll by. `requestId` is a distinct,
+ * server-generated id for the request itself, echoed back on
+ * `Core_IntentResponse`. `domainId` is returned because every follow-up is
+ * domain-scoped — without it neither id is one the caller can look up.
+ */
+export type ProposePayloadResult = Prettify<
+  Core_IntentResponse & { intentId: string; domainId: string }
+>
+
+/**
+ * Options for `intents.proposeAndWait` — the envelope fields, plus how long to
+ * poll.
+ *
+ * Flat rather than per-stage bags (as `xrpl.proposeIntentAndWait` uses), because
+ * there is only one wait here: custody accepting the intent.
+ */
+export type ProposePayloadAndWaitOptions = Prettify<IntentEnvelopeOptions & WaitForExecutionOptions>
+
+/**
+ * Outcome of proposing a payload and waiting it out.
+ *
+ * The top level is exactly {@link WaitForExecutionResult}, so anything written
+ * against `intents.getAndWait` reads the same here, with the ids the propose
+ * step resolved added alongside.
+ */
+export type ProposePayloadAndWaitResult = Prettify<
+  WaitForExecutionResult & {
+    /** The intent id the propose step polled by, as `proposePayload` returns it */
+    intentId: string
+    /** The request id, as `proposePayload` returns it — see {@link ProposePayloadResult} */
+    requestId: string
+    /** The domain the intent was proposed in */
+    domainId: string
+  }
+>
 
 // Get intent
 export type Core_GetIntentPathParams = operations["getIntent"]["parameters"]["path"]

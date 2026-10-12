@@ -48,6 +48,7 @@ vi.mock("../keypairs/index.js", () => {
 
 import axios from "axios"
 import type { CustodySigner } from "../../ripple-custody.types.js"
+import type { AuthFormData } from "../auth/auth.service.types.js"
 import { KeypairService } from "../keypairs/index.js"
 import {
   encodeSignature,
@@ -75,10 +76,13 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       ),
     )
 
-  // Mock AuthService
+  // Mock AuthService. `getToken` declares the real parameters so `mock.calls` is
+  // typed — tests that assert on the auth data posted read it off there.
   const mockAuthService = {
     isTokenExpired: vi.fn(() => false),
-    getToken: vi.fn(() => Promise.resolve("mock-jwt-token")),
+    getToken: vi.fn((_authData: AuthFormData, _forceRefresh?: boolean) =>
+      Promise.resolve("mock-jwt-token"),
+    ),
     getCurrentToken: vi.fn(() => "mock-jwt-token"),
   }
 
@@ -199,23 +203,6 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
           }),
       ).toThrow(CustodyError)
     })
-
-    it("should use provided challenge if available", async () => {
-      const customChallenge = "custom-challenge"
-      vi.clearAllMocks()
-
-      new ApiService({
-        apiUrl: mockApiUrl,
-        authFormData: { publicKey: mockPublicKey, challenge: customChallenge },
-        authService: mockAuthService as any,
-        privateKey: mockPrivateKey,
-      })
-
-      // The challenge is used internally, we verify it doesn't generate a new one
-      const { v4 } = await import("uuid")
-      // v4 should not be called when challenge is provided
-      expect(vi.mocked(v4)).not.toHaveBeenCalled()
-    })
   })
 
   describe("external signer", () => {
@@ -298,7 +285,9 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       )
 
       const body = { request: { type: "test" }, signature: "" }
-      const error = await service.post("/test-endpoint", body).catch((e) => e)
+      const error = (await service
+        .post("/test-endpoint", body)
+        .catch((e: unknown) => e)) as CustodyError
 
       expect(error).toBeInstanceOf(CustodyError)
       expect(error.message).toMatch(/External signer failed: hsm offline/)
@@ -390,6 +379,56 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
 
       resolvers[1]("token-B")
       await Promise.all([pB, pC])
+    })
+
+    it("pairs each concurrent refresh's signature with its own challenge", async () => {
+      // Forced refreshes deliberately run alongside an in-flight one, so the
+      // challenge cannot live on shared state: signing is awaited, and a sibling
+      // overwriting it mid-await would post signature(A) against challenge(B) —
+      // a `401 InvalidSignatureError` that looks random under concurrency.
+      const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+      const release: Array<() => void> = []
+      const sign = vi.fn(
+        ({ data }: { data: Uint8Array }) =>
+          new Promise<Uint8Array>((resolve) => {
+            release.push(() => resolve(Buffer.from(`sig-for-${Buffer.from(data).toString()}`)))
+          }),
+      )
+      const { requestInterceptor: interceptor } = buildWithSigner(secpSigner(sign))
+      const responseInterceptor = mockAxiosInstance.interceptors.response.use.mock.calls.at(
+        -1,
+      )?.[1] as typeof responseErrorInterceptor
+
+      const { v4 } = await import("uuid")
+      let issued = 0
+      vi.mocked(v4).mockImplementation(((): string => `challenge-${++issued}`) as never)
+      mockAuthService.isTokenExpired.mockReturnValue(true)
+      mockAuthService.getToken.mockResolvedValue("token")
+
+      // Refresh A (non-forced), then refresh B forced by a 401 while A is still
+      // awaiting its signer — the window the shared field used to be clobbered in.
+      const pA = interceptor({ headers: {} } as InternalAxiosRequestConfig)
+      ;(mockAxiosInstance as any as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ data: {} })
+      const pB = responseInterceptor({
+        isAxiosError: true,
+        response: { status: 401 },
+        config: { headers: {}, _retried: false },
+      })
+
+      await flush()
+      expect(release).toHaveLength(2)
+      release.forEach((resolve) => resolve())
+      await Promise.all([pA, pB])
+
+      // Each refresh posted the signature it computed over the challenge it sent.
+      expect(mockAuthService.getToken).toHaveBeenCalledTimes(2)
+      for (const [authData] of mockAuthService.getToken.mock.calls) {
+        expect(authData.signature).toBe(b64(`sig-for-${authData.challenge}`))
+      }
+      // Two distinct challenges really were in flight, so the pairing above is
+      // not vacuously true.
+      const challenges = mockAuthService.getToken.mock.calls.map(([authData]) => authData.challenge)
+      expect(new Set(challenges).size).toBe(2)
     })
 
     it("throws when neither privateKey nor signer is provided", () => {
@@ -524,6 +563,43 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       }
     })
 
+    it("should preserve a text/plain error body in the thrown reason", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: {
+          status: 400,
+          data: "Invalid value for: body (Missing required field at 'type')",
+        },
+        message: "Request failed with status code 400",
+      }
+      mockAxiosInstance.get.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.get("/test-endpoint")
+      } catch (error) {
+        expect(error).toBeInstanceOf(CustodyError)
+        expect((error as CustodyError).message).toBe(
+          "GET API request failed: Invalid value for: body (Missing required field at 'type')",
+        )
+        expect((error as CustodyError).statusCode).toBe(400)
+      }
+    })
+
+    it("should fall back to the axios message when the string body is blank", async () => {
+      const axiosError = {
+        isAxiosError: true,
+        response: { status: 500, data: "   " },
+        message: "Server error",
+      }
+      mockAxiosInstance.get.mockRejectedValue(axiosError)
+
+      try {
+        await apiService.get("/test-endpoint")
+      } catch (error) {
+        expect((error as CustodyError).message).toBe("GET API request failed: Server error")
+      }
+    })
+
     it("should wrap non-Axios errors as CustodyError", async () => {
       const genericError = new Error("Network failure")
       mockAxiosInstance.get.mockRejectedValue(genericError)
@@ -546,6 +622,58 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
         expect(error).toBeInstanceOf(CustodyError)
         expect((error as CustodyError).message).toBe("Unknown error occurred")
       }
+    })
+
+    describe("500 query-parameter hint", () => {
+      // The params are read off the request config axios attaches to the error,
+      // which is what the SDK relies on rather than threading them through.
+      const serverError = (status: number, params?: unknown) => ({
+        isAxiosError: true,
+        response: { status, data: { reason: "Internal server error" } },
+        config: { params },
+        message: "Request failed with status code 500",
+      })
+
+      it("names quarantineStatus on a 500 the parameter was sent with", async () => {
+        mockAxiosInstance.get.mockRejectedValue(
+          serverError(500, { "recipient.accountId": ["acc-1"], quarantineStatus: "Quarantined" }),
+        )
+
+        try {
+          await apiService.get("/test-endpoint")
+          expect.unreachable()
+        } catch (error) {
+          const { hint, message, reason } = error as CustodyError
+          expect(hint).toContain("`quarantineStatus`")
+          expect(hint).toContain("issues/238")
+          expect(reason).toBe("Internal server error")
+          expect(message).toBe(`Internal server error\n\n${hint}`)
+        }
+      })
+
+      it("adds no hint on a 500 the parameter was not sent with", async () => {
+        mockAxiosInstance.get.mockRejectedValue(serverError(500, { quarantined: true }))
+
+        try {
+          await apiService.get("/test-endpoint")
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+        }
+      })
+
+      it("adds no hint when the parameter appears on a status other than 500", async () => {
+        mockAxiosInstance.get.mockRejectedValue(
+          serverError(400, { quarantineStatus: "Quarantined" }),
+        )
+
+        try {
+          await apiService.get("/test-endpoint")
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+        }
+      })
     })
   })
 
@@ -716,6 +844,144 @@ MC4CAQAwBQYDK2VwBCIEIOrNTK/ChGQUdwitzdtwnhxfaBgRhR7vQaUxwXWTptnL
       await apiService.post("/test-endpoint", body, { sign: true })
 
       expect(body.signature).toBe(expected)
+    })
+
+    describe("401 signature-failure hint", () => {
+      const signatureError = (data: unknown) => ({
+        isAxiosError: true,
+        response: { status: 401, data },
+        message: "Request failed",
+      })
+
+      const bodyWithFiveFlags = () => ({
+        request: {
+          payload: {
+            parameters: {
+              operation: { flags: ["a", "b", "c", "d", "e"] },
+            },
+          },
+        },
+        signature: "",
+      })
+
+      it("names the oversized array fields on a 401 signature failure", async () => {
+        mockAxiosInstance.post.mockRejectedValue(
+          signatureError({ reason: "InvalidSignatureError" }),
+        )
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags())
+          expect.unreachable()
+        } catch (error) {
+          const { hint, message, reason } = error as CustodyError
+          expect(hint).toContain("`request.payload.parameters.operation.flags`")
+          expect(hint).toContain("issues/223")
+          // The API's own reason stays pristine, but the hint rides along in
+          // `message` so it shows up in stack traces
+          expect(reason).toBe("InvalidSignatureError")
+          expect(message).toBe(`InvalidSignatureError\n\n${hint}`)
+        }
+      })
+
+      it("adds no hint when no array reaches 5 elements", async () => {
+        mockAxiosInstance.post.mockRejectedValue(
+          signatureError({ reason: "InvalidSignatureError" }),
+        )
+
+        const body = { request: { operation: { flags: ["a", "b", "c", "d"] } }, signature: "" }
+
+        try {
+          await apiService.post("/test-endpoint", body)
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+          expect((error as CustodyError).message).toBe("InvalidSignatureError")
+        }
+      })
+
+      it("adds no hint on a 401 that is not a signature failure", async () => {
+        mockAxiosInstance.post.mockRejectedValue(signatureError({ reason: "Token expired" }))
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags())
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+          expect((error as CustodyError).message).toBe("Token expired")
+        }
+      })
+
+      it("adds no hint when the request was not signed", async () => {
+        mockAxiosInstance.post.mockRejectedValue(
+          signatureError({ reason: "InvalidSignatureError" }),
+        )
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags(), { sign: false })
+          expect.unreachable()
+        } catch (error) {
+          expect((error as CustodyError).hint).toBeUndefined()
+          expect((error as CustodyError).message).toBe("InvalidSignatureError")
+        }
+      })
+
+      it("appends the hint to the fallback message when the error body is not an object", async () => {
+        mockAxiosInstance.post.mockRejectedValue(signatureError("InvalidSignatureError"))
+
+        try {
+          await apiService.post("/test-endpoint", bodyWithFiveFlags())
+          expect.unreachable()
+        } catch (error) {
+          const { hint, reason } = error as CustodyError
+          expect(reason).toContain("POST API request failed")
+          expect(hint).toContain("`request.payload.parameters.operation.flags`")
+        }
+      })
+    })
+
+    describe("beforeSign", () => {
+      it("signs and sends what the hook returns", async () => {
+        mockAxiosInstance.post.mockResolvedValue({ data: {} })
+
+        const service = new ApiService({
+          apiUrl: mockApiUrl,
+          authFormData: { publicKey: mockPublicKey },
+          authService: mockAuthService as any,
+          privateKey: mockPrivateKey,
+          beforeSign: (request: any) => ({
+            ...request,
+            payload: { operation: { flags: [...request.payload.operation.flags].sort() } },
+          }),
+        })
+
+        const body = {
+          request: { type: "Propose", payload: { operation: { flags: ["b", "a"] } } },
+          signature: "",
+        }
+        const sorted = { type: "Propose", payload: { operation: { flags: ["a", "b"] } } }
+        await service.post("/test-endpoint", body)
+
+        expect(body.request).toEqual(sorted)
+        expect(body.signature).toBe(expectedPrivateKeySignature(sorted))
+        expect(mockAxiosInstance.post).toHaveBeenCalledWith("/test-endpoint", body, undefined)
+      })
+
+      it("does not run when signing is skipped", async () => {
+        mockAxiosInstance.post.mockResolvedValue({ data: {} })
+
+        const beforeSign = vi.fn((request) => request)
+        const service = new ApiService({
+          apiUrl: mockApiUrl,
+          authFormData: { publicKey: mockPublicKey },
+          authService: mockAuthService as any,
+          privateKey: mockPrivateKey,
+          beforeSign,
+        })
+
+        await service.post("/test-endpoint", { name: "hook" }, { sign: false })
+
+        expect(beforeSign).not.toHaveBeenCalled()
+      })
     })
   })
 

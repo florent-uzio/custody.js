@@ -1,7 +1,7 @@
-import dayjs from "dayjs"
 import { v7 as uuidv7 } from "uuid"
 import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
+import { buildRequestEnvelope } from "../../namespaces/intents.js"
 import type {
   Core_IntentDryRunRequest,
   Core_ProposeIntentBody,
@@ -33,34 +33,6 @@ export function buildBatchOperation(
     ...(!isUndefined(payload.lastLedgerSequence) && {
       lastLedgerSequence: payload.lastLedgerSequence,
     }),
-  }
-}
-
-/**
- * Envelope fields shared by every intent request — dry-run, propose, and
- * raw-sign. The caller supplies the `payload`; the envelope wraps the same
- * author, expiry, id, custom-properties, and target-domain fields around it.
- *
- * `ApiService.post` signs `canonicalize(request)` (RFC 8785), so key order is
- * irrelevant but key inclusion is not — the conditional `description` key is
- * present only when provided.
- */
-export function buildRequestEnvelope<TPayload>(
-  context: IntentContext,
-  options: XrplIntentOptions,
-  payload: TPayload,
-) {
-  const expiryDays = options.expiryDays ?? 1
-  const requestId = options.requestId ?? uuidv7()
-
-  return {
-    author: { domainId: context.domainId, id: context.userId },
-    customProperties: options.requestCustomProperties ?? {},
-    ...(!isUndefined(options.description) && { description: options.description }),
-    expiryAt: dayjs().add(expiryDays, "day").toISOString(),
-    id: requestId,
-    payload,
-    targetDomainId: context.domainId,
   }
 }
 
@@ -106,19 +78,36 @@ export function buildDryRunBody(
 }
 
 /**
- * Builds an XRPL intent body.
+ * Builds an XRPL intent body, returning the transaction-order id and the
+ * intent id alongside it.
+ *
+ * Both ids are generated here when the caller did not supply one. The intent
+ * id is the envelope's own `id` (`options.requestId`, or a fresh one) —
+ * that is what the server assigns as the intent's id, not the *request* id
+ * `Core_IntentResponse` returns — so it has to be captured from the envelope
+ * before it is sent, rather than left for the caller to dig out of the
+ * response.
  */
 export function buildTransactionIntent({
   operation,
   context,
   options,
-}: BuildTransactionIntentProps): Core_ProposeIntentBody {
+}: BuildTransactionIntentProps): {
+  body: Core_ProposeIntentBody
+  payloadId: string
+  intentId: string
+} {
   const payload = buildTransactionOrderPayload(operation, context, options)
+  const requestEnvelope = buildRequestEnvelope(context, options, payload)
   return {
-    request: {
-      ...buildRequestEnvelope(context, options, payload),
-      type: "Propose",
+    body: {
+      request: {
+        ...requestEnvelope,
+        type: "Propose",
+      },
     },
+    payloadId: payload.id,
+    intentId: requestEnvelope.id,
   }
 }
 

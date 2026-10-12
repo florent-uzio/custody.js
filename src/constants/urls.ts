@@ -59,6 +59,9 @@ export const URLs = createURLs({
   accountDepositInstructions: "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions",
   accountDepositInstruction:
     "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions/{instructions-id}",
+  accountParametersCompute: "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute",
+  accountParametersComputeStatus:
+    "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute/{computeId}",
 
   // Compliance
   complianceProviders: "/v1/domains/{domainId}/compliance/providers",
@@ -209,6 +212,7 @@ export const URLs = createURLs({
   omnibusItem: "/v1/domains/{domainId}/omnibus/{omnibusId}",
   omnibusLock: "/v1/domains/{domainId}/omnibus/{omnibusId}/lock",
   omnibusUnlock: "/v1/domains/{domainId}/omnibus/{omnibusId}/unlock",
+  omnibusHierarchy: "/v1/domains/{domainId}/omnibus/{omnibusId}/hierarchy",
   omnibusInternalTransfers: "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers",
   omnibusInternalTransfer:
     "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers/{operationId}",
@@ -227,6 +231,7 @@ export const URLs = createURLs({
   // Exports
   exportsMovement: "/v1/exports/movement",
   exportsPosition: "/v1/exports/position",
+  exportsOmnibusPosition: "/v1/exports/position/omnibus",
 
   // Sweep Thresholds
   sweepThresholds: "/v1/domains/{domainId}/sweep-thresholds",

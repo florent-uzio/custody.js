@@ -1,5 +1,848 @@
 # custody
 
+## 2.13.0
+
+### Minor Changes
+
+- 1a111c6: `batchToCustodyBatchPayload` and `batchToCustodyInnerTransactions` now accept an optional second argument, `{ confidentialSends }`, keyed by the inner transaction's `Account`. It carries the three fields a Custody `ConfidentialMPTSend` batch entry needs but an xrpl.js `ConfidentialMPTSend` cannot hold — the plaintext `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion`. The ledger needs none of them (the amount only ever exists as ciphertext, and the sender's encrypted balance is read from ledger state at apply time), but Harmonize needs all three on the entry to dry-run the Batch and re-derive the proofs — so converting an autofilled Batch previously produced a payload the platform rejected, and callers had to patch `payload.entries[].operation` by hand before `dryRunBatch`. `senderEncryptedBalance` is passed through as **hex**, unlike the operation's `cryptographicFields`, which are base64. A key that is not a valid XRPL address (checked with xrpl.js `isValidAddress`), matches no inner transaction, or whose inner transaction is not a `ConfidentialMPTSend`, throws a `CustodyError` rather than silently emitting an entry the platform would reject. Omitting the argument leaves the output unchanged. Exports the new `BatchToCustodyOptions`, `ConfidentialSendEntryFields` and `Core_BatchInnerOperation_ConfidentialMPTSend` types.
+- 59381b5: Surface the backend's set-reordering signature defect instead of leaving it to be investigated, and add an opt-in escape hatch for it. `CustodyError` gains a `hint` field for SDK-authored diagnostics the API's own reason does not explain, plus a `reason` field holding that API reason on its own — group or compare errors on `reason`, since a hint carries request-specific details and is also appended to `message` so it survives into stack traces. `toJSON()` now returns `reason` (no longer the hint-bearing `message`) and the new `hint`. When a signed POST fails with a `401` signature error, the hint names the array fields in the signed body holding 5+ elements (e.g. `request.payload.parameters.operation.flags`), since the API deserializes some array fields into an unordered set and re-serializes them when verifying the signature — faithful up to 4 elements, hash-ordered at 5+, which breaks verification. The SDK still signs exactly the bytes it sends (JCS preserves array order by design) and reorders nothing by default. Adds a `beforeSign` client option: a hook that reshapes a request payload just before canonicalization and signing, so applications can sort such a field into the order the backend re-emits without waiting for an SDK release. The hook is typed against the new `CustodySignedRequest` export — the union of the only three signed bodies (`Core_Propose`, `Core_Approve`, `Core_Reject`) — so narrowing on `type` gives autocomplete down to the operation. See [#223](https://github.com/florent-uzio/custody.js/issues/223).
+- 6fe358d: `client.internal.cbInDecryption.getStatusAndWait` / `initiateAndWait` now treat
+  a `400` from the CB_IN status endpoint as transient and keep polling, alongside
+  the `404` they already retried. Instances return `400` while several CB_IN
+  decryptions are in flight concurrently, which made concurrent inbox reads
+  (`Promise.all` over several issuances) fail for reasons unrelated to the
+  request.
+
+  Retries exhausting no longer relabels the failure: previously the wait threw a
+  synthesized `404 "…not found after N attempts"` regardless of what the status
+  checks actually returned. It now rethrows the last transient error with the
+  server's own `reason` and `statusCode`, with the attempt count carried in the
+  `hint` and the original error as `cause` — so a genuinely malformed request id
+  surfaces as the `400` it is instead of a misleading "not found".
+
+- 401c018: Bundle devbox OpenAPI spec `1.36.2` (replacing `1.35.0`), adding confidential MPT support. The `ConfidentialMPTConvert`, `ConfidentialMPTConvertBack`, `ConfidentialMPTMergeInbox`, and `ConfidentialMPTSend` operations, the `ConfidentialMultiPurposeToken` ticker properties, and the `MPTSetCanConfidentialAmount` mutable flag are now typed on the existing transaction operation unions, so they flow through `client.intents.propose()` and `client.transactions.dryRun()` with no new API. Adds `client.accounts.initiateCmptCompute()` and `client.accounts.getCmptComputeStatus()` for the cMPT parameter computation used to obtain a confidential transfer's `cryptographicFields`; both responses narrow the spec's plain-`string` `status` to the exported `CmptComputeStatus` union (`Pending`, `Preparing`, `Completed`, `Failed`, plus any future string). Adds `client.accounts.getCmptComputeStatusAndWait()` and `client.accounts.initiateCmptComputeAndWait()`, which poll a computation to a terminal status (`Completed` / `Failed`) and return `{ status, isTerminal, isSuccess, compute }` — the same shape as `client.intents.getAndWait()`, with `cryptographicFields` on `compute` once the status is `Completed`. Pins `xrpl` and `ripple-binary-codec` to local builds of the unreleased [`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts) branch (see `vendor/README.md`); both are bundled into the published package, so consumers get the confidential-MPT transaction models and binary-codec definitions without any extra setup. The bundle covers the SDK's internal use only — applications that import `xrpl` directly to build confidential MPT transactions must install that branch in their own project as well (see the "Beta releases" section of the README). `MPTokenIssuanceSet` operations built by `client.xrpl` now populate the newly required `mutableFlags` field from the xrpl.js `tfMPTSetCanHoldConfidentialBalance` flag, and pass through `issuerEncryptionKey` and `auditorEncryptionKey`. `batchToCustodyInnerTransactions` and `batchToCustodyBatchPayload` now accept the four confidential MPT transaction types as Batch inner transactions; the `ConfidentialMPTSend` ciphertexts, commitments and proof are re-encoded from the XRPL hex form to the base64 form the Custody API expects.
+- 2f6fdb6: Add `paginate` — walk every page of a list endpoint instead of silently reading the first one.
+
+  Every `.list()`-style method in this SDK returns **exactly one page**, and nothing in the response says so at the call site. Roughly 40 methods across 20 namespaces are affected — `tickers.list`, `accounts.getAccountBalances`, `transactions.transfers`, `events.list`, `users.list`, every `virtualLedgers.*` list, and the rest. `startingAfter` has been in the generated types all along and nothing in `src/` ever passed it. So code that lists a collection and filters `items` itself gets `undefined` from a `.find()` and concludes the record does not exist — no error, no warning, no truncation signal of any kind.
+
+  ```ts
+  import { paginate } from "@florent-uzio/custody"
+
+  const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+
+  for await (const ticker of paginate(fetchTickers)) {
+    if (ticker.ledgerId === "xrpl-testnet") return ticker
+  }
+  ```
+
+  It takes a callback rather than a method reference because it has to inject the cursor into a query the caller owns, and list methods disagree on arity — `tickers.list(query)` against `accounts.getAccountBalances(params, query)`. One callback shape covers both. Pages are fetched lazily: the request for page N+1 only goes out once page N's items are exhausted, so `break` and `return` cost nothing. `paginate` sets `startingAfter` and **never** `limit`, because the documented maximum varies by endpoint (100 on most, 1000 on a couple, unspecified elsewhere) — pass `limit: 100` yourself to cut round trips.
+
+  To drain a whole collection, accumulate in the loop. There is deliberately no `listAll`: the memory and request cost of pulling everything is real, and it should be visible in the code that pays it rather than hidden behind a name that reads as free.
+
+  Two things fail loudly rather than quietly. A cursor that does not advance — a page returning the same `nextStartingAfter` it was given — throws a `CustodyError` instead of looping forever issuing requests. And `paginate` will not typecheck against the endpoints that are not cursor-paginated (`omnibus.tenants.list` and `domains.sweepThresholds` page by offset; `channels.*` and `requests.*` return plain arrays), so it cannot be misapplied.
+
+  Also exports `CursorPage<TItem>`, the structural constraint on a cursor-paginated response, for annotating your own `fetchPage` closures. It is generic over both response families the API returns — `Core_*Collection` spells the cursor `string | undefined`, `VirtualAccounting_*PagedCollectionResponse` spells it `string | null` — and `paginate.ts` carries type-level assertions that real generated collections from both still satisfy it, so a regenerated spec that renames `items` or `nextStartingAfter` fails the build rather than rotting silently.
+
+  **`accounts.findByAddress` now reads every page, and can throw where it previously returned.** It filters client-side for an `AccountAddressReference`, but `/v1/addresses` returns those mixed in with every `DepositInstructionsReference` for the same address — so a real match could sit past the page boundary and the lookup would report the account as missing. That matters more than it sounds: `findByAddress` gates `resolveContext`, which every `custody.xrpl.*` method calls.
+
+  The behaviour change is in the ambiguity check. `findByAddress` throws `"Multiple accounts found for address …"` on more than one match, but it could only ever see page one — so a genuine duplicate hiding on a later page returned one arbitrary match and succeeded. It now raises. That is the function's documented contract finally holding rather than a new contract: pass `ledgerId` or `domainId` to disambiguate, as the error has always instructed. The first request is unchanged (`startingAfter` is `undefined` and dropped), so the single-page case costs exactly what it did before, and paging stops as soon as a second match appears rather than counting matches nobody reads.
+
+  One caveat worth knowing: `/v1/addresses` declares no cursor parameters in the spec, only `address`, yet returns a collection type carrying `nextStartingAfter`. If the server never populates it, nothing changes. If it populates it and honours `startingAfter`, the truncation bug is fixed. If it populates it and ignores `startingAfter`, you get the "Pagination stalled" error — a loud failure in place of a silent wrong answer, which is the trade throughout.
+
+  The other ~39 list methods are untouched and still return one page; `paginate` is opt-in per call site and nothing is deprecated. There is no `custody.tickers.paginate()`, no truncation warning, and no `maxPages` knob — [ADR-0008](../docs/adr/0008-cursor-pagination.md) records why each was rejected, and the README gains a Pagination section.
+
+- 9175c5a: Add a `debug` client option that logs every HTTP exchange the SDK makes, so a failing call can be diagnosed without patching the SDK or attaching a proxy. Both HTTP clients are covered — the API client and the auth token endpoint, the latter being where signature failures actually surface — and each request is paired with its response or error, carrying the status, round-trip duration and error body.
+
+  `debug: true` writes to `console.error` (stderr, so diagnostics never mix into a program's stdout, which callers may be piping). Passing a `CustodyDebugLogger` instead routes the structured events into your own logger, for filtering or reshaping: it receives a `CustodyDebugEvent` discriminated on `kind` (`"request"`, then exactly one `"response"` or `"error"`) and tagged with `client` (`"api"` or `"auth"`). The logger is called synchronously on the request path, and one that throws is ignored rather than allowed to fail the request. Exports `CustodyDebugEvent`, `CustodyDebugLogger`, `CustodyDebugClient` and `CustodyHttpMethod` (the uppercased verb, narrowed from plain `string` to the five verbs the SDK issues plus any future string, following the same pattern as `CmptComputeStatus` and `LedgerId`).
+
+  Credentials are always masked, in both forms — the `Authorization` request header and the `access_token` / `id_token` / `refresh_token` response fields — so events are safe to write wherever the rest of an application's logs go. Everything else is verbatim, including the auth request's `signature`, which is bound to a single challenge and is the thing you need when debugging a signature mismatch. Failures raised inside the request interceptor chain (a token request that never succeeded) emit nothing, since nothing went on the wire and the underlying cause is already logged on the auth client.
+
+- 5493381: Add `client.xrpl.findElGamalPublicKey` and `client.xrpl.getElGamalPublicKeyAndWait`, so a cMPT flow can both wait for a provisioned ElGamal key to become readable and check whether one already exists.
+
+  `getElGamalPublicKeyAndWait(address, options?)` polls until the key is readable, then throws — the same `fetch`/`poll`/`wait` ladder `getMptIssuanceIdAndWait` already follows, with the same defaults (10 attempts, 3s apart). The vault writes the key some time _after_ the `provisionElGamalKeyPair` intent reports `Executed`, so `getElGamalPublicKey` called straight after `intents.getAndWait` legitimately finds nothing and throws `No ElGamal key provisioned for account …`. This waits that gap out instead of the caller sleeping for a fixed guess. The address is resolved once, before the loop, so the polling costs one account read per attempt and not two.
+
+  `findElGamalPublicKey(address, options?)` returns `string | undefined` instead of throwing when no key is provisioned. An account can only be provisioned once per ledger — a second `provisionElGamalKeyPair` is rejected with `ElGamal key already provisioned for account <id> on ledger <id>` — so any script that may run twice against the same accounts has to establish first whether the key is already there. That question was previously unanswerable without catching `getElGamalPublicKey`'s error and guessing which failures mean "absent"; `findElGamalPublicKey` reports absence for the key alone, and still throws for an invalid address, an ambiguous lookup or a non-Vault account. The `find` / `get` pair mirrors `accounts.findByAddress` / `findByAddressOrThrow`.
+
+  `getElGamalPublicKey` is unchanged — one read, throws when there is no key. Its documentation, and `provisionElGamalKeyPair`'s, now point at the two siblings and state that provisioning is once-per-ledger.
+
+  `WaitForElGamalPublicKeyOptions` (the disambiguation of `GetElGamalPublicKeyOptions` plus `maxRetries` / `intervalMs` / `onAttempt`) and `GetElGamalPublicKeyOptions` itself are now exported from the package root, which the latter was not.
+
+- 10d5935: Take an XRPL address in `client.xrpl.getElGamalPublicKey` instead of a resolved `{ domainId, accountId, ledgerId }` triple.
+
+  `client.xrpl.getElGamalPublicKey(address, options?)` now resolves the domain, account and ledger from the r-address itself, the same way `provisionElGamalKeyPair`, `proposeIntent` and `rawSign` already do — so provisioning a key and reading it back take the identical argument, and callers no longer have to look an account ID up through `client.accounts.findByAddress` first just to name the account they already have an address for. The ledger the key is read from is the one the address resolved to, which is also the ledger the intent provisioned it on.
+
+  Both `getElGamalPublicKey` and `provisionElGamalKeyPair` now validate the address with `isValidAddress` from xrpl.js before any request goes out, as `rawSignAndWait` and `signBatchPayload` already do for the addresses they take — a typo fails with `Invalid address: <value>` rather than as an account-not-found from the lookup endpoint, and the two cMPT methods reject the same inputs instead of one failing locally and the other at the API.
+
+  `options.domainId` and `options.ledgerId` disambiguate: they are only needed when the address is registered more than once — across domains under the same login, or on several ledgers (`xrpl` vs `xrpl-testnet-august-2024`) — in which case the address lookup throws and names the option to pass, rather than silently picking a match. A missing ElGamal key still throws a `CustodyError`, now naming the address alongside the account and ledger.
+
+  This is a breaking change to the method's signature: `getElGamalPublicKey({ domainId, accountId, ledgerId })` becomes `getElGamalPublicKey(address, { domainId?, ledgerId? })`, and the exported `GetElGamalPublicKeyParams` type is replaced by `GetElGamalPublicKeyOptions`. The trade-off is one extra address-resolution round-trip per call, which is what every other address-taking method on the namespace already pays.
+
+- df2bb42: Add `intents.proposePayload` / `intents.proposeAndWait` and `domains.me()` — propose any intent without hand-assembling the request envelope.
+
+  `intents.propose` took a fully-formed request, so proposing anything that was not an XRPL transaction order meant rebuilding the same envelope every time: `type: "Propose"`, `targetDomainId`, `author`, `expiryAt` date arithmetic, `customProperties`, and a hand-minted UUID. The SDK already built exactly that envelope internally for XRPL; it was just not reachable from the `intents` namespace. It is now.
+
+  ```ts
+  const { requestId, domainId } = await client.intents.proposePayload(
+    { type: "v0_ReleaseQuarantinedTransfers", accountId, transferIds },
+    { description: "Release the transfers held for review", expiryDays: 7 },
+  )
+  ```
+
+  `author.id` also forced a bootstrap on the caller — `users.me()`, then find the domain, then read `userReference.id`, usually cached in a module-level mutable. Both propose methods absorb it, and `domains.me()` exposes the same resolution as `{ domainId, userId }` for anyone who needs the ids directly. `users.me()` still returns the raw reference for callers who want the public key, aliases or roles.
+
+  `proposeAndWait` polls to a terminal status, mirroring `intents.getAndWait`'s `isSuccess` / `isTerminal` convention rather than throwing. **It is not the right method for most production flows:** the default budget is 10 attempts 3s apart, and a custodian approving an intent by hand can take minutes, so it will honestly return `{ isTerminal: false, status: "Open" }` — "still waiting on a human", not a failure. Raising `maxRetries` only moves the problem; no polling budget is right for a person. Use `proposePayload`, keep the `requestId`, and pick the intent up from events or a webhook. Both the JSDoc and the new `examples/intents/release-quarantined-transfers` example say so.
+
+  The payload type is the full `Core_ProposeUserIntentPayload` union, transaction orders included — those are not XRPL-specific, and this is the only path for the other ledgers' transaction orders. XRPL callers should still prefer `xrpl.proposeIntent`, which additionally resolves the address to an account, applies a fee strategy, and returns the payload id.
+
+  Also adds `reason?: string` to `WaitForExecutionResult`, matching what `WaitForTransactionResult` already carries: one sentence saying why a wait did not succeed, `undefined` exactly when `isSuccess` is true. It prefers `state.error`, which carries a rejection code and a message from the policy engine and which nothing in the SDK surfaced before:
+
+  ```ts
+  "Intent 1e9… was Rejected (PolicyViolation): approval threshold not met"
+  "Intent 1e9… was still awaiting approval after 10 attempts."
+  "Intent 1e9… did not execute (status: Expired)."
+  ```
+
+  `intents.getAndWait` gains it too, and `xrpl.proposeIntentAndWait`'s intent-stage reason now comes from this one composition rather than a second hand-rolled one. As with the transaction `reason`, it is a message and not a contract — narrow on `status` and read `intent.data.state.error` for anything the code has to branch on.
+
+  Additive throughout: `intents.propose` is unchanged and remains the raw escape hatch, existing results gain a field, and nothing changes shape. Internally `buildRequestEnvelope` and `resolveDomainAndUser` moved to the `intents` and `domains` namespaces so both namespaces and `XrplService` can share one definition of each — only code importing those from `src/services/xrpl/` directly is affected.
+
+- ceb67ef: Add `client.internal.cbInDecryption` — the first namespace on the **internal** API surface (ADR-0007) — wrapping the two CB_IN inbox balance decryption endpoints for confidential MPT (cMPT) accounts: `POST /internal/v1/cmpt-cb-in` and `GET /internal/v1/cmpt-cb-in/{requestId}`. Methods: `initiate`, `getStatus`, plus `getStatusAndWait` / `initiateAndWait`, which poll to a terminal status (`Completed` / `Failed`) exactly like their `client.accounts.*CmptCompute*` counterparts — same `maxRetries` / `intervalMs` / `onStatusCheck` options, and a 404 while the request materializes is retried rather than thrown. `decryptedAmount` is populated on the returned status once the decryption reaches `Completed`.
+
+  Everything under `client.internal.*` targets the instance's internal API rather than the customer-facing one: types come from `src/models/custody-internal-types.ts`, paths from the new `InternalURLs` map (`src/constants/internal-urls.ts`, typed against the internal document and deliberately non-exhaustive), and every call passes `surface: "internal"` — plus `sign: false` on writes, since no internal request body carries a signed envelope. Consequently these endpoints are only version-gated on instances that serve the internal OpenAPI document; elsewhere the guard fails open for that surface and the backend decides. They back internal tooling and are not covered by the public API's compatibility promises.
+
+- b7e61b1: Add an **internal API surface** to the OpenAPI type-generation pipeline (ADR-0007). Bundled specs are now organized by two orthogonal axes: **channel** (provenance — `openapi/official/`, `openapi/devbox/`, unchanged from ADR-0005) and **surface** (which API the spec describes — a spec at a channel root is `public`, one under `openapi/<channel>/internal/` is `internal`). The internal API (`/internal/v1/…`, `Internal_*` schemas) is disjoint from the public one in both paths and schemas, but reuses some of its `operationId`s (`getUsers`, `getAllEvents`), so each surface is merged into its own document and emitted as its own types file: `src/models/custody-types.ts` for public (output unchanged) and the new `src/models/custody-internal-types.ts` for internal. Within a surface the official-authoritative / devbox-additive merge rules are unchanged. The offline capability dataset stays official-only but now **unions both surfaces of a release** into one `x-app-version` entry, so an official internal spec dropped into `openapi/official/internal/` gates its endpoints under an `apiVersion` pin with no code change; the duplicate-version guard still fires per surface. Bundles the devbox `1.36.2` internal spec at `openapi/devbox/internal/openapi-1-36-2-internal.json`.
+
+  Gating is now **per surface**. `TypedTransport` checks every call against the version guard, so without this the guard would reject every internal endpoint as unsupported the moment it became active — none of them appears in a public spec. `ResolvedCapabilities` (and each `capabilities.generated.ts` entry) now records the `surfaces` it actually describes, and the guard returns early for a surface it never enumerated — the same fail-open philosophy it already applies when no version resolves at all, narrowed to one surface. Auto-detection fetches the instance's internal document from `<apiUrl>/api/OpenAPI?scope=internal&layout=` concurrently with the public one and unions the two; the internal fetch is best-effort, so an instance that doesn't expose it simply resolves to `surfaces: ["public"]`. Detection is skipped when `apiVersion` is pinned or a custom `specSource` is supplied, and no new client option is introduced. Call sites opt in via `RequestConfig.surface`, which is stripped before the config reaches axios.
+
+  No public API change: `custody-internal-types.ts` is not re-exported from the client, `apiVersion` still enumerates official releases only, and the `client.internal.*` namespaces that consume all of this will land in follow-up releases.
+
+- cf3a3c0: Bundle the official OpenAPI specs for `1.34.18`, `1.42.0`, `1.43.0` and `1.43.2`, regenerate the types, and add the two new endpoints. `client.capabilities` now recognises all four versions. (`1.34.19`–`1.34.22` publish no OpenAPI asset, and the `1.41.0` asset's CI artifact has expired, so those versions are not bundled.)
+
+  New methods (`1.42.0`):
+
+  - `client.omnibus.getHierarchy(params, query?)` — `GET /v1/domains/{domainId}/omnibus/{omnibusId}/hierarchy`. Returns `Omnibus_OmnibusHierarchyResponse`: the omnibus header, its tenants and their embedded deposit wallets as one paginated snapshot (`page`, `size`, `status`, `createdBefore`, `tenantIds`). It never returns balances; `omnibus.balances` is always an empty list.
+  - `client.exports.generateOmnibusPositionReport(body)` — `POST /v1/exports/position/omnibus` (unsigned). Takes `Export_OmnibusPositionExportDto` (`domainId`, `asOfTimestamp`, `format`, plus optional `tenantIds`, `tickerIds`, `includeZeroBalances`) and resolves to `Export_OmnibusPositionReportResponseDto` for `format: "JSON"` or the CSV string for `format: "CSV"`.
+
+  Breaking type change:
+
+  - **`client.genesis.run` now requires `antiRewindMode`** (`1.43.0`): `Core_GenesisRequest` lists it as required, typed `Core_AntiRewindMode` (`"STRICT" | "BALANCED" | "DISABLED"`). The same mode is also exposed as a new `ANTI_REWIND_MODE` system property (`Core_SystemProperty_AntiRewindModeSystemProperty`).
+
+  Additive (`1.43.0`), all reached through existing generic methods (`intents.proposePayload`, `tickers`, `ledgers`, `systemProperties`), so no new SDK methods:
+
+  - **Canton and Sui ledgers**: new `Canton` and `Sui` variants of the order-parameter, estimate, transfer-metadata, ledger-parameter and ticker-detail unions, plus `Core_CantonOperation_*` (create party, transfer preapprovals, native/token transfer, accept, reject, withdraw) and `Core_SuiOperation_*` (native/coin transfer). A new `ED25519_CANTON_PARTY_1` vault key id is added.
+  - **Ethereum**: `Core_TransactionOrderParameters_Ethereum` gains an optional `operation` (`SetDelegation` / `SubmitAuthorization`, i.e. EIP-7702), and `Core_EthereumFeeStrategy` a new `Sponsored` variant with an optional `sponsor` uuid.
+  - `Core_LedgerTransactionData.sponsoringTransactionHash`; an optional `address` on `Core_Manifest` / `Core_v0_SignManifest`, with the new rejection code `SignManifestAddressResolutionFailure`; and a deprecated `allowDuplicate` flag on endpoint create/update (deletion target Oct 1st 2027).
+
+  Removed: the `Omnibus_HelloWorldResponse` schema (`1.42.0`), which no SDK method used. `1.43.2` differs from `1.43.0` only in comment text, and `1.34.18` has the same operation and schema set as `1.34.15`.
+
+- 66089ca: Bundle the official OpenAPI specs for `1.34.14`, `1.34.15`, `1.40.0`, `1.40.1` and `1.40.2`, and regenerate the types. None of these releases adds, removes or renames an endpoint — the path/operation set of `1.40.2` is identical to `1.39.2` (163 operations), and the two `1.34.x` patches are byte-identical to `1.34.13` apart from `info.x-app-version` — so there are no new namespaces or methods. `client.capabilities` now recognises the five versions.
+
+  The type changes all come from `1.40.0` and revolve around per-ledger destination tags / memos:
+
+  - `Core_EndpointLedgerParameters` is no longer an alias for `Core_EndpointLedgerParameters_Ethereum`; it is now a discriminated union (on `type`) over `Ethereum | Hedera | Stellar | XRPL`, with the new `Core_EndpointLedgerParameters_Hedera` (`memo?: string`), `Core_EndpointLedgerParameters_Stellar` (`memo?: Core_StellarMemo`) and `Core_EndpointLedgerParameters_XRPL` (`destinationTag?: number`) members. Code that read Ethereum-specific fields (for example `ABI`) off an endpoint's `ledgerParameters` without first narrowing on `type` now has to narrow.
+  - New `Core_TransferDestinationTag` union (`Hedera` / `Stellar` / `XRPL` members, `memo` / `destinationTag` required on each), surfaced as the optional `tag` field on `Core_CreateTransferOrderOutput`.
+  - `Core_TransferMetadata_Hedera` gained an optional `memo` (UTF-8, up to 100 bytes) and `Core_TransferMetadata_Stellar` an optional `memo: Core_StellarMemo`.
+  - `Core_UserOperationRejectionCode` gained `ConflictingDestinationTag`.
+
+  `1.40.1` is API-identical to `1.40.0`; `1.40.2` only adds `Invalid endpoint address (InvalidEndpointAddressError)` to the documented 400 cases of `POST /v1/intents`.
+
+- f2a4659: Bundle the official OpenAPI specs for `1.40.4` and `1.40.5`, and regenerate the types. Neither release adds, removes or renames an endpoint — the path/operation set is identical to `1.40.2` (138 paths, 163 operations) — so there are no new namespaces or methods. `1.40.5` is byte-identical to `1.40.4` apart from `info.x-app-version`, so every change below comes from `1.40.4`. `client.capabilities` now recognises both versions.
+
+  - **Solana durable nonce** (additive): `Core_SolanaOperation_CreateNonceAccount` gained an optional `nonceAuthority: Core_TransactionDestination`, and `Core_TransactionOrderParameters_Solana` an optional `nonceAuthority` (uuid). Both are optional, and Solana orders travel through the generic `intents.proposePayload` path, so no SDK method changes.
+  - **`Omnibus_OmnibusResponse.sponsoringGasStationId` changed shape** (breaking for readers of that field): it was a `uuid` string and is now the new `Omnibus_JsonNullableUUID` object, whose only property is `present?: boolean` — the uuid value is gone entirely. This affects `omnibus.get`, `omnibus.getById`, `omnibus.update`, `omnibus.lock` and `omnibus.unlock`, which all return `Omnibus_OmnibusResponse`. The shape looks like a server-side `JsonNullable<UUID>` serialization wrapper leaking into the published spec rather than an intended contract change; the SDK reflects the spec as published rather than hand-patching it.
+  - `1.40.4` drops `Invalid endpoint address (InvalidEndpointAddressError)` from the documented 400 cases of `POST /v1/intents`, reverting the note `1.40.2` added. Comment text only.
+
+  Generated-code fix: `capabilities.generated.ts` is now emitted with an explicit `KnownAppVersion` union and a `Record<KnownAppVersion, CapabilityEntry>` annotation instead of `as const` + `keyof typeof`. Adding two more versions pushed the inferred literal type of the ~27k-line object past TypeScript's declaration-serialization limit, failing the build with TS7056. The public API is unchanged: `KnownAppVersion` is still the exact literal union of bundled versions, and the `endpoints` / `schemas` / `surfaces` arrays are only ever read into `Set`s, so their element literal types were never observable. This was latent and would have fired on the next bundled spec regardless.
+
+- cca44c3: Update the bundled devbox OpenAPI spec `1.36.2` to the current build, which replaces the cMPT compute endpoint with a generalised **parameters compute** one: `POST /v1/domains/{domainId}/accounts/{accountId}/cmpt-compute` and its status endpoint are gone, superseded by `.../parameters-compute` (operationIds `initiateParametersCompute` / `getParametersComputeStatus`). The SDK follows the API, so the four beta-only methods added in `2.13.0-beta.0` are renamed — `client.accounts.initiateCmptCompute` → `initiateParametersCompute`, `getCmptComputeStatus` → `getParametersComputeStatus`, `getCmptComputeStatusAndWait` → `getParametersComputeStatusAndWait`, `initiateCmptComputeAndWait` → `initiateParametersComputeAndWait` — along with their types (`CmptComputeStatus` → `ParametersComputeStatus`, `WaitForCmptComputeOptions` / `WaitForCmptComputeResult` → `WaitForParametersComputeOptions` / `WaitForParametersComputeResult`, `Core_ApiInitiateCmptComputeResponse` → `Core_ApiInitiateParametersComputeResponse`, `Core_ApiCmptComputeStatusResponse` → `Core_ApiParametersComputeStatusResponse`) and the exported `TERMINAL_CMPT_COMPUTE_STATUSES` → `TERMINAL_PARAMETERS_COMPUTE_STATUSES`. No aliases are kept: the old names pointed at endpoints the backend no longer serves. Behaviour, options and return shapes are otherwise unchanged.
+
+  Two request/response changes ride along. The initiate response now returns the computation id as `id` rather than `cmptComputeId` — `initiateParametersComputeAndWait` reads the new field, so callers that only use the `*AndWait` helpers are unaffected. The initiate body is now a `oneOf` whose only member is the cMPT send request, in which `destination` is required rather than optional.
+
+  The spec also adds `ConfidentialMPTClawback`: a `Core_XrplOperation_ConfidentialMPTClawback` transaction operation with `Core_CmptCryptographicFields_Clawback`, plus a `Clawback` member of the compute's `cryptographicFields` union. Both are typed and flow through `client.intents.propose()` / `client.transactions.dryRun()` with no new API. `batchToCustodyInnerTransactions` and `batchToCustodyBatchPayload` still reject a `ConfidentialMPTClawback`, because the API's `Core_BatchInnerOperation` union does not accept one — a clawback can only be proposed as a standalone transaction, not as a Batch inner transaction.
+
+- 4cef9db: Add `client.xrpl.proposeIntentAndWait`, which proposes an XRPL transaction intent and waits it out to the ledger.
+
+  Following a write through took three calls — `xrpl.proposeIntent`, then `intents.getAndWait`, then `transactions.byOrderAndWait` — plus a `users.me()` bootstrap to learn the domain id. The sequencing is SDK knowledge, not application knowledge: an intent reporting `Executed` only means custody accepted the transaction order, and the transaction can still fail while custody prepares it or once it is on chain. Every consumer following a write was rewriting the same loop.
+
+  ```ts
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+
+  if (result.isSuccess) {
+    // The transaction completed and the ledger accepted it
+    console.log(result.transaction)
+  } else if (!result.intent.isSuccess) {
+    // Rejected by policy, expired, or still open when the attempts ran out —
+    // no transaction was ever created
+    console.log(result.intent.status)
+  }
+  ```
+
+  The result is a `WaitForTransactionResult` — `status`, `isTerminal`, `isSuccess` and `transaction` all describe the transaction, exactly as `transactions.byOrderAndWait` reports them — plus `intent` for the stage before it, and the `requestId`, `payloadId` and `domainId` the intent was proposed under. Both halves are returned because the flow has two failure surfaces: an intent that never executes produces no transaction at all, which at the top level would otherwise be indistinguishable from a transaction still in flight. `domainId` is the domain resolved from `Account`, so follow-ups such as `getMptIssuanceIdAndWait({ domainId, payloadId })` no longer need the `users.me()` bootstrap.
+
+  It never throws on a failed intent or transaction, matching `intents.getAndWait` and `transactions.byOrderAndWait`; propose-time errors (invalid address, a rejected request) still throw. The transaction stage is skipped entirely when the intent does not execute, and the polling stages are configured separately through `options.intent` and `options.transaction`, each defaulting to 10 attempts 3s apart. The address is resolved once for both stages.
+
+  Internally the two polling loops are now shared rather than restated: `waitForExecution` and `waitForOrderTransaction` take the lookup as a callback, so the namespaces drive them through the transport and `XrplService` through its ports (`XrplPorts` gains `getIntent`). Only relevant to code implementing `XrplPorts` directly.
+
+- 8f4c1ec: Return the payload ID from `client.xrpl.proposeIntent`, `rawSign` and `proposeBatch` instead of hiding it.
+
+  All three generate a `payloadId` when `options.payloadId` is omitted, but returned a bare `Core_IntentResponse`, which carries only `requestId`. The generated ID was therefore unrecoverable, and every follow-up keyed on the payload ID — `getMptIssuanceId`, `getMptIssuanceIdAndWait`, and any transaction lookup by `orderReference.Id` — forced the caller to pre-generate a UUID and pass it in just to learn what the SDK was about to generate anyway. The examples in this repo all did exactly that.
+
+  They now return `ProposeIntentResult` — `Core_IntentResponse & { payloadId: string }` — so `const { requestId, payloadId } = await client.xrpl.proposeIntent(...)` feeds straight into `getMptIssuanceIdAndWait({ domainId, payloadId })`. The field is added, not replaced: `requestId` is still there and existing callers keep working, so the only case that changes is exact-shape assertions on the response object. `options.payloadId` still overrides the generated value and is echoed back unchanged, which stays the way to correlate a `dryRunBatch` with its `proposeBatch`.
+
+  `provisionElGamalKeyPair` is unchanged: it proposes its own intent type rather than a transaction order, so it has no payload ID to surface.
+
+  Internally, `buildTransactionIntent` now returns `{ body, payloadId }` rather than the body alone — relevant only to code importing that builder directly.
+
+- 9f8cb23: Take an XRPL address in `client.xrpl.getPublicKey` instead of a resolved `{ domainId, accountId }` pair.
+
+  `client.xrpl.getPublicKey(address, options?)` now resolves the domain and account from the r-address itself, the same way `proposeIntent`, `rawSign`, `provisionElGamalKeyPair` and `getElGamalPublicKey` already do — so reading an account's signing key takes the same argument as every other address-taking method on the namespace, and callers no longer have to look an account ID up through `client.accounts.findByAddress` first just to name an account they already have an address for.
+
+  The address is validated with `isValidAddress` from xrpl.js before any request goes out, so a typo fails with `Invalid address: <value>` rather than as an account-not-found from the lookup endpoint.
+
+  `options.domainId` and `options.ledgerId` disambiguate: they are only needed when the address is registered more than once — across domains under the same login, or on several ledgers (`xrpl` vs `xrpl-testnet-august-2024`) — in which case the address lookup throws and names the option to pass, rather than silently picking a match.
+
+  This is a breaking change to the method's signature: `getPublicKey({ domainId, accountId })` becomes `getPublicKey(address, { domainId?, ledgerId? })`, with a new exported `GetPublicKeyOptions` type. The trade-off is one extra address-resolution round-trip per call, which is what every other address-taking method already pays. `rawSignAndWait`, `signBatchPayload` and `signBatchPayloadAndWait` read the key off the context they have already resolved, so they make no additional call.
+
+- 12e8beb: Add `tickers.findByXrplMptIssuanceId` — the tickers custody holds for one XRPL MPT issuance ID, in one call.
+
+  "Given an MPT issuance ID, what are my tickers?" is the first question any confidential-MPT flow asks: the confidential ticker id is the only way to read a confidential balance, and neither id is derivable from the issuance ID. `getTickers` has no `issuanceId` query parameter, so answering it meant listing a ledger's tickers and scanning `data.ledgerDetails.properties` client-side — twice per asset, once for `MultiPurposeToken` and once for `ConfidentialMultiPurposeToken`.
+
+  ```ts
+  const { public: mmf, confidential: mmfConf } = await custody.tickers.findByXrplMptIssuanceId(
+    MMF_ISSUANCE_ID,
+    { ledgerId: "xrpl-testnet-august-2024" },
+  )
+
+  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
+  const scale = mmf.decimals ?? 0
+  ```
+
+  It takes the ID `xrpl.getMptIssuanceId` produces, and the names match so the pairing is visible.
+
+  **Both halves are optional, and neither implies the other.** Most MPT issuances are not confidential, so `confidential` is usually absent — and whether it ever exists is the issuer's call, not a step already underway. It will not appear on its own, so branch on `undefined` rather than polling for it. `public` is likewise absent when custody tracks no plain ticker. An issuance the ledger does not know comes back as `{}` rather than throwing, so absence reads the same way for every reason.
+
+  That hand-rolled scan reads **one page**. A ledger carrying more tickers than a page holds reports the ticker as missing — no error, the `.find()` just returns `undefined`. For the confidential half that failure is especially quiet, because "truncated off page one" and "this issuance simply isn't confidential" look identical at the call site. `findByXrplMptIssuanceId` walks every page instead, narrowed server-side to `ledgerId` (the only filter the endpoint applies) and reading `limit: 100` at a time.
+
+  `ledgerId` is required: an MPT issuance ID only identifies a token within one XRPL network, and it is what keeps the walk from becoming an unfiltered sweep of every ticker on the instance.
+
+  Both halves come back as `Core_ApiTickerData` — the `data` payload of the collection item, not the item itself. The item's top-level twins (`id`, `ledgerId`, `decimals`, `ledgerDetails`, …) are all `@deprecated` with a Mar. 2027 deletion target, so returning `data` keeps callers off a surface that is going away. The result type is exported as `XrplMptIssuanceTickers`, along with `Core_ApiTickerData` and `FindByXrplMptIssuanceIdOptions`.
+
+  Two tickers of the same kind claiming one issuance ID throw a `CustodyError` naming both. Custody should never hold two, and returning an arbitrary one would make every balance read after it a coin flip — so every page is walked even once both halves are found, since a duplicate can only be ruled out by looking at the rest of the collection. That is one pass over the ledger's tickers: the same cost as the single `list()` call it replaces, plus a request per extra page.
+
+  This is the second internal call site for `paginate` after `accounts.findByAddress`, and follows it in shape — a semantic lookup that owns its own paging, not a `tickers.paginate()` / `listAll()` on the collection method, which [ADR-0008](../docs/adr/0008-cursor-pagination.md) rejects.
+
+- 3f7038d: Add `reason` to `WaitForTransactionResult` — one sentence saying why a wait did not succeed.
+
+  `transactions.byOrderAndWait` and `xrpl.proposeIntentAndWait` deliberately never throw, so every caller that wanted to log or re-throw the failure was writing the same assembly: dig `hint` out of `processing` with an `in` check because the union only carries it on some statuses, pull `reason` and `cause` off an `Interrupted` one, then append `ledgerTransactionData.failure` for the on-chain case. The SDK is the only place that knows which of those three surfaces applies.
+
+  ```ts
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+
+  if (!result.isSuccess) {
+    throw new Error(result.reason)
+    // "Transaction 6f0… was rejected by the ledger (FailedOnChain)."
+    // "Transaction 6f0… failed before it reached the ledger (InvalidUserPayload)."
+    // "No transaction was registered for the order after 10 attempts."
+  }
+  ```
+
+  It is `undefined` exactly when `isSuccess` is true, and set on every other outcome, including the non-terminal ones — a wait that ran out of attempts is still a caller-visible failure, and "still in flight after 10 attempts" is the sentence to log for it. On `proposeIntentAndWait` it covers both stages: when the intent never executes there is no transaction to describe, so the reason names the intent and its status instead of reporting a missing transaction.
+
+  `reason` is a message, not a contract — its wording will change. Narrow on `status` and read `processing` / `ledgerTransactionData` off the returned transaction for anything the code has to branch on.
+
+  Additive: existing results gain a field, nothing changes shape.
+
+- a08f137: Add `client.transactions.byOrderAndWait({ domainId, transactionOrderId }, options)`, which waits for the transaction a transaction order produced and reports whether the ledger accepted it.
+
+  This is the wait the SDK was missing between the two it already had. `intents.getAndWait` tells you custody accepted the order; `xrpl.getMptIssuanceIdAndWait` waits past the transaction-registration gap to read one specific field off the result. Neither answers "did the order's transaction actually land?" — which is the question every step of a multi-transaction flow has to answer before starting the next one, because an intent reporting `Executed` does not mean anything is on chain yet. It is the call to reach for straight after `intents.getAndWait`.
+
+  Two things can go wrong after an intent executes, and the result covers both. Custody can fail to prepare or broadcast the transaction, which surfaces as `processing.status: "Failed"` carrying a hint — `InvalidUserPayload` for an operation the service could not build, `InvalidAmount`, `LockedDestination`, and so on. Or the transaction reaches the ledger and the ledger throws it out, which surfaces as `ledgerTransactionData.failure` of `FailedOnChain` or `PartiallyFailedOnChain` — and that case is why `isSuccess` is not simply `status === "Completed"`: custody reports `Completed` once it is done with the transaction, including transactions the ledger rejected. An on-chain failure is also treated as terminal in its own right, so the wait does not keep polling a rejected transaction until custody's processing status catches up.
+
+  It returns rather than throws, following `intents.getAndWait`: `{ status, isTerminal, isSuccess, transaction }`, where `isSuccess` means completed _and_ accepted — the state a caller can safely build the next transaction on. The failure detail stays structured on the returned `transaction` (`processing.hint`, `processing.cause`, `processing.reason`, `ledgerTransactionData.failure`) instead of being flattened into an error message, so callers that want to branch on it do not have to catch and parse. Retries are on the caller's budget: `maxRetries` (default 10), `intervalMs` (default 3000), and an `onStatusCheck(status, attempt)` callback, whose `status` is `undefined` on an attempt where no transaction was registered yet. Exhausting the attempts returns `isTerminal: false` with the last state observed, and `transaction: undefined` when custody had registered none at all — which is what tells "this order never produced a transaction" apart from "it produced one that is still in flight".
+
+  One subtlety it handles that hand-rolled versions of this loop tend to miss: an order can map to more than one transaction. When custody replaces a transaction — a fee-bumped resubmission, say — the superseded attempt stays in the collection under the same `orderReference.Id`, marked `Replaced`. Reading the first item back can therefore report the outcome of an attempt that no longer counts, and a replaced attempt already sitting at `Completed` will happily be mistaken for a landed one. The lookup drops the `Replaced` rows and takes the newest of the rest by `registeredAt`, sorted client-side so the choice does not depend on the endpoint's default ordering.
+
+  The transaction order ID is the intent payload ID, so pass an explicit `options.payloadId` to `xrpl.proposeIntent` — the default is a fresh UUID the caller never sees, and without it there is no handle to wait on. Exports `WaitForTransactionOptions`, `WaitForTransactionResult`, `Core_TransactionProcessingStatus`, and the `TERMINAL_TRANSACTION_STATUSES` / `PENDING_TRANSACTION_STATUSES` arrays, mirroring what the intents namespace exports for intent statuses.
+
+- 6aee26d: Add `xrpl.buildConfidentialSend` — builds one confidential MPT Batch leg, proofs included, from a single call.
+
+  A confidential send submitted on its own needs no client-side cryptography: `xrpl.proposeIntent({ type: "ConfidentialMPTSend" })` has the platform derive the material. A Batch leg cannot work that way — the inner transaction has to exist, fully formed and signed, _before_ the Batch is dry-run — so the proofs have to be computed up front and spliced in by hand. That was roughly 90 lines of pure mechanism in every consumer: initiate the `cmpt-send` parameters computation, poll it, assert it completed, narrow an untagged response union, map nine camelCase fields onto their PascalCase transaction counterparts, remember `Flags: tfInnerBatchTxn`, and split off the three fields the XRPL wire format has no room for.
+
+  ```ts
+  const leg = await custody.xrpl.buildConfidentialSend({
+    sender: senderAddress,
+    destination: destinationAddress,
+    issuanceId,
+    amount: "1000",
+    ticketSequence,
+  })
+
+  batch.RawTransactions.push({ RawTransaction: leg.transaction })
+
+  const payload = batchToCustodyBatchPayload(autofilled, {
+    confidentialSends: { [senderAddress]: leg.entryFields },
+  })
+  ```
+
+  `sender` and `destination` are XRPL addresses, as everywhere else in `custody.xrpl` — the sender's domain, account id and ledger are resolved from its address through the same `resolveContext` the other methods use, so callers no longer have to carry custody account ids alongside addresses. Pass `domainId` / `ledgerId` only when the address is registered more than once, and `polling` to raise the computation's default budget of 10 attempts 3s apart.
+
+  The result is the `ConfidentialSendLeg` the pairing needs: `transaction` is the xrpl.js `ConfidentialMPTSend`, ready to push onto a `Batch`; `entryFields` is the already-exported `ConfidentialSendEntryFields` — the plaintext `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion` — which feeds straight into the `confidentialSends` option shipped alongside `batchToCustodyBatchPayload`. `senderEncryptedBalance` stays **hex**, as that option expects, unlike the operation's base64 `cryptographicFields`. `ticketSequence` is optional: omit it for a leg sequenced by account sequence and it is left off both the transaction and the compute request. `AuditorEncryptedAmount` is carried when present and dropped when the response spells it out as `null`, which it does whenever no auditor key is registered.
+
+  The builder only ever produces Batch legs, so it always stamps `Flags: tfInnerBatchTxn`. A computation that does not complete, or that returns material for some other confidential operation, throws a `CustodyError` naming the account and the status rather than yielding a half-built transaction.
+
+  Also exports `isSendCryptographicFields`, the type guard that narrows `Core_ApiParametersComputeCryptographicFields` to its `Send` variant. The parameters-compute response carries no `type` discriminator, unlike the operation union, so the variant has to be inferred from the fields present — which left every consumer hand-writing a guard over a generated union, where a wrong one fails at the ledger rather than at the call site. `buildConfidentialSend` applies it internally; reach for it directly only when building a confidential send by hand.
+
+  Internally, `accounts.initiateParametersComputeAndWait` moved to module scope in the `accounts` namespace so both that namespace and `XrplService` (through a new port) drive one definition of the initiate-then-poll pair. The `accounts` method is unchanged.
+
+- 9c075cb: Add the three `client.xrpl` methods and the encoding adapter a confidential MPT (cMPT) flow needed but had to hand-roll.
+
+  `client.xrpl.provisionElGamalKeyPair(address, options)` proposes the `v0_ProvisionElGamalKeyPair` intent every cMPT participant — issuer, senders, receivers, and the auditor when one is configured — must have executed before any confidential operation is accepted. It is its own intent type rather than a transaction order, so unlike `proposeIntent` it takes no fee strategy and no payload ID; the usual `domainId` / `ledgerId` / `requestId` / `description` options apply. Without it, callers had to assemble the `Propose` envelope (author, expiry, target domain) by hand against `client.intents.propose`.
+
+  `client.xrpl.getElGamalPublicKey({ domainId, accountId, ledgerId })` reads that key back from the account's `providerDetails.purposeKeys`, returning the base64 value `MPTokenIssuanceSet` takes as `issuerEncryptionKey` and `auditorEncryptionKey` — no re-encoding. An account holds one ElGamal key per ledger, hence the `ledgerId`; a missing key throws a `CustodyError` naming the account and ledger rather than returning `undefined`, since the calling code has nothing to do without it.
+
+  `client.xrpl.getMptIssuanceId({ domainId, payloadId })` resolves the MPT issuance ID an executed `MPTokenIssuanceCreate` minted, from the payload ID of its transaction order — it looks the transaction up by `orderReference.Id`, then fetches that transaction by ID and reads the issuance off its XRPL ledger data. Two calls rather than one because the collection endpoint returns a lighter projection that omits `ledgerTransactionData.ledgerData` — the issuance ID only appears on the per-transaction detail response. The ID is minted by the ledger, so wait for the intent to execute first; pass an explicit `options.payloadId` to `proposeIntent`, since the default is a fresh UUID the caller never sees. `XrplPorts` gains matching `listTransactions(domainId, query)` and `getTransaction(domainId, transactionId)` ports, which is a breaking change for anyone implementing that interface by hand rather than using `createHttpPorts`.
+
+  `client.xrpl.getMptIssuanceIdAndWait({ domainId, payloadId }, options)` is the polling form of the same lookup, and the one to reach for straight after `intents.getAndWait`. Custody registers the transaction an order produced — then fills in its XRPL ledger data — some time _after_ the intent reports `Executed`, so the non-polling call legitimately finds nothing at that point. It retries on the caller's budget (`maxRetries`, default 10; `intervalMs`, default 3000; plus an `onAttempt` callback) and, like its sibling, throws a `CustodyError` on exhaustion rather than returning `undefined` — it reports which of the two not-ready states the last attempt hit, which a bare `undefined` would throw away, and there is no branch a caller could usefully take without the ID.
+
+  `parametersComputeToCryptographicFields(fields)` re-encodes what a parameters computation returns into what a confidential operation carries. `GET .../parameters-compute/{computeId}` returns every field **hex**-encoded while `Core_CmptCryptographicFields` is **base64**, so the response cannot be spliced into a `ConfidentialMPTSend` as-is. The compute response also carries no `type` discriminator where the operation's union requires one, so the adapter infers the variant from the fields present — `senderEncryptedAmount` means `Send`, a numeric `amount` means `Clawback`, a `balanceCommitment` alongside `holderEncryptedAmount` means `ConvertBack`, `holderEncryptedAmount` alone means `Convert` — and throws a `CustodyError` naming the observed keys when the shape matches none of them. One field has no counterpart in the output on purpose: a Batch entry's _top-level_ `senderEncryptedBalance` stays hex, so it is passed through at the call site rather than silently re-encoded. Exports `Core_ApiParametersComputeCryptographicFields` and `Core_CmptCryptographicFields` for the two ends of that conversion.
+
+  Worth knowing before reaching for that adapter: on a standalone `ConfidentialMPTSend` or `ConfidentialMPTClawback`, `cryptographicFields` is derived by the platform and should be omitted entirely. It is only supplied by hand inside a Batch, where the submitter cannot compute proofs for another participant — which is the case the adapter exists for.
+
+- 66d3565: Fix `client.xrpl.dryRunBatch` ignoring `options.ledgerId`, and apply the XRPL address guard uniformly across the namespace.
+
+  **`dryRunBatch` dropped `ledgerId`.** Step 1 of the XLS-56 Batch flow resolved the submitter with `{ domainId }` alone while `proposeBatch` (Step 3) resolved it with `{ domainId, ledgerId }`. Since `ledgerId` is what disambiguates an address registered on more than one ledger, and the resolved ledger lands in the transaction order payload, a submitter present on both `xrpl` and `xrpl-testnet-august-2024` could have its dry-run signing data computed against a different ledger than the batch was ultimately submitted to — or fail the lookup as ambiguous at Step 1 while succeeding at Step 3. Both steps now pass the same disambiguation.
+
+  **The address guard is now a real precondition everywhere.** `proposeIntent`, `rawSign`, `dryRunBatch` and `proposeBatch` did not validate the XRPL address they were given, so a typo surfaced as an account-not-found from the lookup endpoint (or, for the batch methods, after a version-detection round-trip) rather than as an immediate `Invalid address`. They now validate before any network call, matching `getPublicKey`, `getElGamalPublicKey`, `provisionElGamalKeyPair`, `rawSignAndWait` and `signBatchPayload`.
+
+  The messages are unified on `Invalid <label>: <value>`, where the label names the offending parameter only when it is not simply the address. One message changes: `rawSignAndWait`'s `signerAccount` check now reports `Invalid signerAccount: <value>` instead of `Invalid signerAccount address: <value>`. `Invalid address: <value>` and `Invalid signerAddress: <value>` are unchanged.
+
+  Callers passing malformed addresses to `proposeIntent`, `rawSign`, `dryRunBatch` or `proposeBatch` will now see a `CustodyError` earlier and from a different origin than before — the request never leaves the SDK.
+
+  Internally, `XrplService` is regrouped by concern (intents, keys, MPT issuance, raw signing, batch) with each private helper placed under the group that owns it, and the duplicated retry loop behind `getMptIssuanceIdAndWait` and `pollManifestSignature` is now a single `pollUntil` helper. No public behaviour changes from either.
+
+### Patch Changes
+
+- 83ef4cc: Stop concurrent token refreshes from racing on a shared auth challenge, which made any request fail intermittently with `401 InvalidSignatureError` under load. The challenge was held on an instance field and read twice across the `await` on the signer: a refresh signed the challenge it generated, then — after the signer resolved — re-read the field to build the request body, by which point a sibling refresh could have overwritten it. The refresh then posted its own signature against the other's challenge, and the auth server rejected it. Forced refreshes are deliberately not collapsed (the 401 retry always signs anew) and the response interceptor forces one on any 401, so a burst of concurrent requests produces a burst of racers, each failure triggering another refresh — self-amplifying rather than self-correcting. The challenge now lives in a local for the lifetime of the refresh, so the signature and the challenge sent with it always come from the same one; the instance field had no other reader and is gone.
+
+  The window is microseconds when signing in-process with `privateKey` and a full round-trip when using an external `signer`, so HSM- and KMS-backed clients were hit hardest. Applications passing an explicit `challenge` in `authFormData` were never affected, since the assignment was then idempotent — that was also the workaround. Note this is the auth-challenge signature, not the request-body signature: unlike [#223](https://github.com/florent-uzio/custody.js/issues/223) it is independent of payload shape, which is why it presented as random across unrelated operations. See [#240](https://github.com/florent-uzio/custody.js/issues/240).
+
+- a99314f: Fix `client.accounts.initiateCmptCompute()` and `client.accounts.initiateCmptComputeAndWait()`, which threw `Failed to canonicalize request body` before sending the request. The cMPT compute endpoint takes a plain body rather than a signed envelope, so both calls now pass `{ sign: false }` and skip canonicalization/signing.
+- 0a05c8d: Give `xrpl.buildConfidentialSend` a compute budget that survives concurrency: the parameters computation now defaults to 40 attempts 3s apart (two minutes) instead of the 10 attempts 3s apart (thirty seconds) it inherited from the generic polling defaults.
+
+  Several `buildConfidentialSend` calls issued at once commonly failed, while the same calls made one after another succeeded. The cause is not a race in the SDK — it is the budget. A confidential parameters computation is queued and processed server-side, so N concurrent sends do not each take as long as one send does: the last one picked up waits behind all the others. Thirty seconds is a comfortable budget for a single compute and a tight one for the third or fourth in a burst, which is why the failure looked load-dependent and intermittent rather than deterministic.
+
+  The budget was always configurable through `options.polling` — the defaults were applied by `waitForParametersCompute`, not missing — but the failure gave the caller nothing to act on. It surfaced as `Confidential send computation for account … did not complete (status: Pending)`, which reads like the computation was rejected rather than still running. The error now names the budget it exhausted and says what to do about it:
+
+  ```
+  Confidential send computation for account <id> (<address>) did not complete
+  (status: Pending) after 40 attempts 3000ms apart. A non-terminal status here
+  means the computation is still running — raise `options.polling.maxRetries`.
+  ```
+
+  Only `buildConfidentialSend`'s default moves. `accounts.initiateParametersComputeAndWait` and every other `custody.xrpl` poll keep their 10-attempt default, and an explicit `options.polling` still wins field by field — passing `{ maxRetries: 100 }` alone keeps the 3s interval rather than resetting it.
+
+- 4bf450a: Upgrade dependencies ahead of the 2.13.0 stable release. Runtime: `axios` ^1.20.0, `qs` ^6.16.0, `uuid` ^14.0.3 and `xrpl` ^5.3.0. Dev tooling: `vitest`, `@vitest/ui` and `@vitest/coverage-v8` move to 5.x, `dotenv` to 18.x, plus minor/patch bumps of `@types/node`, `eslint`, `prettier`, `tsx` and `typescript-eslint`. No SDK API changes.
+
+  Held back on purpose: `typescript` stays on 5.9.x (ADR-0006), `canonicalize` stays on 3.x (5.x rewrites the signing canonicalizer and requires Node >= 22), and `@changesets/cli` stays on 2.x until after the stable promotion.
+
+- b6202d6: Fix `client.xrpl.proposeIntentAndWait` polling the wrong id, and add `intentId` to every propose result that was missing it.
+
+  `Core_IntentResponse.requestId` is a distinct, server-generated id for the request itself — not the id the resulting intent is polled or approved by. The actual intent id is the envelope's own `id` (`options.requestId`, or a fresh UUID v7 when omitted), which the SDK generates client-side before sending and the server then assigns to the intent it creates. `proposeIntentAndWait` was polling `getIntent` with the response's `requestId` instead of that envelope id, so once the two diverge (they are independently generated and not guaranteed to match), the wait 404-loops until it times out and reports the intent as never registered — even when it executed successfully.
+
+  `client.xrpl.proposeIntent`, `proposeIntentAndWait`, `proposeBatch`, `rawSign` and `provisionElGamalKeyPair`, and `client.intents.proposePayload` / `proposeAndWait`, now all return `intentId` alongside the existing `requestId` (and `payloadId`, where applicable) — the id to pass to `intents.getAndWait` / `getIntent`, or to poll and approve the intent by. `proposeIntentAndWait` and `intents.proposeAndWait` now poll with `intentId` internally instead of `requestId`. Additive: `requestId` is unchanged and still returned, so only exact-shape assertions on the response object are affected.
+
+  Internally, `buildTransactionIntent` and `buildRequestEnvelope`'s callers now capture the envelope before it is sent, rather than relying on the response to carry an id it never did.
+
+- 073d15d: Bundle the official OpenAPI specs for `1.34.11`, `1.34.12`, `1.34.13`, `1.39.0` and `1.39.2`, and regenerate the types. These five releases add no endpoints and no schemas — the API surface of `1.39.2` is identical to `1.38.0`, and the three `1.34.x` patches are identical to `1.34.10` — so there are no new namespaces or methods. `client.capabilities` now recognises the five versions.
+
+  Two changes ride along in the generated types, both from `1.39.x`. `Core_Balance.totalAmount` and `Core_Balance.availableAmount` dropped their `minimum: 0` constraint and are now documented as "can be negative, zero, or positive"; the TypeScript type is unchanged (`string`), but code that assumed balances are never negative should be revisited. Nine already-deprecated fields also gained a `Deletion target: Mar. 31st 2027` note in their JSDoc — among them all of `Core_ApiTicker`, `Core_Approve.expiryAt` / `Core_Reject.expiryAt`, `Core_LedgerTransactionData.blockTime`, `Core_SenderTransferParty_Account.addresses` / `Core_RecipientTransferParty_Account.address`, `Core_TransactionOrderParameters_XRPL.amount` and `destinationTag`, and the `ledgerId` of `Core_v0_CreateAccount` / `Core_v0_UpdateEndpoint`.
+
+- cb1ebd2: Fix `parametersComputeToCryptographicFields` mangling optional fields the parameters-compute response returns as `null`. The API sends an explicit `null` — not an omitted key — for material it has no value for, most visibly `auditorEncryptedAmount` when the issuance has no auditor key registered. The generated types declare those fields as merely optional, so the helper's `undefined`-only checks let a `null` through to the hex→base64 conversion and emitted the field as an empty string, which the API then rejects.
+
+  Every optional field in the helper — `senderEncryptedBalance`, `senderEncryptedBalanceVersion`, `auditorEncryptedAmount` on `Send`, `zkProof` and `auditorEncryptedAmount` on `Convert`, `auditorEncryptedAmount` on `ConvertBack` — is now omitted when it is `null` as well as when it is absent. The variant inference is null-aware for the same reason: a `null` `senderEncryptedAmount`, `amount`, `holderEncryptedAmount` or `balanceCommitment` no longer selects a variant just by being a present key, so a `Convert` response that spells out `balanceCommitment: null` is no longer read as a `ConvertBack`. A Clawback `amount` of `0` still discriminates. Values that are actually present convert exactly as before.
+
+- 4dedfaf: Fix `client.accounts.initiateParametersCompute()` and `client.accounts.initiateParametersComputeAndWait()`, which failed with `400 Invalid value for: body (Missing required field at 'type')` for every possible input. The API requires the request union's `type` discriminator, but — alone among the spec's single-member sealed unions — this schema does not declare its mapping, so the generated body type omits the field and there was no way to call the endpoint as typed. Both methods now inject `type: "cmpt-send"` before POSTing, so the field never has to be supplied; `InitiateParametersComputeBody` carries it as an optional property typed by the new `ParametersComputeType` export, and a caller-supplied value is preserved for when the union gains a second member. The override goes away once the spec declares the discriminator.
+
+  Also surface the API's reason when an error response has a `text/plain` body instead of the usual JSON error shape — the second half of the same bug report, and what made the above take a while to diagnose. Only object bodies were preserved, so the validation text was discarded and the caller saw axios's generic `POST API request failed: Request failed with status code 400`, with the real reason only reachable by unwrapping `error.cause.response.data` by hand. String bodies are now used as the `CustodyError` reason, keeping the existing `<VERB> API request failed:` prefix so log greps still match; a blank body still falls back to the axios message. This affects every endpoint that declares a `text/plain` error response, which is where the most useful validation text lives.
+
+  See [#229](https://github.com/florent-uzio/custody.js/issues/229).
+
+- bb3d63a: Name the `quarantineStatus` filter as the likely cause when a request fails with a bare `500 Internal server error`. Some Ripple Custody versions answer any transfers query carrying `quarantineStatus` with an internal error, even though the parameter is declared in every bundled OpenAPI spec — so `client.transactions.transfers({ domainId }, { quarantineStatus: "Quarantined" })` fails with nothing to go on, and the filter responsible has to be found by bisecting the query. The `hint` on `CustodyError` now points at it, and at the substitute: filtering on the deprecated `quarantined` boolean returns the same rows for `Quarantined` (`quarantined: true`).
+
+  The parameter is not rewritten automatically. `Core_QuarantineStatus` has three values and the boolean has two, so only `Quarantined` has an exact equivalent — `quarantined: false` conflates `Released`, `Skipped` and the `null` the API returns on fee transfers — and silently substituting it would turn a loud 500 into wrong data for a caller filtering on `Skipped`. The hint fires only on a `500` whose request actually carried the parameter, and hedges on which server versions are affected, since only devbox `1.36.2` was observed. See [#238](https://github.com/florent-uzio/custody.js/issues/238).
+
+- c2d89c0: Refresh the vendored [`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts) builds from commit `63af7e9` to `031913c`, and bundle `@xrplf/mpt-crypto` alongside `xrpl` and `ripple-binary-codec`. Neither vendored package bumps its version upstream (`xrpl` is still `5.0.0`, `ripple-binary-codec` still `2.8.0`), so this is a contents-only refresh with no change to the SDK's own API. `@xrplf/mpt-crypto` (the WASM proof/ElGamal package) has to be vendored now because `xrpl` declares it as a plain dependency at `^0.1.0` rather than an optional peer dependency, and it is not published on the npm registry — without the bundle, installing this package would fail to resolve it. All three are pinned through `overrides` and packed via `bundleDependencies`, which grows the published package from ~3.6 MB to ~5.2 MB. See `vendor/README.md`.
+
+  The refreshed `ripple-binary-codec` definitions rename the `MPTokenIssuanceCreate` / `MPTokenIssuanceSet` `MutableFlags` field to `ImmutableFlags` and drop the `MPTokenIssuanceMutable` ledger-entry flag map, so confidential MPT transactions now serialize against the current devbox rippled rather than the older field name. Per XLS-0094, `xrpl`'s separate `MPTokenIssuanceSetMutableFlags` (`tmfMPT*`) enum is also gone, folded into `MPTokenIssuanceSetFlags` as `tfMPTSetCanLock` (4) through `tfMPTSetCanClawback` (128). The three flag values `client.xrpl`'s adapters read numerically are unaffected — `tfMPTLock` (1), `tfMPTUnlock` (2) and `tfMPTSetCanHoldConfidentialBalance` (256) all keep their previous values — so `MPTokenIssuanceSet` operations still map to the Custody `flags` and `mutableFlags` fields as before. Applications that import `xrpl` directly and referenced `MPTokenIssuanceSetMutableFlags` will need to move those flags onto `Flags` when they update their own vendored copy.
+
+- bc8b44b: Depend on the published `xrpl@^5.1.0` instead of the vendored `XRPLF/xrpl.js@confidential-mpts` builds. XRPLF released the XLS-96 confidential-MPT surface — `ConfidentialMPTClawback`, `ConfidentialMPTConvert`, `ConfidentialMPTConvertBack`, `ConfidentialMPTMergeInbox` and `ConfidentialMPTSend`, `MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance`, and the `@xrplf/mpt-crypto` proof/ElGamal package — so `xrpl@5.1.0` (with `ripple-binary-codec@2.10.0` and `@xrplf/mpt-crypto@0.1.1`) now resolves everything from the npm registry. The `vendor/` directory and the `overrides` and `bundleDependencies` entries that pinned and packed those tarballs are gone, which shrinks the published tarball from ~5.2 MB to ~0.6 MB.
+
+  No SDK API changes. The one consumer-facing difference is that the published package no longer bundles its own copy of `xrpl`: applications that import `xrpl` directly to build confidential MPT transactions should install `xrpl@^5.1.0` themselves, which is now a plain registry install rather than a vendored build.
+
+- 4a2ce71: Add `xrpl-custody-devnet` to the known `XrplLedgerId` values.
+
+  Autocomplete only. `XrplLedgerId` ends in `(string & {})`, so the ledger already worked everywhere a `ledgerId` is accepted — it just had to be typed out from memory, with a silent lookup failure as the penalty for a typo. Nothing else changes: no existing id is renamed or removed, and the type is as assignable from arbitrary strings as it was before.
+
+## 2.13.0-beta.17
+
+### Minor Changes
+
+- cf3a3c0: Bundle the official OpenAPI specs for `1.34.18`, `1.42.0`, `1.43.0` and `1.43.2`, regenerate the types, and add the two new endpoints. `client.capabilities` now recognises all four versions. (`1.34.19`–`1.34.22` publish no OpenAPI asset, and the `1.41.0` asset's CI artifact has expired, so those versions are not bundled.)
+
+  New methods (`1.42.0`):
+
+  - `client.omnibus.getHierarchy(params, query?)` — `GET /v1/domains/{domainId}/omnibus/{omnibusId}/hierarchy`. Returns `Omnibus_OmnibusHierarchyResponse`: the omnibus header, its tenants and their embedded deposit wallets as one paginated snapshot (`page`, `size`, `status`, `createdBefore`, `tenantIds`). It never returns balances; `omnibus.balances` is always an empty list.
+  - `client.exports.generateOmnibusPositionReport(body)` — `POST /v1/exports/position/omnibus` (unsigned). Takes `Export_OmnibusPositionExportDto` (`domainId`, `asOfTimestamp`, `format`, plus optional `tenantIds`, `tickerIds`, `includeZeroBalances`) and resolves to `Export_OmnibusPositionReportResponseDto` for `format: "JSON"` or the CSV string for `format: "CSV"`.
+
+  Breaking type change:
+
+  - **`client.genesis.run` now requires `antiRewindMode`** (`1.43.0`): `Core_GenesisRequest` lists it as required, typed `Core_AntiRewindMode` (`"STRICT" | "BALANCED" | "DISABLED"`). The same mode is also exposed as a new `ANTI_REWIND_MODE` system property (`Core_SystemProperty_AntiRewindModeSystemProperty`).
+
+  Additive (`1.43.0`), all reached through existing generic methods (`intents.proposePayload`, `tickers`, `ledgers`, `systemProperties`), so no new SDK methods:
+
+  - **Canton and Sui ledgers**: new `Canton` and `Sui` variants of the order-parameter, estimate, transfer-metadata, ledger-parameter and ticker-detail unions, plus `Core_CantonOperation_*` (create party, transfer preapprovals, native/token transfer, accept, reject, withdraw) and `Core_SuiOperation_*` (native/coin transfer). A new `ED25519_CANTON_PARTY_1` vault key id is added.
+  - **Ethereum**: `Core_TransactionOrderParameters_Ethereum` gains an optional `operation` (`SetDelegation` / `SubmitAuthorization`, i.e. EIP-7702), and `Core_EthereumFeeStrategy` a new `Sponsored` variant with an optional `sponsor` uuid.
+  - `Core_LedgerTransactionData.sponsoringTransactionHash`; an optional `address` on `Core_Manifest` / `Core_v0_SignManifest`, with the new rejection code `SignManifestAddressResolutionFailure`; and a deprecated `allowDuplicate` flag on endpoint create/update (deletion target Oct 1st 2027).
+
+  Removed: the `Omnibus_HelloWorldResponse` schema (`1.42.0`), which no SDK method used. `1.43.2` differs from `1.43.0` only in comment text, and `1.34.18` has the same operation and schema set as `1.34.15`.
+
+- f2a4659: Bundle the official OpenAPI specs for `1.40.4` and `1.40.5`, and regenerate the types. Neither release adds, removes or renames an endpoint — the path/operation set is identical to `1.40.2` (138 paths, 163 operations) — so there are no new namespaces or methods. `1.40.5` is byte-identical to `1.40.4` apart from `info.x-app-version`, so every change below comes from `1.40.4`. `client.capabilities` now recognises both versions.
+
+  - **Solana durable nonce** (additive): `Core_SolanaOperation_CreateNonceAccount` gained an optional `nonceAuthority: Core_TransactionDestination`, and `Core_TransactionOrderParameters_Solana` an optional `nonceAuthority` (uuid). Both are optional, and Solana orders travel through the generic `intents.proposePayload` path, so no SDK method changes.
+  - **`Omnibus_OmnibusResponse.sponsoringGasStationId` changed shape** (breaking for readers of that field): it was a `uuid` string and is now the new `Omnibus_JsonNullableUUID` object, whose only property is `present?: boolean` — the uuid value is gone entirely. This affects `omnibus.get`, `omnibus.getById`, `omnibus.update`, `omnibus.lock` and `omnibus.unlock`, which all return `Omnibus_OmnibusResponse`. The shape looks like a server-side `JsonNullable<UUID>` serialization wrapper leaking into the published spec rather than an intended contract change; the SDK reflects the spec as published rather than hand-patching it.
+  - `1.40.4` drops `Invalid endpoint address (InvalidEndpointAddressError)` from the documented 400 cases of `POST /v1/intents`, reverting the note `1.40.2` added. Comment text only.
+
+  Generated-code fix: `capabilities.generated.ts` is now emitted with an explicit `KnownAppVersion` union and a `Record<KnownAppVersion, CapabilityEntry>` annotation instead of `as const` + `keyof typeof`. Adding two more versions pushed the inferred literal type of the ~27k-line object past TypeScript's declaration-serialization limit, failing the build with TS7056. The public API is unchanged: `KnownAppVersion` is still the exact literal union of bundled versions, and the `endpoints` / `schemas` / `surfaces` arrays are only ever read into `Set`s, so their element literal types were never observable. This was latent and would have fired on the next bundled spec regardless.
+
+## 2.13.0-beta.16
+
+### Patch Changes
+
+- bc8b44b: Depend on the published `xrpl@^5.1.0` instead of the vendored `XRPLF/xrpl.js@confidential-mpts` builds. XRPLF released the XLS-96 confidential-MPT surface — `ConfidentialMPTClawback`, `ConfidentialMPTConvert`, `ConfidentialMPTConvertBack`, `ConfidentialMPTMergeInbox` and `ConfidentialMPTSend`, `MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance`, and the `@xrplf/mpt-crypto` proof/ElGamal package — so `xrpl@5.1.0` (with `ripple-binary-codec@2.10.0` and `@xrplf/mpt-crypto@0.1.1`) now resolves everything from the npm registry. The `vendor/` directory and the `overrides` and `bundleDependencies` entries that pinned and packed those tarballs are gone, which shrinks the published tarball from ~5.2 MB to ~0.6 MB.
+
+  No SDK API changes. The one consumer-facing difference is that the published package no longer bundles its own copy of `xrpl`: applications that import `xrpl` directly to build confidential MPT transactions should install `xrpl@^5.1.0` themselves, which is now a plain registry install rather than a vendored build.
+
+## 2.13.0-beta.15
+
+### Minor Changes
+
+- 6fe358d: `client.internal.cbInDecryption.getStatusAndWait` / `initiateAndWait` now treat
+  a `400` from the CB_IN status endpoint as transient and keep polling, alongside
+  the `404` they already retried. Instances return `400` while several CB_IN
+  decryptions are in flight concurrently, which made concurrent inbox reads
+  (`Promise.all` over several issuances) fail for reasons unrelated to the
+  request.
+
+  Retries exhausting no longer relabels the failure: previously the wait threw a
+  synthesized `404 "…not found after N attempts"` regardless of what the status
+  checks actually returned. It now rethrows the last transient error with the
+  server's own `reason` and `statusCode`, with the attempt count carried in the
+  `hint` and the original error as `cause` — so a genuinely malformed request id
+  surfaces as the `400` it is instead of a misleading "not found".
+
+- 66089ca: Bundle the official OpenAPI specs for `1.34.14`, `1.34.15`, `1.40.0`, `1.40.1` and `1.40.2`, and regenerate the types. None of these releases adds, removes or renames an endpoint — the path/operation set of `1.40.2` is identical to `1.39.2` (163 operations), and the two `1.34.x` patches are byte-identical to `1.34.13` apart from `info.x-app-version` — so there are no new namespaces or methods. `client.capabilities` now recognises the five versions.
+
+  The type changes all come from `1.40.0` and revolve around per-ledger destination tags / memos:
+
+  - `Core_EndpointLedgerParameters` is no longer an alias for `Core_EndpointLedgerParameters_Ethereum`; it is now a discriminated union (on `type`) over `Ethereum | Hedera | Stellar | XRPL`, with the new `Core_EndpointLedgerParameters_Hedera` (`memo?: string`), `Core_EndpointLedgerParameters_Stellar` (`memo?: Core_StellarMemo`) and `Core_EndpointLedgerParameters_XRPL` (`destinationTag?: number`) members. Code that read Ethereum-specific fields (for example `ABI`) off an endpoint's `ledgerParameters` without first narrowing on `type` now has to narrow.
+  - New `Core_TransferDestinationTag` union (`Hedera` / `Stellar` / `XRPL` members, `memo` / `destinationTag` required on each), surfaced as the optional `tag` field on `Core_CreateTransferOrderOutput`.
+  - `Core_TransferMetadata_Hedera` gained an optional `memo` (UTF-8, up to 100 bytes) and `Core_TransferMetadata_Stellar` an optional `memo: Core_StellarMemo`.
+  - `Core_UserOperationRejectionCode` gained `ConflictingDestinationTag`.
+
+  `1.40.1` is API-identical to `1.40.0`; `1.40.2` only adds `Invalid endpoint address (InvalidEndpointAddressError)` to the documented 400 cases of `POST /v1/intents`.
+
+### Patch Changes
+
+- 0a05c8d: Give `xrpl.buildConfidentialSend` a compute budget that survives concurrency: the parameters computation now defaults to 40 attempts 3s apart (two minutes) instead of the 10 attempts 3s apart (thirty seconds) it inherited from the generic polling defaults.
+
+  Several `buildConfidentialSend` calls issued at once commonly failed, while the same calls made one after another succeeded. The cause is not a race in the SDK — it is the budget. A confidential parameters computation is queued and processed server-side, so N concurrent sends do not each take as long as one send does: the last one picked up waits behind all the others. Thirty seconds is a comfortable budget for a single compute and a tight one for the third or fourth in a burst, which is why the failure looked load-dependent and intermittent rather than deterministic.
+
+  The budget was always configurable through `options.polling` — the defaults were applied by `waitForParametersCompute`, not missing — but the failure gave the caller nothing to act on. It surfaced as `Confidential send computation for account … did not complete (status: Pending)`, which reads like the computation was rejected rather than still running. The error now names the budget it exhausted and says what to do about it:
+
+  ```
+  Confidential send computation for account <id> (<address>) did not complete
+  (status: Pending) after 40 attempts 3000ms apart. A non-terminal status here
+  means the computation is still running — raise `options.polling.maxRetries`.
+  ```
+
+  Only `buildConfidentialSend`'s default moves. `accounts.initiateParametersComputeAndWait` and every other `custody.xrpl` poll keep their 10-attempt default, and an explicit `options.polling` still wins field by field — passing `{ maxRetries: 100 }` alone keeps the 3s interval rather than resetting it.
+
+## 2.13.0-beta.14
+
+### Minor Changes
+
+- 2f6fdb6: Add `paginate` — walk every page of a list endpoint instead of silently reading the first one.
+
+  Every `.list()`-style method in this SDK returns **exactly one page**, and nothing in the response says so at the call site. Roughly 40 methods across 20 namespaces are affected — `tickers.list`, `accounts.getAccountBalances`, `transactions.transfers`, `events.list`, `users.list`, every `virtualLedgers.*` list, and the rest. `startingAfter` has been in the generated types all along and nothing in `src/` ever passed it. So code that lists a collection and filters `items` itself gets `undefined` from a `.find()` and concludes the record does not exist — no error, no warning, no truncation signal of any kind.
+
+  ```ts
+  import { paginate } from "@florent-uzio/custody"
+
+  const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+
+  for await (const ticker of paginate(fetchTickers)) {
+    if (ticker.ledgerId === "xrpl-testnet") return ticker
+  }
+  ```
+
+  It takes a callback rather than a method reference because it has to inject the cursor into a query the caller owns, and list methods disagree on arity — `tickers.list(query)` against `accounts.getAccountBalances(params, query)`. One callback shape covers both. Pages are fetched lazily: the request for page N+1 only goes out once page N's items are exhausted, so `break` and `return` cost nothing. `paginate` sets `startingAfter` and **never** `limit`, because the documented maximum varies by endpoint (100 on most, 1000 on a couple, unspecified elsewhere) — pass `limit: 100` yourself to cut round trips.
+
+  To drain a whole collection, accumulate in the loop. There is deliberately no `listAll`: the memory and request cost of pulling everything is real, and it should be visible in the code that pays it rather than hidden behind a name that reads as free.
+
+  Two things fail loudly rather than quietly. A cursor that does not advance — a page returning the same `nextStartingAfter` it was given — throws a `CustodyError` instead of looping forever issuing requests. And `paginate` will not typecheck against the endpoints that are not cursor-paginated (`omnibus.tenants.list` and `domains.sweepThresholds` page by offset; `channels.*` and `requests.*` return plain arrays), so it cannot be misapplied.
+
+  Also exports `CursorPage<TItem>`, the structural constraint on a cursor-paginated response, for annotating your own `fetchPage` closures. It is generic over both response families the API returns — `Core_*Collection` spells the cursor `string | undefined`, `VirtualAccounting_*PagedCollectionResponse` spells it `string | null` — and `paginate.ts` carries type-level assertions that real generated collections from both still satisfy it, so a regenerated spec that renames `items` or `nextStartingAfter` fails the build rather than rotting silently.
+
+  **`accounts.findByAddress` now reads every page, and can throw where it previously returned.** It filters client-side for an `AccountAddressReference`, but `/v1/addresses` returns those mixed in with every `DepositInstructionsReference` for the same address — so a real match could sit past the page boundary and the lookup would report the account as missing. That matters more than it sounds: `findByAddress` gates `resolveContext`, which every `custody.xrpl.*` method calls.
+
+  The behaviour change is in the ambiguity check. `findByAddress` throws `"Multiple accounts found for address …"` on more than one match, but it could only ever see page one — so a genuine duplicate hiding on a later page returned one arbitrary match and succeeded. It now raises. That is the function's documented contract finally holding rather than a new contract: pass `ledgerId` or `domainId` to disambiguate, as the error has always instructed. The first request is unchanged (`startingAfter` is `undefined` and dropped), so the single-page case costs exactly what it did before, and paging stops as soon as a second match appears rather than counting matches nobody reads.
+
+  One caveat worth knowing: `/v1/addresses` declares no cursor parameters in the spec, only `address`, yet returns a collection type carrying `nextStartingAfter`. If the server never populates it, nothing changes. If it populates it and honours `startingAfter`, the truncation bug is fixed. If it populates it and ignores `startingAfter`, you get the "Pagination stalled" error — a loud failure in place of a silent wrong answer, which is the trade throughout.
+
+  The other ~39 list methods are untouched and still return one page; `paginate` is opt-in per call site and nothing is deprecated. There is no `custody.tickers.paginate()`, no truncation warning, and no `maxPages` knob — [ADR-0008](../docs/adr/0008-cursor-pagination.md) records why each was rejected, and the README gains a Pagination section.
+
+- 12e8beb: Add `tickers.findByXrplMptIssuanceId` — the tickers custody holds for one XRPL MPT issuance ID, in one call.
+
+  "Given an MPT issuance ID, what are my tickers?" is the first question any confidential-MPT flow asks: the confidential ticker id is the only way to read a confidential balance, and neither id is derivable from the issuance ID. `getTickers` has no `issuanceId` query parameter, so answering it meant listing a ledger's tickers and scanning `data.ledgerDetails.properties` client-side — twice per asset, once for `MultiPurposeToken` and once for `ConfidentialMultiPurposeToken`.
+
+  ```ts
+  const { public: mmf, confidential: mmfConf } = await custody.tickers.findByXrplMptIssuanceId(
+    MMF_ISSUANCE_ID,
+    { ledgerId: "xrpl-testnet-august-2024" },
+  )
+
+  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
+  const scale = mmf.decimals ?? 0
+  ```
+
+  It takes the ID `xrpl.getMptIssuanceId` produces, and the names match so the pairing is visible.
+
+  **Both halves are optional, and neither implies the other.** Most MPT issuances are not confidential, so `confidential` is usually absent — and whether it ever exists is the issuer's call, not a step already underway. It will not appear on its own, so branch on `undefined` rather than polling for it. `public` is likewise absent when custody tracks no plain ticker. An issuance the ledger does not know comes back as `{}` rather than throwing, so absence reads the same way for every reason.
+
+  That hand-rolled scan reads **one page**. A ledger carrying more tickers than a page holds reports the ticker as missing — no error, the `.find()` just returns `undefined`. For the confidential half that failure is especially quiet, because "truncated off page one" and "this issuance simply isn't confidential" look identical at the call site. `findByXrplMptIssuanceId` walks every page instead, narrowed server-side to `ledgerId` (the only filter the endpoint applies) and reading `limit: 100` at a time.
+
+  `ledgerId` is required: an MPT issuance ID only identifies a token within one XRPL network, and it is what keeps the walk from becoming an unfiltered sweep of every ticker on the instance.
+
+  Both halves come back as `Core_ApiTickerData` — the `data` payload of the collection item, not the item itself. The item's top-level twins (`id`, `ledgerId`, `decimals`, `ledgerDetails`, …) are all `@deprecated` with a Mar. 2027 deletion target, so returning `data` keeps callers off a surface that is going away. The result type is exported as `XrplMptIssuanceTickers`, along with `Core_ApiTickerData` and `FindByXrplMptIssuanceIdOptions`.
+
+  Two tickers of the same kind claiming one issuance ID throw a `CustodyError` naming both. Custody should never hold two, and returning an arbitrary one would make every balance read after it a coin flip — so every page is walked even once both halves are found, since a duplicate can only be ruled out by looking at the rest of the collection. That is one pass over the ledger's tickers: the same cost as the single `list()` call it replaces, plus a request per extra page.
+
+  This is the second internal call site for `paginate` after `accounts.findByAddress`, and follows it in shape — a semantic lookup that owns its own paging, not a `tickers.paginate()` / `listAll()` on the collection method, which [ADR-0008](../docs/adr/0008-cursor-pagination.md) rejects.
+
+### Patch Changes
+
+- 4a2ce71: Add `xrpl-custody-devnet` to the known `XrplLedgerId` values.
+
+  Autocomplete only. `XrplLedgerId` ends in `(string & {})`, so the ledger already worked everywhere a `ledgerId` is accepted — it just had to be typed out from memory, with a silent lookup failure as the penalty for a typo. Nothing else changes: no existing id is renamed or removed, and the type is as assignable from arbitrary strings as it was before.
+
+## 2.13.0-beta.13
+
+### Minor Changes
+
+- 1a111c6: `batchToCustodyBatchPayload` and `batchToCustodyInnerTransactions` now accept an optional second argument, `{ confidentialSends }`, keyed by the inner transaction's `Account`. It carries the three fields a Custody `ConfidentialMPTSend` batch entry needs but an xrpl.js `ConfidentialMPTSend` cannot hold — the plaintext `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion`. The ledger needs none of them (the amount only ever exists as ciphertext, and the sender's encrypted balance is read from ledger state at apply time), but Harmonize needs all three on the entry to dry-run the Batch and re-derive the proofs — so converting an autofilled Batch previously produced a payload the platform rejected, and callers had to patch `payload.entries[].operation` by hand before `dryRunBatch`. `senderEncryptedBalance` is passed through as **hex**, unlike the operation's `cryptographicFields`, which are base64. A key that is not a valid XRPL address (checked with xrpl.js `isValidAddress`), matches no inner transaction, or whose inner transaction is not a `ConfidentialMPTSend`, throws a `CustodyError` rather than silently emitting an entry the platform would reject. Omitting the argument leaves the output unchanged. Exports the new `BatchToCustodyOptions`, `ConfidentialSendEntryFields` and `Core_BatchInnerOperation_ConfidentialMPTSend` types.
+- df2bb42: Add `intents.proposePayload` / `intents.proposeAndWait` and `domains.me()` — propose any intent without hand-assembling the request envelope.
+
+  `intents.propose` took a fully-formed request, so proposing anything that was not an XRPL transaction order meant rebuilding the same envelope every time: `type: "Propose"`, `targetDomainId`, `author`, `expiryAt` date arithmetic, `customProperties`, and a hand-minted UUID. The SDK already built exactly that envelope internally for XRPL; it was just not reachable from the `intents` namespace. It is now.
+
+  ```ts
+  const { requestId, domainId } = await client.intents.proposePayload(
+    { type: "v0_ReleaseQuarantinedTransfers", accountId, transferIds },
+    { description: "Release the transfers held for review", expiryDays: 7 },
+  )
+  ```
+
+  `author.id` also forced a bootstrap on the caller — `users.me()`, then find the domain, then read `userReference.id`, usually cached in a module-level mutable. Both propose methods absorb it, and `domains.me()` exposes the same resolution as `{ domainId, userId }` for anyone who needs the ids directly. `users.me()` still returns the raw reference for callers who want the public key, aliases or roles.
+
+  `proposeAndWait` polls to a terminal status, mirroring `intents.getAndWait`'s `isSuccess` / `isTerminal` convention rather than throwing. **It is not the right method for most production flows:** the default budget is 10 attempts 3s apart, and a custodian approving an intent by hand can take minutes, so it will honestly return `{ isTerminal: false, status: "Open" }` — "still waiting on a human", not a failure. Raising `maxRetries` only moves the problem; no polling budget is right for a person. Use `proposePayload`, keep the `requestId`, and pick the intent up from events or a webhook. Both the JSDoc and the new `examples/intents/release-quarantined-transfers` example say so.
+
+  The payload type is the full `Core_ProposeUserIntentPayload` union, transaction orders included — those are not XRPL-specific, and this is the only path for the other ledgers' transaction orders. XRPL callers should still prefer `xrpl.proposeIntent`, which additionally resolves the address to an account, applies a fee strategy, and returns the payload id.
+
+  Also adds `reason?: string` to `WaitForExecutionResult`, matching what `WaitForTransactionResult` already carries: one sentence saying why a wait did not succeed, `undefined` exactly when `isSuccess` is true. It prefers `state.error`, which carries a rejection code and a message from the policy engine and which nothing in the SDK surfaced before:
+
+  ```ts
+  "Intent 1e9… was Rejected (PolicyViolation): approval threshold not met"
+  "Intent 1e9… was still awaiting approval after 10 attempts."
+  "Intent 1e9… did not execute (status: Expired)."
+  ```
+
+  `intents.getAndWait` gains it too, and `xrpl.proposeIntentAndWait`'s intent-stage reason now comes from this one composition rather than a second hand-rolled one. As with the transaction `reason`, it is a message and not a contract — narrow on `status` and read `intent.data.state.error` for anything the code has to branch on.
+
+  Additive throughout: `intents.propose` is unchanged and remains the raw escape hatch, existing results gain a field, and nothing changes shape. Internally `buildRequestEnvelope` and `resolveDomainAndUser` moved to the `intents` and `domains` namespaces so both namespaces and `XrplService` can share one definition of each — only code importing those from `src/services/xrpl/` directly is affected.
+
+- 4cef9db: Add `client.xrpl.proposeIntentAndWait`, which proposes an XRPL transaction intent and waits it out to the ledger.
+
+  Following a write through took three calls — `xrpl.proposeIntent`, then `intents.getAndWait`, then `transactions.byOrderAndWait` — plus a `users.me()` bootstrap to learn the domain id. The sequencing is SDK knowledge, not application knowledge: an intent reporting `Executed` only means custody accepted the transaction order, and the transaction can still fail while custody prepares it or once it is on chain. Every consumer following a write was rewriting the same loop.
+
+  ```ts
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+
+  if (result.isSuccess) {
+    // The transaction completed and the ledger accepted it
+    console.log(result.transaction)
+  } else if (!result.intent.isSuccess) {
+    // Rejected by policy, expired, or still open when the attempts ran out —
+    // no transaction was ever created
+    console.log(result.intent.status)
+  }
+  ```
+
+  The result is a `WaitForTransactionResult` — `status`, `isTerminal`, `isSuccess` and `transaction` all describe the transaction, exactly as `transactions.byOrderAndWait` reports them — plus `intent` for the stage before it, and the `requestId`, `payloadId` and `domainId` the intent was proposed under. Both halves are returned because the flow has two failure surfaces: an intent that never executes produces no transaction at all, which at the top level would otherwise be indistinguishable from a transaction still in flight. `domainId` is the domain resolved from `Account`, so follow-ups such as `getMptIssuanceIdAndWait({ domainId, payloadId })` no longer need the `users.me()` bootstrap.
+
+  It never throws on a failed intent or transaction, matching `intents.getAndWait` and `transactions.byOrderAndWait`; propose-time errors (invalid address, a rejected request) still throw. The transaction stage is skipped entirely when the intent does not execute, and the polling stages are configured separately through `options.intent` and `options.transaction`, each defaulting to 10 attempts 3s apart. The address is resolved once for both stages.
+
+  Internally the two polling loops are now shared rather than restated: `waitForExecution` and `waitForOrderTransaction` take the lookup as a callback, so the namespaces drive them through the transport and `XrplService` through its ports (`XrplPorts` gains `getIntent`). Only relevant to code implementing `XrplPorts` directly.
+
+- 8f4c1ec: Return the payload ID from `client.xrpl.proposeIntent`, `rawSign` and `proposeBatch` instead of hiding it.
+
+  All three generate a `payloadId` when `options.payloadId` is omitted, but returned a bare `Core_IntentResponse`, which carries only `requestId`. The generated ID was therefore unrecoverable, and every follow-up keyed on the payload ID — `getMptIssuanceId`, `getMptIssuanceIdAndWait`, and any transaction lookup by `orderReference.Id` — forced the caller to pre-generate a UUID and pass it in just to learn what the SDK was about to generate anyway. The examples in this repo all did exactly that.
+
+  They now return `ProposeIntentResult` — `Core_IntentResponse & { payloadId: string }` — so `const { requestId, payloadId } = await client.xrpl.proposeIntent(...)` feeds straight into `getMptIssuanceIdAndWait({ domainId, payloadId })`. The field is added, not replaced: `requestId` is still there and existing callers keep working, so the only case that changes is exact-shape assertions on the response object. `options.payloadId` still overrides the generated value and is echoed back unchanged, which stays the way to correlate a `dryRunBatch` with its `proposeBatch`.
+
+  `provisionElGamalKeyPair` is unchanged: it proposes its own intent type rather than a transaction order, so it has no payload ID to surface.
+
+  Internally, `buildTransactionIntent` now returns `{ body, payloadId }` rather than the body alone — relevant only to code importing that builder directly.
+
+- 3f7038d: Add `reason` to `WaitForTransactionResult` — one sentence saying why a wait did not succeed.
+
+  `transactions.byOrderAndWait` and `xrpl.proposeIntentAndWait` deliberately never throw, so every caller that wanted to log or re-throw the failure was writing the same assembly: dig `hint` out of `processing` with an `in` check because the union only carries it on some statuses, pull `reason` and `cause` off an `Interrupted` one, then append `ledgerTransactionData.failure` for the on-chain case. The SDK is the only place that knows which of those three surfaces applies.
+
+  ```ts
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+
+  if (!result.isSuccess) {
+    throw new Error(result.reason)
+    // "Transaction 6f0… was rejected by the ledger (FailedOnChain)."
+    // "Transaction 6f0… failed before it reached the ledger (InvalidUserPayload)."
+    // "No transaction was registered for the order after 10 attempts."
+  }
+  ```
+
+  It is `undefined` exactly when `isSuccess` is true, and set on every other outcome, including the non-terminal ones — a wait that ran out of attempts is still a caller-visible failure, and "still in flight after 10 attempts" is the sentence to log for it. On `proposeIntentAndWait` it covers both stages: when the intent never executes there is no transaction to describe, so the reason names the intent and its status instead of reporting a missing transaction.
+
+  `reason` is a message, not a contract — its wording will change. Narrow on `status` and read `processing` / `ledgerTransactionData` off the returned transaction for anything the code has to branch on.
+
+  Additive: existing results gain a field, nothing changes shape.
+
+- 6aee26d: Add `xrpl.buildConfidentialSend` — builds one confidential MPT Batch leg, proofs included, from a single call.
+
+  A confidential send submitted on its own needs no client-side cryptography: `xrpl.proposeIntent({ type: "ConfidentialMPTSend" })` has the platform derive the material. A Batch leg cannot work that way — the inner transaction has to exist, fully formed and signed, _before_ the Batch is dry-run — so the proofs have to be computed up front and spliced in by hand. That was roughly 90 lines of pure mechanism in every consumer: initiate the `cmpt-send` parameters computation, poll it, assert it completed, narrow an untagged response union, map nine camelCase fields onto their PascalCase transaction counterparts, remember `Flags: tfInnerBatchTxn`, and split off the three fields the XRPL wire format has no room for.
+
+  ```ts
+  const leg = await custody.xrpl.buildConfidentialSend({
+    sender: senderAddress,
+    destination: destinationAddress,
+    issuanceId,
+    amount: "1000",
+    ticketSequence,
+  })
+
+  batch.RawTransactions.push({ RawTransaction: leg.transaction })
+
+  const payload = batchToCustodyBatchPayload(autofilled, {
+    confidentialSends: { [senderAddress]: leg.entryFields },
+  })
+  ```
+
+  `sender` and `destination` are XRPL addresses, as everywhere else in `custody.xrpl` — the sender's domain, account id and ledger are resolved from its address through the same `resolveContext` the other methods use, so callers no longer have to carry custody account ids alongside addresses. Pass `domainId` / `ledgerId` only when the address is registered more than once, and `polling` to raise the computation's default budget of 10 attempts 3s apart.
+
+  The result is the `ConfidentialSendLeg` the pairing needs: `transaction` is the xrpl.js `ConfidentialMPTSend`, ready to push onto a `Batch`; `entryFields` is the already-exported `ConfidentialSendEntryFields` — the plaintext `amount`, `senderEncryptedBalance` and `senderEncryptedBalanceVersion` — which feeds straight into the `confidentialSends` option shipped alongside `batchToCustodyBatchPayload`. `senderEncryptedBalance` stays **hex**, as that option expects, unlike the operation's base64 `cryptographicFields`. `ticketSequence` is optional: omit it for a leg sequenced by account sequence and it is left off both the transaction and the compute request. `AuditorEncryptedAmount` is carried when present and dropped when the response spells it out as `null`, which it does whenever no auditor key is registered.
+
+  The builder only ever produces Batch legs, so it always stamps `Flags: tfInnerBatchTxn`. A computation that does not complete, or that returns material for some other confidential operation, throws a `CustodyError` naming the account and the status rather than yielding a half-built transaction.
+
+  Also exports `isSendCryptographicFields`, the type guard that narrows `Core_ApiParametersComputeCryptographicFields` to its `Send` variant. The parameters-compute response carries no `type` discriminator, unlike the operation union, so the variant has to be inferred from the fields present — which left every consumer hand-writing a guard over a generated union, where a wrong one fails at the ledger rather than at the call site. `buildConfidentialSend` applies it internally; reach for it directly only when building a confidential send by hand.
+
+  Internally, `accounts.initiateParametersComputeAndWait` moved to module scope in the `accounts` namespace so both that namespace and `XrplService` (through a new port) drive one definition of the initiate-then-poll pair. The `accounts` method is unchanged.
+
+### Patch Changes
+
+- b6202d6: Fix `client.xrpl.proposeIntentAndWait` polling the wrong id, and add `intentId` to every propose result that was missing it.
+
+  `Core_IntentResponse.requestId` is a distinct, server-generated id for the request itself — not the id the resulting intent is polled or approved by. The actual intent id is the envelope's own `id` (`options.requestId`, or a fresh UUID v7 when omitted), which the SDK generates client-side before sending and the server then assigns to the intent it creates. `proposeIntentAndWait` was polling `getIntent` with the response's `requestId` instead of that envelope id, so once the two diverge (they are independently generated and not guaranteed to match), the wait 404-loops until it times out and reports the intent as never registered — even when it executed successfully.
+
+  `client.xrpl.proposeIntent`, `proposeIntentAndWait`, `proposeBatch`, `rawSign` and `provisionElGamalKeyPair`, and `client.intents.proposePayload` / `proposeAndWait`, now all return `intentId` alongside the existing `requestId` (and `payloadId`, where applicable) — the id to pass to `intents.getAndWait` / `getIntent`, or to poll and approve the intent by. `proposeIntentAndWait` and `intents.proposeAndWait` now poll with `intentId` internally instead of `requestId`. Additive: `requestId` is unchanged and still returned, so only exact-shape assertions on the response object are affected.
+
+  Internally, `buildTransactionIntent` and `buildRequestEnvelope`'s callers now capture the envelope before it is sent, rather than relying on the response to carry an id it never did.
+
+## 2.13.0-beta.12
+
+### Patch Changes
+
+- 83ef4cc: Stop concurrent token refreshes from racing on a shared auth challenge, which made any request fail intermittently with `401 InvalidSignatureError` under load. The challenge was held on an instance field and read twice across the `await` on the signer: a refresh signed the challenge it generated, then — after the signer resolved — re-read the field to build the request body, by which point a sibling refresh could have overwritten it. The refresh then posted its own signature against the other's challenge, and the auth server rejected it. Forced refreshes are deliberately not collapsed (the 401 retry always signs anew) and the response interceptor forces one on any 401, so a burst of concurrent requests produces a burst of racers, each failure triggering another refresh — self-amplifying rather than self-correcting. The challenge now lives in a local for the lifetime of the refresh, so the signature and the challenge sent with it always come from the same one; the instance field had no other reader and is gone.
+
+  The window is microseconds when signing in-process with `privateKey` and a full round-trip when using an external `signer`, so HSM- and KMS-backed clients were hit hardest. Applications passing an explicit `challenge` in `authFormData` were never affected, since the assignment was then idempotent — that was also the workaround. Note this is the auth-challenge signature, not the request-body signature: unlike [#223](https://github.com/florent-uzio/custody.js/issues/223) it is independent of payload shape, which is why it presented as random across unrelated operations. See [#240](https://github.com/florent-uzio/custody.js/issues/240).
+
+## 2.13.0-beta.11
+
+### Minor Changes
+
+- 5493381: Add `client.xrpl.findElGamalPublicKey` and `client.xrpl.getElGamalPublicKeyAndWait`, so a cMPT flow can both wait for a provisioned ElGamal key to become readable and check whether one already exists.
+
+  `getElGamalPublicKeyAndWait(address, options?)` polls until the key is readable, then throws — the same `fetch`/`poll`/`wait` ladder `getMptIssuanceIdAndWait` already follows, with the same defaults (10 attempts, 3s apart). The vault writes the key some time _after_ the `provisionElGamalKeyPair` intent reports `Executed`, so `getElGamalPublicKey` called straight after `intents.getAndWait` legitimately finds nothing and throws `No ElGamal key provisioned for account …`. This waits that gap out instead of the caller sleeping for a fixed guess. The address is resolved once, before the loop, so the polling costs one account read per attempt and not two.
+
+  `findElGamalPublicKey(address, options?)` returns `string | undefined` instead of throwing when no key is provisioned. An account can only be provisioned once per ledger — a second `provisionElGamalKeyPair` is rejected with `ElGamal key already provisioned for account <id> on ledger <id>` — so any script that may run twice against the same accounts has to establish first whether the key is already there. That question was previously unanswerable without catching `getElGamalPublicKey`'s error and guessing which failures mean "absent"; `findElGamalPublicKey` reports absence for the key alone, and still throws for an invalid address, an ambiguous lookup or a non-Vault account. The `find` / `get` pair mirrors `accounts.findByAddress` / `findByAddressOrThrow`.
+
+  `getElGamalPublicKey` is unchanged — one read, throws when there is no key. Its documentation, and `provisionElGamalKeyPair`'s, now point at the two siblings and state that provisioning is once-per-ledger.
+
+  `WaitForElGamalPublicKeyOptions` (the disambiguation of `GetElGamalPublicKeyOptions` plus `maxRetries` / `intervalMs` / `onAttempt`) and `GetElGamalPublicKeyOptions` itself are now exported from the package root, which the latter was not.
+
+- a08f137: Add `client.transactions.byOrderAndWait({ domainId, transactionOrderId }, options)`, which waits for the transaction a transaction order produced and reports whether the ledger accepted it.
+
+  This is the wait the SDK was missing between the two it already had. `intents.getAndWait` tells you custody accepted the order; `xrpl.getMptIssuanceIdAndWait` waits past the transaction-registration gap to read one specific field off the result. Neither answers "did the order's transaction actually land?" — which is the question every step of a multi-transaction flow has to answer before starting the next one, because an intent reporting `Executed` does not mean anything is on chain yet. It is the call to reach for straight after `intents.getAndWait`.
+
+  Two things can go wrong after an intent executes, and the result covers both. Custody can fail to prepare or broadcast the transaction, which surfaces as `processing.status: "Failed"` carrying a hint — `InvalidUserPayload` for an operation the service could not build, `InvalidAmount`, `LockedDestination`, and so on. Or the transaction reaches the ledger and the ledger throws it out, which surfaces as `ledgerTransactionData.failure` of `FailedOnChain` or `PartiallyFailedOnChain` — and that case is why `isSuccess` is not simply `status === "Completed"`: custody reports `Completed` once it is done with the transaction, including transactions the ledger rejected. An on-chain failure is also treated as terminal in its own right, so the wait does not keep polling a rejected transaction until custody's processing status catches up.
+
+  It returns rather than throws, following `intents.getAndWait`: `{ status, isTerminal, isSuccess, transaction }`, where `isSuccess` means completed _and_ accepted — the state a caller can safely build the next transaction on. The failure detail stays structured on the returned `transaction` (`processing.hint`, `processing.cause`, `processing.reason`, `ledgerTransactionData.failure`) instead of being flattened into an error message, so callers that want to branch on it do not have to catch and parse. Retries are on the caller's budget: `maxRetries` (default 10), `intervalMs` (default 3000), and an `onStatusCheck(status, attempt)` callback, whose `status` is `undefined` on an attempt where no transaction was registered yet. Exhausting the attempts returns `isTerminal: false` with the last state observed, and `transaction: undefined` when custody had registered none at all — which is what tells "this order never produced a transaction" apart from "it produced one that is still in flight".
+
+  One subtlety it handles that hand-rolled versions of this loop tend to miss: an order can map to more than one transaction. When custody replaces a transaction — a fee-bumped resubmission, say — the superseded attempt stays in the collection under the same `orderReference.Id`, marked `Replaced`. Reading the first item back can therefore report the outcome of an attempt that no longer counts, and a replaced attempt already sitting at `Completed` will happily be mistaken for a landed one. The lookup drops the `Replaced` rows and takes the newest of the rest by `registeredAt`, sorted client-side so the choice does not depend on the endpoint's default ordering.
+
+  The transaction order ID is the intent payload ID, so pass an explicit `options.payloadId` to `xrpl.proposeIntent` — the default is a fresh UUID the caller never sees, and without it there is no handle to wait on. Exports `WaitForTransactionOptions`, `WaitForTransactionResult`, `Core_TransactionProcessingStatus`, and the `TERMINAL_TRANSACTION_STATUSES` / `PENDING_TRANSACTION_STATUSES` arrays, mirroring what the intents namespace exports for intent statuses.
+
+### Patch Changes
+
+- bb3d63a: Name the `quarantineStatus` filter as the likely cause when a request fails with a bare `500 Internal server error`. Some Ripple Custody versions answer any transfers query carrying `quarantineStatus` with an internal error, even though the parameter is declared in every bundled OpenAPI spec — so `client.transactions.transfers({ domainId }, { quarantineStatus: "Quarantined" })` fails with nothing to go on, and the filter responsible has to be found by bisecting the query. The `hint` on `CustodyError` now points at it, and at the substitute: filtering on the deprecated `quarantined` boolean returns the same rows for `Quarantined` (`quarantined: true`).
+
+  The parameter is not rewritten automatically. `Core_QuarantineStatus` has three values and the boolean has two, so only `Quarantined` has an exact equivalent — `quarantined: false` conflates `Released`, `Skipped` and the `null` the API returns on fee transfers — and silently substituting it would turn a loud 500 into wrong data for a caller filtering on `Skipped`. The hint fires only on a `500` whose request actually carried the parameter, and hedges on which server versions are affected, since only devbox `1.36.2` was observed. See [#238](https://github.com/florent-uzio/custody.js/issues/238).
+
+## 2.13.0-beta.10
+
+### Minor Changes
+
+- 10d5935: Take an XRPL address in `client.xrpl.getElGamalPublicKey` instead of a resolved `{ domainId, accountId, ledgerId }` triple.
+
+  `client.xrpl.getElGamalPublicKey(address, options?)` now resolves the domain, account and ledger from the r-address itself, the same way `provisionElGamalKeyPair`, `proposeIntent` and `rawSign` already do — so provisioning a key and reading it back take the identical argument, and callers no longer have to look an account ID up through `client.accounts.findByAddress` first just to name the account they already have an address for. The ledger the key is read from is the one the address resolved to, which is also the ledger the intent provisioned it on.
+
+  Both `getElGamalPublicKey` and `provisionElGamalKeyPair` now validate the address with `isValidAddress` from xrpl.js before any request goes out, as `rawSignAndWait` and `signBatchPayload` already do for the addresses they take — a typo fails with `Invalid address: <value>` rather than as an account-not-found from the lookup endpoint, and the two cMPT methods reject the same inputs instead of one failing locally and the other at the API.
+
+  `options.domainId` and `options.ledgerId` disambiguate: they are only needed when the address is registered more than once — across domains under the same login, or on several ledgers (`xrpl` vs `xrpl-testnet-august-2024`) — in which case the address lookup throws and names the option to pass, rather than silently picking a match. A missing ElGamal key still throws a `CustodyError`, now naming the address alongside the account and ledger.
+
+  This is a breaking change to the method's signature: `getElGamalPublicKey({ domainId, accountId, ledgerId })` becomes `getElGamalPublicKey(address, { domainId?, ledgerId? })`, and the exported `GetElGamalPublicKeyParams` type is replaced by `GetElGamalPublicKeyOptions`. The trade-off is one extra address-resolution round-trip per call, which is what every other address-taking method on the namespace already pays.
+
+- 9f8cb23: Take an XRPL address in `client.xrpl.getPublicKey` instead of a resolved `{ domainId, accountId }` pair.
+
+  `client.xrpl.getPublicKey(address, options?)` now resolves the domain and account from the r-address itself, the same way `proposeIntent`, `rawSign`, `provisionElGamalKeyPair` and `getElGamalPublicKey` already do — so reading an account's signing key takes the same argument as every other address-taking method on the namespace, and callers no longer have to look an account ID up through `client.accounts.findByAddress` first just to name an account they already have an address for.
+
+  The address is validated with `isValidAddress` from xrpl.js before any request goes out, so a typo fails with `Invalid address: <value>` rather than as an account-not-found from the lookup endpoint.
+
+  `options.domainId` and `options.ledgerId` disambiguate: they are only needed when the address is registered more than once — across domains under the same login, or on several ledgers (`xrpl` vs `xrpl-testnet-august-2024`) — in which case the address lookup throws and names the option to pass, rather than silently picking a match.
+
+  This is a breaking change to the method's signature: `getPublicKey({ domainId, accountId })` becomes `getPublicKey(address, { domainId?, ledgerId? })`, with a new exported `GetPublicKeyOptions` type. The trade-off is one extra address-resolution round-trip per call, which is what every other address-taking method already pays. `rawSignAndWait`, `signBatchPayload` and `signBatchPayloadAndWait` read the key off the context they have already resolved, so they make no additional call.
+
+- 66d3565: Fix `client.xrpl.dryRunBatch` ignoring `options.ledgerId`, and apply the XRPL address guard uniformly across the namespace.
+
+  **`dryRunBatch` dropped `ledgerId`.** Step 1 of the XLS-56 Batch flow resolved the submitter with `{ domainId }` alone while `proposeBatch` (Step 3) resolved it with `{ domainId, ledgerId }`. Since `ledgerId` is what disambiguates an address registered on more than one ledger, and the resolved ledger lands in the transaction order payload, a submitter present on both `xrpl` and `xrpl-testnet-august-2024` could have its dry-run signing data computed against a different ledger than the batch was ultimately submitted to — or fail the lookup as ambiguous at Step 1 while succeeding at Step 3. Both steps now pass the same disambiguation.
+
+  **The address guard is now a real precondition everywhere.** `proposeIntent`, `rawSign`, `dryRunBatch` and `proposeBatch` did not validate the XRPL address they were given, so a typo surfaced as an account-not-found from the lookup endpoint (or, for the batch methods, after a version-detection round-trip) rather than as an immediate `Invalid address`. They now validate before any network call, matching `getPublicKey`, `getElGamalPublicKey`, `provisionElGamalKeyPair`, `rawSignAndWait` and `signBatchPayload`.
+
+  The messages are unified on `Invalid <label>: <value>`, where the label names the offending parameter only when it is not simply the address. One message changes: `rawSignAndWait`'s `signerAccount` check now reports `Invalid signerAccount: <value>` instead of `Invalid signerAccount address: <value>`. `Invalid address: <value>` and `Invalid signerAddress: <value>` are unchanged.
+
+  Callers passing malformed addresses to `proposeIntent`, `rawSign`, `dryRunBatch` or `proposeBatch` will now see a `CustodyError` earlier and from a different origin than before — the request never leaves the SDK.
+
+  Internally, `XrplService` is regrouped by concern (intents, keys, MPT issuance, raw signing, batch) with each private helper placed under the group that owns it, and the duplicated retry loop behind `getMptIssuanceIdAndWait` and `pollManifestSignature` is now a single `pollUntil` helper. No public behaviour changes from either.
+
+### Patch Changes
+
+- cb1ebd2: Fix `parametersComputeToCryptographicFields` mangling optional fields the parameters-compute response returns as `null`. The API sends an explicit `null` — not an omitted key — for material it has no value for, most visibly `auditorEncryptedAmount` when the issuance has no auditor key registered. The generated types declare those fields as merely optional, so the helper's `undefined`-only checks let a `null` through to the hex→base64 conversion and emitted the field as an empty string, which the API then rejects.
+
+  Every optional field in the helper — `senderEncryptedBalance`, `senderEncryptedBalanceVersion`, `auditorEncryptedAmount` on `Send`, `zkProof` and `auditorEncryptedAmount` on `Convert`, `auditorEncryptedAmount` on `ConvertBack` — is now omitted when it is `null` as well as when it is absent. The variant inference is null-aware for the same reason: a `null` `senderEncryptedAmount`, `amount`, `holderEncryptedAmount` or `balanceCommitment` no longer selects a variant just by being a present key, so a `Convert` response that spells out `balanceCommitment: null` is no longer read as a `ConvertBack`. A Clawback `amount` of `0` still discriminates. Values that are actually present convert exactly as before.
+
+## 2.13.0-beta.9
+
+### Minor Changes
+
+- 9c075cb: Add the three `client.xrpl` methods and the encoding adapter a confidential MPT (cMPT) flow needed but had to hand-roll.
+
+  `client.xrpl.provisionElGamalKeyPair(address, options)` proposes the `v0_ProvisionElGamalKeyPair` intent every cMPT participant — issuer, senders, receivers, and the auditor when one is configured — must have executed before any confidential operation is accepted. It is its own intent type rather than a transaction order, so unlike `proposeIntent` it takes no fee strategy and no payload ID; the usual `domainId` / `ledgerId` / `requestId` / `description` options apply. Without it, callers had to assemble the `Propose` envelope (author, expiry, target domain) by hand against `client.intents.propose`.
+
+  `client.xrpl.getElGamalPublicKey({ domainId, accountId, ledgerId })` reads that key back from the account's `providerDetails.purposeKeys`, returning the base64 value `MPTokenIssuanceSet` takes as `issuerEncryptionKey` and `auditorEncryptionKey` — no re-encoding. An account holds one ElGamal key per ledger, hence the `ledgerId`; a missing key throws a `CustodyError` naming the account and ledger rather than returning `undefined`, since the calling code has nothing to do without it.
+
+  `client.xrpl.getMptIssuanceId({ domainId, payloadId })` resolves the MPT issuance ID an executed `MPTokenIssuanceCreate` minted, from the payload ID of its transaction order — it looks the transaction up by `orderReference.Id`, then fetches that transaction by ID and reads the issuance off its XRPL ledger data. Two calls rather than one because the collection endpoint returns a lighter projection that omits `ledgerTransactionData.ledgerData` — the issuance ID only appears on the per-transaction detail response. The ID is minted by the ledger, so wait for the intent to execute first; pass an explicit `options.payloadId` to `proposeIntent`, since the default is a fresh UUID the caller never sees. `XrplPorts` gains matching `listTransactions(domainId, query)` and `getTransaction(domainId, transactionId)` ports, which is a breaking change for anyone implementing that interface by hand rather than using `createHttpPorts`.
+
+  `client.xrpl.getMptIssuanceIdAndWait({ domainId, payloadId }, options)` is the polling form of the same lookup, and the one to reach for straight after `intents.getAndWait`. Custody registers the transaction an order produced — then fills in its XRPL ledger data — some time _after_ the intent reports `Executed`, so the non-polling call legitimately finds nothing at that point. It retries on the caller's budget (`maxRetries`, default 10; `intervalMs`, default 3000; plus an `onAttempt` callback) and, like its sibling, throws a `CustodyError` on exhaustion rather than returning `undefined` — it reports which of the two not-ready states the last attempt hit, which a bare `undefined` would throw away, and there is no branch a caller could usefully take without the ID.
+
+  `parametersComputeToCryptographicFields(fields)` re-encodes what a parameters computation returns into what a confidential operation carries. `GET .../parameters-compute/{computeId}` returns every field **hex**-encoded while `Core_CmptCryptographicFields` is **base64**, so the response cannot be spliced into a `ConfidentialMPTSend` as-is. The compute response also carries no `type` discriminator where the operation's union requires one, so the adapter infers the variant from the fields present — `senderEncryptedAmount` means `Send`, a numeric `amount` means `Clawback`, a `balanceCommitment` alongside `holderEncryptedAmount` means `ConvertBack`, `holderEncryptedAmount` alone means `Convert` — and throws a `CustodyError` naming the observed keys when the shape matches none of them. One field has no counterpart in the output on purpose: a Batch entry's _top-level_ `senderEncryptedBalance` stays hex, so it is passed through at the call site rather than silently re-encoded. Exports `Core_ApiParametersComputeCryptographicFields` and `Core_CmptCryptographicFields` for the two ends of that conversion.
+
+  Worth knowing before reaching for that adapter: on a standalone `ConfidentialMPTSend` or `ConfidentialMPTClawback`, `cryptographicFields` is derived by the platform and should be omitted entirely. It is only supplied by hand inside a Batch, where the submitter cannot compute proofs for another participant — which is the case the adapter exists for.
+
+## 2.13.0-beta.8
+
+### Patch Changes
+
+- 4dedfaf: Fix `client.accounts.initiateParametersCompute()` and `client.accounts.initiateParametersComputeAndWait()`, which failed with `400 Invalid value for: body (Missing required field at 'type')` for every possible input. The API requires the request union's `type` discriminator, but — alone among the spec's single-member sealed unions — this schema does not declare its mapping, so the generated body type omits the field and there was no way to call the endpoint as typed. Both methods now inject `type: "cmpt-send"` before POSTing, so the field never has to be supplied; `InitiateParametersComputeBody` carries it as an optional property typed by the new `ParametersComputeType` export, and a caller-supplied value is preserved for when the union gains a second member. The override goes away once the spec declares the discriminator.
+
+  Also surface the API's reason when an error response has a `text/plain` body instead of the usual JSON error shape — the second half of the same bug report, and what made the above take a while to diagnose. Only object bodies were preserved, so the validation text was discarded and the caller saw axios's generic `POST API request failed: Request failed with status code 400`, with the real reason only reachable by unwrapping `error.cause.response.data` by hand. String bodies are now used as the `CustodyError` reason, keeping the existing `<VERB> API request failed:` prefix so log greps still match; a blank body still falls back to the axios message. This affects every endpoint that declares a `text/plain` error response, which is where the most useful validation text lives.
+
+  See [#229](https://github.com/florent-uzio/custody.js/issues/229).
+
+## 2.13.0-beta.7
+
+### Minor Changes
+
+- cca44c3: Update the bundled devbox OpenAPI spec `1.36.2` to the current build, which replaces the cMPT compute endpoint with a generalised **parameters compute** one: `POST /v1/domains/{domainId}/accounts/{accountId}/cmpt-compute` and its status endpoint are gone, superseded by `.../parameters-compute` (operationIds `initiateParametersCompute` / `getParametersComputeStatus`). The SDK follows the API, so the four beta-only methods added in `2.13.0-beta.0` are renamed — `client.accounts.initiateCmptCompute` → `initiateParametersCompute`, `getCmptComputeStatus` → `getParametersComputeStatus`, `getCmptComputeStatusAndWait` → `getParametersComputeStatusAndWait`, `initiateCmptComputeAndWait` → `initiateParametersComputeAndWait` — along with their types (`CmptComputeStatus` → `ParametersComputeStatus`, `WaitForCmptComputeOptions` / `WaitForCmptComputeResult` → `WaitForParametersComputeOptions` / `WaitForParametersComputeResult`, `Core_ApiInitiateCmptComputeResponse` → `Core_ApiInitiateParametersComputeResponse`, `Core_ApiCmptComputeStatusResponse` → `Core_ApiParametersComputeStatusResponse`) and the exported `TERMINAL_CMPT_COMPUTE_STATUSES` → `TERMINAL_PARAMETERS_COMPUTE_STATUSES`. No aliases are kept: the old names pointed at endpoints the backend no longer serves. Behaviour, options and return shapes are otherwise unchanged.
+
+  Two request/response changes ride along. The initiate response now returns the computation id as `id` rather than `cmptComputeId` — `initiateParametersComputeAndWait` reads the new field, so callers that only use the `*AndWait` helpers are unaffected. The initiate body is now a `oneOf` whose only member is the cMPT send request, in which `destination` is required rather than optional.
+
+  The spec also adds `ConfidentialMPTClawback`: a `Core_XrplOperation_ConfidentialMPTClawback` transaction operation with `Core_CmptCryptographicFields_Clawback`, plus a `Clawback` member of the compute's `cryptographicFields` union. Both are typed and flow through `client.intents.propose()` / `client.transactions.dryRun()` with no new API. `batchToCustodyInnerTransactions` and `batchToCustodyBatchPayload` still reject a `ConfidentialMPTClawback`, because the API's `Core_BatchInnerOperation` union does not accept one — a clawback can only be proposed as a standalone transaction, not as a Batch inner transaction.
+
+### Patch Changes
+
+- 073d15d: Bundle the official OpenAPI specs for `1.34.11`, `1.34.12`, `1.34.13`, `1.39.0` and `1.39.2`, and regenerate the types. These five releases add no endpoints and no schemas — the API surface of `1.39.2` is identical to `1.38.0`, and the three `1.34.x` patches are identical to `1.34.10` — so there are no new namespaces or methods. `client.capabilities` now recognises the five versions.
+
+  Two changes ride along in the generated types, both from `1.39.x`. `Core_Balance.totalAmount` and `Core_Balance.availableAmount` dropped their `minimum: 0` constraint and are now documented as "can be negative, zero, or positive"; the TypeScript type is unchanged (`string`), but code that assumed balances are never negative should be revisited. Nine already-deprecated fields also gained a `Deletion target: Mar. 31st 2027` note in their JSDoc — among them all of `Core_ApiTicker`, `Core_Approve.expiryAt` / `Core_Reject.expiryAt`, `Core_LedgerTransactionData.blockTime`, `Core_SenderTransferParty_Account.addresses` / `Core_RecipientTransferParty_Account.address`, `Core_TransactionOrderParameters_XRPL.amount` and `destinationTag`, and the `ledgerId` of `Core_v0_CreateAccount` / `Core_v0_UpdateEndpoint`.
+
+## 2.13.0-beta.6
+
+### Minor Changes
+
+- ceb67ef: Add `client.internal.cbInDecryption` — the first namespace on the **internal** API surface (ADR-0007) — wrapping the two CB_IN inbox balance decryption endpoints for confidential MPT (cMPT) accounts: `POST /internal/v1/cmpt-cb-in` and `GET /internal/v1/cmpt-cb-in/{requestId}`. Methods: `initiate`, `getStatus`, plus `getStatusAndWait` / `initiateAndWait`, which poll to a terminal status (`Completed` / `Failed`) exactly like their `client.accounts.*CmptCompute*` counterparts — same `maxRetries` / `intervalMs` / `onStatusCheck` options, and a 404 while the request materializes is retried rather than thrown. `decryptedAmount` is populated on the returned status once the decryption reaches `Completed`.
+
+  Everything under `client.internal.*` targets the instance's internal API rather than the customer-facing one: types come from `src/models/custody-internal-types.ts`, paths from the new `InternalURLs` map (`src/constants/internal-urls.ts`, typed against the internal document and deliberately non-exhaustive), and every call passes `surface: "internal"` — plus `sign: false` on writes, since no internal request body carries a signed envelope. Consequently these endpoints are only version-gated on instances that serve the internal OpenAPI document; elsewhere the guard fails open for that surface and the backend decides. They back internal tooling and are not covered by the public API's compatibility promises.
+
+## 2.13.0-beta.5
+
+### Minor Changes
+
+- b7e61b1: Add an **internal API surface** to the OpenAPI type-generation pipeline (ADR-0007). Bundled specs are now organized by two orthogonal axes: **channel** (provenance — `openapi/official/`, `openapi/devbox/`, unchanged from ADR-0005) and **surface** (which API the spec describes — a spec at a channel root is `public`, one under `openapi/<channel>/internal/` is `internal`). The internal API (`/internal/v1/…`, `Internal_*` schemas) is disjoint from the public one in both paths and schemas, but reuses some of its `operationId`s (`getUsers`, `getAllEvents`), so each surface is merged into its own document and emitted as its own types file: `src/models/custody-types.ts` for public (output unchanged) and the new `src/models/custody-internal-types.ts` for internal. Within a surface the official-authoritative / devbox-additive merge rules are unchanged. The offline capability dataset stays official-only but now **unions both surfaces of a release** into one `x-app-version` entry, so an official internal spec dropped into `openapi/official/internal/` gates its endpoints under an `apiVersion` pin with no code change; the duplicate-version guard still fires per surface. Bundles the devbox `1.36.2` internal spec at `openapi/devbox/internal/openapi-1-36-2-internal.json`.
+
+  Gating is now **per surface**. `TypedTransport` checks every call against the version guard, so without this the guard would reject every internal endpoint as unsupported the moment it became active — none of them appears in a public spec. `ResolvedCapabilities` (and each `capabilities.generated.ts` entry) now records the `surfaces` it actually describes, and the guard returns early for a surface it never enumerated — the same fail-open philosophy it already applies when no version resolves at all, narrowed to one surface. Auto-detection fetches the instance's internal document from `<apiUrl>/api/OpenAPI?scope=internal&layout=` concurrently with the public one and unions the two; the internal fetch is best-effort, so an instance that doesn't expose it simply resolves to `surfaces: ["public"]`. Detection is skipped when `apiVersion` is pinned or a custom `specSource` is supplied, and no new client option is introduced. Call sites opt in via `RequestConfig.surface`, which is stripped before the config reaches axios.
+
+  No public API change: `custody-internal-types.ts` is not re-exported from the client, `apiVersion` still enumerates official releases only, and the `client.internal.*` namespaces that consume all of this will land in follow-up releases.
+
+## 2.13.0-beta.4
+
+### Minor Changes
+
+- 9175c5a: Add a `debug` client option that logs every HTTP exchange the SDK makes, so a failing call can be diagnosed without patching the SDK or attaching a proxy. Both HTTP clients are covered — the API client and the auth token endpoint, the latter being where signature failures actually surface — and each request is paired with its response or error, carrying the status, round-trip duration and error body.
+
+  `debug: true` writes to `console.error` (stderr, so diagnostics never mix into a program's stdout, which callers may be piping). Passing a `CustodyDebugLogger` instead routes the structured events into your own logger, for filtering or reshaping: it receives a `CustodyDebugEvent` discriminated on `kind` (`"request"`, then exactly one `"response"` or `"error"`) and tagged with `client` (`"api"` or `"auth"`). The logger is called synchronously on the request path, and one that throws is ignored rather than allowed to fail the request. Exports `CustodyDebugEvent`, `CustodyDebugLogger`, `CustodyDebugClient` and `CustodyHttpMethod` (the uppercased verb, narrowed from plain `string` to the five verbs the SDK issues plus any future string, following the same pattern as `CmptComputeStatus` and `LedgerId`).
+
+  Credentials are always masked, in both forms — the `Authorization` request header and the `access_token` / `id_token` / `refresh_token` response fields — so events are safe to write wherever the rest of an application's logs go. Everything else is verbatim, including the auth request's `signature`, which is bound to a single challenge and is the thing you need when debugging a signature mismatch. Failures raised inside the request interceptor chain (a token request that never succeeded) emit nothing, since nothing went on the wire and the underlying cause is already logged on the auth client.
+
+## 2.13.0-beta.3
+
+### Patch Changes
+
+- c2d89c0: Refresh the vendored [`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts) builds from commit `63af7e9` to `031913c`, and bundle `@xrplf/mpt-crypto` alongside `xrpl` and `ripple-binary-codec`. Neither vendored package bumps its version upstream (`xrpl` is still `5.0.0`, `ripple-binary-codec` still `2.8.0`), so this is a contents-only refresh with no change to the SDK's own API. `@xrplf/mpt-crypto` (the WASM proof/ElGamal package) has to be vendored now because `xrpl` declares it as a plain dependency at `^0.1.0` rather than an optional peer dependency, and it is not published on the npm registry — without the bundle, installing this package would fail to resolve it. All three are pinned through `overrides` and packed via `bundleDependencies`, which grows the published package from ~3.6 MB to ~5.2 MB. See `vendor/README.md`.
+
+  The refreshed `ripple-binary-codec` definitions rename the `MPTokenIssuanceCreate` / `MPTokenIssuanceSet` `MutableFlags` field to `ImmutableFlags` and drop the `MPTokenIssuanceMutable` ledger-entry flag map, so confidential MPT transactions now serialize against the current devbox rippled rather than the older field name. Per XLS-0094, `xrpl`'s separate `MPTokenIssuanceSetMutableFlags` (`tmfMPT*`) enum is also gone, folded into `MPTokenIssuanceSetFlags` as `tfMPTSetCanLock` (4) through `tfMPTSetCanClawback` (128). The three flag values `client.xrpl`'s adapters read numerically are unaffected — `tfMPTLock` (1), `tfMPTUnlock` (2) and `tfMPTSetCanHoldConfidentialBalance` (256) all keep their previous values — so `MPTokenIssuanceSet` operations still map to the Custody `flags` and `mutableFlags` fields as before. Applications that import `xrpl` directly and referenced `MPTokenIssuanceSetMutableFlags` will need to move those flags onto `Flags` when they update their own vendored copy.
+
+## 2.13.0-beta.2
+
+### Minor Changes
+
+- 59381b5: Surface the backend's set-reordering signature defect instead of leaving it to be investigated, and add an opt-in escape hatch for it. `CustodyError` gains a `hint` field for SDK-authored diagnostics the API's own reason does not explain, plus a `reason` field holding that API reason on its own — group or compare errors on `reason`, since a hint carries request-specific details and is also appended to `message` so it survives into stack traces. `toJSON()` now returns `reason` (no longer the hint-bearing `message`) and the new `hint`. When a signed POST fails with a `401` signature error, the hint names the array fields in the signed body holding 5+ elements (e.g. `request.payload.parameters.operation.flags`), since the API deserializes some array fields into an unordered set and re-serializes them when verifying the signature — faithful up to 4 elements, hash-ordered at 5+, which breaks verification. The SDK still signs exactly the bytes it sends (JCS preserves array order by design) and reorders nothing by default. Adds a `beforeSign` client option: a hook that reshapes a request payload just before canonicalization and signing, so applications can sort such a field into the order the backend re-emits without waiting for an SDK release. The hook is typed against the new `CustodySignedRequest` export — the union of the only three signed bodies (`Core_Propose`, `Core_Approve`, `Core_Reject`) — so narrowing on `type` gives autocomplete down to the operation. See [#223](https://github.com/florent-uzio/custody.js/issues/223).
+
+## 2.13.0-beta.1
+
+### Patch Changes
+
+- a99314f: Fix `client.accounts.initiateCmptCompute()` and `client.accounts.initiateCmptComputeAndWait()`, which threw `Failed to canonicalize request body` before sending the request. The cMPT compute endpoint takes a plain body rather than a signed envelope, so both calls now pass `{ sign: false }` and skip canonicalization/signing.
+
+## 2.13.0-beta.0
+
+### Minor Changes
+
+- 401c018: Bundle devbox OpenAPI spec `1.36.2` (replacing `1.35.0`), adding confidential MPT support. The `ConfidentialMPTConvert`, `ConfidentialMPTConvertBack`, `ConfidentialMPTMergeInbox`, and `ConfidentialMPTSend` operations, the `ConfidentialMultiPurposeToken` ticker properties, and the `MPTSetCanConfidentialAmount` mutable flag are now typed on the existing transaction operation unions, so they flow through `client.intents.propose()` and `client.transactions.dryRun()` with no new API. Adds `client.accounts.initiateCmptCompute()` and `client.accounts.getCmptComputeStatus()` for the cMPT parameter computation used to obtain a confidential transfer's `cryptographicFields`; both responses narrow the spec's plain-`string` `status` to the exported `CmptComputeStatus` union (`Pending`, `Preparing`, `Completed`, `Failed`, plus any future string). Adds `client.accounts.getCmptComputeStatusAndWait()` and `client.accounts.initiateCmptComputeAndWait()`, which poll a computation to a terminal status (`Completed` / `Failed`) and return `{ status, isTerminal, isSuccess, compute }` — the same shape as `client.intents.getAndWait()`, with `cryptographicFields` on `compute` once the status is `Completed`. Pins `xrpl` and `ripple-binary-codec` to local builds of the unreleased [`XRPLF/xrpl.js@confidential-mpts`](https://github.com/XRPLF/xrpl.js/tree/confidential-mpts) branch (see `vendor/README.md`); both are bundled into the published package, so consumers get the confidential-MPT transaction models and binary-codec definitions without any extra setup. The bundle covers the SDK's internal use only — applications that import `xrpl` directly to build confidential MPT transactions must install that branch in their own project as well (see the "Beta releases" section of the README). `MPTokenIssuanceSet` operations built by `client.xrpl` now populate the newly required `mutableFlags` field from the xrpl.js `tfMPTSetCanHoldConfidentialBalance` flag, and pass through `issuerEncryptionKey` and `auditorEncryptionKey`. `batchToCustodyInnerTransactions` and `batchToCustodyBatchPayload` now accept the four confidential MPT transaction types as Batch inner transactions; the `ConfidentialMPTSend` ciphertexts, commitments and proof are re-encoded from the XRPL hex form to the base64 form the Custody API expects.
+
 ## 2.12.0
 
 ### Minor Changes

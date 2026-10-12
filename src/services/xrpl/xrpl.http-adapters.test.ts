@@ -246,6 +246,21 @@ describe("createHttpPorts", () => {
     })
   })
 
+  describe("getIntent", () => {
+    it("gets URLs.getIntent with domainId and intentId", async () => {
+      mockTransport.get.mockResolvedValue({ data: { state: { status: "Executed" } } })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.getIntent("domain-1", "req-1")
+
+      expect(mockTransport.get).toHaveBeenCalledWith(URLs.getIntent, {
+        domainId: "domain-1",
+        intentId: "req-1",
+      })
+      expect(result).toEqual({ data: { state: { status: "Executed" } } })
+    })
+  })
+
   describe("dryRunIntent", () => {
     it("posts the body to URLs.intentsDryRun with sign: false and no path params", async () => {
       const body = { id: "intent-1" } as any as Core_IntentDryRunRequest
@@ -289,6 +304,78 @@ describe("createHttpPorts", () => {
         accountId: "acc-1",
       })
       expect(result).toEqual({ id: "account-1" })
+    })
+  })
+
+  describe("initiateParametersComputeAndWait", () => {
+    it("posts the compute unsigned with the type discriminator, then polls the status", async () => {
+      mockTransport.post.mockResolvedValue({ id: "compute-1", status: "Pending" })
+      mockTransport.get.mockResolvedValue({
+        id: "compute-1",
+        status: "Completed",
+        cryptographicFields: { senderEncryptedAmount: "aa01" },
+      })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.initiateParametersComputeAndWait(
+        { domainId: "domain-1", accountId: "acc-1" },
+        {
+          tokenIdentifier: { issuanceId: "00000C1E" },
+          amount: "1000",
+          destination: "rAddress123",
+          ledgerId: "xrpl-mainnet",
+        },
+      )
+
+      expect(mockTransport.post).toHaveBeenCalledWith(
+        URLs.accountParametersCompute,
+        {
+          type: "cmpt-send",
+          tokenIdentifier: { issuanceId: "00000C1E" },
+          amount: "1000",
+          destination: "rAddress123",
+          ledgerId: "xrpl-mainnet",
+        },
+        { domainId: "domain-1", accountId: "acc-1" },
+        { sign: false },
+      )
+      expect(mockTransport.get).toHaveBeenCalledWith(URLs.accountParametersComputeStatus, {
+        domainId: "domain-1",
+        accountId: "acc-1",
+        computeId: "compute-1",
+      })
+      expect(result.isSuccess).toBe(true)
+    })
+  })
+
+  describe("listTransactions", () => {
+    it("gets URLs.transactions with domainId and passes the query through", async () => {
+      mockTransport.get.mockResolvedValue({ items: [] })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.listTransactions("domain-1", { "orderReference.Id": "order-1" })
+
+      expect(mockTransport.get).toHaveBeenCalledWith(
+        URLs.transactions,
+        { domainId: "domain-1" },
+        { "orderReference.Id": "order-1" },
+      )
+      expect(result).toEqual({ items: [] })
+    })
+  })
+
+  describe("getTransaction", () => {
+    it("gets URLs.transaction with domainId and transactionId", async () => {
+      mockTransport.get.mockResolvedValue({ id: "tx-1" })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.getTransaction("domain-1", "tx-1")
+
+      expect(mockTransport.get).toHaveBeenCalledWith(URLs.transaction, {
+        domainId: "domain-1",
+        transactionId: "tx-1",
+      })
+      expect(result).toEqual({ id: "tx-1" })
     })
   })
 })

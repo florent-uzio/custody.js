@@ -1,5 +1,6 @@
 import type { components, operations } from "../models/custody-types.js"
 import type { LedgerId } from "../models/ledger-ids.js"
+import type { Prettify } from "../type-utils/prettify.js"
 
 // Request types
 
@@ -68,6 +69,35 @@ export type ListDepositInstructionsQueryParams =
 export type GetDepositInstructionPathParams =
   operations["deposit-instructions-by-id"]["parameters"]["path"]
 
+export type InitiateParametersComputePathParams =
+  operations["initiateParametersCompute"]["parameters"]["path"]
+
+/**
+ * Discriminator the parameters compute endpoint requires on its body. The
+ * request schema is a sealed union with a single member, and unlike every other
+ * such union in the spec it does not declare its mapping, so the generated body
+ * type omits the field and every call 400s with
+ * `Missing required field at 'type'`.
+ *
+ * TODO: remove this type and the `type` override below once the OpenAPI spec
+ * declares the discriminator — the generated type will then carry it itself.
+ */
+export type ParametersComputeType = "cmpt-send"
+
+/**
+ * `type` is optional here: `initiateParametersCompute` injects the only legal
+ * value when the caller omits it, so consumers never have to restate it. It
+ * becomes meaningful if the union ever gains a second member.
+ */
+export type InitiateParametersComputeBody = Prettify<
+  operations["initiateParametersCompute"]["requestBody"]["content"]["application/json"] & {
+    type?: ParametersComputeType
+  }
+>
+
+export type GetParametersComputeStatusPathParams =
+  operations["getParametersComputeStatus"]["parameters"]["path"]
+
 // Response types
 
 export type Core_AccountsCollection =
@@ -113,6 +143,74 @@ export type Core_TrustedDepositInstructionsCollection =
 
 export type Core_TrustedDepositInstructions =
   operations["deposit-instructions-by-id"]["responses"]["200"]["content"]["application/json"]
+
+/**
+ * Statuses returned by the parameters compute endpoints. `Pending` and
+ * `Preparing` are transient; `Completed` and `Failed` are terminal
+ * (`cryptographicFields` is only populated on `Completed`).
+ *
+ * Trailing `(string & {})` keeps the union assignable from any string, so the
+ * SDK never blocks consumers when the API adds a new status.
+ *
+ * TODO: remove this type and drop the `status` overrides below once the
+ * OpenAPI spec declares the enum — the generated type will then carry the
+ * literals itself.
+ */
+export type ParametersComputeStatus =
+  "Pending" | "Preparing" | "Completed" | "Failed" | (string & {})
+
+export type Core_ApiInitiateParametersComputeResponse = Prettify<
+  Omit<
+    operations["initiateParametersCompute"]["responses"]["200"]["content"]["application/json"],
+    "status"
+  > & { status: ParametersComputeStatus }
+>
+
+export type Core_ApiParametersComputeStatusResponse = Prettify<
+  Omit<
+    operations["getParametersComputeStatus"]["responses"]["200"]["content"]["application/json"],
+    "status"
+  > & { status: ParametersComputeStatus }
+>
+
+/** Statuses that indicate the parameters computation has finished processing */
+export const TERMINAL_PARAMETERS_COMPUTE_STATUSES: ParametersComputeStatus[] = [
+  "Completed",
+  "Failed",
+]
+
+/**
+ * Options for waiting for a parameters computation to finish.
+ */
+export type WaitForParametersComputeOptions = {
+  /**
+   * Maximum number of polling attempts (default: 10). Also bounds how long a
+   * not-yet-available (404) computation is waited for, since 404s are retried
+   * within the same loop.
+   */
+  maxRetries?: number
+  /** Interval between polling attempts in milliseconds (default: 3000) */
+  intervalMs?: number
+  /**
+   * Callback function called on each status check.
+   * Useful for logging or updating UI.
+   */
+  onStatusCheck?: (status: ParametersComputeStatus, attempt: number) => void
+}
+
+/**
+ * Result of waiting for a parameters computation to finish.
+ */
+export type WaitForParametersComputeResult = {
+  /** The final status of the computation */
+  status: ParametersComputeStatus
+  /** Whether the computation reached a terminal status */
+  isTerminal: boolean
+  /** Whether the computation completed successfully */
+  isSuccess: boolean
+  /** The full status response — `cryptographicFields` is populated on `Completed` */
+  compute: Core_ApiParametersComputeStatusResponse
+}
 
 /**
  * Optional filters for {@link findByAddress} / {@link findByAddressOrThrow}.

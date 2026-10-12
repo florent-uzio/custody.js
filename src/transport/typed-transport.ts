@@ -5,6 +5,20 @@ import { splitParams } from "./split-params.js"
 import type { RequestConfig, Transport } from "./transport.types.js"
 
 /**
+ * Strips the SDK-only keys from a request config before it reaches axios.
+ * `surface` is consumed by the version guard; `sign` is consumed by ApiService,
+ * which destructures it itself.
+ */
+function toAxiosConfig(
+  config?: RequestConfig,
+): (AxiosRequestConfig & { sign?: boolean }) | undefined {
+  if (!config) return undefined
+  const rest: RequestConfig = { ...config }
+  delete rest.surface
+  return rest as AxiosRequestConfig & { sign?: boolean }
+}
+
+/**
  * A typed transport layer that wraps ApiService, handling URL template
  * interpolation and path/query parameter splitting automatically.
  *
@@ -26,7 +40,7 @@ export class TypedTransport implements Transport {
     query?: unknown,
     config?: RequestConfig,
   ): Promise<T> {
-    await this.guard.checkEndpoint("GET", url)
+    await this.guard.checkEndpoint("GET", url, undefined, config?.surface)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -39,7 +53,7 @@ export class TypedTransport implements Transport {
     return this.api.get<T>(
       resolvedUrl,
       query as AxiosRequestConfig["params"],
-      config as AxiosRequestConfig,
+      toAxiosConfig(config),
     )
   }
 
@@ -53,9 +67,9 @@ export class TypedTransport implements Transport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
-    await this.guard.checkEndpoint("POST", url)
+    await this.guard.checkEndpoint("POST", url, undefined, config?.surface)
     let resolvedUrl = url
-    let mergedConfig = config as (AxiosRequestConfig & { sign?: boolean }) | undefined
+    let mergedConfig = toAxiosConfig(config)
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
       resolvedUrl = result.url
@@ -80,9 +94,9 @@ export class TypedTransport implements Transport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
-    await this.guard.checkEndpoint("PUT", url)
+    await this.guard.checkEndpoint("PUT", url, undefined, config?.surface)
     let resolvedUrl = url
-    let mergedConfig = config as AxiosRequestConfig | undefined
+    let mergedConfig = toAxiosConfig(config)
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
       resolvedUrl = result.url
@@ -107,9 +121,9 @@ export class TypedTransport implements Transport {
     pathParams?: Record<string, unknown>,
     config?: RequestConfig,
   ): Promise<T> {
-    await this.guard.checkEndpoint("PATCH", url)
+    await this.guard.checkEndpoint("PATCH", url, undefined, config?.surface)
     let resolvedUrl = url
-    let mergedConfig = config as AxiosRequestConfig | undefined
+    let mergedConfig = toAxiosConfig(config)
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
       resolvedUrl = result.url
@@ -134,7 +148,7 @@ export class TypedTransport implements Transport {
     query?: unknown,
     config?: RequestConfig,
   ): Promise<T> {
-    await this.guard.checkEndpoint("DELETE", url)
+    await this.guard.checkEndpoint("DELETE", url, undefined, config?.surface)
     let resolvedUrl = url
     if (pathParams && Object.keys(pathParams).length > 0) {
       const result = splitParams(url, pathParams)
@@ -144,7 +158,7 @@ export class TypedTransport implements Transport {
       }
     }
     return this.api.delete<T>(resolvedUrl, {
-      ...(config as AxiosRequestConfig),
+      ...toAxiosConfig(config),
       params: query as AxiosRequestConfig["params"],
     })
   }

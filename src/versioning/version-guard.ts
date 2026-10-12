@@ -5,6 +5,13 @@ import { CustodyError } from "../models/index.js"
 export type CapabilityKind = "endpoint" | "feature"
 
 /**
+ * Which of the instance's two APIs a call targets (ADR-0007). Defaults to
+ * `"public"` everywhere; only the `client.internal.*` namespaces pass
+ * `"internal"`.
+ */
+export type ApiSurface = "public" | "internal"
+
+/**
  * The capability set the guard checks against: the endpoints and component
  * schemas a single resolved backend version exposes.
  */
@@ -15,6 +22,14 @@ export type ResolvedCapabilities = {
   endpoints: ReadonlySet<string>
   /** Feature capabilities: the names of component schemas the version defines. */
   schemas: ReadonlySet<string>
+  /**
+   * Which surfaces these capabilities actually describe. A call against a
+   * surface that is **not** listed cannot be judged — its endpoints were never
+   * enumerated — so the guard fails open for it rather than reporting every one
+   * of them as unsupported. Public and internal paths are disjoint, so
+   * `endpoints`/`schemas` stay flat unions across the resolved surfaces.
+   */
+  surfaces: ReadonlySet<ApiSurface>
 }
 
 /**
@@ -72,6 +87,7 @@ export function resolveExplicitCapabilities(apiVersion: string): ResolvedCapabil
     appVersion: apiVersion,
     endpoints: new Set(entry.endpoints),
     schemas: new Set(entry.schemas),
+    surfaces: new Set(entry.surfaces),
   }
 }
 
@@ -153,9 +169,14 @@ export class VersionGuard {
   }
 
   /** Resolves (detecting if needed) then asserts the endpoint capability. */
-  async checkEndpoint(httpMethod: string, pathTemplate: string, sdkMethod?: string): Promise<void> {
+  async checkEndpoint(
+    httpMethod: string,
+    pathTemplate: string,
+    sdkMethod?: string,
+    surface: ApiSurface = "public",
+  ): Promise<void> {
     if (await this.gatingActive()) {
-      this.assertEndpoint(httpMethod, pathTemplate, sdkMethod)
+      this.assertEndpoint(httpMethod, pathTemplate, sdkMethod, surface)
     }
   }
 
@@ -197,9 +218,17 @@ export class VersionGuard {
   /**
    * Asserts the resolved version serves `METHOD /pathTemplate`.
    * @param sdkMethod - Label for the error (defaults to the HTTP descriptor).
+   * @param surface - The API surface the call targets; a surface the resolved
+   *   capabilities do not cover fails open (ADR-0007).
    */
-  assertEndpoint(httpMethod: string, pathTemplate: string, sdkMethod?: string): void {
+  assertEndpoint(
+    httpMethod: string,
+    pathTemplate: string,
+    sdkMethod?: string,
+    surface: ApiSurface = "public",
+  ): void {
     if (!this.resolved) return
+    if (!this.resolved.surfaces.has(surface)) return
     const capability = `${httpMethod.toUpperCase()} ${pathTemplate}`
     if (!this.resolved.endpoints.has(capability)) {
       throw new UnsupportedInVersionError({

@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import type { SubmittableTransaction } from "xrpl"
+import { GlobalFlags, type SubmittableTransaction } from "xrpl"
 import { CustodyError } from "../../models/index.js"
+import type { Core_IntentStatus } from "../../namespaces/intents.types.js"
+import type {
+  Core_TransactionProcessingStatus,
+  Core_TransactionsCollection,
+} from "../../namespaces/transactions.types.js"
 import {
   resolveExplicitCapabilities,
   UnsupportedInVersionError,
@@ -21,6 +26,10 @@ vi.mock("xrpl", async (importOriginal) => {
   return {
     encodeForSigning: vi.fn().mockReturnValue("deadbeef01020304"),
     isValidAddress: actual.isValidAddress,
+    // Real enums — the service reads `GlobalFlags.tfInnerBatchTxn` when
+    // building a confidential send, and pulls in the adapters' ASF flag map.
+    GlobalFlags: actual.GlobalFlags,
+    AccountSetAsfFlags: actual.AccountSetAsfFlags,
     //TODO: restore Batch mocks once Batch is supported
     // encodeForSigningBatch: vi.fn().mockReturnValue("batchencoded0102"),
     // hashes: {
@@ -52,6 +61,10 @@ const expectedCompressedKey = "026C69D2EF5C90DC83E19945DEE870D66733244E26F131DEB
 
 const mockBase64Signature = Buffer.from("aabbccdd", "hex").toString("base64")
 
+const mockElGamalKey = Buffer.from("0102030405060708", "hex").toString("base64")
+const mockIssuanceId = "00000C1EC6D1B4AB2CA3E5F9B85C7E1F8D2A3B4C5D6E7F80"
+const mockTransactionId = "d3c2f1a0-1234-4b5c-8d9e-0f1a2b3c4d5e"
+
 const mockBatchSigningData = {
   signingPayload: "deadbeefcafebabe",
   signingPayloadHash: "0011223344556677",
@@ -71,10 +84,62 @@ const mockDryRunResponse: Core_IntentDryRunResponse_v0_CreateTransactionOrder = 
   },
 }
 
+/** Minimal intent shape for the polling tests — only the status is read. */
+function intentWithStatus(status: Core_IntentStatus) {
+  return { data: { id: "intent-1", state: { status } } } as any
+}
+
+/**
+ * Minimal transaction-collection shape for the polling tests, matching the
+ * projection `listTransactions` returns.
+ */
+function transactionWithStatus(
+  status: Core_TransactionProcessingStatus,
+  failure?: string,
+): Core_TransactionsCollection {
+  return {
+    items: [
+      {
+        id: mockTransactionId,
+        registeredAt: "2026-01-01T00:00:00Z",
+        processing: { status },
+        ...(failure ? { ledgerTransactionData: { failure } } : {}),
+      },
+    ],
+  } as any
+}
+
+/**
+ * The hex cryptographic material a `cmpt-send` computation returns. Every field
+ * is hex on the response — `senderEncryptedBalance` stays hex on the batch
+ * entry too, unlike the operation's base64 `cryptographicFields`.
+ */
+const mockSendFields = {
+  senderEncryptedAmount: "AA01",
+  destinationEncryptedAmount: "BB02",
+  issuerEncryptedAmount: "CC03",
+  balanceCommitment: "DD04",
+  amountCommitment: "EE05",
+  zkProof: "FF06",
+  senderEncryptedBalance: "0F1E",
+  senderEncryptedBalanceVersion: 7,
+}
+
+/** A completed parameters computation carrying `fields`, as the port returns it. */
+function completedSendCompute(fields: Record<string, unknown> = mockSendFields) {
+  return {
+    status: "Completed",
+    isTerminal: true,
+    isSuccess: true,
+    compute: { cryptographicFields: fields },
+  } as any
+}
+
 function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
   return {
     resolveContext: overrides.resolveContext ?? (async () => mockContext),
     submitIntent: overrides.submitIntent ?? (async () => ({ requestId: "request-123" }) as any),
+    getIntent: overrides.getIntent ?? (async () => intentWithStatus("Executed")),
     dryRunIntent: overrides.dryRunIntent ?? (async () => mockDryRunResponse),
     getManifest:
       overrides.getManifest ??
@@ -93,9 +158,28 @@ function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
                 publicKey: { value: mockBase64PublicKey },
               },
             ],
+            purposeKeys: [
+              { ledgerId: mockLedgerId, purpose: "ElGamal" as const, publicKey: mockElGamalKey },
+            ],
           },
         },
       })),
+    initiateParametersComputeAndWait:
+      overrides.initiateParametersComputeAndWait ?? (async () => completedSendCompute()),
+    listTransactions:
+      overrides.listTransactions ?? (async () => ({ items: [{ id: mockTransactionId }] }) as any),
+    getTransaction:
+      overrides.getTransaction ??
+      (async () =>
+        ({
+          id: mockTransactionId,
+          ledgerTransactionData: {
+            ledgerData: {
+              type: "Xrpl" as const,
+              tokenData: { issuanceId: mockIssuanceId },
+            },
+          },
+        }) as any),
   } as XrplPorts
 }
 
@@ -113,6 +197,24 @@ describe("XrplService", () => {
   // ── proposeIntent ─────────────────────────────────────────────
 
   describe("proposeIntent", () => {
+    it("rejects an invalid Account before calling the submit port", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.proposeIntent({
+          Account: "not-an-address",
+          operation: {
+            type: "Payment",
+            amount: "1000000",
+            destination: { type: "Address", address: mockAddress },
+          },
+        }),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(submitIntent).not.toHaveBeenCalled()
+    })
+
     it("should submit a Payment intent with correct structure", async () => {
       let capturedBody: any
       ports = createTestPorts({
@@ -150,6 +252,57 @@ describe("XrplService", () => {
         priority: "Low",
         type: "Priority",
       })
+    })
+
+    it("returns the payload id it submitted the transaction order under", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntent({
+        Account: mockAddress,
+        operation: {
+          type: "Payment",
+          amount: "1000000",
+          destination: { type: "Address", address: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH" },
+          destinationTag: 0,
+        },
+      })
+
+      expect(result).toEqual({
+        requestId: "request-123",
+        payloadId: expect.any(String),
+        intentId: expect.any(String),
+      })
+      expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
+    })
+
+    it("returns the caller's payload id when one was supplied", async () => {
+      ports = createTestPorts({
+        submitIntent: async () => ({ requestId: "request-123" }) as any,
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntent(
+        {
+          Account: mockAddress,
+          operation: {
+            type: "Payment",
+            amount: "1000000",
+            destination: { type: "Address", address: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH" },
+            destinationTag: 0,
+          },
+        },
+        { payloadId: "payload-abc" },
+      )
+
+      expect(result.payloadId).toBe("payload-abc")
     })
 
     it("should submit a TrustSet intent", async () => {
@@ -513,15 +666,226 @@ describe("XrplService", () => {
     })
   })
 
+  // ── proposeIntentAndWait ──────────────────────────────────────
+
+  describe("proposeIntentAndWait", () => {
+    const payment = {
+      Account: mockAddress,
+      operation: {
+        type: "Payment" as const,
+        amount: "1000000",
+        destination: { type: "Address" as const, address: mockAddress },
+      },
+    }
+
+    /** Both stages resolve immediately, so no test sleeps. */
+    const noWait = { intent: { intervalMs: 0 }, transaction: { intervalMs: 0 } }
+
+    it("reports success once the intent executed and the ledger accepted the transaction", async () => {
+      ports = createTestPorts({
+        listTransactions: async () => transactionWithStatus("Completed"),
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntentAndWait(payment, noWait)
+
+      expect(result.intent.isSuccess).toBe(true)
+      expect(result.status).toBe("Completed")
+      expect(result.isTerminal).toBe(true)
+      expect(result.isSuccess).toBe(true)
+      expect(result.transaction?.id).toBe(mockTransactionId)
+    })
+
+    it("returns the ids and the resolved domain the intent was proposed under", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+        listTransactions: async () => transactionWithStatus("Completed"),
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntentAndWait(payment, noWait)
+
+      expect(result.requestId).toBe("request-123")
+      expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
+      expect(result.domainId).toBe(mockDomainId)
+    })
+
+    it("polls both stages with the ids from the propose step", async () => {
+      const getIntent = vi.fn(async () => intentWithStatus("Executed"))
+      const listTransactions = vi.fn(async () => transactionWithStatus("Completed"))
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+        getIntent,
+        listTransactions,
+      })
+      service = new XrplService(ports)
+
+      await service.proposeIntentAndWait(payment, noWait)
+
+      // Polls the intent id the envelope was built with, not the server's
+      // own `requestId` — the two are distinct ids.
+      expect(getIntent).toHaveBeenCalledWith(mockDomainId, capturedBody.request.id)
+      expect(listTransactions).toHaveBeenCalledWith(mockDomainId, {
+        "orderReference.Id": capturedBody.request.payload.id,
+      })
+    })
+
+    it("resolves the context once, not once per stage", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({
+        resolveContext,
+        listTransactions: async () => transactionWithStatus("Completed"),
+      })
+      service = new XrplService(ports)
+
+      await service.proposeIntentAndWait(payment, noWait)
+
+      expect(resolveContext).toHaveBeenCalledTimes(1)
+    })
+
+    it("skips the transaction wait when the intent did not execute", async () => {
+      const listTransactions = vi.fn(async () => transactionWithStatus("Completed"))
+      ports = createTestPorts({
+        getIntent: async () => intentWithStatus("Rejected"),
+        listTransactions,
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntentAndWait(payment, noWait)
+
+      expect(listTransactions).not.toHaveBeenCalled()
+      expect(result.intent.status).toBe("Rejected")
+      // Terminal, because no transaction is coming — as opposed to one that is
+      // merely still in flight.
+      expect(result.isTerminal).toBe(true)
+      expect(result.isSuccess).toBe(false)
+      expect(result.transaction).toBeUndefined()
+      // The transaction stage never ran, so the reason has to name the intent —
+      // reporting a missing transaction would point at the wrong stage.
+      expect(result.reason).toContain("did not execute (status: Rejected)")
+    })
+
+    it("is not terminal when the intent ran out of attempts short of a terminal status", async () => {
+      ports = createTestPorts({ getIntent: async () => intentWithStatus("Open") })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntentAndWait(payment, {
+        ...noWait,
+        intent: { maxRetries: 2, intervalMs: 0 },
+      })
+
+      expect(result.intent.status).toBe("Open")
+      expect(result.isTerminal).toBe(false)
+      expect(result.isSuccess).toBe(false)
+      expect(result.reason).toContain("still awaiting approval after 2 attempts")
+    })
+
+    it("reports an on-chain failure as terminal but not successful", async () => {
+      ports = createTestPorts({
+        listTransactions: async () => transactionWithStatus("Completed", "FailedOnChain"),
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntentAndWait(payment, noWait)
+
+      expect(result.intent.isSuccess).toBe(true)
+      expect(result.isTerminal).toBe(true)
+      expect(result.isSuccess).toBe(false)
+      expect(result.transaction?.ledgerTransactionData?.failure).toBe("FailedOnChain")
+      expect(result.reason).toContain("rejected by the ledger (FailedOnChain)")
+    })
+
+    it("does not throw when the transaction never registers", async () => {
+      ports = createTestPorts({ listTransactions: async () => ({ items: [] }) as any })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntentAndWait(payment, {
+        ...noWait,
+        transaction: { maxRetries: 2, intervalMs: 0 },
+      })
+
+      expect(result.intent.isSuccess).toBe(true)
+      expect(result.isTerminal).toBe(false)
+      expect(result.transaction).toBeUndefined()
+    })
+
+    it("rejects an invalid Account before proposing anything", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.proposeIntentAndWait({ ...payment, Account: "not-an-address" }, noWait),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(submitIntent).not.toHaveBeenCalled()
+    })
+  })
+
   // ── getPublicKey ──────────────────────────────────────────────
 
   describe("getPublicKey", () => {
     it("should return the compressed public key for a Vault account", async () => {
-      const result = await service.getPublicKey({
-        domainId: mockDomainId,
-        accountId: mockAccountId,
-      })
+      const result = await service.getPublicKey(mockAddress)
       expect(result).toBe(expectedCompressedKey)
+    })
+
+    it("should resolve domain and account from the address", async () => {
+      let capturedAddress: string | undefined
+      let capturedOpts: any
+      let capturedAccountLookup: [string, string] | undefined
+      ports = createTestPorts({
+        resolveContext: async (address, opts) => {
+          capturedAddress = address
+          capturedOpts = opts
+          return mockContext
+        },
+        getAccount: async (domainId, accountId) => {
+          capturedAccountLookup = [domainId, accountId]
+          return {
+            data: {
+              providerDetails: {
+                type: "Vault",
+                keys: [{ id: "SECP256K1_CUSTODY_1", publicKey: { value: mockBase64PublicKey } }],
+              },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.getPublicKey(mockAddress, {
+        domainId: mockDomainId,
+        ledgerId: mockLedgerId,
+      })
+
+      expect(capturedAddress).toBe(mockAddress)
+      expect(capturedOpts).toEqual({ domainId: mockDomainId, ledgerId: mockLedgerId })
+      expect(capturedAccountLookup).toEqual([mockDomainId, mockAccountId])
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getPublicKey("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
     })
 
     it("should throw when the account is not a Vault account", async () => {
@@ -533,9 +897,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Account is not a Vault account")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Account is not a Vault account",
+      )
     })
 
     it("should throw when SECP256K1_CUSTODY_1 key is not found", async () => {
@@ -552,9 +916,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
 
     it("should throw when keys array is undefined", async () => {
@@ -566,9 +930,9 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
     })
 
     it("should throw when the key exists but publicKey is undefined", async () => {
@@ -585,9 +949,810 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
+      await expect(service.getPublicKey(mockAddress)).rejects.toThrow(
+        "Public key not found for key ID SECP256K1_CUSTODY_1",
+      )
+    })
+  })
+
+  // ── provisionElGamalKeyPair ───────────────────────────────────
+
+  describe("provisionElGamalKeyPair", () => {
+    it("should submit a v0_ProvisionElGamalKeyPair intent with correct structure", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.provisionElGamalKeyPair(mockAddress)
+
+      expect(capturedBody.request.type).toBe("Propose")
+      expect(capturedBody.request.author).toEqual({ domainId: mockDomainId, id: mockUserId })
+      expect(capturedBody.request.targetDomainId).toBe(mockDomainId)
+      expect(capturedBody.request.payload).toEqual({
+        accountId: mockAccountId,
+        ledgerId: mockLedgerId,
+        type: "v0_ProvisionElGamalKeyPair",
+      })
+    })
+
+    it("should carry no payload id, fee strategy or parameters", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      // The payload id option belongs to transaction orders; this intent has no
+      // such field, so passing one must not leak into the payload.
+      await service.provisionElGamalKeyPair(mockAddress, { payloadId: "payload-123" })
+
+      expect(capturedBody.request.payload).not.toHaveProperty("id")
+      expect(capturedBody.request.payload).not.toHaveProperty("parameters")
+    })
+
+    it("should honour requestId and description on the envelope", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.provisionElGamalKeyPair(mockAddress, {
+        requestId: "request-abc",
+        description: "Provision issuer ElGamal key",
+      })
+
+      expect(capturedBody.request.id).toBe("request-abc")
+      expect(capturedBody.request.description).toBe("Provision issuer ElGamal key")
+    })
+
+    it("should propagate resolveContext failures", async () => {
+      ports = createTestPorts({
+        resolveContext: async () => {
+          throw new CustodyError({ reason: "Account not found for address" })
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.provisionElGamalKeyPair(mockAddress)).rejects.toThrow(
+        "Account not found for address",
+      )
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.provisionElGamalKeyPair("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
+  })
+
+  // ── getElGamalPublicKey ───────────────────────────────────────
+
+  describe("getElGamalPublicKey", () => {
+    it("should return the base64 ElGamal key for the ledger unchanged", async () => {
+      const result = await service.getElGamalPublicKey(mockAddress)
+
+      expect(result).toBe(mockElGamalKey)
+    })
+
+    it("should resolve domain, account and ledger from the address", async () => {
+      let capturedAddress: string | undefined
+      let capturedOpts: any
+      let capturedAccountLookup: [string, string] | undefined
+      ports = createTestPorts({
+        resolveContext: async (address, opts) => {
+          capturedAddress = address
+          capturedOpts = opts
+          return mockContext
+        },
+        getAccount: async (domainId, accountId) => {
+          capturedAccountLookup = [domainId, accountId]
+          return {
+            data: {
+              providerDetails: {
+                type: "Vault",
+                purposeKeys: [
+                  { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+                ],
+              },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.getElGamalPublicKey(mockAddress, {
+        domainId: mockDomainId,
+        ledgerId: mockLedgerId,
+      })
+
+      expect(capturedAddress).toBe(mockAddress)
+      expect(capturedOpts).toEqual({ domainId: mockDomainId, ledgerId: mockLedgerId })
+      expect(capturedAccountLookup).toEqual([mockDomainId, mockAccountId])
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKey("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
+
+    it("should propagate resolveContext failures for an ambiguous address", async () => {
+      ports = createTestPorts({
+        resolveContext: async () => {
+          throw new CustodyError({
+            reason: `Multiple accounts found for address ${mockAddress}. Please specify ledgerId and/or domainId to disambiguate.`,
+          })
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "Multiple accounts found for address",
+      )
+    })
+
+    it("should select the key matching the resolved ledger", async () => {
+      ports = createTestPorts({
+        getAccount: async () =>
+          ({
+            data: {
+              providerDetails: {
+                type: "Vault",
+                purposeKeys: [
+                  { ledgerId: "other-ledger", purpose: "ElGamal", publicKey: "othercCg=" },
+                  { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+                ],
+              },
+            },
+          }) as any,
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getElGamalPublicKey(mockAddress)
+
+      expect(result).toBe(mockElGamalKey)
+    })
+
+    it("should throw when the account is not a Vault account", async () => {
+      ports = createTestPorts({
+        getAccount: async () =>
+          ({
+            data: { providerDetails: { type: "External" } },
+          }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "Account is not a Vault account",
+      )
+    })
+
+    it("should throw when no ElGamal key is provisioned for that ledger", async () => {
+      ports = createTestPorts({
+        resolveContext: async () => ({ ...mockContext, ledgerId: "another-ledger" }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "No ElGamal key provisioned for account",
+      )
+    })
+  })
+
+  // ── findElGamalPublicKey ──────────────────────────────────────
+
+  describe("findElGamalPublicKey", () => {
+    it("should return the key when one is provisioned for the resolved ledger", async () => {
+      const result = await service.findElGamalPublicKey(mockAddress)
+
+      expect(result).toBe(mockElGamalKey)
+    })
+
+    it("should return undefined rather than throw when no key is provisioned", async () => {
+      ports = createTestPorts({
+        resolveContext: async () => ({ ...mockContext, ledgerId: "another-ledger" }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.findElGamalPublicKey(mockAddress)).resolves.toBeUndefined()
+    })
+
+    it("should still throw for an invalid address, before any request", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.findElGamalPublicKey("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
+
+    it("should still throw when the account is not a Vault account", async () => {
+      ports = createTestPorts({
+        getAccount: async () => ({ data: { providerDetails: { type: "External" } } }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(service.findElGamalPublicKey(mockAddress)).rejects.toThrow(
+        "Account is not a Vault account",
+      )
+    })
+  })
+
+  // ── getElGamalPublicKeyAndWait ────────────────────────────────
+
+  describe("getElGamalPublicKeyAndWait", () => {
+    /** An account whose vault has not written the ElGamal key yet. */
+    const noKeyYet = { data: { providerDetails: { type: "Vault", purposeKeys: [] } } } as any
+
+    it("should return the key without polling when it is already readable", async () => {
+      let calls = 0
+      ports = createTestPorts({
+        getAccount: async () => {
+          calls++
+          return {
+            data: {
+              providerDetails: {
+                type: "Vault",
+                purposeKeys: [
+                  { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+                ],
+              },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getElGamalPublicKeyAndWait(mockAddress, {
+        maxRetries: 3,
+        intervalMs: 0,
+      })
+
+      expect(result).toBe(mockElGamalKey)
+      expect(calls).toBe(1)
+    })
+
+    it("should keep polling until the vault has written the key", async () => {
+      const accounts = [
+        noKeyYet,
+        noKeyYet,
+        {
+          data: {
+            providerDetails: {
+              type: "Vault",
+              purposeKeys: [
+                { ledgerId: mockLedgerId, purpose: "ElGamal", publicKey: mockElGamalKey },
+              ],
+            },
+          },
+        } as any,
+      ]
+      const onAttempt = vi.fn()
+      ports = createTestPorts({ getAccount: async () => accounts.shift() })
+      service = new XrplService(ports)
+
+      const result = await service.getElGamalPublicKeyAndWait(mockAddress, {
+        maxRetries: 5,
+        intervalMs: 0,
+        onAttempt,
+      })
+
+      expect(result).toBe(mockElGamalKey)
+      expect(onAttempt).toHaveBeenCalledTimes(3)
+    })
+
+    it("should resolve the address once, not on every attempt", async () => {
+      let resolveCalls = 0
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalls++
+          return mockContext
+        },
+        getAccount: async () => noKeyYet,
+      })
+      service = new XrplService(ports)
+
       await expect(
-        service.getPublicKey({ domainId: mockDomainId, accountId: mockAccountId }),
-      ).rejects.toThrow("Public key not found for key ID SECP256K1_CUSTODY_1")
+        service.getElGamalPublicKeyAndWait(mockAddress, { maxRetries: 3, intervalMs: 0 }),
+      ).rejects.toThrow("after 3 attempts")
+      expect(resolveCalls).toBe(1)
+    })
+
+    it("should name the account and ledger when retries are exhausted", async () => {
+      ports = createTestPorts({ getAccount: async () => noKeyYet })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getElGamalPublicKeyAndWait(mockAddress, { maxRetries: 2, intervalMs: 0 }),
+      ).rejects.toThrow(
+        `No ElGamal key provisioned for account ${mockAccountId} (${mockAddress}) on ledger ${mockLedgerId} after 2 attempts.`,
+      )
+    })
+
+    it("should throw before any request when the address is invalid", async () => {
+      let resolveCalled = false
+      ports = createTestPorts({
+        resolveContext: async () => {
+          resolveCalled = true
+          return mockContext
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(service.getElGamalPublicKeyAndWait("not-an-address")).rejects.toThrow(
+        "Invalid address: not-an-address",
+      )
+      expect(resolveCalled).toBe(false)
+    })
+
+    it("should surface a transport failure rather than retrying it away", async () => {
+      let calls = 0
+      ports = createTestPorts({
+        getAccount: async () => {
+          calls++
+          throw new CustodyError({ reason: "Unauthorized" }, 401)
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getElGamalPublicKeyAndWait(mockAddress, { maxRetries: 3, intervalMs: 0 }),
+      ).rejects.toThrow("Unauthorized")
+      expect(calls).toBe(1)
+    })
+  })
+
+  // ── buildConfidentialSend ─────────────────────────────────────
+
+  describe("buildConfidentialSend", () => {
+    const destination = "rP9jPyP5kyvFRb6ZiRghAGw5u8SGAmU4bd"
+    const params = {
+      sender: mockAddress,
+      destination,
+      issuanceId: mockIssuanceId,
+      amount: "1000",
+      ticketSequence: 42,
+    }
+
+    it("runs the computation for the sender's resolved account, domain and ledger", async () => {
+      const initiateParametersComputeAndWait = vi.fn(async () => completedSendCompute())
+      ports = createTestPorts({ initiateParametersComputeAndWait })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params)
+
+      expect(initiateParametersComputeAndWait).toHaveBeenCalledWith(
+        { domainId: mockDomainId, accountId: mockAccountId },
+        {
+          type: "cmpt-send",
+          tokenIdentifier: { issuanceId: mockIssuanceId },
+          amount: "1000",
+          destination,
+          ledgerId: mockLedgerId,
+          ticketSequence: 42,
+        },
+        { maxRetries: 40, intervalMs: 3000 },
+      )
+    })
+
+    it("defaults the computation to a longer budget than the other polls", async () => {
+      let capturedOptions: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, _body, options) => {
+          capturedOptions = options
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params)
+
+      expect(capturedOptions).toEqual({ maxRetries: 40, intervalMs: 3000 })
+    })
+
+    it("keeps the default interval when only maxRetries is overridden", async () => {
+      let capturedOptions: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, _body, options) => {
+          capturedOptions = options
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params, { polling: { maxRetries: 100 } })
+
+      expect(capturedOptions).toEqual({ maxRetries: 100, intervalMs: 3000 })
+    })
+
+    it("builds the inner transaction from the hex compute fields", async () => {
+      const { transaction } = await service.buildConfidentialSend(params)
+
+      expect(transaction).toEqual({
+        Account: mockAddress,
+        TransactionType: "ConfidentialMPTSend",
+        Destination: destination,
+        MPTokenIssuanceID: mockIssuanceId,
+        SenderEncryptedAmount: "AA01",
+        DestinationEncryptedAmount: "BB02",
+        IssuerEncryptedAmount: "CC03",
+        AmountCommitment: "EE05",
+        BalanceCommitment: "DD04",
+        ZKProof: "FF06",
+        TicketSequence: 42,
+        Flags: GlobalFlags.tfInnerBatchTxn,
+      })
+    })
+
+    it("splits the three custody-only fields out as entryFields, hex as returned", async () => {
+      const { entryFields } = await service.buildConfidentialSend(params)
+
+      expect(entryFields).toEqual({
+        amount: "1000",
+        senderEncryptedBalance: "0F1E",
+        senderEncryptedBalanceVersion: 7,
+      })
+    })
+
+    it("omits TicketSequence from both the transaction and the compute request when not given", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, body) => {
+          capturedBody = body
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      const { transaction } = await service.buildConfidentialSend({
+        sender: mockAddress,
+        destination,
+        issuanceId: mockIssuanceId,
+        amount: "1000",
+      })
+
+      expect(transaction).not.toHaveProperty("TicketSequence")
+      expect(capturedBody).not.toHaveProperty("ticketSequence")
+    })
+
+    it("carries AuditorEncryptedAmount when the computation returned one", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          completedSendCompute({ ...mockSendFields, auditorEncryptedAmount: "9911" }),
+      })
+      service = new XrplService(ports)
+
+      const { transaction } = await service.buildConfidentialSend(params)
+
+      expect(transaction.AuditorEncryptedAmount).toBe("9911")
+    })
+
+    it("drops an explicitly null AuditorEncryptedAmount rather than passing it on", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          completedSendCompute({ ...mockSendFields, auditorEncryptedAmount: null }),
+      })
+      service = new XrplService(ports)
+
+      const { transaction } = await service.buildConfidentialSend(params)
+
+      expect(transaction).not.toHaveProperty("AuditorEncryptedAmount")
+    })
+
+    it("passes the polling options through to the computation", async () => {
+      let capturedOptions: any
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async (_params, _body, options) => {
+          capturedOptions = options
+          return completedSendCompute()
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params, { polling: { maxRetries: 20, intervalMs: 5000 } })
+
+      expect(capturedOptions).toEqual({ maxRetries: 20, intervalMs: 5000 })
+    })
+
+    it("passes domainId and ledgerId to resolveContext", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({ resolveContext })
+      service = new XrplService(ports)
+
+      await service.buildConfidentialSend(params, {
+        domainId: "domain-override",
+        ledgerId: "xrpl-testnet",
+      })
+
+      expect(resolveContext).toHaveBeenCalledWith(mockAddress, {
+        domainId: "domain-override",
+        ledgerId: "xrpl-testnet",
+      })
+    })
+
+    it("rejects an invalid sender before running the computation", async () => {
+      const initiateParametersComputeAndWait = vi.fn(async () => completedSendCompute())
+      ports = createTestPorts({ initiateParametersComputeAndWait })
+      service = new XrplService(ports)
+
+      await expect(
+        service.buildConfidentialSend({ ...params, sender: "not-an-address" }),
+      ).rejects.toThrow("Invalid sender: not-an-address")
+      expect(initiateParametersComputeAndWait).not.toHaveBeenCalled()
+    })
+
+    it("rejects an invalid destination before running the computation", async () => {
+      const initiateParametersComputeAndWait = vi.fn(async () => completedSendCompute())
+      ports = createTestPorts({ initiateParametersComputeAndWait })
+      service = new XrplService(ports)
+
+      await expect(
+        service.buildConfidentialSend({ ...params, destination: "not-an-address" }),
+      ).rejects.toThrow("Invalid destination: not-an-address")
+      expect(initiateParametersComputeAndWait).not.toHaveBeenCalled()
+    })
+
+    it("throws when the computation did not complete", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          ({ status: "Failed", isTerminal: true, isSuccess: false, compute: {} }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(service.buildConfidentialSend(params)).rejects.toThrow(
+        "did not complete (status: Failed)",
+      )
+    })
+
+    it("throws when the computation returned material for another operation", async () => {
+      ports = createTestPorts({
+        // Clawback fields — no senderEncryptedAmount, so not a Send.
+        initiateParametersComputeAndWait: async () =>
+          completedSendCompute({ zkProof: "FF06", amount: 5 }),
+      })
+      service = new XrplService(ports)
+
+      await expect(service.buildConfidentialSend(params)).rejects.toThrow(
+        "returned no Send cryptographic fields",
+      )
+    })
+
+    it("throws when a completed computation carries no cryptographic fields", async () => {
+      ports = createTestPorts({
+        initiateParametersComputeAndWait: async () =>
+          ({ status: "Completed", isTerminal: true, isSuccess: true, compute: {} }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(service.buildConfidentialSend(params)).rejects.toThrow(
+        "returned no Send cryptographic fields",
+      )
+    })
+  })
+
+  // ── getMptIssuanceId ──────────────────────────────────────────
+
+  describe("getMptIssuanceId", () => {
+    it("should query the domain's transactions by order reference", async () => {
+      let capturedDomainId: string | undefined
+      let capturedQuery: any
+      ports = createTestPorts({
+        listTransactions: async (domainId, query) => {
+          capturedDomainId = domainId
+          capturedQuery = query
+          return { items: [{ id: mockTransactionId }] } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceId({
+        domainId: mockDomainId,
+        payloadId: "payload-123",
+      })
+
+      expect(capturedDomainId).toBe(mockDomainId)
+      expect(capturedQuery).toEqual({ "orderReference.Id": "payload-123" })
+      expect(result).toBe(mockIssuanceId)
+    })
+
+    it("should read the ledger data off the transaction detail, not the collection", async () => {
+      let capturedDomainId: string | undefined
+      let capturedTransactionId: string | undefined
+      ports = createTestPorts({
+        getTransaction: async (domainId, transactionId) => {
+          capturedDomainId = domainId
+          capturedTransactionId = transactionId
+          return {
+            ledgerTransactionData: {
+              ledgerData: { type: "Xrpl", tokenData: { issuanceId: mockIssuanceId } },
+            },
+          } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceId({
+        domainId: mockDomainId,
+        payloadId: "payload-123",
+      })
+
+      expect(capturedDomainId).toBe(mockDomainId)
+      expect(capturedTransactionId).toBe(mockTransactionId)
+      expect(result).toBe(mockIssuanceId)
+    })
+
+    it("should keep looking when an earlier transaction carries no token data", async () => {
+      const details: Record<string, any> = {
+        "tx-transfer": { ledgerTransactionData: { ledgerData: { type: "Xrpl" } } },
+        "tx-issuance": {
+          ledgerTransactionData: {
+            ledgerData: { type: "Xrpl", tokenData: { issuanceId: mockIssuanceId } },
+          },
+        },
+      }
+      ports = createTestPorts({
+        listTransactions: async () =>
+          ({ items: [{ id: "tx-transfer" }, { id: "tx-issuance" }] }) as any,
+        getTransaction: async (_domainId, transactionId) => details[transactionId],
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceId({
+        domainId: mockDomainId,
+        payloadId: "payload-123",
+      })
+
+      expect(result).toBe(mockIssuanceId)
+    })
+
+    it("should throw when the order has registered no transaction", async () => {
+      ports = createTestPorts({ listTransactions: async () => ({ items: [] }) as any })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceId({ domainId: mockDomainId, payloadId: "payload-123" }),
+      ).rejects.toThrow("No transaction registered for transaction order payload-123")
+    })
+
+    it("should throw when the transaction is not yet on-chain", async () => {
+      ports = createTestPorts({ getTransaction: async () => ({}) as any })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceId({ domainId: mockDomainId, payloadId: "payload-123" }),
+      ).rejects.toThrow("carries no MPT issuance ID")
+    })
+
+    it("should throw when the transaction carries no token data", async () => {
+      ports = createTestPorts({
+        getTransaction: async () =>
+          ({ ledgerTransactionData: { ledgerData: { type: "Xrpl" } } }) as any,
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceId({ domainId: mockDomainId, payloadId: "payload-123" }),
+      ).rejects.toThrow("carries no MPT issuance ID")
+    })
+  })
+
+  // ── getMptIssuanceIdAndWait ───────────────────────────────────
+
+  describe("getMptIssuanceIdAndWait", () => {
+    /** Detail response for a transaction carrying the issuance the ledger minted. */
+    const onChain = {
+      ledgerTransactionData: {
+        ledgerData: { type: "Xrpl", tokenData: { issuanceId: mockIssuanceId } },
+      },
+    } as any
+
+    it("should return the issuance ID without polling when it is already readable", async () => {
+      let calls = 0
+      ports = createTestPorts({
+        getTransaction: async () => {
+          calls++
+          return onChain
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceIdAndWait(
+        { domainId: mockDomainId, payloadId: "payload-123" },
+        { maxRetries: 3, intervalMs: 0 },
+      )
+
+      expect(result).toBe(mockIssuanceId)
+      expect(calls).toBe(1)
+    })
+
+    it("should keep polling until the transaction is registered with its ledger data", async () => {
+      const listResponses = [{ items: [] } as any, { items: [{ id: mockTransactionId }] } as any]
+      const details = [{} as any, onChain] // registered, ledger data not filled in yet
+      const onAttempt = vi.fn()
+      ports = createTestPorts({
+        listTransactions: async () =>
+          listResponses.shift() ?? { items: [{ id: mockTransactionId }] },
+        getTransaction: async () => details.shift(),
+      })
+      service = new XrplService(ports)
+
+      const result = await service.getMptIssuanceIdAndWait(
+        { domainId: mockDomainId, payloadId: "payload-123" },
+        { maxRetries: 5, intervalMs: 0, onAttempt },
+      )
+
+      expect(result).toBe(mockIssuanceId)
+      expect(onAttempt).toHaveBeenCalledTimes(3)
+    })
+
+    it("should throw with the last observed reason when retries are exhausted", async () => {
+      ports = createTestPorts({ getTransaction: async () => ({}) as any })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceIdAndWait(
+          { domainId: mockDomainId, payloadId: "payload-123" },
+          { maxRetries: 2, intervalMs: 0 },
+        ),
+      ).rejects.toThrow(
+        "No MPT issuance ID for transaction order payload-123 after 2 attempts. " +
+          "Transaction order payload-123 carries no MPT issuance ID.",
+      )
+    })
+
+    it("should surface a transport failure rather than retrying it away", async () => {
+      ports = createTestPorts({
+        listTransactions: async () => {
+          throw new CustodyError({ reason: "Unauthorized" }, 401)
+        },
+      })
+      service = new XrplService(ports)
+
+      await expect(
+        service.getMptIssuanceIdAndWait(
+          { domainId: mockDomainId, payloadId: "payload-123" },
+          { maxRetries: 5, intervalMs: 0 },
+        ),
+      ).rejects.toThrow("Unauthorized")
     })
   })
 
@@ -603,6 +1768,17 @@ describe("XrplService", () => {
       Sequence: 1,
     }
 
+    it("rejects an invalid Account before calling the submit port", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.rawSign({ ...mockXrplTransaction, Account: "not-an-address" }),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(submitIntent).not.toHaveBeenCalled()
+    })
+
     it("should submit a raw sign intent with correct structure", async () => {
       let capturedBody: any
       ports = createTestPorts({
@@ -615,7 +1791,13 @@ describe("XrplService", () => {
 
       const result = await service.rawSign(mockXrplTransaction)
 
-      expect(result).toEqual({ requestId: "request-123" })
+      expect(result).toEqual({
+        requestId: "request-123",
+        payloadId: expect.any(String),
+        intentId: expect.any(String),
+      })
+      expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
       expect(capturedBody.request.author.domainId).toBe(mockDomainId)
       expect(capturedBody.request.author.id).toBe(mockUserId)
       expect(capturedBody.request.type).toBe("Propose")
@@ -811,7 +1993,7 @@ describe("XrplService", () => {
     it("should throw CustodyError if signerAccount is not a valid XRPL address", async () => {
       const tx = { ...mockXrplTransaction, SigningPubKey: "PK" }
       await expect(service.rawSignAndWait(tx, { signerAccount: "not-an-address" })).rejects.toThrow(
-        "Invalid signerAccount address: not-an-address",
+        "Invalid signerAccount: not-an-address",
       )
     })
 
@@ -886,7 +2068,7 @@ describe("XrplService", () => {
   // ── dryRunBatch ───────────────────────────────────────────────
 
   describe("dryRunBatch", () => {
-    const submitterAddress = "rSubmitterAddress"
+    const submitterAddress = "rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w"
     const batchPayload: BatchPayloadInput = {
       Account: submitterAddress,
       executionMode: "AllOrNothing",
@@ -906,6 +2088,35 @@ describe("XrplService", () => {
     it("returns batchSigningData from the dry-run estimate", async () => {
       const result = await service.dryRunBatch(batchPayload)
       expect(result).toEqual(mockBatchSigningData)
+    })
+
+    it("passes domainId and ledgerId to resolveContext", async () => {
+      const resolveContext = vi.fn(async () => mockContext)
+      ports = createTestPorts({ resolveContext, dryRunIntent: async () => mockDryRunResponse })
+      service = new XrplService(ports)
+
+      await service.dryRunBatch(batchPayload, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+
+      // The dry-run must resolve the submitter the same way proposeBatch does:
+      // dropping ledgerId here would sign for a different ledger than step 3 submits to.
+      expect(resolveContext).toHaveBeenCalledWith(submitterAddress, {
+        domainId: "domain-456",
+        ledgerId: "ledger-456",
+      })
+    })
+
+    it("rejects an invalid submitter address before calling the dry-run port", async () => {
+      const dryRunIntent = vi.fn(async () => mockDryRunResponse)
+      ports = createTestPorts({ dryRunIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.dryRunBatch({ ...batchPayload, Account: "not-an-address" }),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(dryRunIntent).not.toHaveBeenCalled()
     })
 
     it("submits a v0_CreateTransactionOrder dry-run with empty batchSigners and PlatformManaged sequencing", async () => {
@@ -1199,7 +2410,7 @@ describe("XrplService", () => {
   // ── proposeBatch ──────────────────────────────────────────────
 
   describe("proposeBatch", () => {
-    const submitterAddress = "rSubmitterAddress"
+    const submitterAddress = "rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w"
     const batchPayload: BatchPayloadInput = {
       Account: submitterAddress,
       executionMode: "AllOrNothing",
@@ -1233,7 +2444,7 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      await service.proposeBatch(batchPayload, batchSigners)
+      const result = await service.proposeBatch(batchPayload, batchSigners)
 
       expect(capturedBody.request.type).toBe("Propose")
       expect(capturedBody.request.payload.type).toBe("v0_CreateTransactionOrder")
@@ -1241,6 +2452,13 @@ describe("XrplService", () => {
       expect(op.type).toBe("Batch")
       expect(op.batchSigners).toEqual(batchSigners)
       expect(op.sequencing).toEqual({ type: "PlatformManaged" })
+      expect(result).toEqual({
+        requestId: "request-123",
+        payloadId: expect.any(String),
+        intentId: expect.any(String),
+      })
+      expect(result.payloadId).toBe(capturedBody.request.payload.id)
+      expect(result.intentId).toBe(capturedBody.request.id)
     })
 
     it("passes domainId and ledgerId to resolveContext", async () => {
@@ -1257,6 +2475,17 @@ describe("XrplService", () => {
         domainId: "domain-456",
         ledgerId: "ledger-456",
       })
+    })
+
+    it("rejects an invalid submitter address before calling the submit port", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.proposeBatch({ ...batchPayload, Account: "not-an-address" }, batchSigners),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(submitIntent).not.toHaveBeenCalled()
     })
 
     it("reuses caller-provided requestId and payloadId for dry-run/propose pairing", async () => {
