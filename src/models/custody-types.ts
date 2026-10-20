@@ -3614,10 +3614,12 @@ export interface components {
       /** Format: uuid */
       domainId: string
       alias: string
+      /** @deprecated */
       ledgerId?: string
       providerDetails: components["schemas"]["Core_AccountProviderInformation"]
       lock: components["schemas"]["Core_LockStatus"]
       metadata: components["schemas"]["Core_EntityMetadata"]
+      ledgerIds?: string[]
     }
     Core_AccountAdditionalDetails: {
       processing: components["schemas"]["Core_AccountProcessingDetails"]
@@ -13192,6 +13194,7 @@ export interface components {
        * @enum {string}
        */
       type: "Canton"
+      memo?: string
     }
     Core_ReadWriteSystemPropertyKeyValue_AntiRewindModeProperty: {
       value: components["schemas"]["Core_AntiRewindModeValue"]
@@ -13327,6 +13330,7 @@ export interface components {
        * @enum {string}
        */
       type: "Canton"
+      memo?: string
     }
     Core_TransferMetadata_Sui: {
       /**
