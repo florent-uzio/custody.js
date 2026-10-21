@@ -1,5 +1,12 @@
 # custody
 
+## 2.13.1
+
+### Patch Changes
+
+- e72992a: Type the `client.exports.generatePositionReport` and `client.exports.generateMovementReport` responses. They were declared as `Promise<void>`, but the spec (documented since 1.42.0) returns a 201 body: the JSON report DTO when `format` is `JSON`, or the raw CSV `string` when `format` is `CSV`. Callers that relied on the `void` return type may need a type adjustment.
+- 2e9b3c5: Bundle official OpenAPI spec 1.43.4 and regenerate types. Account responses gain `ledgerIds` (with `ledgerId` now deprecated), and Canton transfer metadata gains an optional `memo`.
+
 ## 2.13.0
 
 ### Minor Changes
