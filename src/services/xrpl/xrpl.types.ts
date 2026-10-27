@@ -217,6 +217,26 @@ export type XrplIntentOptions = Prettify<
 >
 
 export type Core_XrplOperation = components["schemas"]["Core_XrplOperation"]
+export type Core_XrplMemo = components["schemas"]["Core_XrplMemo"]
+
+export type Core_TransactionOrderParameters_XRPL =
+  components["schemas"]["Core_TransactionOrderParameters_XRPL"]
+
+/**
+ * The transaction an XRPL transaction order proposes: the account it is sent
+ * from, plus the fields of {@link Core_TransactionOrderParameters_XRPL} the
+ * caller sets.
+ *
+ * `operation` is required here although the schema marks it optional — every
+ * order this SDK builds carries one. `memos` is optional and defaults to none.
+ * Every memo field is hex-encoded — use xrpl.js `convertStringToHex` to encode
+ * plain text.
+ */
+export type XrplTransactionOrderParams = Prettify<
+  Pick<Payment, "Account"> &
+    Required<Pick<Core_TransactionOrderParameters_XRPL, "operation">> &
+    Partial<Pick<Core_TransactionOrderParameters_XRPL, "memos">>
+>
 
 /**
  * A proposed intent, plus the transaction-order (payload) id and the intent
@@ -477,6 +497,7 @@ export type WaitForMptIssuanceIdOptions = {
 
 export type BuildTransactionIntentProps = {
   operation: Core_XrplOperation
+  memos?: Core_XrplMemo[]
   context: IntentContext
   options: XrplIntentOptions
 }
@@ -550,6 +571,11 @@ export type BatchPayloadInput = {
   sequencing?: Core_Sequencing
   /** Optional last ledger sequence for the outer Batch */
   lastLedgerSequence?: number
+  /**
+   * Memos for the outer Batch, hex-encoded. Inner entries cannot carry memos.
+   * Defaults to none.
+   */
+  memos?: Core_XrplMemo[]
 }
 
 /**

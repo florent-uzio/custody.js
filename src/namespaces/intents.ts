@@ -189,6 +189,7 @@ export function createIntents(t: Transport) {
      * resolves the address to an account, applies a fee strategy and returns the
      * payload id. This path accepts them too — it is the only path for the other
      * ledgers' transaction orders, which have no typed service of their own.
+     * Memos on a transaction order go in the payload's `parameters.memos`.
      *
      * @param payload - The `v0_*` intent payload
      * @param options - Envelope fields; `domainId` pins the domain

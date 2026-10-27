@@ -1053,6 +1053,34 @@ describe("batchToCustodyBatchPayload", () => {
     })
   })
 
+  describe("memos", () => {
+    it("maps the outer Batch Memos to custody memos", () => {
+      const result = batchToCustodyBatchPayload(
+        makeBatch({
+          Memos: [
+            {
+              Memo: {
+                MemoData: "68656C6C6F",
+                MemoType: "6E6F7465",
+                MemoFormat: "746578742F706C61696E",
+              },
+            },
+            { Memo: { MemoData: "776F726C64" } },
+          ],
+        }),
+      )
+      expect(result.memos).toEqual([
+        { memoData: "68656C6C6F", memoType: "6E6F7465", memoFormat: "746578742F706C61696E" },
+        { memoData: "776F726C64" },
+      ])
+    })
+
+    it("omits memos when the outer Batch has none", () => {
+      const result = batchToCustodyBatchPayload(makeBatch())
+      expect(result).not.toHaveProperty("memos")
+    })
+  })
+
   it("preserves Account and converts entries via batchToCustodyInnerTransactions", () => {
     const submitterInner: RawTx = {
       ...baseTx,

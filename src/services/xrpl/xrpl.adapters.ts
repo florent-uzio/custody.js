@@ -4,12 +4,13 @@ import {
   BatchFlags,
   type BatchSigner,
   type IssuedCurrencyAmount,
+  isValidAddress,
+  type Memo,
   MPTokenAuthorizeFlags,
   MPTokenIssuanceCreateFlags,
   MPTokenIssuanceSetFlags,
   OfferCreateFlags,
   TrustSetFlags,
-  isValidAddress,
 } from "xrpl"
 import { isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
@@ -21,6 +22,7 @@ import type {
   Core_BatchExecutionMode,
   Core_CmptCryptographicFields,
   Core_ParticipantSequencing,
+  Core_XrplMemo,
   CustodyAccountSetFlag,
   CustodyBatchSigner,
   CustodyInnerTransaction,
@@ -582,6 +584,13 @@ const withConfidentialSendFields = (
   }
 }
 
+// xrpl.js and Custody both carry memo fields hex-encoded, so only the shape changes.
+const memoToCustodyMemo = ({ Memo }: Memo): Core_XrplMemo => ({
+  ...(!isUndefined(Memo.MemoData) && { memoData: Memo.MemoData }),
+  ...(!isUndefined(Memo.MemoType) && { memoType: Memo.MemoType }),
+  ...(!isUndefined(Memo.MemoFormat) && { memoFormat: Memo.MemoFormat }),
+})
+
 /**
  * Converts an autofilled xrpl.js Batch into a `BatchPayloadInput` for
  * `dryRunBatch` / `proposeBatch`.
@@ -592,6 +601,8 @@ const withConfidentialSendFields = (
  *   `{ type: "AccountSequence", value: Sequence }`; otherwise `sequencing`
  *   is omitted so the service default `{ type: "PlatformManaged" }` applies
  * - `LastLedgerSequence` is passed through when present
+ * - `Memos` on the outer Batch are mapped to `memos` when present. Memos on
+ *   inner transactions are dropped: the API has no field for them
  * - `BatchSigners` on the input is ignored — collect signatures separately
  *   and pass them to `proposeBatch`
  *
@@ -613,6 +624,7 @@ export const batchToCustodyBatchPayload = (
     ...(!isUndefined(batch.LastLedgerSequence) && {
       lastLedgerSequence: batch.LastLedgerSequence,
     }),
+    ...(!isUndefined(batch.Memos) && { memos: batch.Memos.map(memoToCustodyMemo) }),
   }
 }
 

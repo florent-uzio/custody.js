@@ -128,6 +128,32 @@ describe("xrpl builders — request envelope characterization", () => {
     })
   })
 
+  describe("memos", () => {
+    const memos = [{ memoData: "68656C6C6F", memoFormat: "746578742F706C61696E" }]
+    const expectedWithMemos = {
+      ...expectedEnvelope,
+      payload: {
+        ...expectedPayload,
+        parameters: { ...expectedPayload.parameters, memos },
+      },
+    }
+
+    it("passes the caller's memos into the dry-run parameters", () => {
+      const body = buildDryRunBody(operation, context, explicitOptions, memos)
+      expect(body).toEqual(expectedWithMemos)
+    })
+
+    it("passes the caller's memos into the proposed parameters", () => {
+      const { body } = buildTransactionIntent({
+        operation,
+        memos,
+        context,
+        options: explicitOptions,
+      })
+      expect(body).toEqual({ request: { ...expectedWithMemos, type: "Propose" } })
+    })
+  })
+
   describe("defaults", () => {
     it("applies feePriority=Low, empty customProperties, ~1 day expiry, and generated ids", () => {
       const body = buildDryRunBody(operation, context, {})
