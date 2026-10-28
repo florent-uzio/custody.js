@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { buildDryRunBody, buildTransactionIntent } from "./xrpl.builders.js"
-import type { Core_XrplOperation, IntentContext, XrplIntentOptions } from "./xrpl.types.js"
+import { buildDryRunBody, buildTransactionIntent, pickOrderFields } from "./xrpl.builders.js"
+import type {
+  Core_XrplOperation,
+  IntentContext,
+  XrplIntentOptions,
+  XrplTransactionOrderFields,
+} from "./xrpl.types.js"
 
 // ── Fixtures ─────────────────────────────────────────────────────
 //
@@ -26,10 +31,9 @@ const operation: Core_XrplOperation = {
   destinationTag: 0,
 }
 
-// Fully explicit options so no uuidv7()/dayjs()/feePriority defaults are
-// exercised — the output is deterministic (given a frozen clock).
+// Fully explicit options so no uuidv7()/dayjs() defaults are exercised — the
+// output is deterministic (given a frozen clock).
 const optionsNoDescription: XrplIntentOptions = {
-  feePriority: "High",
   expiryDays: 3,
   requestId: "fixed-request-id",
   payloadId: "fixed-payload-id",
@@ -51,7 +55,7 @@ const expectedPayload = {
   id: "fixed-payload-id",
   ledgerId: "ledger-123",
   parameters: {
-    feeStrategy: { priority: "High", type: "Priority" },
+    feeStrategy: { priority: "Low", type: "Priority" },
     memos: [],
     operation,
     type: "XRPL",
@@ -128,34 +132,66 @@ describe("xrpl builders — request envelope characterization", () => {
     })
   })
 
-  describe("memos", () => {
-    const memos = [{ memoData: "68656C6C6F", memoFormat: "746578742F706C61696E" }]
-    const expectedWithMemos = {
+  describe("order fields", () => {
+    const fields: XrplTransactionOrderFields = {
+      memos: [{ memoData: "68656C6C6F", memoFormat: "746578742F706C61696E" }],
+      feeStrategy: { type: "SpecifiedAdditionalFee", drops: "10" },
+      sourceTag: 42,
+      maximumFee: "1000",
+    }
+    const expectedWithFields = {
       ...expectedEnvelope,
       payload: {
         ...expectedPayload,
-        parameters: { ...expectedPayload.parameters, memos },
+        parameters: { ...expectedPayload.parameters, ...fields },
       },
     }
 
-    it("passes the caller's memos into the dry-run parameters", () => {
-      const body = buildDryRunBody(operation, context, explicitOptions, memos)
-      expect(body).toEqual(expectedWithMemos)
+    it("passes the caller's fields into the dry-run parameters", () => {
+      const body = buildDryRunBody(operation, context, explicitOptions, fields)
+      expect(body).toEqual(expectedWithFields)
     })
 
-    it("passes the caller's memos into the proposed parameters", () => {
+    it("passes the caller's fields into the proposed parameters", () => {
       const { body } = buildTransactionIntent({
         operation,
-        memos,
+        fields,
         context,
         options: explicitOptions,
       })
-      expect(body).toEqual({ request: { ...expectedWithMemos, type: "Propose" } })
+      expect(body).toEqual({ request: { ...expectedWithFields, type: "Propose" } })
+    })
+
+    // `toEqual` ignores undefined-valued keys, so check inclusion directly:
+    // an unset sourceTag/maximumFee must not appear in the signed body.
+    it("omits the sourceTag and maximumFee keys when they are unset", () => {
+      const { body } = buildTransactionIntent({
+        operation,
+        fields: pickOrderFields({ memos: fields.memos }),
+        context,
+        options: explicitOptions,
+      })
+      const { parameters } = body.request.payload as typeof expectedPayload
+
+      expect(Object.keys(parameters).sort()).toEqual(["feeStrategy", "memos", "operation", "type"])
+    })
+  })
+
+  describe("pickOrderFields", () => {
+    it("keeps only the order fields", () => {
+      const params = {
+        Account: "rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH",
+        operation,
+        sourceTag: 42,
+      }
+      expect(pickOrderFields(params)).toEqual({ sourceTag: 42 })
+      expect(pickOrderFields(params)).not.toHaveProperty("Account")
+      expect(pickOrderFields(params)).not.toHaveProperty("operation")
     })
   })
 
   describe("defaults", () => {
-    it("applies feePriority=Low, empty customProperties, ~1 day expiry, and generated ids", () => {
+    it("applies a Low priority fee strategy, empty customProperties, ~1 day expiry, and generated ids", () => {
       const body = buildDryRunBody(operation, context, {})
 
       // Whole-object assertion avoids narrowing the payload union by hand;

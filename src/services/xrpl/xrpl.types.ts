@@ -202,10 +202,6 @@ export type XrplIntentOptions = Prettify<
      */
     ledgerId?: XrplLedgerId
     /**
-     * Fee strategy priority. Defaults to "Low".
-     */
-    feePriority?: "Low" | "Medium" | "High"
-    /**
      * Custom properties to include in the intent payload.
      */
     payloadCustomProperties?: Record<string, string>
@@ -222,20 +218,39 @@ export type Core_XrplMemo = components["schemas"]["Core_XrplMemo"]
 export type Core_TransactionOrderParameters_XRPL =
   components["schemas"]["Core_TransactionOrderParameters_XRPL"]
 
+export type Core_XrplFeeStrategy = components["schemas"]["Core_XrplFeeStrategy"]
+
+/**
+ * The optional transaction-level fields of
+ * {@link Core_TransactionOrderParameters_XRPL} the caller can set on an order,
+ * whatever its operation.
+ *
+ * - `memos` defaults to none. Every memo field is hex-encoded — use xrpl.js
+ *   `convertStringToHex` to encode plain text.
+ * - `feeStrategy` defaults to `{ type: "Priority", priority: "Low" }`. Use
+ *   `{ type: "SpecifiedAdditionalFee", drops }` to pay a set amount on top of
+ *   the base fee.
+ * - `sourceTag` and `maximumFee` (drops, as a string) are left off the order
+ *   when omitted.
+ *
+ * The deprecated `destination`, `amount` and `destinationTag` are not exposed:
+ * set them on the operation instead.
+ */
+export type XrplTransactionOrderFields = Partial<
+  Pick<Core_TransactionOrderParameters_XRPL, "memos" | "feeStrategy" | "sourceTag" | "maximumFee">
+>
+
 /**
  * The transaction an XRPL transaction order proposes: the account it is sent
- * from, plus the fields of {@link Core_TransactionOrderParameters_XRPL} the
- * caller sets.
+ * from, its operation, plus the optional {@link XrplTransactionOrderFields}.
  *
  * `operation` is required here although the schema marks it optional — every
- * order this SDK builds carries one. `memos` is optional and defaults to none.
- * Every memo field is hex-encoded — use xrpl.js `convertStringToHex` to encode
- * plain text.
+ * order this SDK builds carries one.
  */
 export type XrplTransactionOrderParams = Prettify<
   Pick<Payment, "Account"> &
     Required<Pick<Core_TransactionOrderParameters_XRPL, "operation">> &
-    Partial<Pick<Core_TransactionOrderParameters_XRPL, "memos">>
+    XrplTransactionOrderFields
 >
 
 /**
@@ -497,7 +512,7 @@ export type WaitForMptIssuanceIdOptions = {
 
 export type BuildTransactionIntentProps = {
   operation: Core_XrplOperation
-  memos?: Core_XrplMemo[]
+  fields?: XrplTransactionOrderFields
   context: IntentContext
   options: XrplIntentOptions
 }
@@ -559,24 +574,24 @@ type BatchSignerDirect = {
  * `SubmitterOperation` and `ParticipantOperation`; build them by hand with
  * `Core_BatchEntry`, or convert from an autofilled xrpl.js `Batch` with
  * `batchToCustodyInnerTransactions`.
+ *
+ * The {@link XrplTransactionOrderFields} apply to the outer Batch only: inner
+ * entries cannot carry memos, a source tag or a fee setting.
  */
-export type BatchPayloadInput = {
-  /** XRPL address of the submitter (the account that pays the outer Batch fee) */
-  Account: string
-  /** How the XRP Ledger handles inner-operation failures */
-  executionMode: Core_BatchExecutionMode
-  /** Inner operations (SubmitterOperation or ParticipantOperation) */
-  entries: Core_BatchEntry[]
-  /** Outer Batch sequencing. Defaults to `{ type: "PlatformManaged" }` */
-  sequencing?: Core_Sequencing
-  /** Optional last ledger sequence for the outer Batch */
-  lastLedgerSequence?: number
-  /**
-   * Memos for the outer Batch, hex-encoded. Inner entries cannot carry memos.
-   * Defaults to none.
-   */
-  memos?: Core_XrplMemo[]
-}
+export type BatchPayloadInput = Prettify<
+  XrplTransactionOrderFields & {
+    /** XRPL address of the submitter (the account that pays the outer Batch fee) */
+    Account: string
+    /** How the XRP Ledger handles inner-operation failures */
+    executionMode: Core_BatchExecutionMode
+    /** Inner operations (SubmitterOperation or ParticipantOperation) */
+    entries: Core_BatchEntry[]
+    /** Outer Batch sequencing. Defaults to `{ type: "PlatformManaged" }` */
+    sequencing?: Core_Sequencing
+    /** Optional last ledger sequence for the outer Batch */
+    lastLedgerSequence?: number
+  }
+>
 
 /**
  * Options for signing the `signingPayload` returned by `dryRunBatch` for an

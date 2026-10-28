@@ -166,6 +166,7 @@ export type {
   Core_IntentDryRunResponse_v0_CreateTransactionOrder,
   Core_Sequencing,
   Core_TransactionEstimate_XRPL,
+  Core_XrplFeeStrategy,
   Core_XrplMemo,
   Core_XrplOperation,
   CustodyAccountSet,
@@ -191,6 +192,7 @@ export type {
   XrplAccountReference,
   XrplIntentOptions,
   XrplPorts,
+  XrplTransactionOrderFields,
   XrplTransactionOrderParams,
 } from "./services/xrpl/index.js"
 
