@@ -10,12 +10,12 @@ import type {
   BatchPayloadInput,
   BuildTransactionIntentProps,
   Core_BatchSigner,
-  Core_XrplMemo,
   Core_XrplOperation,
   Core_XrplOperation_Batch,
   IntentContext,
   SignBatchPayloadResult,
   XrplIntentOptions,
+  XrplTransactionOrderFields,
 } from "./xrpl.types.js"
 
 /**
@@ -38,18 +38,33 @@ export function buildBatchOperation(
 }
 
 /**
+ * Picks the {@link XrplTransactionOrderFields} off a caller's params, so no
+ * other key they carry (`Account`, `entries`, …) reaches the order.
+ */
+export function pickOrderFields({
+  memos,
+  feeStrategy,
+  sourceTag,
+  maximumFee,
+}: XrplTransactionOrderFields): XrplTransactionOrderFields {
+  return { memos, feeStrategy, sourceTag, maximumFee }
+}
+
+/**
  * Builds the `v0_CreateTransactionOrder` payload shared by the dry-run and
  * propose intents. Typed as `Core_Propose_v0_CreateTransactionOrder`, whose
  * parameters union is a subset of the dry-run one, so the result is assignable
  * to both the `Core_IntentDryRunRequest` and `Core_ProposeIntentBody` payloads.
+ *
+ * `sourceTag` and `maximumFee` are only added when set: the signed body is
+ * canonicalized, so a key that appears changes the signature.
  */
 function buildTransactionOrderPayload(
   operation: Core_XrplOperation,
-  memos: Core_XrplMemo[],
+  fields: XrplTransactionOrderFields,
   context: IntentContext,
   options: XrplIntentOptions,
 ): components["schemas"]["Core_Propose_v0_CreateTransactionOrder"] {
-  const feePriority = options.feePriority ?? "Low"
   const payloadId = options.payloadId ?? uuidv7()
 
   return {
@@ -58,10 +73,12 @@ function buildTransactionOrderPayload(
     id: payloadId,
     ledgerId: context.ledgerId,
     parameters: {
-      feeStrategy: { priority: feePriority, type: "Priority" },
-      memos,
+      feeStrategy: fields.feeStrategy ?? { priority: "Low", type: "Priority" },
+      memos: fields.memos ?? [],
       operation,
       type: "XRPL",
+      ...(!isUndefined(fields.sourceTag) && { sourceTag: fields.sourceTag }),
+      ...(!isUndefined(fields.maximumFee) && { maximumFee: fields.maximumFee }),
     },
     type: "v0_CreateTransactionOrder",
   }
@@ -74,9 +91,9 @@ export function buildDryRunBody(
   operation: Core_XrplOperation,
   context: IntentContext,
   options: XrplIntentOptions,
-  memos: Core_XrplMemo[] = [],
+  fields: XrplTransactionOrderFields = {},
 ): Core_IntentDryRunRequest {
-  const payload = buildTransactionOrderPayload(operation, memos, context, options)
+  const payload = buildTransactionOrderPayload(operation, fields, context, options)
   return buildRequestEnvelope(context, options, payload)
 }
 
@@ -93,7 +110,7 @@ export function buildDryRunBody(
  */
 export function buildTransactionIntent({
   operation,
-  memos = [],
+  fields = {},
   context,
   options,
 }: BuildTransactionIntentProps): {
@@ -101,7 +118,7 @@ export function buildTransactionIntent({
   payloadId: string
   intentId: string
 } {
-  const payload = buildTransactionOrderPayload(operation, memos, context, options)
+  const payload = buildTransactionOrderPayload(operation, fields, context, options)
   const requestEnvelope = buildRequestEnvelope(context, options, payload)
   return {
     body: {

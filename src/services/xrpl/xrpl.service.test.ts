@@ -537,7 +537,7 @@ describe("XrplService", () => {
       expect(capturedBody.request.payload.parameters.operation.type).toBe("MPTokenIssuanceDestroy")
     })
 
-    it("should apply custom options (feePriority, expiryDays, customProperties)", async () => {
+    it("should apply order fields and custom options (feeStrategy, expiryDays, customProperties)", async () => {
       let capturedBody: any
       ports = createTestPorts({
         submitIntent: async (body) => {
@@ -555,16 +555,29 @@ describe("XrplService", () => {
             amount: "100",
             destination: { type: "Address", address: "rDest" },
           },
+          feeStrategy: { type: "Priority", priority: "High" },
+          sourceTag: 42,
+          maximumFee: "20",
         },
         {
-          feePriority: "High",
           expiryDays: 7,
           requestCustomProperties: { reference: "test-ref" },
           payloadCustomProperties: { note: "test" },
         },
       )
 
-      expect(capturedBody.request.payload.parameters.feeStrategy.priority).toBe("High")
+      expect(capturedBody.request.payload.parameters).toEqual({
+        feeStrategy: { type: "Priority", priority: "High" },
+        memos: [],
+        operation: {
+          type: "Payment",
+          amount: "100",
+          destination: { type: "Address", address: "rDest" },
+        },
+        sourceTag: 42,
+        maximumFee: "20",
+        type: "XRPL",
+      })
       expect(capturedBody.request.customProperties).toEqual({ reference: "test-ref" })
       expect(capturedBody.request.payload.customProperties).toEqual({ note: "test" })
       const expiryDate = new Date(capturedBody.request.expiryAt)

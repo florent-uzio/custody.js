@@ -573,21 +573,27 @@ webhook route is treated as a genuine Custody event.
 
 `proposeIntent()` and the raw-sign methods accept an optional second parameter with these options:
 
-| Option                    | Type                          | Default | Description                                                                                          |
-| ------------------------- | ----------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| `domainId`                | `string`                      | -       | Domain ID (required if user has multiple domains)                                                    |
-| `ledgerId`                | `XrplLedgerId`                | -       | XRPL ledger to use (`"xrpl"` or `"xrpl-testnet-august-2024"`) — required when the address spans both |
-| `feePriority`             | `"Low" \| "Medium" \| "High"` | `"Low"` | Transaction fee priority                                                                             |
-| `expiryDays`              | `number`                      | `1`     | Days until the intent expires                                                                        |
-| `description`             | `string`                      | -       | Human-readable description on the request (`request.description`)                                    |
-| `requestCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the request                                                                       |
-| `payloadCustomProperties` | `Record<string, string>`      | `{}`    | Custom metadata on the payload                                                                       |
-| `requestId`               | `string`                      | auto    | Override the auto-generated request ID                                                               |
-| `payloadId`               | `string`                      | auto    | Override the auto-generated payload ID                                                               |
+| Option                    | Type                     | Default | Description                                                                                          |
+| ------------------------- | ------------------------ | ------- | ---------------------------------------------------------------------------------------------------- |
+| `domainId`                | `string`                 | -       | Domain ID (required if user has multiple domains)                                                    |
+| `ledgerId`                | `XrplLedgerId`           | -       | XRPL ledger to use (`"xrpl"` or `"xrpl-testnet-august-2024"`) — required when the address spans both |
+| `expiryDays`              | `number`                 | `1`     | Days until the intent expires                                                                        |
+| `description`             | `string`                 | -       | Human-readable description on the request (`request.description`)                                    |
+| `requestCustomProperties` | `Record<string, string>` | `{}`    | Custom metadata on the request                                                                       |
+| `payloadCustomProperties` | `Record<string, string>` | `{}`    | Custom metadata on the payload                                                                       |
+| `requestId`               | `string`                 | auto    | Override the auto-generated request ID                                                               |
+| `payloadId`               | `string`                 | auto    | Override the auto-generated payload ID                                                               |
 
-The first four are the envelope options every intent shares, so
+`domainId`, `expiryDays`, `description`, `requestCustomProperties` and
+`requestId` are the envelope options every intent shares, so
 `intents.proposePayload()` and `intents.proposeAndWait()` take them too. The
-rest are specific to a transaction order.
+rest (`ledgerId`, `payloadCustomProperties`, `payloadId`) are specific to a
+transaction order.
+
+Fee settings are part of the transaction, not the options: `feeStrategy`
+(default `{ type: "Priority", priority: "Low" }`, or
+`{ type: "SpecifiedAdditionalFee", drops }`), `maximumFee`, `sourceTag` and
+`memos` go in the first parameter, next to `Account` and `operation`.
 
 `proposeIntent()`, `rawSign()` and `proposeBatch()` return the intent response
 plus the `payloadId` the intent was proposed under, so follow-up lookups need no

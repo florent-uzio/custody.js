@@ -1081,6 +1081,23 @@ describe("batchToCustodyBatchPayload", () => {
     })
   })
 
+  describe("sourceTag", () => {
+    it("maps the outer Batch SourceTag", () => {
+      const result = batchToCustodyBatchPayload(makeBatch({ SourceTag: 42 }))
+      expect(result.sourceTag).toBe(42)
+    })
+
+    it("omits sourceTag when absent", () => {
+      const result = batchToCustodyBatchPayload(makeBatch())
+      expect(result).not.toHaveProperty("sourceTag")
+    })
+
+    it("does not map Fee to maximumFee", () => {
+      const result = batchToCustodyBatchPayload(makeBatch({ Fee: "36" }))
+      expect(result).not.toHaveProperty("maximumFee")
+    })
+  })
+
   it("preserves Account and converts entries via batchToCustodyInnerTransactions", () => {
     const submitterInner: RawTx = {
       ...baseTx,

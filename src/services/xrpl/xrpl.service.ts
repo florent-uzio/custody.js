@@ -14,6 +14,7 @@ import {
   buildDryRunBody,
   buildSignBatchPayloadResult,
   buildTransactionIntent,
+  pickOrderFields,
 } from "./xrpl.builders.js"
 import { compressPublicKey } from "./xrpl.crypto.js"
 import type { XrplPorts } from "./xrpl.ports.js"
@@ -96,7 +97,7 @@ export class XrplService {
    * Internally: resolves domain/user context from the Account address,
    * builds the intent envelope, and submits it to the Custody API.
    *
-   * @param params - The Account address, XRPL operation and optional memos
+   * @param params - The Account address, XRPL operation and optional order fields (memos, fee strategy, source tag, maximum fee)
    * @param options - Optional configuration for the intent
    * @returns The proposed intent response, plus the transaction-order id
    *   (`payloadId`, pass it to {@link getMptIssuanceId} and friends) and the
@@ -131,7 +132,7 @@ export class XrplService {
    * The transaction stage is skipped when the intent does not execute: no
    * transaction is coming, so there is nothing to wait for.
    *
-   * @param params - The Account address, XRPL operation and optional memos
+   * @param params - The Account address, XRPL operation and optional order fields (memos, fee strategy, source tag, maximum fee)
    * @param options - Intent options, plus per-stage polling configuration
    * @returns The transaction outcome ({@link WaitForTransactionResult}), the
    *   intent outcome, and the ids and domain the intent was proposed under
@@ -203,7 +204,7 @@ export class XrplService {
 
     const { body, payloadId, intentId } = buildTransactionIntent({
       operation: params.operation,
-      memos: params.memos,
+      fields: pickOrderFields(params),
       context,
       options,
     })
@@ -969,7 +970,7 @@ export class XrplService {
     })
 
     const operation = buildBatchOperation(payload, [])
-    const body = buildDryRunBody(operation, context, options, payload.memos)
+    const body = buildDryRunBody(operation, context, options, pickOrderFields(payload))
 
     const response = await this.ports.dryRunIntent(body)
 
@@ -1135,7 +1136,7 @@ export class XrplService {
     const operation = buildBatchOperation(payload, batchSigners)
     const { body, payloadId, intentId } = buildTransactionIntent({
       operation,
-      memos: payload.memos,
+      fields: pickOrderFields(payload),
       context,
       options,
     })

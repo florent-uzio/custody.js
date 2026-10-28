@@ -603,6 +603,9 @@ const memoToCustodyMemo = ({ Memo }: Memo): Core_XrplMemo => ({
  * - `LastLedgerSequence` is passed through when present
  * - `Memos` on the outer Batch are mapped to `memos` when present. Memos on
  *   inner transactions are dropped: the API has no field for them
+ * - `SourceTag` on the outer Batch is mapped to `sourceTag` when present.
+ *   `Fee` is not mapped to `maximumFee`: autofill sets it, so it is not a cap
+ *   the caller chose — set `maximumFee` on the result to cap the fee
  * - `BatchSigners` on the input is ignored — collect signatures separately
  *   and pass them to `proposeBatch`
  *
@@ -625,6 +628,7 @@ export const batchToCustodyBatchPayload = (
       lastLedgerSequence: batch.LastLedgerSequence,
     }),
     ...(!isUndefined(batch.Memos) && { memos: batch.Memos.map(memoToCustodyMemo) }),
+    ...(!isUndefined(batch.SourceTag) && { sourceTag: batch.SourceTag }),
   }
 }
 
