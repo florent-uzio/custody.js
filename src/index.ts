@@ -166,6 +166,7 @@ export type {
   Core_IntentDryRunResponse_v0_CreateTransactionOrder,
   Core_Sequencing,
   Core_TransactionEstimate_XRPL,
+  Core_XrplMemo,
   Core_XrplOperation,
   CustodyAccountSet,
   CustodyBatch,
@@ -190,6 +191,7 @@ export type {
   XrplAccountReference,
   XrplIntentOptions,
   XrplPorts,
+  XrplTransactionOrderParams,
 } from "./services/xrpl/index.js"
 
 // genesis types

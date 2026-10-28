@@ -10,6 +10,7 @@ import type {
   BatchPayloadInput,
   BuildTransactionIntentProps,
   Core_BatchSigner,
+  Core_XrplMemo,
   Core_XrplOperation,
   Core_XrplOperation_Batch,
   IntentContext,
@@ -44,6 +45,7 @@ export function buildBatchOperation(
  */
 function buildTransactionOrderPayload(
   operation: Core_XrplOperation,
+  memos: Core_XrplMemo[],
   context: IntentContext,
   options: XrplIntentOptions,
 ): components["schemas"]["Core_Propose_v0_CreateTransactionOrder"] {
@@ -57,7 +59,7 @@ function buildTransactionOrderPayload(
     ledgerId: context.ledgerId,
     parameters: {
       feeStrategy: { priority: feePriority, type: "Priority" },
-      memos: [],
+      memos,
       operation,
       type: "XRPL",
     },
@@ -72,8 +74,9 @@ export function buildDryRunBody(
   operation: Core_XrplOperation,
   context: IntentContext,
   options: XrplIntentOptions,
+  memos: Core_XrplMemo[] = [],
 ): Core_IntentDryRunRequest {
-  const payload = buildTransactionOrderPayload(operation, context, options)
+  const payload = buildTransactionOrderPayload(operation, memos, context, options)
   return buildRequestEnvelope(context, options, payload)
 }
 
@@ -90,6 +93,7 @@ export function buildDryRunBody(
  */
 export function buildTransactionIntent({
   operation,
+  memos = [],
   context,
   options,
 }: BuildTransactionIntentProps): {
@@ -97,7 +101,7 @@ export function buildTransactionIntent({
   payloadId: string
   intentId: string
 } {
-  const payload = buildTransactionOrderPayload(operation, context, options)
+  const payload = buildTransactionOrderPayload(operation, memos, context, options)
   const requestEnvelope = buildRequestEnvelope(context, options, payload)
   return {
     body: {

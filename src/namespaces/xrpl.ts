@@ -6,7 +6,6 @@ import type {
   ConfidentialSendLeg,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
-  Core_XrplOperation,
   GetBatchSignatureParams,
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
@@ -24,6 +23,7 @@ import type {
   WaitForSignatureOptions,
   XrplIntentOptions,
   XrplService,
+  XrplTransactionOrderParams,
 } from "../services/xrpl/index.js"
 import type { Core_IntentResponse } from "./intents.types.js"
 
@@ -48,7 +48,7 @@ export function createXrpl(getService: () => XrplService) {
      *   transaction order it was proposed under
      */
     proposeIntent: async (
-      params: { Account: string; operation: Core_XrplOperation },
+      params: XrplTransactionOrderParams,
       options?: XrplIntentOptions,
     ): Promise<ProposeIntentResult> => getService().proposeIntent(params, options),
 
@@ -75,7 +75,7 @@ export function createXrpl(getService: () => XrplService) {
      *   `payloadId` and `domainId` the intent was proposed under
      */
     proposeIntentAndWait: async (
-      params: { Account: string; operation: Core_XrplOperation },
+      params: XrplTransactionOrderParams,
       options?: ProposeIntentAndWaitOptions,
     ): Promise<ProposeIntentAndWaitResult> => getService().proposeIntentAndWait(params, options),
 

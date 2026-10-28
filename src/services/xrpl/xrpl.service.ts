@@ -24,7 +24,6 @@ import type {
   ConfidentialSendLeg,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
-  Core_XrplOperation,
   GetBatchSignatureParams,
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
@@ -44,6 +43,7 @@ import type {
   WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
+  XrplTransactionOrderParams,
 } from "./xrpl.types.js"
 import { validateBatchSequencing } from "./xrpl.validators.js"
 
@@ -96,7 +96,7 @@ export class XrplService {
    * Internally: resolves domain/user context from the Account address,
    * builds the intent envelope, and submits it to the Custody API.
    *
-   * @param params - The Account address and XRPL operation
+   * @param params - The Account address, XRPL operation and optional memos
    * @param options - Optional configuration for the intent
    * @returns The proposed intent response, plus the transaction-order id
    *   (`payloadId`, pass it to {@link getMptIssuanceId} and friends) and the
@@ -106,7 +106,7 @@ export class XrplService {
    *   validation fails, or the sender account is not found
    */
   public async proposeIntent(
-    params: { Account: string; operation: Core_XrplOperation },
+    params: XrplTransactionOrderParams,
     options: XrplIntentOptions = {},
   ): Promise<ProposeIntentResult> {
     const { result } = await this.propose(params, options)
@@ -131,7 +131,7 @@ export class XrplService {
    * The transaction stage is skipped when the intent does not execute: no
    * transaction is coming, so there is nothing to wait for.
    *
-   * @param params - The Account address and XRPL operation
+   * @param params - The Account address, XRPL operation and optional memos
    * @param options - Intent options, plus per-stage polling configuration
    * @returns The transaction outcome ({@link WaitForTransactionResult}), the
    *   intent outcome, and the ids and domain the intent was proposed under
@@ -140,7 +140,7 @@ export class XrplService {
    *   never registered
    */
   public async proposeIntentAndWait(
-    params: { Account: string; operation: Core_XrplOperation },
+    params: XrplTransactionOrderParams,
     options: ProposeIntentAndWaitOptions = {},
   ): Promise<ProposeIntentAndWaitResult> {
     const { result, context } = await this.propose(params, options)
@@ -189,7 +189,7 @@ export class XrplService {
    * @private
    */
   private async propose(
-    params: { Account: string; operation: Core_XrplOperation },
+    params: XrplTransactionOrderParams,
     options: XrplIntentOptions,
   ): Promise<{ result: ProposeIntentResult; context: IntentContext }> {
     assertValidAddress(params.Account)
@@ -203,6 +203,7 @@ export class XrplService {
 
     const { body, payloadId, intentId } = buildTransactionIntent({
       operation: params.operation,
+      memos: params.memos,
       context,
       options,
     })
@@ -968,7 +969,7 @@ export class XrplService {
     })
 
     const operation = buildBatchOperation(payload, [])
-    const body = buildDryRunBody(operation, context, options)
+    const body = buildDryRunBody(operation, context, options, payload.memos)
 
     const response = await this.ports.dryRunIntent(body)
 
@@ -1132,7 +1133,12 @@ export class XrplService {
     })
 
     const operation = buildBatchOperation(payload, batchSigners)
-    const { body, payloadId, intentId } = buildTransactionIntent({ operation, context, options })
+    const { body, payloadId, intentId } = buildTransactionIntent({
+      operation,
+      memos: payload.memos,
+      context,
+      options,
+    })
 
     const intentResponse = await this.ports.submitIntent(body)
     return { ...intentResponse, payloadId, intentId }
