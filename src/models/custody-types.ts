@@ -10391,6 +10391,61 @@ export interface components {
           riskLevel?: "UNKNOWN" | "SEVERE" | "HIGH" | "MEDIUM" | "LOW" | "NO_RISK_DETECTED"
           screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Chainalysis"]
         }
+      | {
+          /** @enum {string} */
+          provider: "ELLIPTIC"
+          /** Format: uuid */
+          id?: string
+          /** Format: uuid */
+          domainId?: string
+          /** Format: uuid */
+          intentId?: string
+          /** Format: uuid */
+          transferId?: string
+          /** Format: uuid */
+          transactionOrderId?: string
+          transactionHash?: string
+          addressHash?: string
+          errorDetails?: string
+          warningDetails?: string
+          /** Format: date-time */
+          screenedAt?: string
+          ledgerId: string
+          /** @enum {string} */
+          analysisType: "WALLET" | "TRANSACTION"
+          screeningStatus: string
+          /** @enum {string} */
+          riskLevel?: "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN" | "NOT_SCREENABLE"
+          screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Elliptic"]
+        }
+      | {
+          /** @enum {string} */
+          provider: "CHAINALYSIS"
+          /** Format: uuid */
+          id?: string
+          /** Format: uuid */
+          domainId?: string
+          /** Format: uuid */
+          intentId?: string
+          /** Format: uuid */
+          transferId?: string
+          /** Format: uuid */
+          transactionOrderId?: string
+          transactionHash?: string
+          addressHash?: string
+          errorDetails?: string
+          warningDetails?: string
+          /** Format: date-time */
+          screenedAt?: string
+          ledgerId: string
+          /** @enum {string} */
+          analysisType: "WALLET" | "TRANSACTION"
+          screeningStatus: string
+          /** @enum {string} */
+          riskLevel?:
+            "UNKNOWN" | "SEVERE" | "HIGH" | "MEDIUM" | "LOW" | "NO_RISK_DETECTED" | "NOT_SCREENABLE"
+          screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Chainalysis"]
+        }
     Compliance_ComplianceAnalysisResponse: {
       result: components["schemas"]["Compliance_ComplianceAnalysis"][]
     }
@@ -10439,6 +10494,39 @@ export interface components {
           warningDetails?: string
           /** @enum {string} */
           riskLevel?: "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN"
+          screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Elliptic"]
+        }
+      | {
+          /** @enum {string} */
+          provider: "CHAINALYSIS"
+          walletAddress: string
+          transactionAmount?: number
+          ledger: string
+          /** @enum {string} */
+          transactionType: "INCOMING" | "OUTGOING"
+          /** Format: date-time */
+          screenedAt?: string
+          errorDetails?: string
+          warningDetails?: string
+          /** @enum {string} */
+          riskLevel?:
+            "UNKNOWN" | "SEVERE" | "HIGH" | "MEDIUM" | "LOW" | "NO_RISK_DETECTED" | "NOT_SCREENABLE"
+          screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Chainalysis"]
+        }
+      | {
+          /** @enum {string} */
+          provider: "ELLIPTIC"
+          walletAddress: string
+          transactionAmount?: number
+          ledger: string
+          /** @enum {string} */
+          transactionType: "INCOMING" | "OUTGOING"
+          /** Format: date-time */
+          screenedAt?: string
+          errorDetails?: string
+          warningDetails?: string
+          /** @enum {string} */
+          riskLevel?: "LOW" | "MEDIUM" | "HIGH" | "UNKNOWN" | "NOT_SCREENABLE"
           screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Elliptic"]
         }
     Compliance_ScreeningDetail_Elliptic: {
@@ -12826,6 +12914,20 @@ export interface components {
       recipientVaultId: string
       /** @description Recipient vault display name. Empty for off-platform recipients and when the recipient's domain is outside the requester's access. */
       recipientVaultName: string
+      /**
+       * @description Transaction TYPE (contract v1.3, last column); repeats across rows of the same transaction. A transaction created from an order takes the category of the order's ledger operation (an Ethereum order with call data is 'contract call'); one without a stored order takes it from the kinds of all its transfers: 'transfer' if any is Transfer, else 'recovery', else 'fee', else 'other'. Never empty.
+       * @example transfer
+       * @enum {string}
+       */
+      type:
+        | "transfer"
+        | "contract call"
+        | "token management"
+        | "staking"
+        | "account settings"
+        | "recovery"
+        | "fee"
+        | "other"
     }
     Export_MovementReportResponseDto: {
       /** @description File-level metadata and reconciliation control totals. */
@@ -22672,7 +22774,7 @@ export interface operations {
           "application/json": components["schemas"]["Export_MovementReportResponseDto"]
           /**
            * @example # metadata: {"exportId":"d394fae4-9d6b-4ab7-a3fa-c66e7a6caf56","recordCount":16,...}
-           *     "domainId","domainName","registeredAt","transactionId","onLedgerTransactionId","transferId","transferKind","enrichedTransactionValue","rawTransactionValue","ledgerName",...(39 columns)
+           *     "domainId","domainName","registeredAt","transactionId","onLedgerTransactionId","transferId","transferKind","enrichedTransactionValue","rawTransactionValue","ledgerName",...(40 columns)
            *     "5cd224fe-193e-8bce-c94c-c6c05245e2d1","My root domain","2026-08-17T10:54:04.130Z",...
            */
           "text/csv": string
