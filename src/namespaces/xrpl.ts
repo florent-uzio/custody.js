@@ -6,12 +6,14 @@ import type {
   ConfidentialSendLeg,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
+  DryRunIntentResult,
   GetBatchSignatureParams,
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
   GetPublicKeyOptions,
   ProposeIntentAndWaitOptions,
   ProposeIntentAndWaitResult,
+  ProposeIntentOptions,
   ProposeIntentResult,
   RawSignAndWaitOptions,
   RawSignAndWaitResult,
@@ -42,15 +44,36 @@ export function createXrpl(getService: () => XrplService) {
      * which transaction type to propose (e.g. `{ type: "Payment", ... }`).
      * TypeScript autocomplete shows all available operation types and their fields.
      *
+     * Pass `dryRun: true` to dry-run the exact request first: it is proposed
+     * unchanged only if the dry run passes, otherwise a `CustodyError` lists
+     * Custody's reasons and nothing is proposed.
+     *
      * @param params - The Account address and XRPL operation
-     * @param options - Optional configuration for the intent
+     * @param options - Optional configuration for the intent, and `dryRun`
      * @returns The proposed intent response, plus the `payloadId` of the
      *   transaction order it was proposed under
      */
     proposeIntent: async (
       params: XrplTransactionOrderParams,
-      options?: XrplIntentOptions,
+      options?: ProposeIntentOptions,
     ): Promise<ProposeIntentResult> => getService().proposeIntent(params, options),
+
+    /**
+     * Dry-run an XRPL transaction without proposing it — the same request
+     * `proposeIntent` would send for the same params and options.
+     *
+     * Never throws on a failed dry run: read `success` and `errors`. To propose
+     * exactly what passed, use `proposeIntent(params, { dryRun: true })`.
+     *
+     * @param params - The Account address and XRPL operation
+     * @param options - Optional configuration for the intent
+     * @returns Custody's verdict and estimate, plus the `intentId` and
+     *   `payloadId` the request was built under
+     */
+    dryRunIntent: async (
+      params: XrplTransactionOrderParams,
+      options?: XrplIntentOptions,
+    ): Promise<DryRunIntentResult> => getService().dryRunIntent(params, options),
 
     /**
      * Propose an XRPL transaction as a custody intent and wait it out to the

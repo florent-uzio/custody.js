@@ -2078,6 +2078,145 @@ describe("XrplService", () => {
     })
   })
 
+  // ── dryRunIntent / proposeIntent({ dryRun }) ──────────────────
+
+  describe("dryRunIntent", () => {
+    const paymentParams = {
+      Account: mockAddress,
+      operation: {
+        type: "Payment" as const,
+        amount: "1000000",
+        destination: { type: "Address" as const, address: mockAddress },
+      },
+    }
+
+    const failedDryRun = {
+      ...mockDryRunResponse,
+      success: false,
+      errors: ["Insufficient XRP balance", "Destination does not exist"],
+    }
+
+    it("dry-runs the request proposeIntent would send, without submitting it", async () => {
+      let dryRunBody: any
+      let proposeBody: any
+      const submitIntent = vi.fn(async (body: any) => {
+        proposeBody = body
+        return { requestId: "request-123" } as any
+      })
+      ports = createTestPorts({
+        submitIntent,
+        dryRunIntent: async (body) => {
+          dryRunBody = body
+          return mockDryRunResponse
+        },
+      })
+      service = new XrplService(ports)
+
+      const options = { requestId: "intent-1", payloadId: "payload-1", expiryDays: 2 }
+      const result = await service.dryRunIntent(paymentParams, options)
+
+      expect(submitIntent).not.toHaveBeenCalled()
+      expect(result).toMatchObject({
+        success: true,
+        estimate: mockDryRunResponse.estimate,
+        intentId: "intent-1",
+        payloadId: "payload-1",
+      })
+
+      await service.proposeIntent(paymentParams, options)
+      const { type, ...proposed } = proposeBody.request
+      expect(type).toBe("Propose")
+      // Only the expiry is recomputed between the two calls.
+      expect({ ...proposed, expiryAt: undefined }).toEqual({ ...dryRunBody, expiryAt: undefined })
+    })
+
+    it("returns a failed dry run instead of throwing", async () => {
+      ports = createTestPorts({ dryRunIntent: async () => failedDryRun })
+      service = new XrplService(ports)
+
+      const result = await service.dryRunIntent(paymentParams)
+
+      expect(result.success).toBe(false)
+      expect(result.errors).toEqual(failedDryRun.errors)
+      expect(result.intentId).toEqual(expect.any(String))
+      expect(result.payloadId).toEqual(expect.any(String))
+    })
+
+    it("rejects an invalid Account before calling the dry-run port", async () => {
+      const dryRunIntent = vi.fn(async () => mockDryRunResponse)
+      ports = createTestPorts({ dryRunIntent })
+      service = new XrplService(ports)
+
+      await expect(
+        service.dryRunIntent({ ...paymentParams, Account: "not-an-address" }),
+      ).rejects.toThrow("Invalid address: not-an-address")
+      expect(dryRunIntent).not.toHaveBeenCalled()
+    })
+
+    it("throws on a non-transaction-order dry-run response", async () => {
+      ports = createTestPorts({ dryRunIntent: async () => ({ type: "v0_CreateUser" }) as any })
+      service = new XrplService(ports)
+
+      await expect(service.dryRunIntent(paymentParams)).rejects.toThrow(
+        "Unexpected dry-run response type: v0_CreateUser",
+      )
+    })
+
+    it("proposeIntent with dryRun proposes the exact request that passed", async () => {
+      let dryRunBody: any
+      let proposeBody: any
+      ports = createTestPorts({
+        dryRunIntent: async (body) => {
+          dryRunBody = body
+          return mockDryRunResponse
+        },
+        submitIntent: async (body) => {
+          proposeBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      const result = await service.proposeIntent(paymentParams, { dryRun: true })
+
+      expect(proposeBody).toEqual({ request: { ...dryRunBody, type: "Propose" } })
+      expect(result.intentId).toBe(dryRunBody.id)
+      expect(result.payloadId).toBe(dryRunBody.payload.id)
+    })
+
+    it("proposeIntent with dryRun throws Custody's reasons and proposes nothing on failure", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent, dryRunIntent: async () => failedDryRun })
+      service = new XrplService(ports)
+
+      await expect(service.proposeIntent(paymentParams, { dryRun: true })).rejects.toThrow(
+        "Dry run failed, intent not proposed: Insufficient XRP balance, Destination does not exist",
+      )
+      expect(submitIntent).not.toHaveBeenCalled()
+    })
+
+    it("proposeIntent without dryRun does not call the dry-run port", async () => {
+      const dryRunIntent = vi.fn(async () => mockDryRunResponse)
+      ports = createTestPorts({ dryRunIntent })
+      service = new XrplService(ports)
+
+      await service.proposeIntent(paymentParams)
+
+      expect(dryRunIntent).not.toHaveBeenCalled()
+    })
+
+    it("proposeIntentAndWait honours dryRun", async () => {
+      const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+      ports = createTestPorts({ submitIntent, dryRunIntent: async () => failedDryRun })
+      service = new XrplService(ports)
+
+      await expect(service.proposeIntentAndWait(paymentParams, { dryRun: true })).rejects.toThrow(
+        /Dry run failed/,
+      )
+      expect(submitIntent).not.toHaveBeenCalled()
+    })
+  })
+
   // ── dryRunBatch ───────────────────────────────────────────────
 
   describe("dryRunBatch", () => {
