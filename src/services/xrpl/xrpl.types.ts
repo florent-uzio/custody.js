@@ -271,6 +271,33 @@ export type ProposeIntentResult = Prettify<
 >
 
 /**
+ * Options for {@link XrplService.proposeIntent}: the intent options, plus
+ * `dryRun` to check the order with Custody before proposing it.
+ */
+export type ProposeIntentOptions = Prettify<
+  XrplIntentOptions & {
+    /**
+     * Dry-run the order first and propose it only when the dry run succeeds.
+     * The exact request that passed is proposed — same intent id, payload id
+     * and expiry — and nothing is proposed when it fails: a `CustodyError`
+     * lists Custody's reasons instead. Defaults to `false`.
+     */
+    dryRun?: boolean
+  }
+>
+
+/**
+ * Outcome of dry-running an XRPL transaction order: Custody's verdict
+ * (`success`, `errors`, `result`, `estimate`), plus the intent id and
+ * transaction-order (payload) id the request was built under — the same ids
+ * {@link ProposeIntentResult} reports. Pass them back as `options.requestId` /
+ * `options.payloadId` to propose the same order under the same ids.
+ */
+export type DryRunIntentResult = Prettify<
+  Core_IntentDryRunResponse_v0_CreateTransactionOrder & { payloadId: string; intentId: string }
+>
+
+/**
  * Options for {@link XrplService.proposeIntentAndWait} — the intent options
  * {@link proposeIntent} takes, plus how long to wait for each of the two stages.
  *
@@ -279,7 +306,7 @@ export type ProposeIntentResult = Prettify<
  * the ledger. Each defaults to 10 attempts 3s apart, as its standalone
  * counterpart does.
  */
-export type ProposeIntentAndWaitOptions = XrplIntentOptions & {
+export type ProposeIntentAndWaitOptions = ProposeIntentOptions & {
   /** Polling options for the intent stage (`intents.getAndWait`) */
   intent?: WaitForExecutionOptions
   /** Polling options for the transaction stage (`transactions.byOrderAndWait`) */

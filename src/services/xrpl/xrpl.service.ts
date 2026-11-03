@@ -5,7 +5,11 @@ import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
 import { CustodyError } from "../../models/index.js"
 import { buildRequestEnvelope, waitForExecution } from "../../namespaces/intents.js"
-import type { Core_IntentResponse, Core_ProposeIntentBody } from "../../namespaces/intents.types.js"
+import type {
+  Core_IntentDryRunRequest,
+  Core_IntentResponse,
+  Core_ProposeIntentBody,
+} from "../../namespaces/intents.types.js"
 import { waitForOrderTransaction } from "../../namespaces/transactions.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
 import { isPresent, isSendCryptographicFields } from "./xrpl.adapters.js"
@@ -25,6 +29,8 @@ import type {
   ConfidentialSendLeg,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
+  Core_IntentDryRunResponse_v0_CreateTransactionOrder,
+  DryRunIntentResult,
   GetBatchSignatureParams,
   GetElGamalPublicKeyOptions,
   GetMptIssuanceIdParams,
@@ -33,6 +39,7 @@ import type {
   MptIssuanceIdLookup,
   ProposeIntentAndWaitOptions,
   ProposeIntentAndWaitResult,
+  ProposeIntentOptions,
   ProposeIntentResult,
   ProvisionElGamalKeyPairResult,
   RawSignAndWaitOptions,
@@ -98,17 +105,19 @@ export class XrplService {
    * builds the intent envelope, and submits it to the Custody API.
    *
    * @param params - The Account address, XRPL operation and optional order fields (memos, fee strategy, source tag, maximum fee)
-   * @param options - Optional configuration for the intent
+   * @param options - Optional configuration for the intent; `dryRun: true`
+   *   dry-runs the exact request first and proposes it only if it passes
    * @returns The proposed intent response, plus the transaction-order id
    *   (`payloadId`, pass it to {@link getMptIssuanceId} and friends) and the
    *   intent id (`intentId`, pass it to `intents.getAndWait`) it was proposed
    *   under
    * @throws {CustodyError} If the Account is not a valid XRPL address,
-   *   validation fails, or the sender account is not found
+   *   validation fails, the sender account is not found, or `dryRun` is set
+   *   and the dry run fails
    */
   public async proposeIntent(
     params: XrplTransactionOrderParams,
-    options: XrplIntentOptions = {},
+    options: ProposeIntentOptions = {},
   ): Promise<ProposeIntentResult> {
     const { result } = await this.propose(params, options)
     return result
@@ -191,26 +200,107 @@ export class XrplService {
    */
   private async propose(
     params: XrplTransactionOrderParams,
-    options: XrplIntentOptions,
+    options: ProposeIntentOptions,
   ): Promise<{ result: ProposeIntentResult; context: IntentContext }> {
+    const { context, body, dryRunBody, payloadId, intentId } = await this.buildTransactionOrder(
+      params,
+      options,
+      "xrpl.proposeIntent",
+    )
+
+    if (options.dryRun) {
+      const response = await this.dryRunTransactionOrder(dryRunBody)
+
+      if (!response.success) {
+        throw new CustodyError({
+          reason: `Dry run failed, intent not proposed: ${response.errors?.join(", ") ?? "unknown error"}`,
+        })
+      }
+    }
+
+    const intentResponse = await this.ports.submitIntent(body)
+    return { result: { ...intentResponse, payloadId, intentId }, context }
+  }
+
+  /**
+   * Dry-runs an XRPL transaction order without proposing it.
+   *
+   * Builds the request `proposeIntent` would send for the same params and
+   * options. A failed dry run is reported, not thrown: read `success` and
+   * `errors`. To propose exactly the request that passed, prefer
+   * `proposeIntent(params, { dryRun: true })`; otherwise pass the returned
+   * `intentId` / `payloadId` back as `options.requestId` / `options.payloadId`
+   * (only the expiry is recomputed).
+   *
+   * @param params - The Account address, XRPL operation and optional order fields (memos, fee strategy, source tag, maximum fee)
+   * @param options - Optional configuration for the intent
+   * @returns Custody's dry-run verdict and estimate, plus the intent id and
+   *   payload id the request was built under
+   * @throws {CustodyError} If the Account is not a valid XRPL address,
+   *   validation fails, the sender account is not found, or the response is
+   *   not a transaction-order dry run
+   */
+  public async dryRunIntent(
+    params: XrplTransactionOrderParams,
+    options: XrplIntentOptions = {},
+  ): Promise<DryRunIntentResult> {
+    const { dryRunBody, payloadId, intentId } = await this.buildTransactionOrder(
+      params,
+      options,
+      "xrpl.dryRunIntent",
+    )
+
+    const response = await this.dryRunTransactionOrder(dryRunBody)
+    return { ...response, payloadId, intentId }
+  }
+
+  /**
+   * Validates the params, resolves the sender's context and builds the
+   * transaction-order request — shared by `propose` and `dryRunIntent` so both
+   * send the same request for the same params and options.
+   * @private
+   */
+  private async buildTransactionOrder(
+    params: XrplTransactionOrderParams,
+    options: XrplIntentOptions,
+    method: string,
+  ) {
     assertValidAddress(params.Account)
 
-    await this.guard.checkFeature(xrplOperationSchema(params.operation.type), "xrpl.proposeIntent")
+    await this.guard.checkFeature(xrplOperationSchema(params.operation.type), method)
 
     const context = await this.ports.resolveContext(params.Account, {
       domainId: options.domainId,
       ledgerId: options.ledgerId,
     })
 
-    const { body, payloadId, intentId } = buildTransactionIntent({
+    const intent = buildTransactionIntent({
       operation: params.operation,
       fields: pickOrderFields(params),
       context,
       options,
     })
 
-    const intentResponse = await this.ports.submitIntent(body)
-    return { result: { ...intentResponse, payloadId, intentId }, context }
+    return { context, ...intent }
+  }
+
+  /**
+   * Dry-runs a transaction-order request, narrowing the response to its
+   * transaction-order variant.
+   * @private
+   */
+  private async dryRunTransactionOrder(
+    body: Core_IntentDryRunRequest,
+  ): Promise<Core_IntentDryRunResponse_v0_CreateTransactionOrder> {
+    const response = await this.ports.dryRunIntent(body)
+
+    if (response.type !== "v0_CreateTransactionOrder") {
+      throw new CustodyError({
+        reason: `Unexpected dry-run response type: ${response.type}`,
+      })
+    }
+
+    return response
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -972,13 +1062,8 @@ export class XrplService {
     const operation = buildBatchOperation(payload, [])
     const body = buildDryRunBody(operation, context, options, pickOrderFields(payload))
 
-    const response = await this.ports.dryRunIntent(body)
+    const response = await this.dryRunTransactionOrder(body)
 
-    if (response.type !== "v0_CreateTransactionOrder") {
-      throw new CustodyError({
-        reason: `Unexpected dry-run response type: ${response.type}`,
-      })
-    }
     if (!response.success) {
       throw new CustodyError({
         reason: `Batch dry run failed: ${response.errors?.join(", ") ?? "unknown error"}`,

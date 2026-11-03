@@ -107,6 +107,9 @@ export function buildDryRunBody(
  * `Core_IntentResponse` returns — so it has to be captured from the envelope
  * before it is sent, rather than left for the caller to dig out of the
  * response.
+ *
+ * `dryRunBody` is the same request without the `Propose` tag, so a dry run of
+ * it checks exactly what `body` proposes — same ids, same expiry.
  */
 export function buildTransactionIntent({
   operation,
@@ -115,6 +118,7 @@ export function buildTransactionIntent({
   options,
 }: BuildTransactionIntentProps): {
   body: Core_ProposeIntentBody
+  dryRunBody: Core_IntentDryRunRequest
   payloadId: string
   intentId: string
 } {
@@ -127,6 +131,7 @@ export function buildTransactionIntent({
         type: "Propose",
       },
     },
+    dryRunBody: requestEnvelope,
     payloadId: payload.id,
     intentId: requestEnvelope.id,
   }
