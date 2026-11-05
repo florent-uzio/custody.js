@@ -1,5 +1,12 @@
 # custody
 
+## 2.15.0
+
+### Minor Changes
+
+- e103e54: Bundle official OpenAPI specs 1.43.6 and 1.34.26 and regenerate types and the capability matrix. Neither release adds endpoints or schemas. Compliance analysis and wallet analysis responses gain Chainalysis/Elliptic variants whose `riskLevel` includes `NOT_SCREENABLE`, and movement report rows gain a `type` field (transaction category, e.g. `transfer`, `contract call`, `staking`).
+- 777ae12: Dry run a single XRPL operation before proposing it (#294). `xrpl.dryRunIntent(params, options)` dry-runs the same `v0_CreateTransactionOrder` request `proposeIntent` would send and returns Custody's verdict (`success`, `errors`, `result`, `estimate`) with the `intentId` and `payloadId` it was built under, without throwing on a failed dry run. `proposeIntent` and `proposeIntentAndWait` accept `dryRun: true` to dry-run first and propose the exact request that passed (same ids and expiry), throwing a `CustodyError` with Custody's reasons and proposing nothing when it fails. `ProposeIntentOptions` and `DryRunIntentResult` are exported from the package root.
+
 ## 2.14.0
 
 ### Minor Changes
