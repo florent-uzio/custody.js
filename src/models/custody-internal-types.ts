@@ -661,6 +661,70 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/internal/v1/me/domains/{domainId}/session": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations["getConnectedSession"]
+    put?: never
+    post: operations["postConnect"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/internal/v1/me/domains/{domainId}/session/{sessionId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations["getDAppDetails"]
+    put?: never
+    post: operations["postApproveSession"]
+    delete: operations["deleteDisconnect"]
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/internal/v1/me/domains/{domainId}/session/{sessionId}/change": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations["postChangeAccount"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/internal/v1/me/domains/{domainId}/session/{sessionId}/events": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations["getSessionEvents"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -975,6 +1039,7 @@ export interface components {
       participant: components["schemas"]["Internal_Participant"]
       operation: components["schemas"]["Internal_BatchInnerOperation"]
       sequencing: components["schemas"]["Internal_ParticipantSequencing"]
+      sponsorship?: components["schemas"]["Internal_XrplSponsorshipParams"]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -984,6 +1049,7 @@ export interface components {
     Internal_BatchEntry_SubmitterOperation: {
       operation: components["schemas"]["Internal_BatchInnerOperation"]
       sequencing: components["schemas"]["Internal_Sequencing"]
+      sponsorship?: components["schemas"]["Internal_XrplSponsorshipParams"]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -1163,6 +1229,7 @@ export interface components {
       /** Format: int64 */
       destinationTag?: number
       currency?: components["schemas"]["Internal_XrplPaymentCurrency"]
+      flags?: components["schemas"]["Internal_Xrpl_PaymentFlag"][]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -3986,6 +4053,7 @@ export interface components {
       destinationTag?: number
       memos: components["schemas"]["Internal_XrplMemo"][]
       operation?: components["schemas"]["Internal_XrplOperation"]
+      sponsorship?: components["schemas"]["Internal_XrplSponsorshipParams"]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -4898,6 +4966,8 @@ export interface components {
       | components["schemas"]["Internal_XrplOperation_MPTokenIssuanceSet"]
       | components["schemas"]["Internal_XrplOperation_OfferCreate"]
       | components["schemas"]["Internal_XrplOperation_Payment"]
+      | components["schemas"]["Internal_XrplOperation_SponsorshipSetAsSponsee"]
+      | components["schemas"]["Internal_XrplOperation_SponsorshipSetAsSponsor"]
       | components["schemas"]["Internal_XrplOperation_TicketCreate"]
       | components["schemas"]["Internal_XrplOperation_TrustSet"]
     Internal_XrplOperation_AccountSet: {
@@ -5079,11 +5149,35 @@ export interface components {
       /** Format: int64 */
       destinationTag?: number
       currency?: components["schemas"]["Internal_XrplPaymentCurrency"]
+      flags?: components["schemas"]["Internal_Xrpl_PaymentFlag"][]
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
        */
       type: "Payment"
+    }
+    Internal_XrplOperation_SponsorshipSetAsSponsee: {
+      sponsor: components["schemas"]["Internal_TransactionDestination"]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "SponsorshipSetAsSponsee"
+    }
+    Internal_XrplOperation_SponsorshipSetAsSponsor: {
+      sponsee: components["schemas"]["Internal_TransactionDestination"]
+      /** @description This field is a large integer and represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      feeAmountDelta?: string
+      /** Format: int32 */
+      remainingOwnerCountDelta?: number
+      /** @description This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision. */
+      maxFee?: string
+      flags: components["schemas"]["Internal_Xrpl_SponsorshipSetFlag"][]
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "SponsorshipSetAsSponsor"
     }
     Internal_XrplOperation_TicketCreate: {
       /**
@@ -5137,6 +5231,10 @@ export interface components {
        * @enum {string}
        */
       type: "TickerId"
+    }
+    Internal_XrplSponsorshipParams: {
+      sponsor: components["schemas"]["Internal_TransactionDestination"]
+      flags: components["schemas"]["Internal_Xrpl_SponsorFlag"][]
     }
     Internal_XrplTickerProperties:
       | components["schemas"]["Internal_XrplTickerProperties_ConfidentialMultiPurposeToken"]
@@ -5237,6 +5335,20 @@ export interface components {
     Internal_Xrpl_MPTokenIssuanceSetFlag: "tfMPTLock" | "tfMPTUnlock"
     /** @enum {string} */
     Internal_Xrpl_OfferCreateFlag: "tfImmediateOrCancel" | "tfFillOrKill" | "tfSell"
+    /** @enum {string} */
+    Internal_Xrpl_PaymentFlag: "tfSponsorCreatedAccount"
+    /**
+     * @description spfSponsorFee sponsors the transaction fee, spfSponsorReserve the owner reserve. spfSponsorReserve is rejected on transaction types for which the ledger does not allow reserve sponsorship (e.g. OfferCreate, TicketCreate, ConfidentialMPT operations)
+     * @enum {string}
+     */
+    Internal_Xrpl_SponsorFlag: "spfSponsorFee" | "spfSponsorReserve"
+    /** @enum {string} */
+    Internal_Xrpl_SponsorshipSetFlag:
+      | "tfRequireSignForFee"
+      | "tfClearRequireSignForFee"
+      | "tfRequireSignForReserve"
+      | "tfClearRequireSignForReserve"
+      | "tfDeleteObject"
     /** @enum {string} */
     Internal_Xrpl_TrustSetFlag: "tfSetFreeze" | "tfClearFreeze" | "tfSetfAuth"
     Internal_v0_AcknowledgeBackup: {
@@ -5888,6 +6000,40 @@ export interface components {
       intentContext: Record<string, never>
       entity: Record<string, never>
       hash: string
+    }
+    Web3Connector_ConnectAccount: {
+      uri: string
+      accountId: string
+      ledgerId?: string
+    }
+    Web3Connector_Session: {
+      id: string
+      description: string
+      url: string
+      icons: string[]
+      name: string
+      isConnected: boolean
+      /** Format: date-time */
+      connectedOn?: string
+      connectedAccountIds: string[]
+      ledgerId: string
+      /** Format: date-time */
+      lastActivity: string
+    }
+    Web3Connector_SessionApproval: {
+      approve: boolean
+    }
+    Web3Connector_ChangeAccount: {
+      to: string
+      ledgerId?: string
+    }
+    Web3Connector_SessionEvent: {
+      sessionId: string
+      /** Format: date-time */
+      date: string
+      name: string
+      handled: boolean
+      params: string
     }
   }
   responses: never
@@ -7319,6 +7465,204 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+    }
+  }
+  getConnectedSession: {
+    parameters: {
+      query?: {
+        accountId?: string
+        ledgerId?: string
+        dAppName?: string
+        name?: string
+        connectedAccountIds?: string[]
+        "connectedOn.lt"?: string
+        "connectedOn.gt"?: string
+        sortBy?: "name" | "lastActivity"
+        sortOrder?: "ASC" | "DESC"
+      }
+      header?: never
+      path: {
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Web3Connector_Session"][]
+        }
+      }
+    }
+  }
+  postConnect: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Web3Connector_ConnectAccount"]
+      }
+    }
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Web3Connector_Session"]
+        }
+      }
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      408: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  getDAppDetails: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        sessionId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Web3Connector_Session"]
+        }
+      }
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  postApproveSession: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        sessionId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Web3Connector_SessionApproval"]
+      }
+    }
+    responses: {
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      408: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  deleteDisconnect: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        sessionId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  postChangeAccount: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        sessionId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Web3Connector_ChangeAccount"]
+      }
+    }
+    responses: {
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  getSessionEvents: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        domainId: string
+        sessionId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Web3Connector_SessionEvent"][]
+        }
       }
     }
   }

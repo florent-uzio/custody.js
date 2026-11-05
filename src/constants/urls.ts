@@ -59,6 +59,8 @@ export const URLs = createURLs({
   accountDepositInstructions: "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions",
   accountDepositInstruction:
     "/v1/domains/{domainId}/accounts/{accountId}/deposit-instructions/{instructions-id}",
+  accountSponsorships: "/v1/domains/{domainId}/accounts/{accountId}/sponsorships",
+  accountSponsorshipMovements: "/v1/domains/{domainId}/accounts/{accountId}/sponsorship-movements",
   accountParametersCompute: "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute",
   accountParametersComputeStatus:
     "/v1/domains/{domainId}/accounts/{accountId}/parameters-compute/{computeId}",

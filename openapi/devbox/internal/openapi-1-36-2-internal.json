@@ -1902,6 +1902,391 @@
           }
         }
       }
+    },
+    "/internal/v1/me/domains/{domainId}/session": {
+      "post": {
+        "tags": [
+          "Web3Connector"
+        ],
+        "operationId": "postConnect",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Web3Connector_ConnectAccount"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Web3Connector_Session"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": ""
+          },
+          "408": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Web3Connector"
+        ],
+        "operationId": "getConnectedSession",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ledgerId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dAppName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "connectedAccountIds",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "connectedOn.lt",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "connectedOn.gt",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "name",
+                "lastActivity"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "ASC",
+                "DESC"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Web3Connector_Session"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/internal/v1/me/domains/{domainId}/session/{sessionId}": {
+      "post": {
+        "tags": [
+          "Web3Connector"
+        ],
+        "operationId": "postApproveSession",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Web3Connector_SessionApproval"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": ""
+          },
+          "408": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Web3Connector"
+        ],
+        "operationId": "deleteDisconnect",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Web3Connector"
+        ],
+        "operationId": "getDAppDetails",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Web3Connector_Session"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/internal/v1/me/domains/{domainId}/session/{sessionId}/change": {
+      "post": {
+        "tags": [
+          "Web3Connector"
+        ],
+        "operationId": "postChangeAccount",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Web3Connector_ChangeAccount"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/internal/v1/me/domains/{domainId}/session/{sessionId}/events": {
+      "get": {
+        "tags": [
+          "Web3Connector"
+        ],
+        "operationId": "getSessionEvents",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Web3Connector_SessionEvent"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": [ ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2839,6 +3224,9 @@
           "sequencing": {
             "$ref": "#/components/schemas/Internal_ParticipantSequencing"
           },
+          "sponsorship": {
+            "$ref": "#/components/schemas/Internal_XrplSponsorshipParams"
+          },
           "type": {
             "enum": [
               "ParticipantOperation"
@@ -2860,6 +3248,9 @@
           },
           "sequencing": {
             "$ref": "#/components/schemas/Internal_Sequencing"
+          },
+          "sponsorship": {
+            "$ref": "#/components/schemas/Internal_XrplSponsorshipParams"
           },
           "type": {
             "enum": [
@@ -3346,6 +3737,12 @@
           },
           "currency": {
             "$ref": "#/components/schemas/Internal_XrplPaymentCurrency"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Internal_Xrpl_PaymentFlag"
+            }
           },
           "type": {
             "enum": [
@@ -11630,6 +12027,9 @@
           "operation": {
             "$ref": "#/components/schemas/Internal_XrplOperation"
           },
+          "sponsorship": {
+            "$ref": "#/components/schemas/Internal_XrplSponsorshipParams"
+          },
           "type": {
             "enum": [
               "XRPL"
@@ -14082,6 +14482,12 @@
             "$ref": "#/components/schemas/Internal_XrplOperation_Payment"
           },
           {
+            "$ref": "#/components/schemas/Internal_XrplOperation_SponsorshipSetAsSponsee"
+          },
+          {
+            "$ref": "#/components/schemas/Internal_XrplOperation_SponsorshipSetAsSponsor"
+          },
+          {
             "$ref": "#/components/schemas/Internal_XrplOperation_TicketCreate"
           },
           {
@@ -14107,6 +14513,8 @@
             "MPTokenIssuanceSet": "#/components/schemas/Internal_XrplOperation_MPTokenIssuanceSet",
             "OfferCreate": "#/components/schemas/Internal_XrplOperation_OfferCreate",
             "Payment": "#/components/schemas/Internal_XrplOperation_Payment",
+            "SponsorshipSetAsSponsee": "#/components/schemas/Internal_XrplOperation_SponsorshipSetAsSponsee",
+            "SponsorshipSetAsSponsor": "#/components/schemas/Internal_XrplOperation_SponsorshipSetAsSponsor",
             "TicketCreate": "#/components/schemas/Internal_XrplOperation_TicketCreate",
             "TrustSet": "#/components/schemas/Internal_XrplOperation_TrustSet"
           }
@@ -14585,9 +14993,71 @@
           "currency": {
             "$ref": "#/components/schemas/Internal_XrplPaymentCurrency"
           },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Internal_Xrpl_PaymentFlag"
+            }
+          },
           "type": {
             "enum": [
               "Payment"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Internal_XrplOperation_SponsorshipSetAsSponsee": {
+        "required": [
+          "sponsor",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "sponsor": {
+            "$ref": "#/components/schemas/Internal_TransactionDestination"
+          },
+          "type": {
+            "enum": [
+              "SponsorshipSetAsSponsee"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Internal_XrplOperation_SponsorshipSetAsSponsor": {
+        "required": [
+          "sponsee",
+          "flags",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "sponsee": {
+            "$ref": "#/components/schemas/Internal_TransactionDestination"
+          },
+          "feeAmountDelta": {
+            "type": "string",
+            "description": "This field is a large integer and represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "remainingOwnerCountDelta": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxFee": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Internal_Xrpl_SponsorshipSetFlag"
+            }
+          },
+          "type": {
+            "enum": [
+              "SponsorshipSetAsSponsor"
             ],
             "type": "string"
           }
@@ -14726,6 +15196,24 @@
               "TickerId"
             ],
             "type": "string"
+          }
+        }
+      },
+      "Internal_XrplSponsorshipParams": {
+        "required": [
+          "sponsor",
+          "flags"
+        ],
+        "type": "object",
+        "properties": {
+          "sponsor": {
+            "$ref": "#/components/schemas/Internal_TransactionDestination"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Internal_Xrpl_SponsorFlag"
+            }
           }
         }
       },
@@ -14981,6 +15469,30 @@
           "tfImmediateOrCancel",
           "tfFillOrKill",
           "tfSell"
+        ],
+        "type": "string"
+      },
+      "Internal_Xrpl_PaymentFlag": {
+        "enum": [
+          "tfSponsorCreatedAccount"
+        ],
+        "type": "string"
+      },
+      "Internal_Xrpl_SponsorFlag": {
+        "enum": [
+          "spfSponsorFee",
+          "spfSponsorReserve"
+        ],
+        "type": "string",
+        "description": "spfSponsorFee sponsors the transaction fee, spfSponsorReserve the owner reserve. spfSponsorReserve is rejected on transaction types for which the ledger does not allow reserve sponsorship (e.g. OfferCreate, TicketCreate, ConfidentialMPT operations)"
+      },
+      "Internal_Xrpl_SponsorshipSetFlag": {
+        "enum": [
+          "tfRequireSignForFee",
+          "tfClearRequireSignForFee",
+          "tfRequireSignForReserve",
+          "tfClearRequireSignForReserve",
+          "tfDeleteObject"
         ],
         "type": "string"
       },
@@ -16893,12 +17405,142 @@
             "type": "string"
           }
         }
+      },
+      "Web3Connector_ConnectAccount": {
+        "required": [
+          "uri",
+          "accountId"
+        ],
+        "type": "object",
+        "properties": {
+          "uri": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "ledgerId": {
+            "type": "string"
+          }
+        }
+      },
+      "Web3Connector_Session": {
+        "required": [
+          "id",
+          "description",
+          "url",
+          "icons",
+          "name",
+          "isConnected",
+          "connectedAccountIds",
+          "ledgerId",
+          "lastActivity"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "icons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "isConnected": {
+            "type": "boolean"
+          },
+          "connectedOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "connectedAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ledgerId": {
+            "type": "string"
+          },
+          "lastActivity": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Web3Connector_SessionApproval": {
+        "required": [
+          "approve"
+        ],
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Web3Connector_ChangeAccount": {
+        "required": [
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "ledgerId": {
+            "type": "string"
+          }
+        }
+      },
+      "Web3Connector_SessionEvent": {
+        "required": [
+          "sessionId",
+          "date",
+          "name",
+          "handled",
+          "params"
+        ],
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "name": {
+            "type": "string"
+          },
+          "handled": {
+            "type": "boolean"
+          },
+          "params": {
+            "type": "string"
+          }
+        }
       }
     },
     "securitySchemes": {
       "httpAuth": {
         "type": "http",
         "scheme": "bearer"
+      },
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },

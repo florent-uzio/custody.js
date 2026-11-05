@@ -39,6 +39,16 @@ export type GetManifestsQueryParams = operations["getManifests"]["parameters"]["
 
 export type GetManifestPathParams = operations["getManifest"]["parameters"]["path"]
 
+export type GetAccountSponsorshipsPathParams =
+  operations["getAccountSponsorships"]["parameters"]["path"]
+export type GetAccountSponsorshipsQueryParams =
+  operations["getAccountSponsorships"]["parameters"]["query"]
+
+export type GetAccountSponsorshipMovementsPathParams =
+  operations["getAccountSponsorshipMovements"]["parameters"]["path"]
+export type GetAccountSponsorshipMovementsQueryParams =
+  operations["getAccountSponsorshipMovements"]["parameters"]["query"]
+
 export type ListComplianceConfigurationsPathParams =
   operations["listComplianceConfigurations"]["parameters"]["path"]
 export type ListComplianceConfigurationsQueryParams =
@@ -125,6 +135,11 @@ export type Core_ManifestsCollection =
 
 export type Core_ApiManifest =
   operations["getManifest"]["responses"]["200"]["content"]["application/json"]
+
+export type Core_SponsorshipsCollection = components["schemas"]["Core_SponsorshipsCollection"]
+
+export type Core_SponsorshipMovementsCollection =
+  components["schemas"]["Core_SponsorshipMovementsCollection"]
 
 export type Core_ComplianceConfigurationsCollection =
   operations["listComplianceConfigurations"]["responses"]["200"]["content"]["application/json"]
