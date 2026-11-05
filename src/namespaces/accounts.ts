@@ -17,6 +17,8 @@ import type {
   Core_ComplianceConfiguration,
   Core_ComplianceConfigurationsCollection,
   Core_ManifestsCollection,
+  Core_SponsorshipMovementsCollection,
+  Core_SponsorshipsCollection,
   Core_TransferabilityResponse,
   Core_TrustedDepositInstructions,
   Core_TrustedDepositInstructionsCollection,
@@ -33,6 +35,10 @@ import type {
   GetAccountPathParams,
   GetAccountQueryParams,
   GetAccountsPathParams,
+  GetAccountSponsorshipMovementsPathParams,
+  GetAccountSponsorshipMovementsQueryParams,
+  GetAccountSponsorshipsPathParams,
+  GetAccountSponsorshipsQueryParams,
   GetAccountsQueryParams,
   GetAddressesPathParams,
   GetAddressesQueryParams,
@@ -291,6 +297,19 @@ export function createAccounts(t: Transport) {
 
     getManifest: (params: GetManifestPathParams): Promise<Core_ApiManifest> =>
       t.get(URLs.accountManifest, params),
+
+    /** XRPL sponsorships (XLS-68) the account is sponsor or sponsee of, on one ledger. */
+    getSponsorships: (
+      params: GetAccountSponsorshipsPathParams,
+      query: GetAccountSponsorshipsQueryParams,
+    ): Promise<Core_SponsorshipsCollection> => t.get(URLs.accountSponsorships, params, query),
+
+    /** Funded / Spent / Returned movements of the account's XRPL sponsorships, on one ledger. */
+    getSponsorshipMovements: (
+      params: GetAccountSponsorshipMovementsPathParams,
+      query: GetAccountSponsorshipMovementsQueryParams,
+    ): Promise<Core_SponsorshipMovementsCollection> =>
+      t.get(URLs.accountSponsorshipMovements, params, query),
 
     listComplianceConfigurations: (
       params: ListComplianceConfigurationsPathParams,

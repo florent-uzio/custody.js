@@ -3095,6 +3095,287 @@
         ]
       }
     },
+    "/v1/domains/{domainId}/accounts/{accountId}/sponsorships": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get XRPL sponsorships the account is sponsor or sponsee of",
+        "operationId": "getAccountSponsorships",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "description": "Unique identifier for the domain.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ledgerId",
+            "in": "query",
+            "description": "Ledger the sponsorships live on.",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeInactive",
+            "in": "query",
+            "description": "Also return sponsorships deleted on-ledger. Defaults to false.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of entities to return.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "startingAfter",
+            "in": "query",
+            "description": "Sponsorship id used to the determine beginning of query results.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_SponsorshipsCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "One of: Domain locked (DomainLockedError); Requester locked (RequesterLockedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/accounts/{accountId}/sponsorship-movements": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get movements of the XRPL sponsorships the account is sponsor or sponsee of",
+        "operationId": "getAccountSponsorshipMovements",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "description": "Unique identifier for the domain.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ledgerId",
+            "in": "query",
+            "description": "Ledger the sponsorships live on.",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "name": "transactionId",
+            "in": "query",
+            "description": "Return movements produced by any of the given transactionIds.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "example": [
+              "90c4cf2f-ebe0-4bf7-91cd-4c45cd02277b",
+              "fdeeeb4b-f987-4ec4-9880-1eb280581d49"
+            ]
+          },
+          {
+            "name": "movement",
+            "in": "query",
+            "description": "Return movements matching any of the given kinds. Values: Funded, Spent, Returned.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Core_Xrpl_SponsorshipMovement"
+              }
+            },
+            "example": [
+              "Funded",
+              "Returned"
+            ]
+          },
+          {
+            "name": "sponsorshipIndex",
+            "in": "query",
+            "description": "Return movements of the sponsorship with the given ledger index.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DB8A3D1C5E7F24B6A09C8E1F3D5B7A9C2E4F6081B3D5F7092A4C6E8F0B2D4F61"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of entities to return.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "startingAfter",
+            "in": "query",
+            "description": "SponsorshipMovement id used to the determine beginning of query results.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Property name used to sort the query results.",
+            "schema": {
+              "enum": [
+                "registeredAt"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "description": "Sort order applied to the query results.",
+            "schema": {
+              "$ref": "#/components/schemas/Core_SortOrder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_SponsorshipMovementsCollection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "One of: Domain locked (DomainLockedError); Requester locked (RequesterLockedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "One of: Invalid JWT (InvalidJwtError); User not authorized (PermissionDeniedError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entity or Domain not found (EntityNotFoundError)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Core_ErrorMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
     "/v1/domains/{domainId}/endpoints": {
       "get": {
         "tags": [
@@ -4055,6 +4336,7 @@
           "Transactions"
         ],
         "summary": "List transactions",
+        "description": "Lists transactions for a domain. Note: `ledgerTransactionData.ledgerData` is not populated in list responses. Use `GET /v1/domains/{domainId}/transactions/{transactionId}` to retrieve ledger-specific data for a transaction.",
         "operationId": "getTransactions",
         "parameters": [
           {
@@ -7786,6 +8068,2384 @@
         ]
       }
     },
+    "/v1/domains/{domainId}/compliance/providers": {
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Retrieves configuration steps and provider connection status for the give domain",
+        "operationId": "GetAllProvidersForDomain",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ConfigurationDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Connects different external providers with Custody",
+        "operationId": "ConnectProvider",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ProviderConnectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ProviderConnectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers/{provider}/screening-rules": {
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Retrieves screening rules for connected provider of the given domain",
+        "operationId": "GetScreeningRulesForDomainAndProvider",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ELLIPTIC",
+                "CHAINALYSIS"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_GetScreeningRulesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Creates screening rules for connected provider of the given domain",
+        "operationId": "ConfigureScreeningRulesForDomainAndProvider",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ELLIPTIC",
+                "CHAINALYSIS"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ConfigureScreeningRulesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers/{provider}/toggle-preview-screening": {
+      "put": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Enables or disables the preview screening for an existing provider connection",
+        "operationId": "TogglePreviewScreening",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ELLIPTIC",
+                "CHAINALYSIS"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers/{provider}/pause-connection": {
+      "put": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Pause/unpause an existing external provider connection",
+        "operationId": "PauseProviderConnection",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ELLIPTIC",
+                "CHAINALYSIS",
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "paused",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/policy": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Create Compliance Policy Payload",
+        "operationId": "CreatePolicyPayload",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_PolicyPayloadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/domain": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Creates Domain payload",
+        "operationId": "CreateDomainPayload",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_DomainPayloadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Delete compliance domain",
+        "operationId": "DeleteComplianceDomain",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/domain/validation": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Check if compliance domain creation/injection is allowed",
+        "operationId": "ValidateComplianceDomainCreation",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ValidateComplianceDomainCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ValidateComplianceDomainCreationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/analysis": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Retrieves compliance analysis against all established external providers.",
+        "operationId": "analysis",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_ComplianceAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ComplianceAnalysisResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/analysis/preview": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Performs a preview analysis of the wallet",
+        "operationId": "PreviewAnalysis",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_WalletAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_WalletAnalysisResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/transactionType/{transactionType}/exception-role": {
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Gets Exception role for the domain",
+        "operationId": "GetExceptionRole",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "transactionType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "INCOMING",
+                "OUTGOING"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ExceptionRoleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/provider-connection": {
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Retrieves connected provider connection details for the given domain",
+        "operationId": "GetAllProviderConnectionForDomain",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ProviderConnectionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType}": {
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Gets Compliance policy for the domain",
+        "operationId": "GetPolicy",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "policyType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "AUTOMATIC",
+                "EXCEPTION"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "transactionType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "INCOMING",
+                "OUTGOING"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_PolicyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/providers/{provider}": {
+      "delete": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Deletes provider connection and screening rules for the given domain & provider",
+        "operationId": "DeleteProviderConnectionAndScreeningRules",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ELLIPTIC",
+                "CHAINALYSIS",
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Creates a TravelRule message for a transfer",
+        "operationId": "CreateTravelRuleTransfer",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_CreateTransferRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_InitiateTravelRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}": {
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Get a travel rule transfer by ID",
+        "operationId": "GetTravelRuleTransfer",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "travelRuleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "decrypt",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transfer retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_GetTravelRuleTransferResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer or domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}/pii": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Append PII to a travel rule message",
+        "operationId": "AppendPIIToTransfer",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "travelRuleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_AppendPIIRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "PII appended successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_AppendPIITravelRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer or domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}/encrypted-pii": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Present end-to-end encrypted PII to a travel rule message without policy",
+        "operationId": "PresentEncryptedPIIToTransferWithoutPolicy",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "travelRuleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "skipValidation",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_PresentPIIRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Encrypted PII presented successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_PresentPIITravelRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer or domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/messages/{travelRuleId}/policies/{travelRulePolicyId}/encrypted-pii": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Append end-to-end encrypted PII to a travel rule message",
+        "operationId": "PresentEncryptedPIIToTransfer",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "travelRuleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "travelRulePolicyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "skipValidation",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_PresentPIIRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Encrypted PII presented successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_PresentPIITravelRuleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transfer or domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/travel-rule/details": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Get travel rule details for a batch of requests",
+        "description": "Retrieves travel rule message details for a batch of domain and ID pairs",
+        "operationId": "GetTravelRuleDetails",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_TravelRuleDetailsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Travel rule details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_TravelRuleDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Domain or Travel rule details not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/compliance/travel-rule/providers/{provider}/relationships": {
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Create a relationship with the travel rule provider",
+        "description": "Pass-through proxy API to create a relationship with the travel rule provider (e.g., Notabene)",
+        "operationId": "CreateRelationship",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Compliance_CreateRelationshipRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Relationship created successfully"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "List all relationships registered with the travel rule provider",
+        "description": "Pass-through proxy API to list all relationships from the travel rule provider (e.g., Notabene)",
+        "operationId": "ListRelationships",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "NOTABENE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Filter by 'from' DID (Decentralized Identifier)",
+            "schema": {
+              "pattern": "^did:[a-z0-9]+:.+$",
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Filter by 'to' DID (Decentralized Identifier)",
+            "schema": {
+              "pattern": "^did:[a-z0-9]+:.+$",
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "custodian",
+            "in": "query",
+            "description": "Filter by custodian DID (Decentralized Identifier)",
+            "schema": {
+              "pattern": "^did:[a-z0-9]+:.+$",
+              "type": "string",
+              "format": "did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relationships retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_RelationshipList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Domain not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Compliance_ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "httpAuth": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/domains/{domainId}/channels": {
+      "get": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Get all channels",
+        "operationId": "getAllChannels",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EDS_Channel"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Create a channel",
+        "operationId": "createChannel",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/EDS_WebhookChannelCreate"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EDS_Channel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/domains/{domainId}/channels/{channelId}/test": {
+      "post": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Test a channel",
+        "operationId": "testChannel",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/domains/{domainId}/channels/{channelId}": {
+      "get": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Get channel details",
+        "operationId": "getChannel",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EDS_Channel"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Delete a channel",
+        "operationId": "deleteChannel",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Update a channel",
+        "operationId": "updateChannel",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EDS_ChannelUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EDS_Channel"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/domains/{domainId}/channels/{channelId}/events": {
+      "get": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Get all events for a channel",
+        "operationId": "getAllChannelEvents",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EDS_Event"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/domains/{domainId}/channels/{channelId}/events/{eventId}": {
+      "get": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Get channel event details",
+        "operationId": "getEvent",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EDS_Event"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/domains/{domainId}/channels/events": {
+      "get": {
+        "tags": [
+          "Event Distribution Service"
+        ],
+        "summary": "Get all events",
+        "operationId": "getAllEvents",
+        "parameters": [
+          {
+            "name": "domainId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EDS_Event"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/domain/{domainId}/account/{accountId}/sponsor": {
       "get": {
         "tags": [
@@ -10267,15 +12927,23 @@
           }
         }
       },
-      "Core_ApiBatchSigningData": {
+      "Core_ApiBatchSignerSigningData": {
         "required": [
+          "participant",
+          "account",
           "signingPayload",
-          "signingPayloadHash",
-          "executionMode",
-          "transactions"
+          "signingPayloadHash"
         ],
         "type": "object",
         "properties": {
+          "participant": {
+            "$ref": "#/components/schemas/Core_Participant"
+          },
+          "account": {
+            "maxLength": 35,
+            "minLength": 25,
+            "type": "string"
+          },
           "signingPayload": {
             "pattern": "^[A-Fa-f0-9]*$",
             "type": "string",
@@ -10285,6 +12953,30 @@
             "pattern": "^[A-Fa-f0-9]*$",
             "type": "string",
             "description": "Hex encoded string."
+          }
+        }
+      },
+      "Core_ApiBatchSigningData": {
+        "required": [
+          "signingPayload",
+          "signingPayloadHash",
+          "executionMode",
+          "transactions",
+          "signers"
+        ],
+        "type": "object",
+        "properties": {
+          "signingPayload": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Deprecated: not signable under Batch v1.1; use signers[].signingPayload",
+            "deprecated": true
+          },
+          "signingPayloadHash": {
+            "pattern": "^[A-Fa-f0-9]*$",
+            "type": "string",
+            "description": "Deprecated: not signable under Batch v1.1; use signers[].signingPayload",
+            "deprecated": true
           },
           "executionMode": {
             "$ref": "#/components/schemas/Core_Xrpl_BatchExecutionMode"
@@ -10295,6 +12987,13 @@
             "items": {
               "$ref": "#/components/schemas/Core_ApiInnerTransactionData"
             }
+          },
+          "signers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_ApiBatchSignerSigningData"
+            },
+            "description": "One entry per required BatchSigner, sorted by AccountID. Sign signingPayload and return the signature in batchSigners with the same participant."
           }
         }
       },
@@ -10320,6 +13019,7 @@
           "InternalError",
           "InvalidAccountStateOnLedger",
           "InvalidAmount",
+          "InvalidBatchSignature",
           "InvalidContractParameters",
           "InvalidDestination",
           "InvalidUserPayload",
@@ -10340,6 +13040,7 @@
           "InternalError",
           "InvalidAccountStateOnLedger",
           "InvalidAmount",
+          "InvalidBatchSignature",
           "InvalidContractParameters",
           "InvalidDestination",
           "InvalidUserPayload",
@@ -11631,6 +14332,9 @@
           "sequencing": {
             "$ref": "#/components/schemas/Core_ParticipantSequencing"
           },
+          "sponsorship": {
+            "$ref": "#/components/schemas/Core_XrplSponsorshipParams"
+          },
           "type": {
             "enum": [
               "ParticipantOperation"
@@ -11652,6 +14356,9 @@
           },
           "sequencing": {
             "$ref": "#/components/schemas/Core_Sequencing"
+          },
+          "sponsorship": {
+            "$ref": "#/components/schemas/Core_XrplSponsorshipParams"
           },
           "type": {
             "enum": [
@@ -12138,6 +14845,12 @@
           },
           "currency": {
             "$ref": "#/components/schemas/Core_XrplPaymentCurrency"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_PaymentFlag"
+            }
           },
           "type": {
             "enum": [
@@ -19946,6 +22659,187 @@
         ],
         "type": "string"
       },
+      "Core_Sponsorship": {
+        "required": [
+          "id",
+          "role",
+          "ledgerId",
+          "index",
+          "sponsor",
+          "sponsee",
+          "feeAmount",
+          "remainingOwnerCount",
+          "requireSignForFee",
+          "requireSignForReserve",
+          "active",
+          "lastUpdatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Core_SponsorshipRole"
+          },
+          "ledgerId": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "index": {
+            "type": "string"
+          },
+          "sponsor": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sponsee": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "feeAmount": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "maxFee": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "remainingOwnerCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requireSignForFee": {
+            "type": "boolean"
+          },
+          "requireSignForReserve": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "lastUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Core_SponsorshipMovement": {
+        "required": [
+          "id",
+          "movement",
+          "sponsorshipIndex",
+          "sponsor",
+          "sponsee",
+          "amount",
+          "onLedgerTransactionId",
+          "registeredAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "movement": {
+            "$ref": "#/components/schemas/Core_Xrpl_SponsorshipMovement"
+          },
+          "sponsorshipIndex": {
+            "type": "string"
+          },
+          "sponsor": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sponsee": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "amount": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "onLedgerTransactionId": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registeredAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Core_SponsorshipMovementsCollection": {
+        "required": [
+          "items",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_SponsorshipMovement"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentStartingAfter": {
+            "type": "string"
+          },
+          "nextStartingAfter": {
+            "type": "string"
+          }
+        }
+      },
+      "Core_SponsorshipRole": {
+        "enum": [
+          "Sponsor",
+          "Sponsee"
+        ],
+        "type": "string"
+      },
+      "Core_SponsorshipsCollection": {
+        "required": [
+          "items",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Sponsorship"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentStartingAfter": {
+            "type": "string"
+          },
+          "nextStartingAfter": {
+            "type": "string"
+          }
+        }
+      },
       "Core_StateReviewAuthorityValue": {
         "required": [
           "publicKey"
@@ -23104,6 +25998,9 @@
           "operation": {
             "$ref": "#/components/schemas/Core_XrplOperation"
           },
+          "sponsorship": {
+            "$ref": "#/components/schemas/Core_XrplSponsorshipParams"
+          },
           "type": {
             "enum": [
               "XRPL"
@@ -25701,6 +28598,12 @@
             "$ref": "#/components/schemas/Core_XrplOperation_Payment"
           },
           {
+            "$ref": "#/components/schemas/Core_XrplOperation_SponsorshipSetAsSponsee"
+          },
+          {
+            "$ref": "#/components/schemas/Core_XrplOperation_SponsorshipSetAsSponsor"
+          },
+          {
             "$ref": "#/components/schemas/Core_XrplOperation_TicketCreate"
           },
           {
@@ -25726,6 +28629,8 @@
             "MPTokenIssuanceSet": "#/components/schemas/Core_XrplOperation_MPTokenIssuanceSet",
             "OfferCreate": "#/components/schemas/Core_XrplOperation_OfferCreate",
             "Payment": "#/components/schemas/Core_XrplOperation_Payment",
+            "SponsorshipSetAsSponsee": "#/components/schemas/Core_XrplOperation_SponsorshipSetAsSponsee",
+            "SponsorshipSetAsSponsor": "#/components/schemas/Core_XrplOperation_SponsorshipSetAsSponsor",
             "TicketCreate": "#/components/schemas/Core_XrplOperation_TicketCreate",
             "TrustSet": "#/components/schemas/Core_XrplOperation_TrustSet"
           }
@@ -26204,9 +29109,71 @@
           "currency": {
             "$ref": "#/components/schemas/Core_XrplPaymentCurrency"
           },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_PaymentFlag"
+            }
+          },
           "type": {
             "enum": [
               "Payment"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_SponsorshipSetAsSponsee": {
+        "required": [
+          "sponsor",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "sponsor": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "type": {
+            "enum": [
+              "SponsorshipSetAsSponsee"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Core_XrplOperation_SponsorshipSetAsSponsor": {
+        "required": [
+          "sponsee",
+          "flags",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "sponsee": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "feeAmountDelta": {
+            "type": "string",
+            "description": "This field is a large integer and represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "remainingOwnerCountDelta": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxFee": {
+            "minimum": 0,
+            "type": "string",
+            "description": "This field is a large integer that can be positive or zero. It is represented as a string because it may contain value that cannot be expressed with JSON number without a loss of precision."
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_SponsorshipSetFlag"
+            }
+          },
+          "type": {
+            "enum": [
+              "SponsorshipSetAsSponsor"
             ],
             "type": "string"
           }
@@ -26345,6 +29312,24 @@
               "TickerId"
             ],
             "type": "string"
+          }
+        }
+      },
+      "Core_XrplSponsorshipParams": {
+        "required": [
+          "sponsor",
+          "flags"
+        ],
+        "type": "object",
+        "properties": {
+          "sponsor": {
+            "$ref": "#/components/schemas/Core_TransactionDestination"
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Core_Xrpl_SponsorFlag"
+            }
           }
         }
       },
@@ -26648,6 +29633,12 @@
           "tfImmediateOrCancel",
           "tfFillOrKill",
           "tfSell"
+        ],
+        "type": "string"
+      },
+      "Core_Xrpl_PaymentFlag": {
+        "enum": [
+          "tfSponsorCreatedAccount"
         ],
         "type": "string"
       },
@@ -27319,6 +30310,32 @@
             "type": "string"
           }
         }
+      },
+      "Core_Xrpl_SponsorFlag": {
+        "enum": [
+          "spfSponsorFee",
+          "spfSponsorReserve"
+        ],
+        "type": "string",
+        "description": "spfSponsorFee sponsors the transaction fee, spfSponsorReserve the owner reserve. spfSponsorReserve is rejected on transaction types for which the ledger does not allow reserve sponsorship (e.g. OfferCreate, TicketCreate, ConfidentialMPT operations)"
+      },
+      "Core_Xrpl_SponsorshipMovement": {
+        "enum": [
+          "Funded",
+          "Spent",
+          "Returned"
+        ],
+        "type": "string"
+      },
+      "Core_Xrpl_SponsorshipSetFlag": {
+        "enum": [
+          "tfRequireSignForFee",
+          "tfClearRequireSignForFee",
+          "tfRequireSignForReserve",
+          "tfClearRequireSignForReserve",
+          "tfDeleteObject"
+        ],
+        "type": "string"
       },
       "Core_Xrpl_TrustSetFlag": {
         "enum": [
@@ -29288,6 +32305,2173 @@
         },
         "additionalProperties": false
       },
+      "Compliance_ErrorResponse": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ProviderConnectRequest": {
+        "oneOf": [
+          {
+            "required": [
+              "provider",
+              "credential"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "ELLIPTIC"
+                ],
+                "type": "string"
+              },
+              "credential": {
+                "required": [
+                  "apiKey",
+                  "secret"
+                ],
+                "type": "object",
+                "properties": {
+                  "apiKey": {
+                    "type": "string"
+                  },
+                  "secret": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "required": [
+              "provider",
+              "credential"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "CHAINALYSIS"
+                ],
+                "type": "string"
+              },
+              "credential": {
+                "required": [
+                  "apiKey"
+                ],
+                "type": "object",
+                "properties": {
+                  "apiKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "required": [
+              "provider",
+              "credential"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "NOTABENE"
+                ],
+                "type": "string"
+              },
+              "credential": {
+                "required": [
+                  "clientId",
+                  "clientSecret",
+                  "entityDid",
+                  "audience"
+                ],
+                "type": "object",
+                "properties": {
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "entityDid": {
+                    "type": "string"
+                  },
+                  "audience": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Compliance_ProviderConnectionResponse": {
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "enum": [
+              "ELLIPTIC",
+              "CHAINALYSIS",
+              "NOTABENE"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "CONNECTED",
+              "PAUSED"
+            ],
+            "type": "string"
+          },
+          "readyForScreening": {
+            "type": "boolean"
+          },
+          "previewScreeningEnabled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Compliance_ProviderConnectionsResponse": {
+        "type": "object",
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "complianceDomainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainType": {
+            "enum": [
+              "COMPLIANCE",
+              "BUSINESS"
+            ],
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ProviderConnectionResponse"
+            }
+          }
+        }
+      },
+      "Compliance_ConfigurationDetailResponse": {
+        "type": "object",
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "connectionDetails": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ProviderConnectionResponse"
+            }
+          },
+          "configurationSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ConfigurationStepResponse"
+            }
+          }
+        }
+      },
+      "Compliance_ConfigurationStepResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "enum": [
+              "ADD_RISK_SETTING_RULES",
+              "ADD_POLICY_FOR_OUTGOING_ORDERS",
+              "ADD_POLICY_FOR_AUTOMATIC_RELEASE_QUARANTINED_TRANSFERS",
+              "ADD_EXCEPTION_FOR_OUTGOING_ORDERS",
+              "ADD_EXCEPTION_FOR_RELEASE_QUARANTINED_TRANSFERS"
+            ],
+            "type": "string"
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "shared": {
+            "type": "boolean"
+          },
+          "configurationStepType": {
+            "enum": [
+              "RISK_SETTING",
+              "POLICY",
+              "AGENT"
+            ],
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "ELLIPTIC",
+              "CHAINALYSIS"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "START",
+              "PENDING",
+              "VIEW"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_GetScreeningRulesResponse": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Compliance_TransactionScreeningRule_Elliptic"
+                },
+                {
+                  "$ref": "#/components/schemas/Compliance_TransactionScreeningRule_Chainalysis"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Compliance_ConfigureScreeningRulesRequest": {
+        "required": [
+          "rules"
+        ],
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Compliance_TransactionScreeningRule_Elliptic"
+                },
+                {
+                  "$ref": "#/components/schemas/Compliance_TransactionScreeningRule_Chainalysis"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Compliance_RiskLevelAction_Elliptic": {
+        "required": [
+          "action",
+          "condition",
+          "threshold"
+        ],
+        "type": "object",
+        "properties": {
+          "condition": {
+            "enum": [
+              "EQUALS",
+              "GREATER_THAN",
+              "LESS_THAN",
+              "GREATER_THAN_OR_EQUALS",
+              "LESS_THAN_OR_EQUALS"
+            ],
+            "type": "string"
+          },
+          "threshold": {
+            "type": "number"
+          },
+          "action": {
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "REQUIRE_EXPLICIT_DECISION"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_RiskLevelAction_Chainalysis": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "REQUIRE_EXPLICIT_DECISION"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_TransactionScreeningRule_Elliptic": {
+        "required": [
+          "highRisk",
+          "lowRisk",
+          "transactionType"
+        ],
+        "type": "object",
+        "properties": {
+          "transactionType": {
+            "enum": [
+              "INCOMING",
+              "OUTGOING"
+            ],
+            "type": "string"
+          },
+          "lowRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Elliptic"
+          },
+          "highRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Elliptic"
+          }
+        }
+      },
+      "Compliance_TransactionScreeningRule_Chainalysis": {
+        "required": [
+          "highRisk",
+          "lowRisk",
+          "transactionType"
+        ],
+        "type": "object",
+        "properties": {
+          "transactionType": {
+            "enum": [
+              "INCOMING",
+              "OUTGOING"
+            ],
+            "type": "string"
+          },
+          "lowRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Chainalysis"
+          },
+          "highRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Chainalysis"
+          },
+          "mediumRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Chainalysis"
+          },
+          "severeRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Chainalysis"
+          },
+          "unknownRisk": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Chainalysis"
+          },
+          "unknownCategory": {
+            "$ref": "#/components/schemas/Compliance_RiskLevelAction_Chainalysis"
+          }
+        }
+      },
+      "Compliance_PolicyPayloadRequest": {
+        "required": [
+          "lockStatus",
+          "policyType",
+          "transactionType"
+        ],
+        "type": "object",
+        "properties": {
+          "policyType": {
+            "enum": [
+              "AUTOMATIC",
+              "EXCEPTION"
+            ],
+            "type": "string"
+          },
+          "transactionType": {
+            "enum": [
+              "INCOMING",
+              "OUTGOING"
+            ],
+            "type": "string"
+          },
+          "approvalWorkflow": {
+            "type": "object"
+          },
+          "exceptionRole": {
+            "type": "string"
+          },
+          "lockStatus": {
+            "enum": [
+              "Locked",
+              "Unlocked",
+              "Archived"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_PolicyResponse": {
+        "required": [
+          "lockStatus",
+          "policyName",
+          "policyType",
+          "transactionType"
+        ],
+        "type": "object",
+        "properties": {
+          "policyId": {
+            "type": "string"
+          },
+          "policyName": {
+            "type": "string"
+          },
+          "policyType": {
+            "enum": [
+              "AUTOMATIC",
+              "EXCEPTION"
+            ],
+            "type": "string"
+          },
+          "transactionType": {
+            "enum": [
+              "INCOMING",
+              "OUTGOING"
+            ],
+            "type": "string"
+          },
+          "approvalWorkflow": {
+            "type": "object"
+          },
+          "exceptionRole": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          },
+          "lockStatus": {
+            "enum": [
+              "Locked",
+              "Unlocked",
+              "Archived"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ExceptionRoleResponse": {
+        "required": [
+          "complianceDomainId",
+          "domainId",
+          "policyId",
+          "transactionType"
+        ],
+        "type": "object",
+        "properties": {
+          "complianceDomainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionType": {
+            "enum": [
+              "INCOMING",
+              "OUTGOING"
+            ],
+            "type": "string"
+          },
+          "exceptionRole": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_DomainPayloadRequest": {
+        "required": [
+          "domainName",
+          "domainType",
+          "permissions"
+        ],
+        "type": "object",
+        "properties": {
+          "domainName": {
+            "type": "string"
+          },
+          "domainType": {
+            "enum": [
+              "COMPLIANCE",
+              "BUSINESS"
+            ],
+            "type": "string"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_User"
+            }
+          },
+          "permissions": {
+            "type": "object"
+          },
+          "childrenDomainIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "additionalPolicies": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "ADD_POLICY_FOR_OUTGOING_ORDERS",
+                "ADD_POLICY_FOR_AUTOMATIC_RELEASE_QUARANTINED_TRANSFERS"
+              ],
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Compliance_User": {
+        "required": [
+          "alias",
+          "id",
+          "lockStatus",
+          "roles"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "alias": {
+            "type": "string"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lockStatus": {
+            "enum": [
+              "Locked",
+              "Unlocked",
+              "Archived"
+            ],
+            "type": "string"
+          },
+          "loginIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_LoginId"
+            }
+          }
+        }
+      },
+      "Compliance_LoginId": {
+        "required": [
+          "id",
+          "providerId"
+        ],
+        "type": "object",
+        "properties": {
+          "providerId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ValidateComplianceDomainCreationRequest": {
+        "type": "object",
+        "properties": {
+          "childrenDomainIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Compliance_ValidateComplianceDomainCreationResponse": {
+        "type": "object",
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ComplianceAnalysisRequest": {
+        "required": [
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ComplianceAnalysisRequestData"
+            }
+          }
+        }
+      },
+      "Compliance_ComplianceAnalysisRequestData": {
+        "type": "object",
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Compliance_ComplianceAnalysis": {
+        "oneOf": [
+          {
+            "required": [
+              "analysisType",
+              "ledgerId",
+              "provider",
+              "screeningStatus"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "ELLIPTIC"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "domainId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "intentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transferId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transactionOrderId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transactionHash": {
+                "type": "string"
+              },
+              "addressHash": {
+                "type": "string"
+              },
+              "errorDetails": {
+                "type": "string"
+              },
+              "warningDetails": {
+                "type": "string"
+              },
+              "screenedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "ledgerId": {
+                "type": "string"
+              },
+              "analysisType": {
+                "enum": [
+                  "WALLET",
+                  "TRANSACTION"
+                ],
+                "type": "string"
+              },
+              "screeningStatus": {
+                "type": "string"
+              },
+              "riskLevel": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              "screeningDetail": {
+                "$ref": "#/components/schemas/Compliance_ScreeningDetail_Elliptic"
+              }
+            }
+          },
+          {
+            "required": [
+              "analysisType",
+              "ledgerId",
+              "provider",
+              "screeningStatus"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "CHAINALYSIS"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "domainId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "intentId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transferId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transactionOrderId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transactionHash": {
+                "type": "string"
+              },
+              "addressHash": {
+                "type": "string"
+              },
+              "errorDetails": {
+                "type": "string"
+              },
+              "warningDetails": {
+                "type": "string"
+              },
+              "screenedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "ledgerId": {
+                "type": "string"
+              },
+              "analysisType": {
+                "enum": [
+                  "WALLET",
+                  "TRANSACTION"
+                ],
+                "type": "string"
+              },
+              "screeningStatus": {
+                "type": "string"
+              },
+              "riskLevel": {
+                "enum": [
+                  "UNKNOWN",
+                  "SEVERE",
+                  "HIGH",
+                  "MEDIUM",
+                  "LOW",
+                  "NO_RISK_DETECTED"
+                ],
+                "type": "string"
+              },
+              "screeningDetail": {
+                "$ref": "#/components/schemas/Compliance_ScreeningDetail_Chainalysis"
+              }
+            }
+          }
+        ]
+      },
+      "Compliance_ComplianceAnalysisResponse": {
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ComplianceAnalysis"
+            }
+          }
+        }
+      },
+      "Compliance_WalletAnalysisRequest": {
+        "oneOf": [
+          {
+            "required": [
+              "provider",
+              "walletAddress"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "ELLIPTIC"
+                ],
+                "type": "string"
+              },
+              "walletAddress": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "required": [
+              "ledger",
+              "provider",
+              "tickerId",
+              "walletAddress",
+              "transactionAmount"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "CHAINALYSIS"
+                ],
+                "type": "string"
+              },
+              "walletAddress": {
+                "type": "string"
+              },
+              "transactionAmount": {
+                "type": "number"
+              },
+              "ledger": {
+                "type": "string"
+              },
+              "tickerId": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "Compliance_WalletAnalysisResponse": {
+        "oneOf": [
+          {
+            "required": [
+              "ledger",
+              "provider",
+              "transactionType",
+              "walletAddress"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "CHAINALYSIS"
+                ],
+                "type": "string"
+              },
+              "walletAddress": {
+                "type": "string"
+              },
+              "transactionAmount": {
+                "type": "number"
+              },
+              "ledger": {
+                "type": "string"
+              },
+              "transactionType": {
+                "enum": [
+                  "INCOMING",
+                  "OUTGOING"
+                ],
+                "type": "string"
+              },
+              "screenedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "errorDetails": {
+                "type": "string"
+              },
+              "warningDetails": {
+                "type": "string"
+              },
+              "riskLevel": {
+                "enum": [
+                  "UNKNOWN",
+                  "SEVERE",
+                  "HIGH",
+                  "MEDIUM",
+                  "LOW",
+                  "NO_RISK_DETECTED"
+                ],
+                "type": "string"
+              },
+              "screeningDetail": {
+                "$ref": "#/components/schemas/Compliance_ScreeningDetail_Chainalysis"
+              }
+            }
+          },
+          {
+            "required": [
+              "ledger",
+              "provider",
+              "transactionType",
+              "walletAddress"
+            ],
+            "type": "object",
+            "properties": {
+              "provider": {
+                "enum": [
+                  "ELLIPTIC"
+                ],
+                "type": "string"
+              },
+              "walletAddress": {
+                "type": "string"
+              },
+              "transactionAmount": {
+                "type": "number"
+              },
+              "ledger": {
+                "type": "string"
+              },
+              "transactionType": {
+                "enum": [
+                  "INCOMING",
+                  "OUTGOING"
+                ],
+                "type": "string"
+              },
+              "screenedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "errorDetails": {
+                "type": "string"
+              },
+              "warningDetails": {
+                "type": "string"
+              },
+              "riskLevel": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "UNKNOWN"
+                ],
+                "type": "string"
+              },
+              "screeningDetail": {
+                "$ref": "#/components/schemas/Compliance_ScreeningDetail_Elliptic"
+              }
+            }
+          }
+        ]
+      },
+      "Compliance_ScreeningDetail_Elliptic": {
+        "required": [
+          "referenceLink",
+          "referenceId",
+          "riskScoreValue"
+        ],
+        "type": "object",
+        "properties": {
+          "walletCategory": {
+            "type": "string"
+          },
+          "referenceLink": {
+            "type": "string"
+          },
+          "referenceId": {
+            "type": "string"
+          },
+          "riskScoreValue": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ScreeningDetail_Chainalysis": {
+        "type": "object",
+        "properties": {
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_ChainalysisAlert"
+            }
+          },
+          "directCounterparty": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_ChainalysisAlert": {
+        "required": [
+          "alertLevel",
+          "exposureType",
+          "externalLink"
+        ],
+        "type": "object",
+        "properties": {
+          "alertLevel": {
+            "enum": [
+              "SEVERE",
+              "HIGH",
+              "MEDIUM",
+              "LOW",
+              "NO_RISK_DETECTED"
+            ],
+            "type": "string"
+          },
+          "exposureType": {
+            "enum": [
+              "DIRECT"
+            ],
+            "type": "string"
+          },
+          "externalLink": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_CreateTransferRequest": {
+        "required": [
+          "originator",
+          "beneficiary",
+          "asset",
+          "amount",
+          "ref",
+          "agents"
+        ],
+        "type": "object",
+        "properties": {
+          "originator": {
+            "$ref": "#/components/schemas/Compliance_TransferPartyIdentifier"
+          },
+          "beneficiary": {
+            "$ref": "#/components/schemas/Compliance_TransferPartyIdentifier"
+          },
+          "asset": {
+            "type": "string",
+            "description": "Asset identifier (e.g., bip122:000000000019d6689c085ae165831e93/slip44:0)"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Transfer amount"
+          },
+          "ref": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+            "type": "string",
+            "description": "Reference identifier for the transfer"
+          },
+          "agents": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_Agent"
+            },
+            "description": "Agents involved in the transfer (e.g., VASP, SourceAddress, SettlementAddress)"
+          },
+          "settlementId": {
+            "type": "string",
+            "description": "Settlement identifier for the transfer"
+          },
+          "transactionValue": {
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "description": "The fiat amount",
+                "example": "150.75"
+              },
+              "currency": {
+                "maxLength": 3,
+                "minLength": 1,
+                "type": "string",
+                "description": "The currency code (e.g., USD)",
+                "example": "USD"
+              }
+            },
+            "description": "The fiat value of the transaction"
+          },
+          "blockchainAnalyticsAlias": {
+            "type": "string",
+            "description": "Optional analytics alias",
+            "example": "My Wallet"
+          }
+        },
+        "description": "Request to create a travel rule transfer"
+      },
+      "Compliance_TransferPartyIdentifier": {
+        "required": [
+          "@id"
+        ],
+        "type": "object",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "DID or identifier for the party"
+          }
+        },
+        "description": "Identifier for a party in a transfer"
+      },
+      "Compliance_InitiateTravelRuleResponse": {
+        "type": "object",
+        "properties": {
+          "createTransfer201Response": {
+            "$ref": "#/components/schemas/Compliance_CreateTransfer201Response"
+          },
+          "suggestedIntentId": {
+            "type": "string",
+            "description": "The intentId the client needs to initiate the intent with",
+            "format": "uuid"
+          },
+          "complianceTravelRuleId": {
+            "type": "string",
+            "description": "The id associated with this travel rule record on Compliance side",
+            "format": "uuid"
+          }
+        },
+        "description": "Response from creating a travel rule transfer"
+      },
+      "Compliance_CreateTransfer201Response": {
+        "type": "object",
+        "properties": {
+          "transfer": {
+            "$ref": "#/components/schemas/Compliance_Transfer"
+          }
+        },
+        "description": "Direct response from the travel rule provider when creating a transfer"
+      },
+      "Compliance_GetTravelRuleTransferResponse": {
+        "type": "object",
+        "properties": {
+          "transfer": {
+            "$ref": "#/components/schemas/Compliance_Transfer"
+          },
+          "suggestedIntentId": {
+            "type": "string",
+            "description": "The intentId the client needs to initiate the intent with",
+            "format": "uuid"
+          },
+          "complianceTravelRuleId": {
+            "type": "string",
+            "description": "The id associated with this travel rule record on Compliance side",
+            "format": "uuid"
+          }
+        },
+        "description": "Response from getting a travel rule transfer"
+      },
+      "Compliance_Transfer": {
+        "type": "object",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "The ID of the transfer",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "description": "The ID of the transfer (alternative field name)",
+            "format": "uuid"
+          },
+          "status": {
+            "enum": [
+              "OUTGOING",
+              "INCOMING",
+              "REJECTED",
+              "AUTHORIZED",
+              "FLAGGED",
+              "SETTLED",
+              "FLAGGED-SETTLEMENT",
+              "RETURNED",
+              "FROZEN",
+              "CLEARED"
+            ],
+            "type": "string",
+            "description": "The status of the transfer"
+          },
+          "direction": {
+            "enum": [
+              "INCOMING",
+              "OUTGOING"
+            ],
+            "type": "string",
+            "description": "The direction of the transfer"
+          },
+          "ref": {
+            "type": "string",
+            "description": "The reference provided in the request"
+          },
+          "asset": {
+            "type": "string",
+            "description": "The asset being transferred"
+          },
+          "amount": {
+            "type": "string",
+            "description": "The amount being transferred"
+          },
+          "originator": {
+            "$ref": "#/components/schemas/Compliance_TransferParty"
+          },
+          "beneficiary": {
+            "$ref": "#/components/schemas/Compliance_TransferParty"
+          },
+          "agents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_Agent"
+            }
+          },
+          "settlementId": {
+            "type": "string",
+            "description": "The transaction id of the settlement transaction"
+          },
+          "isTravelRule": {
+            "type": "boolean",
+            "description": "Whether the transfer requires travel rule compliance"
+          },
+          "presentationDefinitionUrl": {
+            "type": "string",
+            "description": "URL for the presentation definition"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the transfer was created",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When the transfer was last updated",
+            "format": "date-time"
+          },
+          "settledAt": {
+            "type": "string",
+            "description": "When the transfer was settled",
+            "format": "date-time"
+          },
+          "rejectedAt": {
+            "type": "string",
+            "description": "When the transfer was rejected",
+            "format": "date-time"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "description": "Reason for rejection if the transfer was rejected"
+          }
+        },
+        "description": "Travel rule transfer details from the provider"
+      },
+      "Compliance_TransferParty": {
+        "type": "object",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "The DID identifier of the party"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "The account number of the party"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the party"
+          }
+        },
+        "description": "Party information in a transfer"
+      },
+      "Compliance_Agent": {
+        "required": [
+          "@id",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "The DID identifier of the agent"
+          },
+          "for": {
+            "type": "string",
+            "description": "The party this agent is acting for"
+          },
+          "role": {
+            "enum": [
+              "VASP",
+              "Custodian",
+              "SettlementAddress",
+              "SourceAddress",
+              "Gateway",
+              "Unknown"
+            ],
+            "type": "string",
+            "description": "The role of the agent"
+          }
+        },
+        "description": "Agent involved in the transfer"
+      },
+      "Compliance_AppendPIIRequest": {
+        "required": [
+          "ivms101"
+        ],
+        "type": "object",
+        "properties": {
+          "ivms101": {
+            "$ref": "#/components/schemas/Compliance_IVMS101"
+          },
+          "originator": {
+            "$ref": "#/components/schemas/Compliance_TransferPartyIdentifier"
+          },
+          "beneficiary": {
+            "$ref": "#/components/schemas/Compliance_TransferPartyIdentifier"
+          }
+        },
+        "description": "Request to append PII to a travel rule transfer"
+      },
+      "Compliance_AppendPIITravelRuleResponse": {
+        "type": "object",
+        "properties": {
+          "appendPIIResponse": {
+            "$ref": "#/components/schemas/Compliance_AppendPIIResponse"
+          },
+          "suggestedIntentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "complianceTravelRuleId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "description": "Response from appending PII to a travel rule transfer"
+      },
+      "Compliance_AppendPIIResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Success message"
+          }
+        },
+        "description": "Direct response from the provider for append PII"
+      },
+      "Compliance_PresentPIIRequest": {
+        "required": [
+          "ivms101"
+        ],
+        "type": "object",
+        "properties": {
+          "ivms101": {
+            "$ref": "#/components/schemas/Compliance_IVMS101"
+          }
+        },
+        "description": "Request to present encrypted PII to a travel rule transfer"
+      },
+      "Compliance_PresentPIITravelRuleResponse": {
+        "type": "object",
+        "properties": {
+          "presentPIIResponse": {
+            "$ref": "#/components/schemas/Compliance_PresentPIIResponse"
+          },
+          "suggestedIntentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "complianceTravelRuleId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "description": "Response from presenting encrypted PII to a travel rule transfer"
+      },
+      "Compliance_PresentPIIResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Success message"
+          }
+        },
+        "description": "Direct response from the provider for present PII"
+      },
+      "Compliance_IVMS101": {
+        "type": "object",
+        "properties": {
+          "originator": {
+            "$ref": "#/components/schemas/Compliance_IVMS101Originator"
+          },
+          "beneficiary": {
+            "$ref": "#/components/schemas/Compliance_IVMS101Beneficiary"
+          }
+        },
+        "description": "IVMS101 data structure for travel rule compliance"
+      },
+      "Compliance_IVMS101Originator": {
+        "type": "object",
+        "properties": {
+          "originatorPerson": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_IVMS101Person"
+            }
+          },
+          "accountNumber": {
+            "type": "string"
+          }
+        },
+        "description": "Originator information in IVMS101 format"
+      },
+      "Compliance_IVMS101Beneficiary": {
+        "type": "object",
+        "properties": {
+          "beneficiaryPerson": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_IVMS101Person"
+            }
+          },
+          "accountNumber": {
+            "type": "string"
+          }
+        },
+        "description": "Beneficiary information in IVMS101 format"
+      },
+      "Compliance_IVMS101Person": {
+        "type": "object",
+        "properties": {
+          "naturalPerson": {
+            "$ref": "#/components/schemas/Compliance_IVMS101NaturalPerson"
+          },
+          "legalPerson": {
+            "$ref": "#/components/schemas/Compliance_IVMS101LegalPerson"
+          }
+        },
+        "description": "Person information in IVMS101 format"
+      },
+      "Compliance_IVMS101NaturalPerson": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/Compliance_IVMS101Name"
+          },
+          "dateAndPlaceOfBirth": {
+            "$ref": "#/components/schemas/Compliance_IVMS101DateAndPlaceOfBirth"
+          },
+          "geographicAddress": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_IVMS101GeographicAddress"
+            }
+          },
+          "nationalIdentification": {
+            "$ref": "#/components/schemas/Compliance_IVMS101NationalIdentification"
+          },
+          "customerIdentification": {
+            "type": "string",
+            "description": "Customer identification number assigned by the VASP"
+          }
+        },
+        "description": "Natural person information"
+      },
+      "Compliance_IVMS101LegalPerson": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/Compliance_IVMS101LegalPersonName"
+          },
+          "geographicAddress": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_IVMS101GeographicAddress"
+            }
+          },
+          "nationalIdentification": {
+            "$ref": "#/components/schemas/Compliance_IVMS101NationalIdentification"
+          },
+          "customerIdentification": {
+            "type": "string",
+            "description": "Customer identification number assigned by the VASP"
+          },
+          "countryOfRegistration": {
+            "type": "string",
+            "description": "ISO-3166-1 alpha-2 country code where the legal person is registered"
+          }
+        },
+        "description": "Legal person (organization) information"
+      },
+      "Compliance_IVMS101Name": {
+        "required": [
+          "nameIdentifier"
+        ],
+        "type": "object",
+        "properties": {
+          "nameIdentifier": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_IVMS101NameIdentifier"
+            }
+          }
+        },
+        "description": "Name information for natural person"
+      },
+      "Compliance_IVMS101NameIdentifier": {
+        "required": [
+          "primaryIdentifier",
+          "naturalPersonNameIdentifierType"
+        ],
+        "type": "object",
+        "properties": {
+          "primaryIdentifier": {
+            "type": "string",
+            "description": "Primary name identifier (e.g., surname)"
+          },
+          "secondaryIdentifier": {
+            "type": "string",
+            "description": "Secondary name identifier (e.g., given name)"
+          },
+          "naturalPersonNameIdentifierType": {
+            "type": "string",
+            "description": "Type of name identifier (e.g., LEGL, BIRT, MAID, TRAD)"
+          }
+        }
+      },
+      "Compliance_IVMS101LegalPersonName": {
+        "required": [
+          "nameIdentifier"
+        ],
+        "type": "object",
+        "properties": {
+          "nameIdentifier": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_IVMS101LegalPersonNameIdentifier"
+            }
+          }
+        },
+        "description": "Name information for legal person"
+      },
+      "Compliance_IVMS101LegalPersonNameIdentifier": {
+        "required": [
+          "legalPersonName",
+          "legalPersonNameIdentifierType"
+        ],
+        "type": "object",
+        "properties": {
+          "legalPersonName": {
+            "type": "string",
+            "description": "Legal person name"
+          },
+          "legalPersonNameIdentifierType": {
+            "type": "string",
+            "description": "Type of legal person name identifier (e.g., LEGL, SHRT, TRAD)"
+          }
+        }
+      },
+      "Compliance_IVMS101DateAndPlaceOfBirth": {
+        "required": [
+          "dateOfBirth",
+          "placeOfBirth"
+        ],
+        "type": "object",
+        "properties": {
+          "dateOfBirth": {
+            "type": "string",
+            "format": "date"
+          },
+          "placeOfBirth": {
+            "type": "string"
+          }
+        }
+      },
+      "Compliance_IVMS101GeographicAddress": {
+        "required": [
+          "addressType",
+          "townName",
+          "country"
+        ],
+        "type": "object",
+        "properties": {
+          "addressType": {
+            "type": "string",
+            "description": "Type of address (e.g., HOME, BIZZ, GEOG)"
+          },
+          "streetName": {
+            "type": "string",
+            "description": "Street name - required if addressLine not provided"
+          },
+          "buildingNumber": {
+            "type": "string",
+            "description": "Building number - required if addressLine not provided"
+          },
+          "addressLine": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Full address line(s) - use this OR streetName/buildingNumber"
+          },
+          "postCode": {
+            "type": "string",
+            "description": "Postal code (optional)"
+          },
+          "townName": {
+            "type": "string",
+            "description": "Town or city name"
+          },
+          "countrySubDivision": {
+            "type": "string",
+            "description": "State, province, or region (e.g., NY)"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country code (ISO-3166 Alpha-2, e.g., US)"
+          }
+        }
+      },
+      "Compliance_IVMS101NationalIdentification": {
+        "required": [
+          "nationalIdentifier",
+          "nationalIdentifierType"
+        ],
+        "type": "object",
+        "properties": {
+          "nationalIdentifier": {
+            "type": "string",
+            "description": "National identifier number"
+          },
+          "nationalIdentifierType": {
+            "type": "string",
+            "description": "Type of national identifier (e.g., ARNU, CCPT, RAID, DRLC, FIIN, TXID, SOCS, IDCD, LEIX, MISC)"
+          },
+          "registrationAuthority": {
+            "type": "string",
+            "description": "Authority that issued the identifier (optional)"
+          },
+          "countryOfIssue": {
+            "type": "string",
+            "description": "Country of issue (ISO-3166 Alpha-2)"
+          }
+        },
+        "description": "National identification information"
+      },
+      "Compliance_TravelRuleDetailsRequest": {
+        "required": [
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_TravelRuleDetailsRequestData"
+            }
+          }
+        },
+        "description": "Request to retrieve travel rule details for a batch of domain and ID pairs"
+      },
+      "Compliance_TravelRuleDetailsRequestData": {
+        "required": [
+          "domainId",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "domainId": {
+            "type": "string",
+            "description": "The custody domain ID",
+            "format": "uuid"
+          },
+          "id": {
+            "type": "string",
+            "description": "The ID to look up. Can be an intent ID, transfer ID, or transaction order ID associated with a travel rule record",
+            "format": "uuid"
+          }
+        }
+      },
+      "Compliance_TravelRuleDetailsResponse": {
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_TravelRuleDetail"
+            },
+            "description": "List of travel rule details"
+          }
+        },
+        "description": "Response containing travel rule details for a batch of requests"
+      },
+      "Compliance_TravelRuleDetail": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "enum": [
+              "NOTABENE"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "intentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transferId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "transactionOrderId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "travelRuleStatus": {
+            "enum": [
+              "OUTGOING",
+              "INCOMING",
+              "REJECTED",
+              "AUTHORIZED",
+              "FLAGGED",
+              "SETTLED",
+              "FLAGGED_SETTLEMENT",
+              "RETURNED",
+              "FROZEN",
+              "CLEARED"
+            ],
+            "type": "string"
+          },
+          "travelRuleMessageId": {
+            "type": "string"
+          },
+          "compliedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorDetails": {
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "INCOMING",
+              "OUTGOING"
+            ],
+            "type": "string"
+          },
+          "transfer": {
+            "$ref": "#/components/schemas/Compliance_Transfer"
+          }
+        },
+        "description": "Individual travel rule detail for a single request"
+      },
+      "Compliance_CreateRelationshipRequest": {
+        "required": [
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "The DID of the source entity. Defaults to the entityDID from the domain credentials.",
+            "format": "did",
+            "example": "did:web:ripple.com:test:us"
+          },
+          "to": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "The DID of the target entity.",
+            "format": "did",
+            "example": "did:web:example.com:test:counterparty"
+          }
+        },
+        "description": "Request to create a relationship with a travel rule provider"
+      },
+      "Compliance_RelationshipList": {
+        "type": "object",
+        "properties": {
+          "relationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_RelationshipWithProofs"
+            },
+            "description": "Array of relationship objects with ownership proofs"
+          }
+        },
+        "description": "List of relationships from the travel rule provider"
+      },
+      "Compliance_RelationshipWithProofs": {
+        "required": [
+          "@id",
+          "from",
+          "to",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "@id": {
+            "type": "string",
+            "description": "Unique identifier for the relationship",
+            "example": "urn:uuid:12345678-1234-1234-1234-123456789abc"
+          },
+          "from": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the source entity",
+            "format": "did",
+            "example": "did:web:ripple.com:test:us"
+          },
+          "to": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the target entity",
+            "format": "did",
+            "example": "did:web:example.com:test:counterparty"
+          },
+          "custodian": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the custodian entity (optional)",
+            "format": "did",
+            "example": "did:web:custodian.com:test:vault"
+          },
+          "status": {
+            "enum": [
+              "UNCONFIRMED",
+              "CONFIRMED",
+              "REJECTED"
+            ],
+            "type": "string",
+            "description": "Current state of the relationship",
+            "example": "CONFIRMED"
+          },
+          "confirmedBy": {
+            "pattern": "^did:[a-z0-9]+:.+$",
+            "type": "string",
+            "description": "Decentralized Identifier (DID) of the entity that confirmed the relationship",
+            "format": "did",
+            "example": "did:web:example.com:test:counterparty"
+          },
+          "proofs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Compliance_OwnershipProof"
+            },
+            "description": "Ownership proofs associated with this relationship"
+          }
+        },
+        "description": "A relationship between two entities with ownership proofs"
+      },
+      "Compliance_OwnershipProof": {
+        "required": [
+          "address",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "description": "The blockchain address being proven",
+            "example": "0x1234567890abcdef1234567890abcdef12345678"
+          },
+          "chain": {
+            "type": "string",
+            "description": "The blockchain network",
+            "example": "ethereum"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "VERIFIED",
+              "REJECTED"
+            ],
+            "type": "string",
+            "description": "Status of the ownership proof",
+            "example": "VERIFIED"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Cryptographic signature proving ownership",
+            "example": "0xabcdef..."
+          },
+          "message": {
+            "type": "string",
+            "description": "The message that was signed",
+            "example": "I own this address"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "When the proof was created",
+            "format": "date-time",
+            "example": "2026-03-10T14:30:00.0000000+00:00"
+          }
+        },
+        "description": "Proof of ownership for an address or entity"
+      },
+      "EDS_ChannelCreate": {
+        "required": [
+          "createdBy",
+          "id",
+          "name",
+          "supportedEventTypes",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "supportedEventTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "DISABLED"
+            ],
+            "type": "string"
+          },
+          "maxRetries": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "discriminator": {
+          "propertyName": "type"
+        }
+      },
+      "EDS_WebhookChannelCreate": {
+        "required": [
+          "createdBy",
+          "id",
+          "name",
+          "supportedEventTypes",
+          "url"
+        ],
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EDS_ChannelCreate"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "WEBHOOK"
+                ],
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "EDS_Channel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "domainId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "supportedEventTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "type": {
+            "enum": [
+              "WEBHOOK"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "DISABLED"
+            ],
+            "type": "string"
+          },
+          "maxRetries": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "url": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lastUpdatedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errorRate": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "EDS_ChannelUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "supportedEventTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "type": "string"
+          },
+          "maxRetries": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastUpdatedBy": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "EDS_Event": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channelName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "SUCCESS",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUpdatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retriedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "payload": {
+            "type": "string"
+          }
+        }
+      },
       "GasStation_AlertLimitDto": {
         "required": [
           "tickerId",
@@ -30089,6 +35273,11 @@
         "type": "http",
         "scheme": "bearer"
       },
+      "bearer-jwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
       "bearer": {
         "type": "http",
         "scheme": "bearer",
@@ -30168,6 +35357,14 @@
     {
       "name": "Invitations",
       "description": "**User invitations** are an alternative method to create users. With a user invitation, there is no need for the user to manually share its public key as the process is fully automated in the backend. Moreover it is possible to create invitations that have an expiration date."
+    },
+    {
+      "name": "Compliance",
+      "description": "Compliance APIs enable the creation of compliance-related domains, integration with compliance providers, management of risk score configurations, and execution of compliance analyses. They facilitate the creation of compliance policies, as well as the management of compliance users and agents to automate compliance checks effectively."
+    },
+    {
+      "name": "Event Distribution Service",
+      "description": "Event Distribution Service (EDS) APIs"
     },
     {
       "name": "Gas station",
