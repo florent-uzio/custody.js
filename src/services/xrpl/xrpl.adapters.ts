@@ -10,9 +10,12 @@ import {
   MPTokenIssuanceCreateFlags,
   MPTokenIssuanceSetFlags,
   OfferCreateFlags,
+  PaymentFlags,
+  type PaymentFlagsInterface,
+  SponsorFlags,
   TrustSetFlags,
 } from "xrpl"
-import { isString, isUndefined } from "../../helpers/index.js"
+import { isObject, isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type {
   BatchPayloadInput,
@@ -22,7 +25,10 @@ import type {
   Core_BatchExecutionMode,
   Core_CmptCryptographicFields,
   Core_ParticipantSequencing,
+  Core_Xrpl_PaymentFlag,
+  Core_Xrpl_SponsorFlag,
   Core_XrplMemo,
+  Core_XrplSponsorshipParams,
   CustodyAccountSetFlag,
   CustodyBatchSigner,
   CustodyInnerTransaction,
@@ -174,6 +180,58 @@ const mpTokenIssuanceSetMutableFlagsToStrings = (
 // Confidential MPT ciphertexts, commitments and proofs are hex-encoded Blob
 // fields on the XRPL wire (and so on the xrpl.js models), but the Custody API
 // types every member of `Core_CmptCryptographicFields` as `format: base64`.
+const paymentFlagsToStrings = (flags?: number | PaymentFlagsInterface): Core_Xrpl_PaymentFlag[] => {
+  if (!flags) return []
+  if (isObject<PaymentFlagsInterface>(flags)) {
+    return (["tfSponsorCreatedAccount"] as const).filter((k) => flags[k])
+  }
+  const result: Core_Xrpl_PaymentFlag[] = []
+  if (flags & PaymentFlags.tfSponsorCreatedAccount) result.push("tfSponsorCreatedAccount")
+  return result
+}
+
+const sponsorFlagsToStrings = (
+  flags: number | Partial<Record<Core_Xrpl_SponsorFlag, boolean>>,
+): Core_Xrpl_SponsorFlag[] => {
+  if (isObject<Partial<Record<Core_Xrpl_SponsorFlag, boolean>>>(flags)) {
+    return (["spfSponsorFee", "spfSponsorReserve"] as const).filter((k) => flags[k])
+  }
+  const result: Core_Xrpl_SponsorFlag[] = []
+  if (flags & SponsorFlags.spfSponsorFee) result.push("spfSponsorFee")
+  if (flags & SponsorFlags.spfSponsorReserve) result.push("spfSponsorReserve")
+  return result
+}
+
+/**
+ * Maps an inner transaction's XLS-68 `Sponsor` / `SponsorFlags` to the
+ * Custody entry-level `sponsorship`, or `undefined` when it has no sponsor.
+ * `SponsorSignature` has no Custody counterpart and is ignored.
+ *
+ * @throws {CustodyError} If `SponsorFlags` is set without `Sponsor`, or
+ *   `Sponsor` is set without at least one known sponsor flag
+ */
+const txToSponsorship = (tx: RawTx): Core_XrplSponsorshipParams | undefined => {
+  if (isUndefined(tx.Sponsor)) {
+    if (!isUndefined(tx.SponsorFlags)) {
+      throw new CustodyError({
+        reason: `Inner transaction from ${tx.Account} has SponsorFlags but no Sponsor`,
+      })
+    }
+    return undefined
+  }
+
+  const flags = sponsorFlagsToStrings(tx.SponsorFlags ?? 0)
+  if (flags.length === 0) {
+    throw new CustodyError({
+      reason:
+        `Inner transaction from ${tx.Account} has Sponsor ${tx.Sponsor} but its SponsorFlags ` +
+        "set neither spfSponsorFee nor spfSponsorReserve",
+    })
+  }
+
+  return { sponsor: { type: "Address", address: tx.Sponsor }, flags }
+}
+
 const hexToBase64 = (hex: string) => Buffer.from(hex, "hex").toString("base64")
 
 /**
@@ -229,6 +287,8 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
   switch (tx.TransactionType) {
     case "Payment": {
       const amount = tx.Amount
+      // Omitted when empty, so a Payment without the flag keeps its signed body.
+      const flags = paymentFlagsToStrings(tx.Flags)
       if (isString(amount)) {
         // XRP drops
         return {
@@ -236,6 +296,7 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
           destination: { type: "Address", address: tx.Destination },
           amount,
           ...(tx.DestinationTag !== undefined && { destinationTag: tx.DestinationTag }),
+          ...(flags.length > 0 && { flags }),
         }
       }
       const isMPT = "mpt_issuance_id" in amount
@@ -244,6 +305,7 @@ const txToOperation = (tx: RawTx): CustodyOperation => {
         destination: { type: "Address", address: tx.Destination },
         amount: amount.value,
         ...(tx.DestinationTag !== undefined && { destinationTag: tx.DestinationTag }),
+        ...(flags.length > 0 && { flags }),
         currency: isMPT
           ? { type: "MultiPurposeToken" as const, issuanceId: amount.mpt_issuance_id }
           : {
@@ -640,6 +702,10 @@ export const batchToCustodyBatchPayload = (
  * `Account` matches the outer `Batch.Account` (the submitter), and as a
  * `ParticipantOperation` otherwise.
  *
+ * An inner transaction's XLS-68 `Sponsor` / `SponsorFlags` become the entry's
+ * `sponsorship`. `SponsorSignature` has no Custody counterpart and is ignored.
+ * A Payment's `tfSponsorCreatedAccount` flag becomes `flags` on its operation.
+ *
  * `options.confidentialSends` exists because a `ConfidentialMPTSend` entry
  * needs three fields an xrpl.js transaction cannot carry: the plaintext
  * `amount`, and the sender's `senderEncryptedBalance` /
@@ -654,7 +720,8 @@ export const batchToCustodyBatchPayload = (
  *
  * @throws {CustodyError} If a `confidentialSends` key is not a valid XRPL
  * address, matches no inner transaction, or matches one that is not a
- * `ConfidentialMPTSend`
+ * `ConfidentialMPTSend`; or if an inner transaction has `SponsorFlags` without
+ * `Sponsor`, or `Sponsor` without a known sponsor flag
  */
 export const batchToCustodyInnerTransactions = (
   batch: Pick<Batch, "Account" | "RawTransactions">,
@@ -687,12 +754,14 @@ export const batchToCustodyInnerTransactions = (
     const operation = isUndefined(extras)
       ? txToOperation(tx)
       : withConfidentialSendFields(txToOperation(tx), tx.Account, extras)
+    const sponsorship = txToSponsorship(tx)
 
     if (tx.Account === batch.Account) {
       return {
         type: "SubmitterOperation",
         sequencing,
         operation,
+        ...(!isUndefined(sponsorship) && { sponsorship }),
       }
     }
     return {
@@ -700,6 +769,7 @@ export const batchToCustodyInnerTransactions = (
       participant: { type: "Address", address: tx.Account },
       sequencing,
       operation,
+      ...(!isUndefined(sponsorship) && { sponsorship }),
     }
   })
 

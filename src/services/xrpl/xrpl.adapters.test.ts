@@ -7,8 +7,11 @@ import {
   MPTokenIssuanceCreateFlags,
   MPTokenIssuanceSetFlags,
   OfferCreateFlags,
+  PaymentFlags,
+  SponsorFlags,
   TrustSetFlags,
 } from "xrpl"
+import { CustodyError } from "../../models/index.js"
 import {
   batchSignersToCustodyBatchSigners,
   batchToCustodyBatchPayload,
@@ -115,6 +118,41 @@ describe("batchToCustodyInnerTransactions", () => {
           },
         },
       ])
+    })
+
+    it("maps numeric tfSponsorCreatedAccount on an XRP payment", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "Payment",
+        Destination: "rDest456",
+        Amount: "1000000",
+        Flags: PaymentFlags.tfSponsorCreatedAccount,
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "Payment",
+        destination: { type: "Address", address: "rDest456" },
+        amount: "1000000",
+        flags: ["tfSponsorCreatedAccount"],
+      })
+    })
+
+    it("maps object-form tfSponsorCreatedAccount on a token payment", () => {
+      const tx: RawTx = {
+        ...baseTx,
+        TransactionType: "Payment",
+        Destination: "rDest456",
+        Amount: { currency: "USD", issuer: "rIssuer", value: "100" },
+        Flags: { tfSponsorCreatedAccount: true },
+      }
+      const [result] = batchToCustodyInnerTransactions(makeRawTransactions(tx))
+      expect(result.operation).toEqual({
+        type: "Payment",
+        destination: { type: "Address", address: "rDest456" },
+        amount: "100",
+        currency: { type: "Currency", code: "USD", issuer: "rIssuer" },
+        flags: ["tfSponsorCreatedAccount"],
+      })
     })
 
     it("converts IOU payment", () => {
@@ -882,6 +920,77 @@ describe("batchToCustodyInnerTransactions", () => {
         )
         expect(payload.entries[0]?.operation).toHaveProperty("amount", "1000")
       })
+    })
+  })
+
+  describe("sponsorship", () => {
+    const SPONSOR = "rSponsor123"
+    const payment: RawTx = {
+      ...baseTx,
+      TransactionType: "Payment",
+      Destination: "rDest",
+      Amount: "1000",
+    }
+
+    it("maps Sponsor and numeric SponsorFlags to the submitter entry's sponsorship", () => {
+      const [entry] = batchToCustodyInnerTransactions(
+        makeRawTransactions({
+          ...payment,
+          Sponsor: SPONSOR,
+          SponsorFlags: SponsorFlags.spfSponsorFee | SponsorFlags.spfSponsorReserve,
+        }),
+      )
+      expect(entry).toMatchObject({
+        type: "SubmitterOperation",
+        sponsorship: {
+          sponsor: { type: "Address", address: SPONSOR },
+          flags: ["spfSponsorFee", "spfSponsorReserve"],
+        },
+      })
+    })
+
+    it("maps object-form SponsorFlags to a participant entry's sponsorship", () => {
+      const [entry] = batchToCustodyInnerTransactions(
+        makeRawTransactions(
+          {
+            ...payment,
+            Sponsor: SPONSOR,
+            SponsorFlags: { spfSponsorReserve: true } as unknown as number,
+          },
+          "rOuterSubmitter",
+        ),
+      )
+      expect(entry).toMatchObject({
+        type: "ParticipantOperation",
+        sponsorship: {
+          sponsor: { type: "Address", address: SPONSOR },
+          flags: ["spfSponsorReserve"],
+        },
+      })
+    })
+
+    it.each([
+      { case: "Sponsor without SponsorFlags", fields: { Sponsor: SPONSOR } },
+      { case: "SponsorFlags of 0", fields: { Sponsor: SPONSOR, SponsorFlags: 0 } },
+      { case: "SponsorFlags with no known bit", fields: { Sponsor: SPONSOR, SponsorFlags: 4 } },
+      {
+        case: "object-form SponsorFlags with no flag set",
+        fields: { Sponsor: SPONSOR, SponsorFlags: {} as unknown as number },
+      },
+      {
+        case: "SponsorFlags without Sponsor",
+        fields: { SponsorFlags: SponsorFlags.spfSponsorFee },
+      },
+    ])("throws a CustodyError on $case", ({ fields }) => {
+      const convert = () =>
+        batchToCustodyInnerTransactions(makeRawTransactions({ ...payment, ...fields }))
+      expect(convert).toThrow(CustodyError)
+      expect(convert).toThrow(/Sponsor/)
+    })
+
+    it("omits sponsorship when the inner transaction has no sponsor", () => {
+      const [entry] = batchToCustodyInnerTransactions(makeRawTransactions(payment))
+      expect(entry).not.toHaveProperty("sponsorship")
     })
   })
 

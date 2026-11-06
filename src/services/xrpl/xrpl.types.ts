@@ -143,6 +143,9 @@ export type Core_ParticipantSequencing = components["schemas"]["Core_Participant
 export type Core_BatchEntry = components["schemas"]["Core_BatchEntry"]
 export type Core_BatchSigner = components["schemas"]["Core_BatchSigner"]
 export type Core_Participant = components["schemas"]["Core_Participant"]
+export type Core_XrplSponsorshipParams = components["schemas"]["Core_XrplSponsorshipParams"]
+export type Core_Xrpl_SponsorFlag = components["schemas"]["Core_Xrpl_SponsorFlag"]
+export type Core_Xrpl_PaymentFlag = components["schemas"]["Core_Xrpl_PaymentFlag"]
 export type Core_Sequencing = components["schemas"]["Core_Sequencing"]
 export type Core_BatchExecutionMode = components["schemas"]["Core_Xrpl_BatchExecutionMode"]
 export type Core_ApiBatchSigningData = components["schemas"]["Core_ApiBatchSigningData"]
@@ -234,12 +237,17 @@ export type Core_XrplFeeStrategy = components["schemas"]["Core_XrplFeeStrategy"]
  *   the base fee.
  * - `sourceTag` and `maximumFee` (drops, as a string) are left off the order
  *   when omitted.
+ * - `sponsorship` (XLS-68) names an account that pays the fee and/or reserve
+ *   for this transaction. It is left off the order when omitted.
  *
  * The deprecated `destination`, `amount` and `destinationTag` are not exposed:
  * set them on the operation instead.
  */
 export type XrplTransactionOrderFields = Partial<
-  Pick<Core_TransactionOrderParameters_XRPL, "memos" | "feeStrategy" | "sourceTag" | "maximumFee">
+  Pick<
+    Core_TransactionOrderParameters_XRPL,
+    "memos" | "feeStrategy" | "sourceTag" | "maximumFee" | "sponsorship"
+  >
 >
 
 /**

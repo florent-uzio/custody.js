@@ -587,6 +587,61 @@ describe("XrplService", () => {
       expect(Math.abs(expiryDate.getTime() - expectedDate.getTime())).toBeLessThan(1000)
     })
 
+    it.each([
+      {
+        type: "SponsorshipSetAsSponsor" as const,
+        sponsee: { type: "Address" as const, address: "rSponsee" },
+        maxFee: "1000",
+        flags: ["tfRequireSignForFee" as const],
+      },
+      {
+        type: "SponsorshipSetAsSponsee" as const,
+        sponsor: { type: "Address" as const, address: "rSponsor" },
+      },
+    ])("proposes a $type operation unchanged", async (operation) => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.proposeIntent({ Account: mockAddress, operation })
+
+      expect(capturedBody.request.payload.parameters.operation).toEqual(operation)
+    })
+
+    it("sends order-level sponsorship when set", async () => {
+      let capturedBody: any
+      ports = createTestPorts({
+        submitIntent: async (body) => {
+          capturedBody = body
+          return { requestId: "request-123" } as any
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.proposeIntent({
+        Account: mockAddress,
+        operation: {
+          type: "Payment",
+          amount: "100",
+          destination: { type: "Address", address: "rDest" },
+        },
+        sponsorship: {
+          sponsor: { type: "Address", address: "rSponsor" },
+          flags: ["spfSponsorFee", "spfSponsorReserve"],
+        },
+      })
+
+      expect(capturedBody.request.payload.parameters.sponsorship).toEqual({
+        sponsor: { type: "Address", address: "rSponsor" },
+        flags: ["spfSponsorFee", "spfSponsorReserve"],
+      })
+    })
+
     it("should use provided requestId and payloadId", async () => {
       let capturedBody: any
       ports = createTestPorts({
@@ -2096,6 +2151,30 @@ describe("XrplService", () => {
       success: false,
       errors: ["Insufficient XRP balance", "Destination does not exist"],
     }
+
+    it("sends order-level sponsorship in the dry-run body", async () => {
+      let dryRunBody: any
+      ports = createTestPorts({
+        dryRunIntent: async (body) => {
+          dryRunBody = body
+          return mockDryRunResponse
+        },
+      })
+      service = new XrplService(ports)
+
+      await service.dryRunIntent({
+        ...paymentParams,
+        sponsorship: {
+          sponsor: { type: "Address", address: "rSponsor" },
+          flags: ["spfSponsorFee"],
+        },
+      })
+
+      expect(dryRunBody.payload.parameters.sponsorship).toEqual({
+        sponsor: { type: "Address", address: "rSponsor" },
+        flags: ["spfSponsorFee"],
+      })
+    })
 
     it("dry-runs the request proposeIntent would send, without submitting it", async () => {
       let dryRunBody: any

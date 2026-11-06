@@ -24,7 +24,7 @@ A comprehensive JavaScript/Typescript SDK for interacting with the Ripple Custod
 - **Pagination**: Every `.list()` returns one page — `paginate()` walks the whole collection for you, so client-side filtering never reports a record as missing because it sat on page two. See [Pagination](#pagination)
 - **Type Safety**: Full TypeScript support with types derived from the OpenAPI specification
 - **Ledger ID Autocomplete**: `LedgerId`, `XrplLedgerId`, and `NonXrplLedgerId` exports give IDE autocomplete for the supported ledgers (e.g. `"ethereum"`, `"xrpl"`, `"solana"`, …) while still accepting any string — so newly added ledgers never break the SDK
-- **XRPL Intent Proposal**: Single `proposeIntent()` method for all XRPL transaction types (Payment, TrustSet, DepositPreauth, Clawback, OfferCreate, AccountSet, TicketCreate, Batch, MPToken operations) using a type-safe discriminated union — or `proposeIntentAndWait()` to follow it all the way to the ledger in one call
+- **XRPL Intent Proposal**: Single `proposeIntent()` method for all XRPL transaction types (Payment, TrustSet, DepositPreauth, Clawback, OfferCreate, AccountSet, TicketCreate, Batch, MPToken operations, SponsorshipSet) using a type-safe discriminated union — or `proposeIntentAndWait()` to follow it all the way to the ledger in one call
 - **Raw Signing**: Sign arbitrary XRPL transactions and Batch inner transactions via Custody
 
 ## Architecture
@@ -552,6 +552,7 @@ See the [`examples/`](./examples/) directory for working code.
 - [Regular Key MPToken Issuance](./examples/xrpl/regular-key-mpt-issuance/) — issue an MPToken with the master key disabled and a regular key active
 - [Batch (multi-account)](./examples/xrpl/batch/multi-accounts/) — XLS-56 Batch across multiple inner accounts
 - [Propose and wait](./examples/xrpl/propose-and-wait/) — follow a payment to the ledger in one call, and read the two failure branches apart
+- [Sponsorship](./examples/xrpl/sponsorship/) — XLS-68: create a sponsorship, send a sponsored transaction, read it back
 
 #### Intent examples
 
@@ -592,8 +593,9 @@ transaction order.
 
 Fee settings are part of the transaction, not the options: `feeStrategy`
 (default `{ type: "Priority", priority: "Low" }`, or
-`{ type: "SpecifiedAdditionalFee", drops }`), `maximumFee`, `sourceTag` and
-`memos` go in the first parameter, next to `Account` and `operation`.
+`{ type: "SpecifiedAdditionalFee", drops }`), `maximumFee`, `sourceTag`,
+`memos` and `sponsorship` (an XLS-68 sponsor that pays the fee and/or reserve)
+go in the first parameter, next to `Account` and `operation`.
 
 `proposeIntent()`, `rawSign()` and `proposeBatch()` return the intent response
 plus the `payloadId` the intent was proposed under, so follow-up lookups need no

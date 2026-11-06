@@ -47,8 +47,9 @@ export function pickOrderFields({
   feeStrategy,
   sourceTag,
   maximumFee,
+  sponsorship,
 }: XrplTransactionOrderFields): XrplTransactionOrderFields {
-  return { memos, feeStrategy, sourceTag, maximumFee }
+  return { memos, feeStrategy, sourceTag, maximumFee, sponsorship }
 }
 
 /**
@@ -57,7 +58,7 @@ export function pickOrderFields({
  * parameters union is a subset of the dry-run one, so the result is assignable
  * to both the `Core_IntentDryRunRequest` and `Core_ProposeIntentBody` payloads.
  *
- * `sourceTag` and `maximumFee` are only added when set: the signed body is
+ * `sourceTag`, `maximumFee` and `sponsorship` are only added when set: the signed body is
  * canonicalized, so a key that appears changes the signature.
  */
 function buildTransactionOrderPayload(
@@ -80,6 +81,7 @@ function buildTransactionOrderPayload(
       type: "XRPL",
       ...(!isUndefined(fields.sourceTag) && { sourceTag: fields.sourceTag }),
       ...(!isUndefined(fields.maximumFee) && { maximumFee: fields.maximumFee }),
+      ...(!isUndefined(fields.sponsorship) && { sponsorship: fields.sponsorship }),
     },
     type: "v0_CreateTransactionOrder",
   }
