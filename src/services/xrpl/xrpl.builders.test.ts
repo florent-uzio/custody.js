@@ -163,8 +163,8 @@ describe("xrpl builders — request envelope characterization", () => {
     })
 
     // `toEqual` ignores undefined-valued keys, so check inclusion directly:
-    // an unset sourceTag/maximumFee must not appear in the signed body.
-    it("omits the sourceTag and maximumFee keys when they are unset", () => {
+    // an unset sourceTag/maximumFee/sponsorship must not appear in the signed body.
+    it("omits the sourceTag, maximumFee and sponsorship keys when they are unset", () => {
       const { body } = buildTransactionIntent({
         operation,
         fields: pickOrderFields({ memos: fields.memos }),
