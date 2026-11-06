@@ -23,6 +23,7 @@ export default tseslint.config(
             "src/*.test.ts",
             "src/*/*.test.ts",
             "src/*/*/*.test.ts",
+            "src/*/*/*.test-d.ts",
             "src/testing/*.ts",
           ],
           maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 40,

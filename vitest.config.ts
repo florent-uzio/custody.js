@@ -6,6 +6,13 @@ export default defineConfig({
     globals: false,
     environment: "node",
 
+    // Type-level tests (`*.test-d.ts`) are checked by tsc through vitest
+    typecheck: {
+      enabled: true,
+      include: ["src/**/*.test-d.ts"],
+      tsconfig: "./tsconfig.typecheck.json",
+    },
+
     // Coverage configuration
     coverage: {
       provider: "v8",
