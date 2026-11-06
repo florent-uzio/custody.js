@@ -2,18 +2,24 @@ import {
   AccountSetAsfFlags,
   type Batch,
   BatchFlags,
+  type BatchFlagsInterface,
   type BatchSigner,
   type IssuedCurrencyAmount,
   isValidAddress,
   type Memo,
   MPTokenAuthorizeFlags,
+  type MPTokenAuthorizeFlagsInterface,
   MPTokenIssuanceCreateFlags,
+  type MPTokenIssuanceCreateFlagsInterface,
   MPTokenIssuanceSetFlags,
+  type MPTokenIssuanceSetFlagsInterface,
   OfferCreateFlags,
+  type OfferCreateFlagsInterface,
   PaymentFlags,
   type PaymentFlagsInterface,
   SponsorFlags,
   TrustSetFlags,
+  type TrustSetFlagsInterface,
 } from "xrpl"
 import { isObject, isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
@@ -57,12 +63,11 @@ const amountToAssetQuantity = (amount: IssuedCurrencyAmount | string) => {
 // XRPL flags can arrive either as a bitmask integer or as a pre-decoded object
 // (e.g. { tfSell: true }). Both forms are handled throughout the flag helpers below.
 const offerCreateFlagsToStrings = (
-  flags?: number | object,
+  flags?: number | OfferCreateFlagsInterface,
 ): ("tfImmediateOrCancel" | "tfFillOrKill" | "tfSell")[] => {
   if (!flags) return []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    return (["tfImmediateOrCancel", "tfFillOrKill", "tfSell"] as const).filter((k) => f[k])
+  if (isObject<OfferCreateFlagsInterface>(flags)) {
+    return (["tfImmediateOrCancel", "tfFillOrKill", "tfSell"] as const).filter((k) => flags[k])
   }
   const result: ("tfImmediateOrCancel" | "tfFillOrKill" | "tfSell")[] = []
   if (flags & OfferCreateFlags.tfImmediateOrCancel) result.push("tfImmediateOrCancel")
@@ -72,12 +77,11 @@ const offerCreateFlagsToStrings = (
 }
 
 const trustSetFlagsToStrings = (
-  flags?: number | object,
+  flags?: number | TrustSetFlagsInterface,
 ): ("tfSetFreeze" | "tfClearFreeze" | "tfSetfAuth")[] => {
   if (!flags) return []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    return (["tfSetfAuth", "tfSetFreeze", "tfClearFreeze"] as const).filter((k) => f[k])
+  if (isObject<TrustSetFlagsInterface>(flags)) {
+    return (["tfSetfAuth", "tfSetFreeze", "tfClearFreeze"] as const).filter((k) => flags[k])
   }
   const result: ("tfSetFreeze" | "tfClearFreeze" | "tfSetfAuth")[] = []
   if (flags & TrustSetFlags.tfSetfAuth) result.push("tfSetfAuth")
@@ -103,11 +107,12 @@ const accountSetAsfFlagToString = (flag: number): CustodyAccountSetFlag => {
   return mapped
 }
 
-const mpTokenAuthorizeFlagsToStrings = (flags?: number | object): "tfMPTUnauthorize"[] => {
+const mpTokenAuthorizeFlagsToStrings = (
+  flags?: number | MPTokenAuthorizeFlagsInterface,
+): "tfMPTUnauthorize"[] => {
   if (!flags) return []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    return (["tfMPTUnauthorize"] as const).filter((k) => f[k])
+  if (isObject<MPTokenAuthorizeFlagsInterface>(flags)) {
+    return (["tfMPTUnauthorize"] as const).filter((k) => flags[k])
   }
   const result: "tfMPTUnauthorize"[] = []
   if (flags & MPTokenAuthorizeFlags.tfMPTUnauthorize) result.push("tfMPTUnauthorize")
@@ -117,11 +122,10 @@ const mpTokenAuthorizeFlagsToStrings = (flags?: number | object): "tfMPTUnauthor
 type MPTokenIssuanceCreateFlag = CustodyMpTokenIssuanceCreate["flags"][number]
 
 const mpTokenIssuanceCreateFlagsToStrings = (
-  flags?: number | object,
+  flags?: number | MPTokenIssuanceCreateFlagsInterface,
 ): MPTokenIssuanceCreateFlag[] => {
   if (!flags) return []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
+  if (isObject<MPTokenIssuanceCreateFlagsInterface>(flags)) {
     return (
       [
         "tfMPTCanLock",
@@ -131,7 +135,7 @@ const mpTokenIssuanceCreateFlagsToStrings = (
         "tfMPTCanTransfer",
         "tfMPTCanClawback",
       ] as const
-    ).filter((k) => f[k])
+    ).filter((k) => flags[k])
   }
   const result: MPTokenIssuanceCreateFlag[] = []
   if (flags & MPTokenIssuanceCreateFlags.tfMPTCanLock) result.push("tfMPTCanLock")
@@ -144,12 +148,11 @@ const mpTokenIssuanceCreateFlagsToStrings = (
 }
 
 const mpTokenIssuanceSetFlagsToStrings = (
-  flags?: number | object,
+  flags?: number | MPTokenIssuanceSetFlagsInterface,
 ): ("tfMPTLock" | "tfMPTUnlock")[] => {
   if (!flags) return []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    return (["tfMPTLock", "tfMPTUnlock"] as const).filter((k) => f[k])
+  if (isObject<MPTokenIssuanceSetFlagsInterface>(flags)) {
+    return (["tfMPTLock", "tfMPTUnlock"] as const).filter((k) => flags[k])
   }
   const result: ("tfMPTLock" | "tfMPTUnlock")[] = []
   if (flags & MPTokenIssuanceSetFlags.tfMPTLock) result.push("tfMPTLock")
@@ -165,12 +168,11 @@ type MPTokenIssuanceMutableFlag = CustodyMpTokenIssuanceSet["mutableFlags"][numb
 // arguably not a mutable flag at all, but until the two converge we read the
 // xrpl.js `Flags` bit and emit it on the Custody `mutableFlags` array.
 const mpTokenIssuanceSetMutableFlagsToStrings = (
-  flags?: number | object,
+  flags?: number | MPTokenIssuanceSetFlagsInterface,
 ): MPTokenIssuanceMutableFlag[] => {
   if (!flags) return []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    return f.tfMPTSetCanHoldConfidentialBalance ? ["MPTSetCanConfidentialAmount"] : []
+  if (isObject<MPTokenIssuanceSetFlagsInterface>(flags)) {
+    return flags.tfMPTSetCanHoldConfidentialBalance ? ["MPTSetCanConfidentialAmount"] : []
   }
   return flags & MPTokenIssuanceSetFlags.tfMPTSetCanHoldConfidentialBalance
     ? ["MPTSetCanConfidentialAmount"]
@@ -586,20 +588,21 @@ export const batchSignersToCustodyBatchSigners = (
  * Accepts a numeric bitmask or a pre-decoded object form (`{ tfAllOrNothing: true }`).
  * Throws if no execution-mode flag is set or multiple are set.
  */
-const batchFlagsToExecutionMode = (flags: number | object | undefined): Core_BatchExecutionMode => {
-  if (flags === undefined) {
+const batchFlagsToExecutionMode = (
+  flags: number | BatchFlagsInterface | undefined,
+): Core_BatchExecutionMode => {
+  if (isUndefined(flags)) {
     throw new CustodyError({
       reason: "Batch.Flags is required to determine executionMode",
     })
   }
 
   const matches: Core_BatchExecutionMode[] = []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    if (f.tfAllOrNothing) matches.push("AllOrNothing")
-    if (f.tfOnlyOne) matches.push("OnlyOne")
-    if (f.tfUntilFailure) matches.push("UntilFailure")
-    if (f.tfIndependent) matches.push("Independent")
+  if (isObject<BatchFlagsInterface>(flags)) {
+    if (flags.tfAllOrNothing) matches.push("AllOrNothing")
+    if (flags.tfOnlyOne) matches.push("OnlyOne")
+    if (flags.tfUntilFailure) matches.push("UntilFailure")
+    if (flags.tfIndependent) matches.push("Independent")
   } else {
     if (flags & BatchFlags.tfAllOrNothing) matches.push("AllOrNothing")
     if (flags & BatchFlags.tfOnlyOne) matches.push("OnlyOne")
