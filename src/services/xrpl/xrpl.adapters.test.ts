@@ -1207,6 +1207,55 @@ describe("batchToCustodyBatchPayload", () => {
     })
   })
 
+  describe("sponsorship", () => {
+    const SPONSOR = "rSponsor123"
+
+    it("maps the outer Batch Sponsor and numeric SponsorFlags to sponsorship", () => {
+      const result = batchToCustodyBatchPayload(
+        makeBatch({ Sponsor: SPONSOR, SponsorFlags: SponsorFlags.spfSponsorFee }),
+      )
+      expect(result.sponsorship).toEqual({
+        sponsor: { type: "Address", address: SPONSOR },
+        flags: ["spfSponsorFee"],
+      })
+    })
+
+    it("maps object-form SponsorFlags to sponsorship", () => {
+      const result = batchToCustodyBatchPayload(
+        makeBatch({
+          Sponsor: SPONSOR,
+          SponsorFlags: { spfSponsorFee: true } as unknown as number,
+        }),
+      )
+      expect(result.sponsorship).toEqual({
+        sponsor: { type: "Address", address: SPONSOR },
+        flags: ["spfSponsorFee"],
+      })
+    })
+
+    it("omits sponsorship when the outer Batch has no Sponsor", () => {
+      const result = batchToCustodyBatchPayload(makeBatch())
+      expect(result).not.toHaveProperty("sponsorship")
+    })
+
+    it.each([
+      {
+        case: "SponsorFlags without Sponsor",
+        fields: { SponsorFlags: SponsorFlags.spfSponsorFee },
+        message: `Outer Batch from ${SUBMITTER} has SponsorFlags but no Sponsor`,
+      },
+      {
+        case: "Sponsor without a known sponsor flag",
+        fields: { Sponsor: SPONSOR, SponsorFlags: 0 },
+        message: `Outer Batch from ${SUBMITTER} has Sponsor ${SPONSOR} but its SponsorFlags`,
+      },
+    ])("throws a CustodyError naming the outer Batch on $case", ({ fields, message }) => {
+      const convert = () => batchToCustodyBatchPayload(makeBatch(fields))
+      expect(convert).toThrow(CustodyError)
+      expect(convert).toThrow(message)
+    })
+  })
+
   it("preserves Account and converts entries via batchToCustodyInnerTransactions", () => {
     const submitterInner: RawTx = {
       ...baseTx,
