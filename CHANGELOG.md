@@ -1,5 +1,44 @@
 # custody
 
+## 3.0.0
+
+### Major Changes
+
+- 3a2bbc0: `xrpl.signBatchPayloadAndWait` and `xrpl.signBatchPayload` now take one `signers[]` entry from `xrpl.dryRunBatch` (Batch v1.1) instead of a payload and an address.
+
+  Under Batch v1.1 each inner signer has its own signing payload. The top-level `signingPayload` that `dryRunBatch` returns is deprecated and cannot be signed. The returned `custodyBatchSigner.participant` is now the entry's `participant`, unchanged (for example `{ type: "Account", accountId }`), as Custody requires. `SignBatchPayloadHandle` and `GetBatchSignatureParams` gain `participant`, so `getBatchSignature(handle)` returns it too. New exported types: `Core_ApiBatchSignerSigningData` and `Core_Participant`.
+
+  ```ts
+  // before
+  const { signingPayload } = await custody.xrpl.dryRunBatch(batchPayload)
+  const signed = await custody.xrpl.signBatchPayloadAndWait(signingPayload, ACCOUNT_1)
+
+  // after
+  const { signers } = await custody.xrpl.dryRunBatch(batchPayload)
+  const mine = signers.find((s) => s.account === ACCOUNT_1)!
+  const signed = await custody.xrpl.signBatchPayloadAndWait(mine)
+  ```
+
+  Handles you stored from `signBatchPayload` before this release have no `participant`. Sign again to get a new handle.
+
+### Minor Changes
+
+- f8a1bc7: `exports.generateMovementReport`, `generatePositionReport` and `generateOmnibusPositionReport` now narrow their return type by the body's `format`: `format: "CSV"` resolves to `string`, `format: "JSON"` to the report DTO. A `format` typed as `"CSV" | "JSON"` still gives the union. `GenerateMovementReportResponse`, `GeneratePositionReportResponse` and `GenerateOmnibusPositionReportResponse` take an optional format parameter (for example `GeneratePositionReportResponse<"JSON">`) that defaults to both formats.
+
+  ```ts
+  const csv = await custody.exports.generatePositionReport({ ...filters, format: "CSV" }) // string
+  const report = await custody.exports.generatePositionReport({ ...filters, format: "JSON" }) // Export_PositionReportResponseDto
+  ```
+
+- b8ed35a: `batchToCustodyBatchPayload` now maps the outer Batch's XLS-68 `Sponsor` + `SponsorFlags` to order-level `sponsorship`. Before, the outer sponsorship was silently dropped. The key is left off when the Batch has no `Sponsor`, and inconsistent sponsor fields throw a `CustodyError`. Only `spfSponsorFee` is valid on an outer Batch: the ledger rejects `spfSponsorReserve` there.
+- 44ff45f: XRPL sponsorships (XLS-68) on `client.xrpl`. A sponsor account can pay another account's transaction fees and/or owner reserves.
+
+  - `xrpl.proposeIntent`, `proposeIntentAndWait` and `dryRunIntent` accept order-level `sponsorship: { sponsor, flags }`, next to `memos` and `sourceTag`. The key is left off the order when not set.
+  - `SponsorshipSetAsSponsor` and `SponsorshipSetAsSponsee` operations go through `proposeIntent`.
+  - `batchToCustodyInnerTransactions` / `batchToCustodyBatchPayload` map each inner transaction's `Sponsor` + `SponsorFlags` to the entry's `sponsorship`, and a Payment's `tfSponsorCreatedAccount` flag to its `flags`. Inconsistent sponsor fields throw a `CustodyError`.
+  - New exported types: `Core_XrplSponsorshipParams`, `Core_Xrpl_SponsorFlag`, `Core_Xrpl_PaymentFlag`.
+  - New example: `examples/xrpl/sponsorship/`.
+
 ## 2.16.0
 
 ### Minor Changes
