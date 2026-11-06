@@ -86,19 +86,25 @@ export async function atomicSettlement(
     },
   })
 
-  // Dry-run to obtain the canonical signing payload
-  const { signingPayload } = await custody.xrpl.dryRunBatch(batchPayload, {
+  // Dry-run to obtain one signing payload per inner signer
+  const { signers } = await custody.xrpl.dryRunBatch(batchPayload, {
     domainId: DOMAIN_ID,
     ledgerId: LEDGER_ID,
   })
 
+  const signerFor = (account: string) => {
+    const signer = signers.find((s) => s.account === account)
+    if (!signer) throw new Error(`No Batch signer entry for ${account}`)
+    return signer
+  }
+
   console.log("Retrieving participant signatures for batch.")
   const [signer1, signer2] = await Promise.all([
-    custody.xrpl.signBatchPayloadAndWait(signingPayload, mmfSender.address, {
+    custody.xrpl.signBatchPayloadAndWait(signerFor(mmfSender.address), {
       domainId: DOMAIN_ID,
       polling: { maxRetries: 10 },
     }),
-    custody.xrpl.signBatchPayloadAndWait(signingPayload, rlusdSender.address, {
+    custody.xrpl.signBatchPayloadAndWait(signerFor(rlusdSender.address), {
       domainId: DOMAIN_ID,
       polling: { maxRetries: 10 },
     }),

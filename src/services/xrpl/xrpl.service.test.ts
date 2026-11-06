@@ -15,6 +15,7 @@ import type { XrplPorts } from "./xrpl.ports.js"
 import { XrplService } from "./xrpl.service.js"
 import type {
   BatchPayloadInput,
+  Core_ApiBatchSignerSigningData,
   Core_BatchSigner,
   Core_IntentDryRunResponse_v0_CreateTransactionOrder,
   IntentContext,
@@ -2374,7 +2375,14 @@ describe("XrplService", () => {
   // ── signBatchPayloadAndWait ───────────────────────────────────
 
   describe("signBatchPayloadAndWait", () => {
-    it("signs the hex payload and returns both BatchSigner shapes", async () => {
+    const accountSigner: Core_ApiBatchSignerSigningData = {
+      participant: { type: "Account", accountId: "3f6c1d2e-8b4a-4c7e-9f1a-2b3c4d5e6f70" },
+      account: mockAddress,
+      signingPayload: "deadbeef",
+      signingPayloadHash: "1A3C5E70",
+    }
+
+    it("signs the signer's payload and echoes its Account participant", async () => {
       let capturedBody: any
       ports = createTestPorts({
         submitIntent: async (body) => {
@@ -2384,7 +2392,7 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      const result = await service.signBatchPayloadAndWait("deadbeef", mockAddress, {
+      const result = await service.signBatchPayloadAndWait(accountSigner, {
         polling: { maxRetries: 1, intervalMs: 0 },
       })
 
@@ -2405,7 +2413,7 @@ describe("XrplService", () => {
         },
       })
       expect(result.custodyBatchSigner).toEqual({
-        participant: { type: "Address", address: mockAddress },
+        participant: { type: "Account", accountId: "3f6c1d2e-8b4a-4c7e-9f1a-2b3c4d5e6f70" },
         publicKey: expectedCompressedKey,
         signature: "AABBCCDD",
       })
@@ -2416,7 +2424,7 @@ describe("XrplService", () => {
       ports = createTestPorts({ resolveContext })
       service = new XrplService(ports)
 
-      await service.signBatchPayloadAndWait("deadbeef", mockAddress, {
+      await service.signBatchPayloadAndWait(accountSigner, {
         accountId: "explicit-account",
         ledgerId: "explicit-ledger",
         polling: { maxRetries: 1, intervalMs: 0 },
@@ -2426,10 +2434,27 @@ describe("XrplService", () => {
       expect(resolveContext).toHaveBeenCalledTimes(1)
     })
 
-    it("throws CustodyError when signerAddress is invalid", async () => {
-      await expect(service.signBatchPayloadAndWait("deadbeef", "not-an-address")).rejects.toThrow(
-        "Invalid signerAddress: not-an-address",
+    it("echoes an Address participant unchanged", async () => {
+      const result = await service.signBatchPayloadAndWait(
+        {
+          participant: { type: "Address", address: mockAddress },
+          account: mockAddress,
+          signingPayload: "deadbeef",
+          signingPayloadHash: "1A3C5E70",
+        },
+        { polling: { maxRetries: 1, intervalMs: 0 } },
       )
+
+      expect(result.custodyBatchSigner.participant).toEqual({
+        type: "Address",
+        address: mockAddress,
+      })
+    })
+
+    it("throws CustodyError when signer.account is invalid", async () => {
+      await expect(
+        service.signBatchPayloadAndWait({ ...accountSigner, account: "not-an-address" }),
+      ).rejects.toThrow("Invalid signer.account: not-an-address")
     })
 
     it("throws CustodyError when the signature never arrives", async () => {
@@ -2439,7 +2464,7 @@ describe("XrplService", () => {
       service = new XrplService(ports)
 
       await expect(
-        service.signBatchPayloadAndWait("deadbeef", mockAddress, {
+        service.signBatchPayloadAndWait(accountSigner, {
           polling: { maxRetries: 2, intervalMs: 0 },
         }),
       ).rejects.toThrow("Manifest signature not available after maximum retries")
@@ -2466,7 +2491,13 @@ describe("XrplService", () => {
       })
       service = new XrplService(ports)
 
-      const handle = await service.signBatchPayload("deadbeef", mockAddress)
+      const participant = { type: "Account" as const, accountId: "acct-participant-1" }
+      const handle = await service.signBatchPayload({
+        participant,
+        account: mockAddress,
+        signingPayload: "deadbeef",
+        signingPayloadHash: "1A3C5E70",
+      })
 
       const expectedBase64 = Buffer.from("deadbeef", "hex").toString("base64")
       expect(capturedBody.request.payload.type).toBe("v0_SignManifest")
@@ -2482,14 +2513,20 @@ describe("XrplService", () => {
       expect(handle.domainId).toBe(mockDomainId)
       expect(handle.accountId).toBe(mockAccountId)
       expect(handle.signerAddress).toBe(mockAddress)
+      expect(handle.participant).toEqual({ type: "Account", accountId: "acct-participant-1" })
       expect(handle.signingPubKey).toBe(expectedCompressedKey)
       expect(handle.intentResponse).toEqual({ requestId: "r-1" })
     })
 
-    it("throws CustodyError when signerAddress is invalid", async () => {
-      await expect(service.signBatchPayload("deadbeef", "not-an-address")).rejects.toThrow(
-        "Invalid signerAddress: not-an-address",
-      )
+    it("throws CustodyError when signer.account is invalid", async () => {
+      await expect(
+        service.signBatchPayload({
+          participant: { type: "Address", address: "not-an-address" },
+          account: "not-an-address",
+          signingPayload: "deadbeef",
+          signingPayloadHash: "1A3C5E70",
+        }),
+      ).rejects.toThrow("Invalid signer.account: not-an-address")
     })
   })
 
@@ -2501,10 +2538,11 @@ describe("XrplService", () => {
       domainId: mockDomainId,
       accountId: mockAccountId,
       signerAddress: mockAddress,
+      participant: { type: "Account" as const, accountId: "acct-participant-1" },
       signingPubKey: expectedCompressedKey,
     }
 
-    it("returns both BatchSigner shapes when the signature is available", async () => {
+    it("returns both BatchSigner shapes, echoing the stored participant", async () => {
       const result = await service.getBatchSignature(params)
 
       expect(result).toEqual({
@@ -2518,7 +2556,7 @@ describe("XrplService", () => {
           },
         },
         custodyBatchSigner: {
-          participant: { type: "Address", address: mockAddress },
+          participant: { type: "Account", accountId: "acct-participant-1" },
           publicKey: expectedCompressedKey,
           signature: "AABBCCDD",
         },

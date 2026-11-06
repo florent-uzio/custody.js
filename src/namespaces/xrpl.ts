@@ -4,6 +4,7 @@ import type {
   BuildConfidentialSendOptions,
   BuildConfidentialSendParams,
   ConfidentialSendLeg,
+  Core_ApiBatchSignerSigningData,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
   DryRunIntentResult,
@@ -244,12 +245,17 @@ export function createXrpl(getService: () => XrplService) {
 
     /**
      * Step 1 of the XLS-56 Batch flow — dry-runs a Batch and returns the
-     * canonical signing data. Each participant signs `signingPayload` with
-     * their own XRPL key; collect signatures and pass them to `proposeBatch`.
+     * canonical signing data. `signers` has one entry per required
+     * BatchSigner, each with its own `signingPayload`; pass the entries for
+     * accounts on this custody instance to `signBatchPayload(AndWait)`, collect
+     * the signatures and pass them to `proposeBatch`.
+     *
+     * The top-level `signingPayload` is deprecated and not signable under
+     * Batch v1.1.
      *
      * @param payload - Submitter, execution mode, and inner entries
      * @param options - Optional configuration for the dry-run intent
-     * @returns The batch signing data (signingPayload, hash, resolved transactions)
+     * @returns The batch signing data (`signers[]`, resolved transactions)
      */
     dryRunBatch: async (
       payload: BatchPayloadInput,
@@ -257,21 +263,21 @@ export function createXrpl(getService: () => XrplService) {
     ): Promise<Core_ApiBatchSigningData> => getService().dryRunBatch(payload, options),
 
     /**
-     * Step 2 of the XLS-56 Batch flow — signs the `signingPayload` from a dry
-     * run for an inner account managed by this custody instance and waits for
-     * the manifest signature. Call once per locally-managed signer.
+     * Step 2 of the XLS-56 Batch flow — signs one `signers[]` entry from
+     * `dryRunBatch` for an inner account managed by this custody instance and
+     * waits for the manifest signature. Call once per locally-managed signer.
      *
-     * @param signingPayload - Hex-encoded payload from `dryRunBatch`
-     * @param signerAddress - The XRPL address of the inner account to sign for
+     * `custodyBatchSigner.participant` is the entry's `participant`, unchanged,
+     * as Custody requires.
+     *
+     * @param signer - A `signers[]` entry from `dryRunBatch`
      * @param options - Optional configuration for the raw sign intent and polling
      * @returns Signature, public key, and pre-built BatchSigner shapes
      */
     signBatchPayloadAndWait: async (
-      signingPayload: string,
-      signerAddress: string,
+      signer: Core_ApiBatchSignerSigningData,
       options?: SignBatchPayloadOptions,
-    ): Promise<SignBatchPayloadResult> =>
-      getService().signBatchPayloadAndWait(signingPayload, signerAddress, options),
+    ): Promise<SignBatchPayloadResult> => getService().signBatchPayloadAndWait(signer, options),
 
     /**
      * Step 2 of the XLS-56 Batch flow (non-blocking) — proposes the raw sign
@@ -282,17 +288,15 @@ export function createXrpl(getService: () => XrplService) {
      * returned handle and pass it to `getBatchSignature` later to fetch the
      * signature once available.
      *
-     * @param signingPayload - Hex-encoded payload from `dryRunBatch`
-     * @param signerAddress - The XRPL address of the inner account to sign for
+     * @param signer - A `signers[]` entry from `dryRunBatch`
      * @param options - Optional configuration for the raw sign intent
-     * @returns A handle with the manifest ID and fields needed to retrieve the signature
+     * @returns A handle with the manifest ID, the signer's `participant` and the
+     *   fields needed to retrieve the signature
      */
     signBatchPayload: async (
-      signingPayload: string,
-      signerAddress: string,
+      signer: Core_ApiBatchSignerSigningData,
       options?: SignBatchPayloadOptions,
-    ): Promise<SignBatchPayloadHandle> =>
-      getService().signBatchPayload(signingPayload, signerAddress, options),
+    ): Promise<SignBatchPayloadHandle> => getService().signBatchPayload(signer, options),
 
     /**
      * Retrieves the signature for a payload proposed via `signBatchPayload`,

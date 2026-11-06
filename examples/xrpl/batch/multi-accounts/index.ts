@@ -9,8 +9,8 @@ import { type Batch, BatchFlags, Client, GlobalFlags, type Payment, xrpToDrops }
  *  2. Construct inner transactions from different accounts
  *  3. Build and autofill the Batch transaction via the XRPL client
  *  4. Convert the autofilled Batch to a custody `BatchPayloadInput`
- *  5. Dry-run to obtain the canonical `signingPayload` from Ripple Custody
- *  6. Sign the payload for each inner account managed by this custody instance
+ *  5. Dry-run to obtain one signing payload per inner signer (`signers[]`)
+ *  6. Sign each inner account's `signers[]` entry on this custody instance
  *     (blocking `signBatchPayloadAndWait`, or non-blocking `signBatchPayload`
  *     + `getBatchSignature` when an operator approves signatures out-of-band)
  *  7. Submit the Batch with the collected `batchSigners`
@@ -91,11 +91,18 @@ const submitMultiAccountBatch = async () => {
     //   }
     const batchPayload = batchToCustodyBatchPayload(autofilledBatch)
 
-    // ── 4. Dry-run to obtain the canonical signing payload ───────
+    // ── 4. Dry-run to obtain the signing payloads ────────────────
 
-    // Ripple Custody resolves the inner operations and returns the exact
-    // bytes each participant must sign in `signingPayload`.
-    const { signingPayload } = await custody.xrpl.dryRunBatch(batchPayload)
+    // Ripple Custody resolves the inner operations and returns `signers`: one
+    // entry per inner signer (`account`), with the exact bytes it must sign
+    // (`signingPayload`) and the `participant` to return the signature with.
+    const { signers } = await custody.xrpl.dryRunBatch(batchPayload)
+
+    const signerFor = (account: string) => {
+      const signer = signers.find((s) => s.account === account)
+      if (!signer) throw new Error(`No Batch signer entry for ${account}`)
+      return signer
+    }
 
     // ── 5. Sign the payload for each inner account ───────────────
 
@@ -120,13 +127,13 @@ const submitMultiAccountBatch = async () => {
     //     signature once it has been approved.
 
     // ACCOUNT_1 — blocking: propose and wait for the signature in one call.
-    const signer1 = await custody.xrpl.signBatchPayloadAndWait(signingPayload, ACCOUNT_1)
+    const signer1 = await custody.xrpl.signBatchPayloadAndWait(signerFor(ACCOUNT_1))
 
     // ACCOUNT_2 — non-blocking: propose now, retrieve the signature later.
-    const handle2 = await custody.xrpl.signBatchPayload(signingPayload, ACCOUNT_2)
+    const handle2 = await custody.xrpl.signBatchPayload(signerFor(ACCOUNT_2))
 
     // `handle2` is plain serializable data ({ payloadId, domainId, accountId,
-    // signerAddress, signingPubKey, ... }). In a real out-of-band flow you would
+    // signerAddress, participant, signingPubKey, ... }). In a real out-of-band flow you would
     // persist it here and return, then resume once the operator has approved.
 
     // getBatchSignature does a single fetch by default and returns `undefined`
