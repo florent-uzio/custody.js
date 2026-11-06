@@ -11,10 +11,11 @@ import {
   MPTokenIssuanceSetFlags,
   OfferCreateFlags,
   PaymentFlags,
+  type PaymentFlagsInterface,
   SponsorFlags,
   TrustSetFlags,
 } from "xrpl"
-import { isString, isUndefined } from "../../helpers/index.js"
+import { isObject, isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type {
   BatchPayloadInput,
@@ -179,21 +180,21 @@ const mpTokenIssuanceSetMutableFlagsToStrings = (
 // Confidential MPT ciphertexts, commitments and proofs are hex-encoded Blob
 // fields on the XRPL wire (and so on the xrpl.js models), but the Custody API
 // types every member of `Core_CmptCryptographicFields` as `format: base64`.
-const paymentFlagsToStrings = (flags?: number | object): Core_Xrpl_PaymentFlag[] => {
+const paymentFlagsToStrings = (flags?: number | PaymentFlagsInterface): Core_Xrpl_PaymentFlag[] => {
   if (!flags) return []
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    return (["tfSponsorCreatedAccount"] as const).filter((k) => f[k])
+  if (isObject<PaymentFlagsInterface>(flags)) {
+    return (["tfSponsorCreatedAccount"] as const).filter((k) => flags[k])
   }
   const result: Core_Xrpl_PaymentFlag[] = []
   if (flags & PaymentFlags.tfSponsorCreatedAccount) result.push("tfSponsorCreatedAccount")
   return result
 }
 
-const sponsorFlagsToStrings = (flags: number | object): Core_Xrpl_SponsorFlag[] => {
-  if (typeof flags === "object") {
-    const f = flags as Record<string, boolean>
-    return (["spfSponsorFee", "spfSponsorReserve"] as const).filter((k) => f[k])
+const sponsorFlagsToStrings = (
+  flags: number | Partial<Record<Core_Xrpl_SponsorFlag, boolean>>,
+): Core_Xrpl_SponsorFlag[] => {
+  if (isObject<Partial<Record<Core_Xrpl_SponsorFlag, boolean>>>(flags)) {
+    return (["spfSponsorFee", "spfSponsorReserve"] as const).filter((k) => flags[k])
   }
   const result: Core_Xrpl_SponsorFlag[] = []
   if (flags & SponsorFlags.spfSponsorFee) result.push("spfSponsorFee")
