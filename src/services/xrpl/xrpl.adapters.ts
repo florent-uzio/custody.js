@@ -205,18 +205,23 @@ const sponsorFlagsToStrings = (
 }
 
 /**
- * Maps an inner transaction's XLS-68 `Sponsor` / `SponsorFlags` to the
- * Custody entry-level `sponsorship`, or `undefined` when it has no sponsor.
- * `SponsorSignature` has no Custody counterpart and is ignored.
+ * Maps a transaction's XLS-68 `Sponsor` / `SponsorFlags` to a Custody
+ * `sponsorship` (entry-level for an inner transaction, order-level for the
+ * outer Batch), or `undefined` when it has no sponsor. `SponsorSignature` has
+ * no Custody counterpart and is ignored. `label` names the transaction in
+ * error messages.
  *
  * @throws {CustodyError} If `SponsorFlags` is set without `Sponsor`, or
  *   `Sponsor` is set without at least one known sponsor flag
  */
-const txToSponsorship = (tx: RawTx): Core_XrplSponsorshipParams | undefined => {
+const txToSponsorship = (
+  tx: Pick<RawTx, "Account" | "Sponsor" | "SponsorFlags">,
+  label = "Inner transaction",
+): Core_XrplSponsorshipParams | undefined => {
   if (isUndefined(tx.Sponsor)) {
     if (!isUndefined(tx.SponsorFlags)) {
       throw new CustodyError({
-        reason: `Inner transaction from ${tx.Account} has SponsorFlags but no Sponsor`,
+        reason: `${label} from ${tx.Account} has SponsorFlags but no Sponsor`,
       })
     }
     return undefined
@@ -226,7 +231,7 @@ const txToSponsorship = (tx: RawTx): Core_XrplSponsorshipParams | undefined => {
   if (flags.length === 0) {
     throw new CustodyError({
       reason:
-        `Inner transaction from ${tx.Account} has Sponsor ${tx.Sponsor} but its SponsorFlags ` +
+        `${label} from ${tx.Account} has Sponsor ${tx.Sponsor} but its SponsorFlags ` +
         "set neither spfSponsorFee nor spfSponsorReserve",
     })
   }
@@ -671,17 +676,26 @@ const memoToCustodyMemo = ({ Memo }: Memo): Core_XrplMemo => ({
  * - `SourceTag` on the outer Batch is mapped to `sourceTag` when present.
  *   `Fee` is not mapped to `maximumFee`: autofill sets it, so it is not a cap
  *   the caller chose — set `maximumFee` on the result to cap the fee
+ * - `Sponsor` + `SponsorFlags` on the outer Batch are mapped to order-level
+ *   `sponsorship` when present. Flags are passed through as given: under
+ *   XLS-68 only `spfSponsorFee` is valid on the outer Batch, and the ledger
+ *   rejects `spfSponsorReserve` there (`temINVALID_FLAG`)
  * - `BatchSigners` on the input is ignored — collect signatures separately
  *   and pass them to `proposeBatch`
  *
  * `options.confidentialSends` supplies the three `ConfidentialMPTSend` entry
  * fields the XRPL wire format has no room for — see
  * {@link batchToCustodyInnerTransactions}.
+ *
+ * @throws {CustodyError} If the outer Batch has `SponsorFlags` without
+ * `Sponsor`, or `Sponsor` without a known sponsor flag; or for any reason
+ * {@link batchToCustodyInnerTransactions} throws
  */
 export const batchToCustodyBatchPayload = (
   batch: Batch,
   options?: BatchToCustodyOptions,
 ): BatchPayloadInput => {
+  const sponsorship = txToSponsorship(batch, "Outer Batch")
   return {
     Account: batch.Account,
     executionMode: batchFlagsToExecutionMode(batch.Flags),
@@ -694,6 +708,7 @@ export const batchToCustodyBatchPayload = (
     }),
     ...(!isUndefined(batch.Memos) && { memos: batch.Memos.map(memoToCustodyMemo) }),
     ...(!isUndefined(batch.SourceTag) && { sourceTag: batch.SourceTag }),
+    ...(!isUndefined(sponsorship) && { sponsorship }),
   }
 }
 
