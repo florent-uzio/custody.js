@@ -27,6 +27,7 @@ import type {
   BuildConfidentialSendOptions,
   BuildConfidentialSendParams,
   ConfidentialSendLeg,
+  Core_ApiBatchSignerSigningData,
   Core_ApiBatchSigningData,
   Core_BatchSigner,
   Core_IntentDryRunResponse_v0_CreateTransactionOrder,
@@ -1032,16 +1033,19 @@ export class XrplService {
 
   /**
    * Step 1 of the XLS-56 Batch flow — dry-runs a Batch transaction order and
-   * returns the canonical signing data. Each participant must sign
-   * `signingPayload` with their own XRPL key; collect those signatures and pass
-   * them to `proposeBatch` (Step 3).
+   * returns the canonical signing data. Each entry of `signers` must be signed
+   * by its `account`: its own `signingPayload`, returned with the same
+   * `participant`. Collect those signatures and pass them to `proposeBatch`
+   * (Step 3).
    *
-   * Use `signBatchPayloadAndWait` to sign for inner accounts managed by this
-   * custody instance.
+   * Pass an entry to `signBatchPayloadAndWait` (or `signBatchPayload`) to sign
+   * for an inner account managed by this custody instance.
    *
    * @param payload - Submitter address, execution mode, and inner entries
    * @param options - Optional configuration for the dry-run intent
-   * @returns The batch signing data (`signingPayload`, `signingPayloadHash`, resolved transactions)
+   * @returns The batch signing data: `signers[]` (one signing payload per
+   *   required BatchSigner — the top-level `signingPayload` is deprecated and
+   *   not signable under Batch v1.1) and the resolved transactions
    * @throws {CustodyError} If the submitter Account is not a valid XRPL address,
    *   the dry run fails, or it does not return batch signing data
    */
@@ -1079,26 +1083,28 @@ export class XrplService {
   }
 
   /**
-   * Step 2 of the XLS-56 Batch flow — signs the `signingPayload` returned by
-   * `dryRunBatch` for a single inner account managed by this custody instance,
-   * and waits for the manifest signature.
+   * Step 2 of the XLS-56 Batch flow — signs one `signers[]` entry returned by
+   * `dryRunBatch` for an inner account managed by this custody instance, and
+   * waits for the manifest signature.
+   *
+   * Signs `signer.signingPayload` with the account resolved from
+   * `signer.account`. The returned `custodyBatchSigner.participant` is
+   * `signer.participant` unchanged, as Custody requires.
    *
    * Inner accounts on other custody instances (or non-custody participants)
    * sign independently with their own keys.
    *
-   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
-   * @param signerAddress - XRPL address of the inner account to sign for
+   * @param signer - A `signers[]` entry from the `dryRunBatch` response
    * @param options - Optional configuration for the raw sign intent and polling
    * @returns The signature, signing public key, and pre-built BatchSigner shapes
-   * @throws {CustodyError} If the signer address is invalid, the signer account
+   * @throws {CustodyError} If `signer.account` is invalid, the signer account
    *   is not found, or the signature is not available after maximum retries
    */
   public async signBatchPayloadAndWait(
-    signingPayload: string,
-    signerAddress: string,
+    signer: Core_ApiBatchSignerSigningData,
     options: SignBatchPayloadOptions = {},
   ): Promise<SignBatchPayloadResult> {
-    const handle = await this.signBatchPayload(signingPayload, signerAddress, options)
+    const handle = await this.signBatchPayload(signer, options)
 
     const signature = await this.waitForManifestSignature(
       handle.domainId,
@@ -1112,7 +1118,7 @@ export class XrplService {
 
   /**
    * Step 2 of the XLS-56 Batch flow (non-blocking variant) — proposes the raw
-   * sign intent for the `signingPayload` returned by `dryRunBatch` for a single
+   * sign intent for one `signers[]` entry returned by `dryRunBatch` for an
    * inner account managed by this custody instance, then returns immediately
    * without waiting for the manifest signature.
    *
@@ -1121,25 +1127,25 @@ export class XrplService {
    * `getBatchSignature` later (possibly from another process) to fetch the
    * signature once it is available.
    *
-   * @param signingPayload - Hex-encoded `signingPayload` from `dryRunBatch` response
-   * @param signerAddress - XRPL address of the inner account to sign for
+   * @param signer - A `signers[]` entry from the `dryRunBatch` response
    * @param options - Optional configuration for the raw sign intent
-   * @returns A handle with the manifest ID and the fields needed to retrieve the signature
-   * @throws {CustodyError} If the signer address is invalid, or the signer
+   * @returns A handle with the manifest ID, the signer's `participant` and the
+   *   fields needed to retrieve the signature
+   * @throws {CustodyError} If `signer.account` is invalid, or the signer
    *   account is not found
    */
   public async signBatchPayload(
-    signingPayload: string,
-    signerAddress: string,
+    signer: Core_ApiBatchSignerSigningData,
     options: SignBatchPayloadOptions = {},
   ): Promise<SignBatchPayloadHandle> {
-    assertValidAddress(signerAddress, "signerAddress")
+    const signerAddress = signer.account
+    assertValidAddress(signerAddress, "signer.account")
 
     const context = await this.resolveSignerContext(signerAddress, options)
 
     const signingPubKey = await this.fetchPublicKey(context.domainId, context.accountId)
 
-    const base64Encoded = Buffer.from(signingPayload, "hex").toString("base64")
+    const base64Encoded = Buffer.from(signer.signingPayload, "hex").toString("base64")
 
     const { intentResponse, payloadId } = await this.proposeRawSignIntent(
       base64Encoded,
@@ -1152,6 +1158,7 @@ export class XrplService {
       domainId: context.domainId,
       accountId: context.accountId,
       signerAddress,
+      participant: signer.participant,
       signingPubKey,
       intentResponse,
     }

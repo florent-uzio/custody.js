@@ -12,6 +12,7 @@ import type {
   Core_BatchSigner,
   Core_XrplOperation,
   Core_XrplOperation_Batch,
+  GetBatchSignatureParams,
   IntentContext,
   SignBatchPayloadResult,
   XrplIntentOptions,
@@ -141,7 +142,7 @@ export function buildTransactionIntent({
  * Assembles a `SignBatchPayloadResult` from the signer details and signature.
  */
 export function buildSignBatchPayloadResult(
-  params: { signerAddress: string; signingPubKey: string },
+  params: Pick<GetBatchSignatureParams, "signerAddress" | "signingPubKey" | "participant">,
   signature: string,
 ): SignBatchPayloadResult {
   return {
@@ -155,7 +156,7 @@ export function buildSignBatchPayloadResult(
       },
     },
     custodyBatchSigner: {
-      participant: { type: "Address", address: params.signerAddress },
+      participant: params.participant,
       publicKey: params.signingPubKey,
       signature,
     },

@@ -142,9 +142,11 @@ export type CustodyOperation = CustodyInnerTransaction["operation"]
 export type Core_ParticipantSequencing = components["schemas"]["Core_ParticipantSequencing"]
 export type Core_BatchEntry = components["schemas"]["Core_BatchEntry"]
 export type Core_BatchSigner = components["schemas"]["Core_BatchSigner"]
+export type Core_Participant = components["schemas"]["Core_Participant"]
 export type Core_Sequencing = components["schemas"]["Core_Sequencing"]
 export type Core_BatchExecutionMode = components["schemas"]["Core_Xrpl_BatchExecutionMode"]
 export type Core_ApiBatchSigningData = components["schemas"]["Core_ApiBatchSigningData"]
+export type Core_ApiBatchSignerSigningData = components["schemas"]["Core_ApiBatchSignerSigningData"]
 export type Core_TransactionEstimate_XRPL = components["schemas"]["Core_TransactionEstimate_XRPL"]
 export type Core_IntentDryRunResponse_v0_CreateTransactionOrder =
   components["schemas"]["Core_IntentDryRunResponse_v0_CreateTransactionOrder"]
@@ -621,7 +623,7 @@ export type BatchPayloadInput = Prettify<
 >
 
 /**
- * Options for signing the `signingPayload` returned by `dryRunBatch` for an
+ * Options for signing a `signers[]` entry returned by `dryRunBatch` for an
  * inner account managed by this custody instance.
  *
  * When `accountId` and `ledgerId` are provided, the address-to-account lookup
@@ -663,8 +665,10 @@ export type SignBatchPayloadHandle = {
   domainId: string
   /** Account ID of the signer account */
   accountId: string
-  /** XRPL address of the signer */
+  /** XRPL address of the signer (`signers[].account` from `dryRunBatch`) */
   signerAddress: string
+  /** The signer's participant, exactly as `dryRunBatch` returned it in `signers[]` */
+  participant: Core_Participant
   /** The compressed secp256k1 public key in uppercase hex */
   signingPubKey: string
   /** The proposed intent response */
@@ -683,8 +687,10 @@ export type GetBatchSignatureParams = {
   domainId: string
   /** Account ID of the signer account */
   accountId: string
-  /** XRPL address of the signer */
+  /** XRPL address of the signer (`signers[].account` from `dryRunBatch`) */
   signerAddress: string
+  /** The signer's participant, exactly as `dryRunBatch` returned it in `signers[]` */
+  participant: Core_Participant
   /** The compressed secp256k1 public key in uppercase hex */
   signingPubKey: string
 }
