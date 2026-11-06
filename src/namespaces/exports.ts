@@ -7,7 +7,6 @@ import type {
   GenerateOmnibusPositionReportResponse,
   GeneratePositionReportBody,
   GeneratePositionReportResponse,
-  ReportFormat,
 } from "./exports.types.js"
 
 /**
@@ -18,17 +17,17 @@ import type {
  */
 export function createExports(t: Transport) {
   return {
-    generateMovementReport: <F extends ReportFormat>(
+    generateMovementReport: <F extends GenerateMovementReportBody["format"]>(
       body: GenerateMovementReportBody & { format: F },
     ): Promise<GenerateMovementReportResponse<F>> =>
       t.post(URLs.exportsMovement, body, undefined, { sign: false }),
 
-    generatePositionReport: <F extends ReportFormat>(
+    generatePositionReport: <F extends GeneratePositionReportBody["format"]>(
       body: GeneratePositionReportBody & { format: F },
     ): Promise<GeneratePositionReportResponse<F>> =>
       t.post(URLs.exportsPosition, body, undefined, { sign: false }),
 
-    generateOmnibusPositionReport: <F extends ReportFormat>(
+    generateOmnibusPositionReport: <F extends GenerateOmnibusPositionReportBody["format"]>(
       body: GenerateOmnibusPositionReportBody & { format: F },
     ): Promise<GenerateOmnibusPositionReportResponse<F>> =>
       t.post(URLs.exportsOmnibusPosition, body, undefined, { sign: false }),

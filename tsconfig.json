@@ -24,5 +24,5 @@
     "declarationMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.test.ts", "src/testing/**"]
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test-d.ts", "src/testing/**"]
 }
