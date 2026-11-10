@@ -1,5 +1,11 @@
 # custody
 
+## 3.1.0
+
+### Minor Changes
+
+- 263b19f: Sync OpenAPI specs to Custody 1.43.7 (and 1.34.27) and regenerate types. Compliance: the Chainalysis risk-level policy gains an optional `notScreenable` action, `Compliance_WalletAnalysisRequest` gains an `ELLIPTIC` provider variant, and `previewAnalysis` now documents 500/501/502 error responses. No new endpoints or schemas.
+
 ## 3.0.0
 
 ### Major Changes
