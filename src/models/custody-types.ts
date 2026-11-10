@@ -10302,6 +10302,8 @@ export interface components {
       severeRisk?: components["schemas"]["Compliance_RiskLevelAction_Chainalysis"]
       unknownRisk?: components["schemas"]["Compliance_RiskLevelAction_Chainalysis"]
       unknownCategory?: components["schemas"]["Compliance_RiskLevelAction_Chainalysis"]
+      /** @description Action for incoming transfers the provider could not screen. INCOMING only; rejected on OUTGOING. Optional: when omitted, the stored rule is left unchanged. A stored rule cannot be deleted; set it to REQUIRE_EXPLICIT_DECISION, which behaves the same as having no rule. */
+      notScreenable?: components["schemas"]["Compliance_RiskLevelAction_Chainalysis"]
     }
     Compliance_PolicyPayloadRequest: {
       /** @enum {string} */
@@ -10505,6 +10507,15 @@ export interface components {
           transactionAmount: number
           ledger: string
           tickerId: string
+        }
+      | {
+          /** @enum {string} */
+          provider: "ELLIPTIC"
+          walletAddress: string
+          /** @description Harmonize ledger id of the wallet */
+          ledger: string
+          /** @description Harmonize ticker id of the asset; when omitted the Elliptic asset pre-check is skipped and the wallet is screened on its address only */
+          tickerId?: string
         }
     Compliance_WalletAnalysisResponse:
       | {
@@ -19236,6 +19247,33 @@ export interface operations {
           "*/*": components["schemas"]["Compliance_ErrorResponse"]
         }
       }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description The provider cannot screen this network or asset (NOT_SCREENABLE): a pre-check rejected it before any provider call. The reason names the asset, ledger or network; the preview stores no screening */
+      501: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
+      /** @description The provider returned no analysis for the wallet after all retries (no verdict), or the Harmonize ticker lookup failed (SDK error or ticker without ticker data; CHAINALYSIS only, the Elliptic pre-check skips instead). The body carries the generic 5xx message (the handler sanitises the detail); the preview stores no screening, so the reason is in the server logs */
+      502: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "*/*": components["schemas"]["Compliance_ErrorResponse"]
+        }
+      }
     }
   }
   GetExceptionRole: {
@@ -22930,7 +22968,7 @@ export interface operations {
           "application/json": components["schemas"]["Export_MovementReportResponseDto"]
           /**
            * @example # metadata: {"exportId":"d394fae4-9d6b-4ab7-a3fa-c66e7a6caf56","recordCount":16,...}
-           *     "domainId","domainName","registeredAt","transactionId","onLedgerTransactionId","transferId","transferKind","enrichedTransactionValue","rawTransactionValue","ledgerName",...(40 columns)
+           *     "domainId","domainName","registeredAt","transactionId","onLedgerTransactionId","transferId","transferKind","enrichedTransactionValue","rawTransactionValue","ledgerName",...(39 columns)
            *     "5cd224fe-193e-8bce-c94c-c6c05245e2d1","My root domain","2026-08-17T10:54:04.130Z",...
            */
           "text/csv": string
