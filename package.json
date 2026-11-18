@@ -63,6 +63,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@changesets/cli": "^2.31.0",
+    "@hey-api/openapi-ts": "0.99.0",
     "@types/node": "^26.6.5",
     "@types/qs": "^6.15.1",
     "@vitest/coverage-v8": "^5.0.3",
