@@ -69,12 +69,12 @@
     "@vitest/ui": "^5.0.3",
     "dotenv": "^18.0.7",
     "lint-staged": "^17.6.1",
-    "openapi-typescript": "^7.13.0",
     "oxfmt": "^0.79.0",
     "oxlint": "^1.94.0",
     "oxlint-tsgolint": "^7.0.2007",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
+    "typescript-printer": "npm:typescript@^5.9.3",
     "vitest": "^5.0.3"
   },
   "lint-staged": {
