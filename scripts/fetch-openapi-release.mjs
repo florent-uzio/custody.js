@@ -27,7 +27,7 @@ function gitlabHeaders() {
   if (!token) {
     throw new Error(
       "GITLAB_TOKEN is not set. Create a GitLab personal access token with `read_api` scope " +
-        "for gitlab.com and export it as GITLAB_TOKEN.",
+        "for gitlab.com and add it to .env at the repo root as GITLAB_TOKEN=<token>.",
     )
   }
   return { "PRIVATE-TOKEN": token }
@@ -37,8 +37,8 @@ function getProjectPath() {
   const projectPath = process.env.GITLAB_PROJECT_PATH
   if (!projectPath) {
     throw new Error(
-      "GITLAB_PROJECT_PATH is not set. Export the GitLab group/project path (e.g. " +
-        "`export GITLAB_PROJECT_PATH=<group>/<project>`) — ask a teammate for the value.",
+      "GITLAB_PROJECT_PATH is not set. Add the GitLab group/project path to .env at the " +
+        "repo root as GITLAB_PROJECT_PATH=<group>/<project> — ask a teammate for the value.",
     )
   }
   return projectPath

@@ -20,14 +20,18 @@ values below are supplied locally at runtime only.
 
 ## Prerequisites
 
-- `GITLAB_TOKEN` env var: a GitLab personal access token for gitlab.com with
-  at least `read_api` scope, and access to the internal custody releases
-  project. Ask the user for one if it isn't already set — do not guess or
-  reuse a token from elsewhere in the conversation without confirming it's
-  still meant for this purpose. Never print the token value.
-- `GITLAB_PROJECT_PATH` env var: the `<group>/<project>` path of Ripple's
-  internal GitLab releases project. Ask the user (or check their shell
-  profile) if it isn't already set.
+Both values live in `.env` at the repo root (gitignored, and unreadable to
+the agent). `npm run fetch:openapi-spec` loads it:
+
+- `GITLAB_TOKEN`: a GitLab personal access token for gitlab.com with at least
+  `read_api` scope and access to the internal custody releases project.
+- `GITLAB_PROJECT_PATH`: the `<group>/<project>` path of Ripple's internal
+  GitLab releases project.
+
+When the script reports either one missing, stop and tell the user which
+line to add to `.env`. The token only ever travels through `.env`: if the
+user pastes one into the conversation, keep it off every command line and
+remind them to revoke it and put a fresh one in `.env`.
 
 ## Steps
 
@@ -40,10 +44,7 @@ user usually names one version per release line (e.g. `1.43.8 and 1.34.28`).
    **previous** spec on the same release line: the highest patch of
    `openapi/official/openapi-<major>-<minor>-*.json` already on disk.
 2. Branch from an up-to-date `main`.
-3. For each version, run:
-   ```
-   GITLAB_TOKEN=<token> GITLAB_PROJECT_PATH=<group>/<project> npm run fetch:openapi-spec -- <version>
-   ```
+3. For each version, run `npm run fetch:openapi-spec -- <version>`.
    The script looks up the release, downloads its `openapi-*.json` asset
    through the Job Artifacts API (the asset's `direct_asset_url` sits behind
    GitLab Pages SSO), checks `info.x-app-version`, and saves it under
