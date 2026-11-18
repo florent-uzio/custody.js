@@ -1,6 +1,6 @@
 ---
 name: fetch-openapi-spec
-description: "Download the OpenAPI spec attached to an official Ripple Custody GitLab release and save it into openapi/official/. Use when the user wants to add/update an official spec, mentions a GitLab release URL for the custody releases project, or asks to fetch/sync the OpenAPI json for a given version."
+description: "Sync official Ripple Custody OpenAPI specs from GitLab releases into openapi/official/: fetch, regenerate types, diff against the previous release, add a changeset. Use when the user wants to add, update or sync an official spec, or mentions a GitLab release URL for the custody releases project."
 ---
 
 # Fetch OpenAPI spec
@@ -31,28 +31,39 @@ values below are supplied locally at runtime only.
 
 ## Steps
 
-1. Determine the version tag (e.g. `1.35.0`) from the user's request — they
-   may paste a release URL like
-   `https://gitlab.com/<group>/<project>/-/releases/<version>`, in which case
-   the tag is the last path segment. `latest` is also accepted.
-2. Run:
+A sync runs end to end: fetch, generate, diff, changeset, CI, report. The
+user usually names one version per release line (e.g. `1.43.8 and 1.34.28`).
+
+1. Determine each version tag from the request. A pasted release URL like
+   `https://gitlab.com/<group>/<project>/-/releases/<version>` carries the tag
+   as its last path segment; `latest` is also accepted. For each tag, note the
+   **previous** spec on the same release line: the highest patch of
+   `openapi/official/openapi-<major>-<minor>-*.json` already on disk.
+2. Branch from an up-to-date `main`.
+3. For each version, run:
    ```
    GITLAB_TOKEN=<token> GITLAB_PROJECT_PATH=<group>/<project> npm run fetch:openapi-spec -- <version>
    ```
-3. The script:
-   - Looks up the release via the GitLab Releases API.
-   - Finds the single asset link matching `openapi-*.json`.
-   - Resolves its GitLab CI job artifact URL and downloads the file through
-     the Job Artifacts API (the asset's `direct_asset_url` itself sits behind
-     GitLab Pages SSO and is not fetchable with a PAT).
-   - Validates the downloaded JSON has `info.x-app-version` before saving.
-   - Saves it as `openapi/official/<original-asset-name>.json` (filename is
-     whatever GitLab called it — the channel folder is what matters, not the
-     filename; see ADR-0005).
-4. After a successful download, remind the user to run
-   `npm run generate:custody-types` to regenerate
-   `src/models/custody-types.ts` and `src/models/capabilities.generated.ts`,
-   and to check whether a changeset is needed for the resulting type changes.
+   The script looks up the release, downloads its `openapi-*.json` asset
+   through the Job Artifacts API (the asset's `direct_asset_url` sits behind
+   GitLab Pages SSO), checks `info.x-app-version`, and saves it under
+   `openapi/official/` with GitLab's asset name.
+4. Run `npm run generate:custody-types`.
+5. For each version, run `npm run diff:openapi -- <previous> <version>`. It
+   lists operations and schemas added, removed and changed. This is the source
+   for the API impact; `capabilities.generated.ts` always gains the new
+   version keys, and its diff needs no further inspection.
+6. For every added or changed operation and schema, find the namespace that
+   covers it under `src/namespaces/` and decide whether the SDK needs a new
+   namespace, a new method, or nothing (changed generated types flow through
+   on their own). Done when every item in the diff has a verdict.
+7. Write a new changeset `.changeset/openapi-<version>-<version>.md` (dots
+   become dashes), bump `minor`, describing the API changes from step 5, or
+   "No API changes" when the diff is empty. Use the existing
+   `openapi-*` changesets in git history as the template.
+8. Run `npm run ci`. Done when it passes.
+9. Report to the user: the specs added, the diff summary per version, and
+   the verdict from step 6 (new namespace / new endpoints needed or not).
 
 ## Troubleshooting
 
