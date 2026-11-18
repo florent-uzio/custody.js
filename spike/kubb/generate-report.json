@@ -1,0 +1,36 @@
+{
+  "public": {
+    "unresolved": [],
+    "nonJson": {
+      "request": 0,
+      "response": 0
+    },
+    "duplicateOperationIds": [],
+    "inlineOps": 24,
+    "renamedSchemas": [
+      "Core_ManifestContent_EIP-191 -> Core_ManifestContent_EIP_191",
+      "Core_ManifestValue_EIP-191 -> Core_ManifestValue_EIP_191"
+    ],
+    "kubbWarnings": 2,
+    "ms": 451,
+    "adapterLines": 3234,
+    "kubbLines": 25925
+  },
+  "internal": {
+    "unresolved": [],
+    "nonJson": {
+      "request": 0,
+      "response": 10
+    },
+    "duplicateOperationIds": [],
+    "inlineOps": 4,
+    "renamedSchemas": [
+      "Internal_ManifestContent_EIP-191 -> Internal_ManifestContent_EIP_191",
+      "Internal_ManifestValue_EIP-191 -> Internal_ManifestValue_EIP_191"
+    ],
+    "kubbWarnings": 2,
+    "ms": 702,
+    "adapterLines": 1172,
+    "kubbLines": 8672
+  }
+}

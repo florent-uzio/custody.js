@@ -1,0 +1,4 @@
+
+> @florent-uzio/custody@3.0.0 typecheck
+> tsc --noEmit
+

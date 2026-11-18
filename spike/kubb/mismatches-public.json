@@ -1,0 +1,352 @@
+[
+  {
+    "kind": "schema",
+    "label": "Core_IntentDetails",
+    "line": 222,
+    "reasons": [
+      "additionalProperties @.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_IntentDryRunRequest",
+    "line": 223,
+    "reasons": [
+      "additionalProperties @.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_IntentEntity",
+    "line": 271,
+    "reasons": [
+      "additionalProperties @.details.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_Propose",
+    "line": 353,
+    "reasons": [
+      "additionalProperties @.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_ProposeIntentBody",
+    "line": 354,
+    "reasons": [
+      "additionalProperties @.request.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_ProposeUserIntentPayload",
+    "line": 356,
+    "reasons": [
+      "additionalProperties @[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_TrustedIntent",
+    "line": 574,
+    "reasons": [
+      "additionalProperties @.data.details.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_TrustedIntentsCollection",
+    "line": 575,
+    "reasons": [
+      "additionalProperties @.items[].data.details.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_UserIntentPayload",
+    "line": 595,
+    "reasons": [
+      "additionalProperties @[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_v0_ExecuteExtension",
+    "line": 699,
+    "reasons": ["additionalProperties @.payload: old=[Record<string, never>] new=[object]"]
+  },
+  {
+    "kind": "schema",
+    "label": "Compliance_PolicyPayloadRequest",
+    "line": 809,
+    "reasons": [
+      "union-members @.approvalWorkflow: old-only= new-only=object",
+      "union-object-arity @.approvalWorkflow: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Compliance_PolicyResponse",
+    "line": 810,
+    "reasons": [
+      "union-members @.approvalWorkflow: old-only= new-only=object",
+      "union-object-arity @.approvalWorkflow: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Compliance_DomainPayloadRequest",
+    "line": 812,
+    "reasons": ["type @.permissions: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "schema",
+    "label": "EDS_WebhookChannelCreate",
+    "line": 862,
+    "reasons": [
+      "extra-in-new @.id",
+      "extra-in-new @.name",
+      "extra-in-new @.supportedEventTypes",
+      "extra-in-new @.status",
+      "extra-in-new @.maxRetries",
+      "extra-in-new @.createdBy",
+      "extra-in-new @.type",
+      "extra-in-new @.url"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "GasStation_SponsorableDomainDto",
+    "line": 879,
+    "reasons": [
+      "union-members @.parentId: old-only= new-only=object",
+      "union-object-arity @.parentId: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "GasStation_SponsorableDomainsResponseDto",
+    "line": 880,
+    "reasons": [
+      "union-members @.items[].parentId: old-only= new-only=object",
+      "union-object-arity @.items[].parentId: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "GasStation_AuditEventDto",
+    "line": 890,
+    "reasons": ["type @.payload: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "schema",
+    "label": "GasStation_EventsResponseDto",
+    "line": 891,
+    "reasons": ["type @.items[].payload: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_IntentBody",
+    "line": 961,
+    "reasons": [
+      "oneOf-structure @: unmatched old=2 new=2 e.g. old={ request: { targetDomainId: string; id: string; expiryAt: string; payload: { backupId: string; type new=Core_SystemSigned"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_SystemSigned",
+    "line": 969,
+    "reasons": [
+      "additionalProperties @.request.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_SystemSignedRequest",
+    "line": 970,
+    "reasons": [
+      "additionalProperties @.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Core_UserSigned",
+    "line": 973,
+    "reasons": [
+      "additionalProperties @.request.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Export_MovementExportDto",
+    "line": 1004,
+    "reasons": [
+      "optionality @.custodyStatus: old=required new=optional",
+      "nullable/undefined @.custodyStatus: old-only= new-only=undefined",
+      "optionality @.ledgerStatus: old=required new=optional",
+      "nullable/undefined @.ledgerStatus: old-only= new-only=undefined"
+    ]
+  },
+  {
+    "kind": "schema",
+    "label": "Export_ExportMetadataDto",
+    "line": 1025,
+    "reasons": ["type @.filters: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "schema",
+    "label": "Export_PositionReportResponseDto",
+    "line": 1027,
+    "reasons": ["type @.metadata.filters: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "schema",
+    "label": "Export_MovementReportResponseDto",
+    "line": 1029,
+    "reasons": ["type @.metadata.filters: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "schema",
+    "label": "Export_OmnibusExportMetadataDto",
+    "line": 1032,
+    "reasons": ["type @.filters: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "schema",
+    "label": "Export_OmnibusPositionReportResponseDto",
+    "line": 1034,
+    "reasons": ["type @.metadata.filters: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "request-body",
+    "label": "createIntent",
+    "line": 1446,
+    "reasons": [
+      "oneOf-structure @: unmatched old=2 new=2 e.g. old={ request: { targetDomainId: string; id: string; expiryAt: string; payload: { backupId: string; type new=Core_SystemSigned"
+    ]
+  },
+  {
+    "kind": "response",
+    "label": "getIntents 200",
+    "line": 1484,
+    "reasons": [
+      "additionalProperties @.items[].data.details.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "response",
+    "label": "getIntent 200",
+    "line": 1490,
+    "reasons": [
+      "additionalProperties @.data.details.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "request-body",
+    "label": "intentDryRun",
+    "line": 1503,
+    "reasons": [
+      "additionalProperties @.payload[type=v0_ExecuteExtension].payload: old=[Record<string, never>] new=[object]"
+    ]
+  },
+  {
+    "kind": "request-body",
+    "label": "CreatePolicyPayload",
+    "line": 1729,
+    "reasons": [
+      "union-members @.approvalWorkflow: old-only= new-only=object",
+      "union-object-arity @.approvalWorkflow: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "request-body",
+    "label": "CreateDomainPayload",
+    "line": 1733,
+    "reasons": ["type @.permissions: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "response",
+    "label": "GetPolicy 200",
+    "line": 1761,
+    "reasons": [
+      "union-members @.approvalWorkflow: old-only= new-only=object",
+      "union-object-arity @.approvalWorkflow: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "request-body",
+    "label": "createChannel",
+    "line": 1810,
+    "reasons": [
+      "extra-in-new @.id",
+      "extra-in-new @.name",
+      "extra-in-new @.supportedEventTypes",
+      "extra-in-new @.status",
+      "extra-in-new @.maxRetries",
+      "extra-in-new @.createdBy",
+      "extra-in-new @.type",
+      "extra-in-new @.url"
+    ]
+  },
+  {
+    "kind": "response",
+    "label": "SponsorListController_getSponsorableDomains_legacyDomain 200",
+    "line": 1872,
+    "reasons": [
+      "union-members @.items[].parentId: old-only= new-only=object",
+      "union-object-arity @.items[].parentId: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "response",
+    "label": "EventController_getEvents_legacyDomain 200",
+    "line": 1892,
+    "reasons": ["type @.items[].payload: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "response",
+    "label": "SponsorListController_getSponsorableDomains 200",
+    "line": 1947,
+    "reasons": [
+      "union-members @.items[].parentId: old-only= new-only=object",
+      "union-object-arity @.items[].parentId: old=1 new=0"
+    ]
+  },
+  {
+    "kind": "response",
+    "label": "EventController_getEvents 200",
+    "line": 1972,
+    "reasons": ["type @.items[].payload: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "response",
+    "label": "PositionReportController_generatePositionReport 201",
+    "line": 2135,
+    "reasons": ["type @.metadata.filters: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "request-body",
+    "label": "MovementReportController_generateMovementReport",
+    "line": 2144,
+    "reasons": [
+      "optionality @.custodyStatus: old=required new=optional",
+      "nullable/undefined @.custodyStatus: old-only= new-only=undefined",
+      "optionality @.ledgerStatus: old=required new=optional",
+      "nullable/undefined @.ledgerStatus: old-only= new-only=undefined"
+    ]
+  },
+  {
+    "kind": "response",
+    "label": "MovementReportController_generateMovementReport 201",
+    "line": 2145,
+    "reasons": ["type @.metadata.filters: old=Record<string, never> new=object"]
+  },
+  {
+    "kind": "response",
+    "label": "OmnibusPositionReportController_generateOmnibusPositionReport 201",
+    "line": 2182,
+    "reasons": ["type @.metadata.filters: old=Record<string, never> new=object"]
+  }
+]

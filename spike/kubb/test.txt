@@ -1,0 +1,879 @@
+
+> @florent-uzio/custody@3.0.0 test
+> vitest run --reporter verbose
+
+Testing types with tsc and vue-tsc is an experimental feature.
+Breaking changes might not follow SemVer, please pin Vitest's version when using it.
+
+ RUN  v5.0.3 /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146
+
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isFunction > correctly identifies functions 1ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isNumber > correctly identifies numbers 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isString > correctly identifies strings 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isUndefined > correctly identifies "undefined" 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isObject > correctly identifies objects 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isBoolean > correctly identifies a boolean 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isDate > correctly identifies a date 3ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isUUID > correctly identifies valid UUIDs 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isUUID > correctly rejects invalid UUIDs 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isUUID > handles edge cases correctly 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isStringifiedObject > correctly identifies valid stringified objects 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isStringifiedObject > correctly rejects non-stringified objects 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isStringifiedObject > handles edge cases correctly 0ms
+ ✓ src/helpers/typeof-fns/typeof-fns.test.ts > isStringifiedObject > handles real-world examples from the codebase 0ms
+ ✓ src/helpers/async/async.test.ts > sleep > should return a promise 2ms
+ ✓ src/helpers/async/async.test.ts > sleep > should resolve after the specified time 1ms
+ ✓ src/helpers/async/async.test.ts > sleep > should resolve with undefined 0ms
+ ✓ src/helpers/async/async.test.ts > sleep > should handle zero milliseconds 1ms
+ ✓ src/helpers/async/async.test.ts > sleep > should handle small time values 0ms
+ ✓ src/helpers/async/async.test.ts > sleep > should handle large time values 0ms
+ ✓ src/helpers/async/async.test.ts > sleep > should allow multiple concurrent sleep calls 0ms
+ ✓ src/helpers/async/async.test.ts > sleep > should work in async/await context 0ms
+ ✓ src/helpers/async/async.test.ts > sleep > should properly chain with other promises 1ms
+ ✓ src/helpers/async/async.test.ts > pollUntil > returns the first defined result without further attempts 1ms
+ ✓ src/helpers/async/async.test.ts > pollUntil > retries until the attempt returns a value 3ms
+ ✓ src/helpers/async/async.test.ts > pollUntil > returns undefined once the attempts are exhausted 3ms
+ ✓ src/helpers/async/async.test.ts > pollUntil > reports the 1-based attempt number to onAttempt 3ms
+ ✓ src/helpers/async/async.test.ts > pollUntil > does not sleep after the final attempt 1ms
+ ✓ src/helpers/async/async.test.ts > pollUntil > propagates an error thrown by the attempt instead of retrying 1ms
+ ✓ src/helpers/async/async.test.ts > pollUntil > treats a falsy-but-defined result as a value 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext > resolves domainId/userId from the single domain and merges the matched account 2ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext > uses opts.domainId to select among multiple domains 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext > uses opts.ledgerId to disambiguate among multiple matching addresses 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext > forwards only {address} to the /v1/addresses query, regardless of ledgerId/domainId opts 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext — resolveDomainAndUser error branches > throws when loginId is missing 1ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext — resolveDomainAndUser error branches > throws when the user has no domains 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext — resolveDomainAndUser error branches > throws when the provided domainId is not found among the user's domains 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext — resolveDomainAndUser error branches > throws when the domain matched by the provided domainId has no user reference 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext — resolveDomainAndUser error branches > throws when the user has multiple domains and no domainId is provided 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext — resolveDomainAndUser error branches > throws when the single primary domain has no id 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > resolveContext — resolveDomainAndUser error branches > throws when the single primary domain has no user reference 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > submitIntent > posts the body to URLs.intents with no path params or config 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > getIntent > gets URLs.getIntent with domainId and intentId 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > dryRunIntent > posts the body to URLs.intentsDryRun with sign: false and no path params 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > getManifest > gets URLs.accountManifest with domainId/accountId/manifestId 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > getAccount > gets URLs.account with domainId/accountId 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > initiateParametersComputeAndWait > posts the compute unsigned with the type discriminator, then polls the status 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > listTransactions > gets URLs.transactions with domainId and passes the query through 0ms
+ ✓ src/services/xrpl/xrpl.http-adapters.test.ts > createHttpPorts > getTransaction > gets URLs.transaction with domainId and transactionId 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > generate > should generate a valid key pair 3ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > generate > should generate different key pairs on each call 1ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > generate > should generate PEM-formatted private key 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > generate > should generate base64-encoded public key 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should sign a message and return a base64 signature 1ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should sign a stringified JSON object 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should sign a UUID string 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should sign an empty string 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should produce different signatures for the same message (ECDSA is probabilistic) 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should produce different signatures for different messages 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should throw CustodyError when message is not a string 1ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should throw CustodyError when private key is not a string 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should throw CustodyError when private key doesn't contain PEM header 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should throw CustodyError when private key is empty string 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should throw CustodyError when private key has PEM header but is invalid 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should throw CustodyError when private key is wrong curve (secp256k1) 1ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should throw CustodyError when private key is wrong curve (Ed25519) 0ms
+ ✓ src/services/keypairs/secp256r1.service.test.ts > Secp256r1Service > sign > should re-throw CustodyError when validation throws CustodyError (covers lines 88-90) 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > generate > should generate a valid key pair 4ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > generate > should generate different key pairs on each call 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > generate > should generate PEM-formatted private key 0ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > generate > should generate base64-encoded public key 0ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should sign a message and return a base64 signature 2ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should sign a stringified JSON object 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should sign a UUID string 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should sign an empty string 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should produce different signatures for the same message (ECDSA is probabilistic) 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should produce different signatures for different messages 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should throw an error when message is not a string 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should throw an error when private key is not a string 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should throw an error when private key doesn't contain PEM header 0ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should throw an error when private key is empty string 0ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should throw CustodyError when private key has PEM header but is invalid 1ms
+ ✓ src/services/keypairs/secp256k1.service.test.ts > Secp256k1Service > sign > should throw CustodyError when private key is wrong curve 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > constructor > should create axios client with correct configuration 3ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > constructor > should use custom timeout when provided 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > constructor > should register request interceptor 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > constructor > should register response interceptor 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > constructor > should throw error for unsupported private key algorithm 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > constructor > should throw CustodyError for a private key that passes detectKeyType but fails to parse 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > signs the auth challenge with 'auth-challenge' context and encodes the result 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > signs the canonicalized body with 'request-body' context and encodes the result 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > awaits an async signer 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > does not detect a key algorithm when using a signer 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > wraps a throwing signer in a CustodyError on the POST body path 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > wraps a rejecting async signer in a CustodyError on the auth-challenge path 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > throws when the signer returns a non-Uint8Array signature 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > collapses concurrent expired-token refreshes into a single signer call 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > does not let an overtaken refresh clobber a newer forced refresh 4ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > pairs each concurrent refresh's signature with its own challenge 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > throws when neither privateKey nor signer is provided 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > external signer > throws when both privateKey and signer are provided 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > request interceptor > should inject JWT token into request headers 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > request interceptor > should use cached token when not expired 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > request interceptor > should refresh token when expired 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should make GET request and return data 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should pass query params to GET request 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should forward config to GET request alongside params 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should throw CustodyError on API error with error structure 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should throw CustodyError with fallback message on unexpected error format 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should preserve a text/plain error body in the thrown reason 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should fall back to the axios message when the string body is blank 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should wrap non-Axios errors as CustodyError 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > should handle unknown error types 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > 500 query-parameter hint > names quarantineStatus on a 500 the parameter was sent with 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > 500 query-parameter hint > adds no hint on a 500 the parameter was not sent with 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > get > 500 query-parameter hint > adds no hint when the parameter appears on a status other than 500 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should make POST request and return data 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should auto-sign request when signature is missing 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should auto-sign request when signature is undefined 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should preserve existing signature 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should pass config to POST request 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should throw CustodyError when canonicalization fails 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should throw CustodyError on API error with error structure 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should throw CustodyError with fallback message on unexpected error format 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should wrap non-Axios errors as CustodyError 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should skip signing when body is undefined 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should skip signing/canonicalization when sign: false is passed 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > should still sign when sign: true is passed explicitly 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > 401 signature-failure hint > names the oversized array fields on a 401 signature failure 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > 401 signature-failure hint > adds no hint when no array reaches 5 elements 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > 401 signature-failure hint > adds no hint on a 401 that is not a signature failure 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > 401 signature-failure hint > adds no hint when the request was not signed 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > 401 signature-failure hint > appends the hint to the fallback message when the error body is not an object 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > beforeSign > signs and sends what the hook returns 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > post > beforeSign > does not run when signing is skipped 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > patch > should make PATCH request and return data 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > patch > should forward body without canonicalization or signing 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > patch > should pass config to PATCH request 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > patch > should throw CustodyError on API error with error structure 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > patch > should throw CustodyError with fallback message on unexpected error format 1ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > patch > should wrap non-Axios errors as CustodyError 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > delete > should make DELETE request and return data 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > delete > should pass config to DELETE request 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > delete > should throw CustodyError on API error with error structure 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > delete > should throw CustodyError with fallback message on unexpected error format 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > delete > should wrap non-Axios errors as CustodyError 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > response interceptor (401 retry) > should retry request with refreshed token on 401 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > response interceptor (401 retry) > should force a fresh token on 401 retry even when the cached token still looks valid 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > response interceptor (401 retry) > should not retry on non-401 errors 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > response interceptor (401 retry) > should not retry if already retried (_retried flag) 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > response interceptor (401 retry) > should not retry when config is missing 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > challenge refresh > should generate a fresh challenge on token refresh 0ms
+ ✓ src/services/apis/api.service.test.ts > ApiService > challenge refresh > should not regenerate challenge when user provided one 0ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > found at least one bundled spec in each channel to test against 1ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-10.json 10ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-11.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-12.json 7ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-13.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-14.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-15.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-18.json 6ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-23.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-24.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-26.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-27.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-28.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-8.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-34-9.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-35-0.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-35-1.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-35-2.json 3ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-35-3.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-35-4.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-35-5.json 3ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-36-0.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-36-1.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-36-2.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-36-4.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-37-0.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-38-0.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-39-0.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-39-2.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-40-0.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-40-1.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-40-2.json 7ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-40-4.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-40-5.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-42-0.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-43-0.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-43-2.json 4ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-43-4.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-43-6.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-43-7.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/official/openapi-1-43-8.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/devbox/openapi-1-36-2.json 5ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > runtime and generator agree on /Users/florentuzio/Documents/github/ripple-custody/custody.js/.claude/worktrees/agent-ad5baadbbd84d6146/openapi/devbox/internal/openapi-1-36-2-internal.json 2ms
+ ✓ src/versioning/capability-parity.test.ts > capability extraction parity > agrees on the missing-version default for a spec with no info/paths/components 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should return immediately when intent is in terminal status 2ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should return isSuccess false for Failed status 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should poll until terminal status is reached 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should return non-terminal result when max retries exceeded 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should call onStatusCheck callback on each attempt 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should handle Rejected as terminal status 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should handle Expired as terminal status 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should retry on 404 errors during initial fetch 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should keep polling through repeated 404s until terminal (regression) 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should throw 404 when the intent never materializes 1ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > getAndWait (waitForExecution) > should throw non-404 errors immediately 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > reason > is undefined on success 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > reason > prefers state.error over the status alone 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > reason > falls back to the status when custody reported no error 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > reason > names an exhausted Open wait as awaiting approval, not as a failure 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > reason > names the status for other exhausted waits 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > wraps the payload in an envelope built from the resolved context 3ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > generates a request id when none was supplied 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > echoes a caller-supplied request id unchanged 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > expires in a day by default, and honours expiryDays 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > omits description entirely when not provided, since the request is signed 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > includes description and custom properties when provided 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > pins the domain when the login has several 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposePayload > throws rather than guessing when the login is ambiguous 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposeAndWait > proposes, then polls the intent it just created 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposeAndWait > reports an intent awaiting approval as non-terminal rather than throwing 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposeAndWait > reports a rejected intent without throwing 0ms
+ ✓ src/namespaces/__tests__/intents.test.ts > createIntents > proposeAndWait > takes both envelope and polling options from the one bag 0ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > buildDryRunBody > emits the full flat envelope when description is provided 8ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > buildDryRunBody > omits the description key entirely when description is absent 1ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > buildTransactionIntent > wraps the same envelope under `request` with type Propose when description is provided 0ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > buildTransactionIntent > omits the description key entirely when description is absent 0ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > buildTransactionIntent > returns the caller's payload id 0ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > buildTransactionIntent > returns the generated payload id when none was supplied 2ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > order fields > passes the caller's fields into the dry-run parameters 0ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > order fields > passes the caller's fields into the proposed parameters 1ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > order fields > omits the sourceTag, maximumFee and sponsorship keys when they are unset 1ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > pickOrderFields > keeps only the order fields 1ms
+ ✓ src/services/xrpl/xrpl.builders.test.ts > xrpl builders — request envelope characterization > defaults > applies a Low priority fee strategy, empty customProperties, ~1 day expiry, and generated ids 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should query the transactions collection filtered by the order ID 2ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should report success on a completed transaction 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should report a failed transaction as terminal but not successful, keeping the hint 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should report an interrupted transaction as terminal but not successful 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should not report success when the ledger rejected a completed transaction 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should treat an on-chain failure as terminal even before processing catches up 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should poll while no transaction is registered for the order yet 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should poll while the transaction is still in flight 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should ignore a replaced transaction and follow its replacement 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should take the newest transaction regardless of the order items arrive in 8ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should return a non-terminal result when max retries are exceeded 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should return no transaction when none was ever registered 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should call onStatusCheck on each attempt, including before the transaction exists 0ms
+ ✓ src/namespaces/__tests__/transactions.test.ts > createTransactions > byOrderAndWait (waitForOrderTransaction) > should propagate transport errors rather than polling through them 1ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > generate > should generate a valid key pair 3ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > generate > should generate different key pairs on each call 1ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > generate > should generate PEM-formatted private key 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > generate > should generate base64-encoded public key 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should sign a message and return a base64 signature 1ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should sign a stringified JSON object (canonicalized JSON path) 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should sign a UUID string (non-JSON path) 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should sign an empty string 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should produce consistent signatures for the same message 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should produce different signatures for different messages 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should throw CustodyError when message is not a string 1ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should throw CustodyError when private key is not a string 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should throw CustodyError when private key doesn't contain PEM header 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should throw CustodyError when private key is empty string 0ms
+ ✓ src/services/keypairs/ed25519.service.test.ts > Ed25519Service > sign > should throw an error when private key has PEM header but is invalid 1ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > constructor > should create axios client with correct configuration 2ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > constructor > should use custom timeout when provided 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should fetch a new token when no token exists 1ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should send correct form data when fetching token 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should return cached token when token is still valid 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should fetch new token when cached token is expired 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should use exp claim from JWT for token expiration 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should fall back to default 4-hour validity when JWT has no exp claim 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should fetch new token when within 5-minute buffer of expiration 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should bypass a valid cache when forceRefresh is true 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should use the cache when forceRefresh is not passed 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should join an in-flight refresh even when forceRefresh is true 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should handle concurrent token requests with single fetch (race condition prevention) 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should clear refresh promise after successful fetch 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should clear refresh promise after failed fetch 1ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should throw CustodyError with API error data when axios error has response 1ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getToken > should throw CustodyError with generic message for non-axios errors 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > isTokenExpired > should return true when no token has been fetched 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > isTokenExpired > should return false immediately after fetching token 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > isTokenExpired > should return true when token is expired 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > isTokenExpired > should return true when within 5-minute buffer of expiration 1ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > isTokenExpired > should return false when outside 5-minute buffer 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getCurrentToken > should return null when no token has been fetched 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getCurrentToken > should return the current token after fetching 0ms
+ ✓ src/services/auth/auth.service.test.ts > AuthService > getCurrentToken > should return the token even if expired (no validation) 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > rejects an invalid Account before calling the submit port 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit a Payment intent with correct structure 7ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > returns the payload id it submitted the transaction order under 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > returns the caller's payload id when one was supplied 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit a TrustSet intent 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit a Clawback intent 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit a DepositPreauth intent 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit an MPTokenAuthorize intent 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit an OfferCreate intent 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit an AccountSet intent 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should submit MPTokenIssuanceCreate, MPTokenIssuanceSet, MPTokenIssuanceDestroy intents 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should apply order fields and custom options (feeStrategy, expiryDays, customProperties) 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > proposes a SponsorshipSetAsSponsor operation unchanged 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > proposes a SponsorshipSetAsSponsee operation unchanged 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > sends order-level sponsorship when set 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should use provided requestId and payloadId 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should pass domainId to resolveContext 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should propagate resolveContext errors 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntent > should propagate account not found errors 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > reports success once the intent executed and the ledger accepted the transaction 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > returns the ids and the resolved domain the intent was proposed under 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > polls both stages with the ids from the propose step 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > resolves the context once, not once per stage 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > skips the transaction wait when the intent did not execute 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > is not terminal when the intent ran out of attempts short of a terminal status 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > reports an on-chain failure as terminal but not successful 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > does not throw when the transaction never registers 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeIntentAndWait > rejects an invalid Account before proposing anything 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getPublicKey > should return the compressed public key for a Vault account 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getPublicKey > should resolve domain and account from the address 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getPublicKey > should throw before any request when the address is invalid 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getPublicKey > should throw when the account is not a Vault account 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getPublicKey > should throw when SECP256K1_CUSTODY_1 key is not found 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getPublicKey > should throw when keys array is undefined 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getPublicKey > should throw when the key exists but publicKey is undefined 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > provisionElGamalKeyPair > should submit a v0_ProvisionElGamalKeyPair intent with correct structure 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > provisionElGamalKeyPair > should carry no payload id, fee strategy or parameters 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > provisionElGamalKeyPair > should honour requestId and description on the envelope 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > provisionElGamalKeyPair > should propagate resolveContext failures 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > provisionElGamalKeyPair > should throw before any request when the address is invalid 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKey > should return the base64 ElGamal key for the ledger unchanged 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKey > should resolve domain, account and ledger from the address 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKey > should throw before any request when the address is invalid 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKey > should propagate resolveContext failures for an ambiguous address 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKey > should select the key matching the resolved ledger 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKey > should throw when the account is not a Vault account 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKey > should throw when no ElGamal key is provisioned for that ledger 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > findElGamalPublicKey > should return the key when one is provisioned for the resolved ledger 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > findElGamalPublicKey > should return undefined rather than throw when no key is provisioned 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > findElGamalPublicKey > should still throw for an invalid address, before any request 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > findElGamalPublicKey > should still throw when the account is not a Vault account 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKeyAndWait > should return the key without polling when it is already readable 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKeyAndWait > should keep polling until the vault has written the key 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKeyAndWait > should resolve the address once, not on every attempt 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKeyAndWait > should name the account and ledger when retries are exhausted 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKeyAndWait > should throw before any request when the address is invalid 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getElGamalPublicKeyAndWait > should surface a transport failure rather than retrying it away 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > runs the computation for the sender's resolved account, domain and ledger 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > defaults the computation to a longer budget than the other polls 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > keeps the default interval when only maxRetries is overridden 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > builds the inner transaction from the hex compute fields 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > splits the three custody-only fields out as entryFields, hex as returned 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > omits TicketSequence from both the transaction and the compute request when not given 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > carries AuditorEncryptedAmount when the computation returned one 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > drops an explicitly null AuditorEncryptedAmount rather than passing it on 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > passes the polling options through to the computation 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > passes domainId and ledgerId to resolveContext 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > rejects an invalid sender before running the computation 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > rejects an invalid destination before running the computation 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > throws when the computation did not complete 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > throws when the computation returned material for another operation 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > buildConfidentialSend > throws when a completed computation carries no cryptographic fields 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceId > should query the domain's transactions by order reference 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceId > should read the ledger data off the transaction detail, not the collection 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceId > should keep looking when an earlier transaction carries no token data 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceId > should throw when the order has registered no transaction 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceId > should throw when the transaction is not yet on-chain 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceId > should throw when the transaction carries no token data 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceIdAndWait > should return the issuance ID without polling when it is already readable 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceIdAndWait > should keep polling until the transaction is registered with its ledger data 4ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceIdAndWait > should throw with the last observed reason when retries are exhausted 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getMptIssuanceIdAndWait > should surface a transport failure rather than retrying it away 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSign > rejects an invalid Account before calling the submit port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSign > should submit a raw sign intent with correct structure 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSign > should apply custom options 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSign > should use provided requestId and payloadId 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSign > should pass domainId to resolveContext 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSign > should propagate resolveContext errors 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should auto-set SigningPubKey and return signature 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should not mutate the input transaction object 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should not override SigningPubKey if already set 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should throw CustodyError on timeout 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should call onAttempt callback 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should retry on 404 manifest 3ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should throw CustodyError if signerAccount is not a valid XRPL address 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should use signerAccount to resolve context and build intent 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > rawSignAndWait > should fetch SigningPubKey from signerAccount when not pre-set 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > sends order-level sponsorship in the dry-run body 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > dry-runs the request proposeIntent would send, without submitting it 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > returns a failed dry run instead of throwing 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > rejects an invalid Account before calling the dry-run port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > throws on a non-transaction-order dry-run response 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > proposeIntent with dryRun proposes the exact request that passed 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > proposeIntent with dryRun throws Custody's reasons and proposes nothing on failure 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > proposeIntent without dryRun does not call the dry-run port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunIntent > proposeIntentAndWait honours dryRun 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > returns batchSigningData from the dry-run estimate 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > passes domainId and ledgerId to resolveContext 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > rejects an invalid submitter address before calling the dry-run port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > submits a v0_CreateTransactionOrder dry-run with empty batchSigners and PlatformManaged sequencing 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > preserves caller-provided sequencing and lastLedgerSequence 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > throws when the dry run reports failure 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > throws when the response carries no batchSigningData 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > dryRunBatch > rejects a mixed sequencing configuration before calling the dry-run port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > signBatchPayloadAndWait > signs the signer's payload and echoes its Account participant 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > signBatchPayloadAndWait > skips the address lookup when accountId and ledgerId are provided 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > signBatchPayloadAndWait > echoes an Address participant unchanged 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > signBatchPayloadAndWait > throws CustodyError when signer.account is invalid 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > signBatchPayloadAndWait > throws CustodyError when the signature never arrives 4ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > signBatchPayload > proposes the sign intent and returns a handle without waiting 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > signBatchPayload > throws CustodyError when signer.account is invalid 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getBatchSignature > returns both BatchSigner shapes, echoing the stored participant 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getBatchSignature > fetches the manifest only once by default 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getBatchSignature > returns undefined on a 404 manifest 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > getBatchSignature > polls when maxRetries is provided 6ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeBatch > submits a v0_CreateTransactionOrder propose with the provided batchSigners 2ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeBatch > passes domainId and ledgerId to resolveContext 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeBatch > rejects an invalid submitter address before calling the submit port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeBatch > reuses caller-provided requestId and payloadId for dry-run/propose pairing 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService > proposeBatch > rejects a mixed sequencing configuration before calling the submit port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService version gating > blocks proposeBatch on a version without the Batch feature (1.35.4) 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService version gating > blocks proposeBatch on an official version that lacks Batch (1.35.0) 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService version gating > allows proposeBatch when the resolved instance exposes Batch (auto-detected devbox) 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService version gating > blocks dryRunBatch on 1.35.4 before hitting the dry-run port 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService version gating > blocks proposeIntent carrying a Batch operation on 1.35.4 1ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService version gating > allows proposeIntent with a Payment operation on 1.35.4 0ms
+ ✓ src/services/xrpl/xrpl.service.test.ts > XrplService version gating > never gates rawSign 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchSignersToCustodyBatchSigners > maps participant, publicKey and signature 2ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchSignersToCustodyBatchSigners > falls back to empty strings when SigningPubKey / TxnSignature are undefined 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchSignersToCustodyBatchSigners > maps multiple signers 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Payment > converts XRP payment 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Payment > maps numeric tfSponsorCreatedAccount on an XRP payment 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Payment > maps object-form tfSponsorCreatedAccount on a token payment 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Payment > converts IOU payment 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Payment > includes destinationTag when present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Payment > omits destinationTag when absent 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Payment > converts MPT payment 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > OfferCreate > converts with no flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > OfferCreate > converts numeric flags 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > OfferCreate > converts object flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > TrustSet > converts with no flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > TrustSet > converts numeric flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > AccountSet > converts setFlag 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > AccountSet > converts clearFlag 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > AccountSet > converts transferRate 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > AccountSet > throws for unsupported ASF flag 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > TicketCreate > converts ticketCount 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Clawback > converts IOU clawback 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > Clawback > converts MPT clawback 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > DepositPreauth > converts authorize 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > DepositPreauth > converts unauthorize 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > DepositPreauth > omits absent authorize/unauthorize fields 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > EscrowFinish > converts required fields only 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > EscrowFinish > converts optional condition, fulfillment, credentialIds 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenAuthorize > converts with no flags and no holder 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenAuthorize > converts numeric tfMPTUnauthorize flag 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenAuthorize > converts object flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenAuthorize > includes holder when present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceCreate > converts with no optional fields 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceCreate > converts numeric flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceCreate > converts object flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceCreate > converts all optional fields 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceDestroy > converts tokenIdentifier 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > converts with no optional holder 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > converts tfMPTUnlock flag 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > converts object flags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > includes holder when present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > maps the tfMPTSetCanHoldConfidentialBalance bit onto mutableFlags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > maps the confidential flag from the object form too 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > passes through the issuer and auditor encryption keys 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > MPTokenIssuanceSet > omits the encryption keys when absent 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTConvert > maps the issuance and the plaintext amount 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTConvertBack > maps the issuance and the plaintext amount 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTMergeInbox > maps the issuance only 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > maps the destination and base64-encodes the cryptographic fields 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > includes the auditor ciphertext when present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > drops the DestinationTag and CredentialIDs, which have no Custody counterpart 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > leaves the output untouched when no options are passed 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > applies the three fields to the matching entry only 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > passes senderEncryptedBalance through as hex, unlike the base64 cryptographicFields 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > omits the fields left undefined 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > throws when a key is not a valid XRPL address 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > throws when a valid address matches no inner transaction 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > throws when the matching inner transaction is not a ConfidentialMPTSend 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > ConfidentialMPTSend > confidentialSends > is forwarded by batchToCustodyBatchPayload 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > maps Sponsor and numeric SponsorFlags to the submitter entry's sponsorship 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > maps object-form SponsorFlags to a participant entry's sponsorship 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > throws a CustodyError on Sponsor without SponsorFlags 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > throws a CustodyError on SponsorFlags of 0 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > throws a CustodyError on SponsorFlags with no known bit 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > throws a CustodyError on object-form SponsorFlags with no flag s… 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > throws a CustodyError on SponsorFlags without Sponsor 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sponsorship > omits sponsorship when the inner transaction has no sponsor 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > unsupported transaction type > throws for unknown type 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sequencing > uses Ticket sequencing when TicketSequence is present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > sequencing > falls back to AccountSequence value 0 when Sequence is undefined 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > participant vs submitter > emits SubmitterOperation when inner Account matches outer Batch.Account 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyInnerTransactions > participant vs submitter > emits ParticipantOperation when inner Account differs from outer Batch.Account 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps numeric flag tfAllOrNothing → 65536 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps numeric flag tfOnlyOne → 131072 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps numeric flag tfUntilFailure → 262144 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps numeric flag tfIndependent → 524288 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps object flag {"tfAllOrNothing":true} → AllOrNothing 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps object flag {"tfOnlyOne":true} → OnlyOne 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps object flag {"tfUntilFailure":true} → UntilFailure 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > maps object flag {"tfIndependent":true} → Independent 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > throws when Flags is missing 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > throws when no execution-mode flag is set (numeric) 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > throws when multiple execution-mode flags are set (numeric) 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > executionMode > throws when multiple execution-mode flags are set (object) 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sequencing > maps Sequence to AccountSequence when present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sequencing > omits sequencing when Sequence is absent (defers to service default) 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > lastLedgerSequence > passes through when present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > lastLedgerSequence > omits when absent 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > memos > maps the outer Batch Memos to custody memos 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > memos > omits memos when the outer Batch has none 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sourceTag > maps the outer Batch SourceTag 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sourceTag > omits sourceTag when absent 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sourceTag > does not map Fee to maximumFee 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sponsorship > maps the outer Batch Sponsor and numeric SponsorFlags to sponsorship 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sponsorship > maps object-form SponsorFlags to sponsorship 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sponsorship > omits sponsorship when the outer Batch has no Sponsor 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sponsorship > throws a CustodyError naming the outer Batch on SponsorFlags without Sponsor 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > sponsorship > throws a CustodyError naming the outer Batch on Sponsor without a known sponsor flag 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > preserves Account and converts entries via batchToCustodyInnerTransactions 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > batchToCustodyBatchPayload > ignores BatchSigners on the input — collected separately for proposeBatch 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > isSendCryptographicFields > narrows a Send response 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > isSendCryptographicFields > rejects the other three variants 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > isSendCryptographicFields > rejects an explicitly null senderEncryptedAmount 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > re-encodes Send fields from hex to base64 and tags the variant 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > carries the optional Send fields through when present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > omits optional Send fields that are absent rather than emitting undefined 1ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > omits optional Send fields the API returned as null 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > omits a null auditorEncryptedAmount on Convert and ConvertBack 10ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > ignores null-valued keys when inferring the variant 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > detects Clawback from the numeric amount and leaves it unencoded 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > detects Clawback even when the amount is zero 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > detects Convert from holderEncryptedAmount without a balance commitment 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > detects ConvertBack when a balance commitment is present 0ms
+ ✓ src/services/xrpl/xrpl.adapters.test.ts > parametersComputeToCryptographicFields > throws naming the observed keys when the shape matches no variant 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should return the full account address reference when address is found 2ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should throw CustodyError when address is not found 2ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should throw CustodyError when items array is empty 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should find exact match among multiple addresses 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should throw when the address matches on multiple ledgers and no filter is given 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should disambiguate by ledgerId when multiple matches exist 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should disambiguate by domainId when multiple matches exist 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should disambiguate by both ledgerId and domainId combined 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should throw with ledger suffix when ledgerId is given but no match is found 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should throw with domain suffix when domainId is given but no match is found 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddressOrThrow > should throw with both suffixes when both filters are given but no match is found 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should return the full account address reference on a single match 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should return undefined when items array is empty 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should return undefined when no items match the address 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should still throw on ambiguous matches without filters 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should return the disambiguated match when ledgerId is given 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should return the disambiguated match when domainId is given 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should return undefined when ledgerId is given but no entry matches that ledger 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should return undefined when domainId is given but no entry matches that domain 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should find a match on a later page instead of reporting it missing 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should throw on an ambiguity that only becomes visible across pages 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should stop paging once two matches make the result ambiguous 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > findByAddress > should issue a single request when the server volunteers no cursor 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > forceUpdateAccountBalances > should POST to the balances/refresh URL with an undefined body and merged path+query params 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > forceUpdateAccountBalances > should merge only path params into pathParams when no query is given 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > generateNewExternalAddressDeprecated > should POST to the addresses URL with an undefined body and merged path+query params 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should return immediately when the computation is already Completed 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should return isSuccess false for Failed status 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should poll through Pending and Preparing until terminal 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should return a non-terminal result when max retries are exceeded 2ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should call onStatusCheck on each attempt 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should keep polling through 404s until the computation materializes 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should throw 404 when the computation never materializes 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > getParametersComputeStatusAndWait > should throw non-404 errors immediately 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > initiateParametersCompute > should inject the type discriminator the API requires 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > initiateParametersComputeAndWait > should initiate then poll the returned compute id until Completed 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > initiateParametersComputeAndWait > should surface a Failed computation without throwing 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > initiateParametersComputeAndWait > should keep a caller-supplied type discriminator 0ms
+ ✓ src/namespaces/__tests__/accounts.test.ts > initiateParametersComputeAndWait > should not poll when initiating fails 0ms
+ ✓ src/services/debug/debug.test.ts > resolveDebugLogger > returns undefined when debugging is off 2ms
+ ✓ src/services/debug/debug.test.ts > resolveDebugLogger > selects the built-in console sink for `true` 0ms
+ ✓ src/services/debug/debug.test.ts > resolveDebugLogger > uses a caller-supplied logger as-is 0ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > emits a request event with the method, absolute url, params and body 2ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > masks the Authorization header 0ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > masks the token in the auth endpoint's response body 0ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > leaves a response body without credential fields untouched 0ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > expands a URLSearchParams body so the auth token request is readable 0ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > pairs a request with a response event carrying status, duration and body 1ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > emits an error event with the status and error body on a failed response 5ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > omits the status when the request failed without a response 1ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > stays silent when a request interceptor failed before anything went on the wire 1ms
+ ✓ src/services/debug/debug.test.ts > attachDebugInterceptors > does not fail the request when the logger throws 1ms
+ ✓ src/services/debug/debug.test.ts > consoleDebugLogger > writes to stderr, never stdout, so it cannot corrupt piped output 1ms
+ ✓ src/services/debug/debug.test.ts > consoleDebugLogger > reports a transport failure with no status as `no response` 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > yields every item across pages, in order 6ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > passes undefined as the first cursor, then each nextStartingAfter 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > stops after a single page that carries no cursor 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > yields nothing for an empty collection 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > follows the cursor on an empty page rather than treating it as the end 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > treats a null cursor as the end (the VirtualAccounting_* shape) 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > treats an empty-string cursor as the end 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > throws a CustodyError when the cursor does not advance 1ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > does not fetch the next page until the current one is exhausted 0ms
+ ✓ src/helpers/paginate/paginate.test.ts > paginate > issues no further requests after an early break 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.initiate / getStatus > should POST unsigned against the internal surface 3ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.initiate / getStatus > should GET the status against the internal surface 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should return immediately when the decryption is already Completed 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should return isSuccess false for Failed status 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should poll through Pending and Preparing until terminal 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should return a non-terminal result when max retries are exceeded 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should call onStatusCheck on each attempt 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should keep polling through 404s until the decryption materializes 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should throw 404 when the decryption never materializes 1ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should keep polling through 400s raised by concurrent decryptions 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should rethrow the last transient error with its own status when retries are exhausted 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.getStatusAndWait > should throw non-transient errors immediately 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.initiateAndWait > should initiate then poll the returned request id until Completed 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.initiateAndWait > should surface a Failed decryption without throwing 0ms
+ ✓ src/namespaces/__tests__/cb-in-decryption.test.ts > internal.cbInDecryption.initiateAndWait > should not poll when initiating fails 0ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > parity with KeypairService (correctness oracle) > reproduces KeypairService output for ed25519 7ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > parity with KeypairService (correctness oracle) > reproduces KeypairService output for secp256k1 2ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > parity with KeypairService (correctness oracle) > reproduces KeypairService output for secp256r1 1ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > prepareSigningInput > SHA-256 hashes an ed25519 request body 1ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > prepareSigningInput > uses raw bytes for an ed25519 auth challenge 1ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > prepareSigningInput > uses raw bytes for ECDSA regardless of context 0ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > assertValidRawSignature > throws on a non-Uint8Array 0ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > assertValidRawSignature > throws on an empty signature 0ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > assertValidRawSignature > throws on a non-64-byte ed25519 signature 0ms
+ ✓ src/services/keypairs/signing-scheme.test.ts > signing-scheme > assertValidRawSignature > accepts a 64-byte ed25519 signature 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard.assertFeature > throws when the feature schema is absent from the resolved version 2ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard.assertFeature > passes when the feature schema is present in the resolved version 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard.assertFeature > passes for a feature present in every version 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard.assertEndpoint > passes for an endpoint present in every version 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard.assertEndpoint > throws for an endpoint the resolved version lacks 0ms
+ ✓ src/versioning/version-guard.test.ts > pass-through guard (no resolved version) > never throws for any capability 0ms
+ ✓ src/versioning/version-guard.test.ts > UnsupportedInVersionError > is a CustodyError exposing capability, kind, resolved version, and sdk method 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard deferred (lazy) resolution > resolves once and dedupes concurrent ensureResolved calls to a single resolver invocation 1ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard deferred (lazy) resolution > checkFeature resolves then gates against the detected capabilities 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard deferred (lazy) resolution > checkFeature passes when the detected version has the feature 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard deferred (lazy) resolution > checkEndpoint resolves then gates against the detected capabilities 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard deferred (lazy) resolution > surfaces resolver (detection) errors through ensureResolved, and retries afterward 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard fail-open (unresolved version) > fails open — checks pass through, no UnsupportedInVersionError — when detection fails 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard fail-open (unresolved version) > fails open and fires onFailOpen once when explicitly disabled (no resolved version) 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard fail-open (unresolved version) > does not re-run detection after failing open 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard fail-open (unresolved version) > never fires onFailOpen when a version resolves, and still gates 0ms
+ ✓ src/versioning/version-guard.test.ts > resolveExplicitCapabilities > throws listing the known versions for an unrecognized apiVersion 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard surfaces > gates the public surface as before 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard surfaces > fails open for an internal call when no internal capabilities were resolved 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard surfaces > gates the internal surface once its capabilities are resolved 0ms
+ ✓ src/versioning/version-guard.test.ts > VersionGuard surfaces > still fails open entirely when no version resolved at all 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should call api.get with plain URL when no params provided 1ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should call api.get with query params when no path params 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should resolve path params from URL template 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should resolve path params and pass query separately 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should resolve multiple path params 1ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should separate mixed path and non-path params in pathParams 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should return the data from api.get 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > get > should forward config to api.get 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > post > should call api.post with URL and body 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > post > should resolve path params before posting 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > post > should forward config to api.post 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > post > should return the data from api.post 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > post > should forward { sign: false } through config to api.post 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > post > should merge non-path pathParams keys into query params (alongside sign) 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > put > should resolve path params before putting 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > put > should merge non-path pathParams keys into query params 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > patch > should call api.patch with URL and body 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > patch > should call api.patch with URL and body when no path params 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > patch > should forward config to api.patch 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > patch > should return the data from api.patch 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > patch > should merge non-path pathParams keys into query params 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > patch > should leave config untouched when pathParams contains only path keys 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > delete > should call api.delete with resolved URL when path params provided 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > delete > should call api.delete with plain URL when no path params 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > delete > should resolve path params and pass query separately 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > delete > should merge extra pathParams keys into query 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > delete > should forward config to api.delete 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > delete > should return the data from api.delete 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > internal surface (ADR-0007) > passes an internal call through when only public capabilities resolved 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > internal surface (ADR-0007) > still gates a public call against the same guard 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > internal surface (ADR-0007) > does not leak `surface` into the axios config 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > endpoint version gating > dispatches a call whose endpoint the resolved version serves 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > endpoint version gating > gates on the path template, not the resolved URL 0ms
+ ✓ src/transport/typed-transport.test.ts > TypedTransport > endpoint version gating > throws UnsupportedInVersionError and never dispatches an endpoint the version lacks 0ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > valid configurations > accepts a fully platform-managed Batch (outer + entry PlatformManaged) 1ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > valid configurations > accepts a fully platform-managed Batch when outer sequencing is omitted (defaults to PlatformManaged) 0ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > valid configurations > accepts a fully explicit Batch mixing AccountSequence and Ticket across slots 0ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > valid configurations > accepts an empty Batch (only the outer slot) 0ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > mixed configurations > throws when the outer defaults to PlatformManaged but entries are explicit 0ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > mixed configurations > throws when the outer is explicit but an entry is PlatformManaged 0ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > mixed configurations > throws when a PlatformManaged Batch contains an (always-explicit) participant entry 0ms
+ ✓ src/services/xrpl/xrpl.validators.test.ts > validateBatchSequencing > mixed configurations > names the disagreeing slots in the error 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > unions oneOf members so a member present in only one version survives 2ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > unions enum values across versions 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > keeps schemas unique to each version 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > unions object properties from both versions 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > unions paths and methods 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > falls back to newest-wins and warns on an irreconcilable scalar conflict between official specs 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > adds devbox-only schemas to the superset (devbox is additive) 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > unions a devbox-only oneOf member (Batch) into an existing official schema 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > keeps the official value and warns when a devbox spec conflicts on a scalar 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > takes the base document identity from the newest official spec, never a devbox spec 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > throws when given no documents 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocs > normalizes a doubled leading slash in a path key so it doesn't collide as a duplicate operationId 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocsBySurface > merges each surface into its own document 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocsBySurface > keeps an operationId that exists on both surfaces addressable in each document 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocsBySurface > treats an untagged document as public 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocsBySurface > omits a surface that has no bundled specs 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocsBySurface > applies the official-wins rule within the internal surface 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocsBySurface > takes each surface's document identity from its own newest official spec 0ms
+ ✓ scripts/generate-custody-types/merge.test.mjs > mergeOpenApiDocsBySurface > throws when given no documents 0ms
+ ✓ scripts/generate-custody-types/capabilities.test.mjs > extractCapabilities > reads the app version from info.x-app-version 1ms
+ ✓ scripts/generate-custody-types/capabilities.test.mjs > extractCapabilities > lists endpoints as `METHOD /path`, uppercased, sorted, ignoring non-method keys 0ms
+ ✓ scripts/generate-custody-types/capabilities.test.mjs > extractCapabilities > lists component schema names, sorted 0ms
+ ✓ scripts/generate-custody-types/capabilities.test.mjs > buildCapabilityDataset > keys each version by its endpoints and schemas 1ms
+ ✓ scripts/generate-custody-types/capabilities.test.mjs > buildCapabilityDataset > throws when two specs of the same surface report the same app version (collision guard) 0ms
+ ✓ scripts/generate-custody-types/capabilities.test.mjs > buildCapabilityDataset > unions a release's public and internal surfaces into one version entry (ADR-0007) 0ms
+ ✓ scripts/generate-custody-types/capabilities.test.mjs > renderCapabilitiesModule > renders a generated TS module exposing CAPABILITIES as const 0ms
+ ✓ src/versioning/detect.test.ts > extractCapabilitiesFromSpec > reads the app version, endpoints, and schema names from a live spec 2ms
+ ✓ src/versioning/detect.test.ts > extractCapabilitiesFromSpec > handles a version the SDK has never bundled 0ms
+ ✓ src/versioning/detect.test.ts > detectCapabilities > fetches via the SpecSource once and extracts capabilities 1ms
+ ✓ src/versioning/detect.test.ts > buildOpenApiUrl > appends the OpenAPI path to the apiUrl, stripping trailing slashes 0ms
+ ✓ src/versioning/detect.test.ts > buildOpenApiUrl > selects the internal document with scope=internal (ADR-0007) 0ms
+ ✓ src/versioning/detect.test.ts > detectCapabilities with an internal spec source > unions both documents and records both surfaces 0ms
+ ✓ src/versioning/detect.test.ts > detectCapabilities with an internal spec source > falls back to public-only when the internal document is unavailable 0ms
+ ✓ src/versioning/detect.test.ts > detectCapabilities with an internal spec source > still propagates a failure to fetch the public document 1ms
+ ✓ src/versioning/detect.test.ts > detectCapabilities with an internal spec source > resolves public-only when no internal source is given 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should return both halves as the `data` payload, not the deprecated item 2ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should narrow on the ledger server-side and page 100 at a time 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should omit the confidential half for a plain MPT issuance 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should return the confidential half alone when custody tracks no plain ticker 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should return an empty result when no ticker claims the issuance 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should ignore XRPL tickers that carry no issuance ID 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should ignore tickers from another ledger family 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should find a half on a later page instead of reporting it missing 0ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should throw on a duplicate that only becomes visible across pages 1ms
+ ✓ src/namespaces/__tests__/tickers.test.ts > findByXrplMptIssuanceId > should keep paging after both halves are found, so duplicates are not missed 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > intents.dryRun 5ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > transactions.dryRun 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > genesis.run 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > ledgers.processEthereumContractCall 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > userInvitations.create 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > userInvitations.fill 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > vaults.importPreparedOperations 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > exports.generateMovementReport 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > exports.generatePositionReport 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > exports.generateOmnibusPositionReport 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > accounts.initiateParametersCompute 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > accounts.initiateParametersComputeAndWait 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > internal.cbInDecryption.initiate 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > internal.cbInDecryption.initiateAndWait 0ms
+ ✓ src/namespaces/__tests__/unsigned-posts.test.ts > non-intent POST methods pass sign: false > intents.propose stays signed (inverse case) 0ms
+ ✓ src/namespaces/__tests__/domains.test.ts > resolveDomainAndUser > resolves the single domain when the login has exactly one 2ms
+ ✓ src/namespaces/__tests__/domains.test.ts > resolveDomainAndUser > resolves the pinned domain when the login has several 0ms
+ ✓ src/namespaces/__tests__/domains.test.ts > resolveDomainAndUser > throws when the login has several domains and none was pinned 1ms
+ ✓ src/namespaces/__tests__/domains.test.ts > resolveDomainAndUser > throws when the pinned domain is not one of the login's 0ms
+ ✓ src/namespaces/__tests__/domains.test.ts > resolveDomainAndUser > throws when the login has no domains 0ms
+ ✓ src/namespaces/__tests__/domains.test.ts > resolveDomainAndUser > throws when there is no login id 0ms
+ ✓ src/namespaces/__tests__/domains.test.ts > resolveDomainAndUser > throws a CustodyError, not a bare Error 0ms
+ ✓ src/namespaces/__tests__/domains.test.ts > createDomains > me > resolves the pair from /v1/me 1ms
+ ✓ src/namespaces/__tests__/domains.test.ts > createDomains > me > honours a pinned domainId 0ms
+ ✓ src/namespaces/__tests__/domains.test.ts > createDomains > me > throws on an ambiguous login rather than picking a domain 0ms
+ ✓ src/transport/split-params.test.ts > splitParams > should return original URL and no query when no params are provided 1ms
+ ✓ src/transport/split-params.test.ts > splitParams > should treat all params as query when URL has no placeholders 0ms
+ ✓ src/transport/split-params.test.ts > splitParams > should extract path params from URL template 1ms
+ ✓ src/transport/split-params.test.ts > splitParams > should separate path and query params 0ms
+ ✓ src/transport/split-params.test.ts > splitParams > should handle multiple path params 0ms
+ ✓ src/transport/split-params.test.ts > splitParams > should handle multiple path params with query params 0ms
+ ✓ src/transport/split-params.test.ts > splitParams > should handle complex nested URL templates 0ms
+ ✓ src/transport/split-params.test.ts > splitParams > should handle numeric path param values 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a full https URL 1ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a full http URL 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a domain without protocol 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a domain with subdomain 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a URL with port 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a domain with port and no protocol 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a URL with query and hash 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a domain with path and no protocol 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from a localhost URL 0ms
+ ✓ src/helpers/url/url.test.ts > getHostname > returns hostname from an IP address 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should replace single parameter 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should replace multiple parameters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle numeric parameters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle mixed string and numeric parameters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle parameters with special characters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle URLs with no parameters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle URLs with unused parameters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle URLs with missing parameters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle complex nested paths 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should handle parameters with regex special characters 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should percent-encode a slash in a parameter value 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should percent-encode a path traversal sequence in a parameter value 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should percent-encode query and fragment characters in a parameter value 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParams > should leave a plain UUID and numeric value unchanged 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParamsSafe > should work with const assertions 0ms
+ ✓ src/helpers/url/url.test.ts > replacePathParamsSafe > should provide type safety 0ms
+ ✓ scripts/diff-openapi.test.mjs > diffOpenApiSpecs > reports operations added, removed and changed, ignoring non-method keys 1ms
+ ✓ scripts/diff-openapi.test.mjs > diffOpenApiSpecs > reports schemas added, removed and changed 0ms
+ ✓ scripts/diff-openapi.test.mjs > diffOpenApiSpecs > treats key order as irrelevant 0ms
+ ✓ scripts/diff-openapi.test.mjs > formatDiff > prints the versions and a count per category 0ms
+ ✓ src/services/channels/verify-webhook-secret.test.ts > verifyWebhookSecret > returns true when the query param matches the expected secret 1ms
+ ✓ src/services/channels/verify-webhook-secret.test.ts > verifyWebhookSecret > accepts a path+query url (e.g. Node's req.url) 0ms
+ ✓ src/services/channels/verify-webhook-secret.test.ts > verifyWebhookSecret > supports a custom param name 0ms
+ ✓ src/services/channels/verify-webhook-secret.test.ts > verifyWebhookSecret > returns false when the secret does not match 0ms
+ ✓ src/services/channels/verify-webhook-secret.test.ts > verifyWebhookSecret > returns false when the query param is missing 0ms
+ ✓ src/services/channels/verify-webhook-secret.test.ts > verifyWebhookSecret > returns false when the query param is present but empty 0ms
+ ✓ src/services/channels/parse-event-payload.test.ts > parseEventPayload > parses an IntentExecuted event 1ms
+ ✓ src/services/channels/parse-event-payload.test.ts > parseEventPayload > parses an AccountCreated event 0ms
+ ✓ src/services/channels/parse-event-payload.test.ts > parseEventPayload > parses a BalancesUpdated event 0ms
+ ✓ src/services/channels/parse-event-payload.test.ts > parseEventPayload > throws CustodyError when payload is missing 0ms
+ ✓ src/services/channels/parse-event-payload.test.ts > parseEventPayload > throws CustodyError on malformed JSON 0ms
+ ✓ src/services/channels/parse-event-payload.test.ts > parseEventPayload > throws CustodyError when the inner type discriminator is missing 0ms
+ ✓ src/services/channels/parse-event-payload.test.ts > parseEventPayload > throws CustodyError when the inner payload is missing entirely 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > detects ed25519 from PEM string 1ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > detects secp256k1 from PEM string 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > detects secp256r1 from PEM string 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > returns unknown for PEM with unknown OID 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > detects ed25519 from Buffer 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > returns unknown for random Buffer 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > handles PEM with whitespace and newlines 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > detects secp256r1 from openssl PEM 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > detects secp256k1 from openssl PEM 0ms
+ ✓ src/services/keypairs/keypair.service.test.ts > KeypairService.detectKeyType > detects ed25519 from openssl PEM 0ms
+ ✓ src/services/xrpl/xrpl.crypto.test.ts > compressPublicKey > returns a 33-byte compressed key as uppercase hex with a 02/03 prefix 2ms
+ ✓ src/services/xrpl/xrpl.crypto.test.ts > compressPublicKey > uses the "02" prefix for an even-y key 0ms
+ ✓ src/services/xrpl/xrpl.crypto.test.ts > compressPublicKey > uses the "03" prefix for an odd-y key 0ms
+ ✓ src/ripple-custody.test.ts > RippleCustody apiVersion option > throws at construction for an unrecognized apiVersion, listing known versions 2ms
+ ✓ src/ripple-custody.test.ts > RippleCustody apiVersion option > constructs with a known apiVersion 3ms
+ ✓ src/ripple-custody.test.ts > RippleCustody apiVersion option > constructs with no apiVersion (auto-detect enabled by default) 1ms
+ ✓ src/ripple-custody.test.ts > RippleCustody apiVersion option > gates exports.generateMovementReport against a pre-1.37.0 apiVersion 1ms
+ ✓ src/ripple-custody.test.ts > RippleCustody live-spec auto-detection > auto-detects on first call and gates xrpl.proposeBatch against the live spec 3ms
+ ✓ src/ripple-custody.test.ts > RippleCustody live-spec auto-detection > caches detection: concurrent triggers dedupe to a single fetch 1ms
+ ✓ src/ripple-custody.test.ts > RippleCustody live-spec auto-detection > ready() surfaces detection errors 0ms
+ ✓ src/ripple-custody.test.ts > RippleCustody live-spec auto-detection > autoDetectVersion: false disables detection (no fetch) 0ms
+ ✓ src/ripple-custody.test.ts > RippleCustody live-spec auto-detection > an explicit apiVersion skips detection entirely 0ms
+ ✓ src/ripple-custody.test.ts > RippleCustody fail-open (unresolved version) > fails open with a single warning when detection fails (no UnsupportedInVersionError) 1ms
+ ✓ src/ripple-custody.test.ts > RippleCustody fail-open (unresolved version) > warns once when auto-detect is disabled and no apiVersion is set 1ms
+ ✓ src/ripple-custody.test.ts > RippleCustody.backendVersion() > returns the explicit apiVersion without triggering detection 1ms
+ ✓ src/ripple-custody.test.ts > RippleCustody.backendVersion() > auto-detects and returns the live spec's x-app-version 0ms
+ ✓ src/ripple-custody.test.ts > RippleCustody.backendVersion() > returns "unknown" when the live spec has no x-app-version 0ms
+ ✓ src/ripple-custody.test.ts > RippleCustody.backendVersion() > throws a CustodyError when live detection fails 0ms
+ ✓ src/ripple-custody.test.ts > RippleCustody.backendVersion() > throws a CustodyError when nothing can ever be resolved 0ms
+ ✓ src/models/custody-error.test.ts > CustodyError > keeps `reason` free of the hint and appends it to `message` 1ms
+ ✓ src/models/custody-error.test.ts > CustodyError > leaves `message` as the reason when there is no hint 1ms
+ ✓ src/models/custody-error.test.ts > CustodyError > serializes the reason rather than the hint-bearing message 0ms
+ ✓ src/services/apis/signature-hint.test.ts > signatureMismatchHint > returns undefined when no array reaches 5 elements 1ms
+ ✓ src/services/apis/signature-hint.test.ts > signatureMismatchHint > names a nested array of 5 elements 0ms
+ ✓ src/services/apis/signature-hint.test.ts > signatureMismatchHint > names every offending array, including ones nested inside arrays 0ms
+ ✓ src/services/apis/signature-hint.test.ts > signatureMismatchHint > ignores objects with 5+ keys, which the backend round-trips faithfully 0ms
+ ✓ src/helpers/canonicalize/canonicalize.test.ts > canonicalizeRequest > produces a stable, key-sorted canonical string 1ms
+ ✓ src/helpers/canonicalize/canonicalize.test.ts > canonicalizeRequest > throws a CustodyError when canonicalization yields no output 0ms
+ ✓ src/services/apis/quarantine-status-hint.test.ts > quarantineStatusHint > returns undefined when the request had no query params 1ms
+ ✓ src/services/apis/quarantine-status-hint.test.ts > quarantineStatusHint > returns undefined when the query filtered on something else 0ms
+ ✓ src/services/apis/quarantine-status-hint.test.ts > quarantineStatusHint > names the parameter and the substitute when the query carried it 0ms
+ ✓ src/services/apis/quarantine-status-hint.test.ts > quarantineStatusHint > fires whatever value the parameter holds, since the filter fails on all of them 0ms
+ ✓ src/services/apis/quarantine-status-hint.test.ts > quarantineStatusHint > ignores a parameter left explicitly undefined, which axios never sends 0ms
+ ✓ src/namespaces/__tests__/exports.test-d.ts:17 > exports report return type narrows by format > generateMovementReport
+ ✓ src/namespaces/__tests__/exports.test-d.ts:30 > exports report return type narrows by format > generatePositionReport
+ ✓ src/namespaces/__tests__/exports.test-d.ts:43 > exports report return type narrows by format > generateOmnibusPositionReport
+
+ Test Files  41 passed (41)
+      Tests  859 passed (859)
+Type Errors  no errors
+   Start at  22:46:35
+   Duration  2.81s (import 38%, transform 37%, typecheck 14%, tests 9%, worker 2%)
+
+  Transform  transforming modules took 2.67s · 43% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

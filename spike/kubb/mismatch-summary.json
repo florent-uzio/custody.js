@@ -1,0 +1,34 @@
+{
+  "public": {
+    "mismatches": 44,
+    "byKind": {
+      "schema": 28,
+      "request-body": 6,
+      "response": 10
+    },
+    "byCategory": {
+      "additionalProperties": 16,
+      "union-members": 8,
+      "union-object-arity": 8,
+      "type": 14,
+      "extra-in-new": 2,
+      "oneOf-structure": 2,
+      "optionality": 2,
+      "nullable/undefined": 2
+    }
+  },
+  "internal": {
+    "mismatches": 39,
+    "byKind": {
+      "schema": 32,
+      "response": 5,
+      "request-body": 2
+    },
+    "byCategory": {
+      "union-object-arity": 26,
+      "oneOf-structure": 3,
+      "additionalProperties": 17,
+      "type": 7
+    }
+  }
+}
