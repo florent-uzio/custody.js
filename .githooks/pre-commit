@@ -1,0 +1,4 @@
+#!/bin/sh
+# Formats and lints the staged files only (config: "lint-staged" in
+# package.json). Skip once with `git commit --no-verify`.
+npx lint-staged --concurrent false
