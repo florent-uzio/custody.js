@@ -91,3 +91,10 @@ Bottom line: `tsc` and the test suite are already TS-7-ready, but the
 formatting and type-generation devtools are not — and the format failure is
 silent, which is the more dangerous mode. That, plus the pending TS 7.1 API,
 makes deferral the safe call.
+
+## Update (2026-11-18)
+
+Formatting moved from Prettier + `prettier-plugin-organize-imports` to `oxfmt`
+with `sortImports`, which does not use the TypeScript language-service API. The
+remaining TS 7 blocker is `openapi-typescript`. Unused imports are no longer
+removed by the formatter; oxlint's `no-unused-vars` reports them instead.

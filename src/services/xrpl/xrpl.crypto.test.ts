@@ -1,5 +1,7 @@
 import { generateKeyPairSync } from "crypto"
+
 import { describe, expect, it } from "vitest"
+
 import { compressPublicKey } from "./xrpl.crypto.js"
 
 type Vector = {

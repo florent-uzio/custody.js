@@ -1,5 +1,6 @@
 import { type InternalAxiosRequestConfig } from "axios"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
 import { CustodyError } from "../../models/custody-error.js"
 import { ApiService } from "./api.service.js"
@@ -47,6 +48,7 @@ vi.mock("../keypairs/index.js", () => {
 })
 
 import axios from "axios"
+
 import type { CustodySigner } from "../../ripple-custody.types.js"
 import type { AuthFormData } from "../auth/auth.service.types.js"
 import { KeypairService } from "../keypairs/index.js"

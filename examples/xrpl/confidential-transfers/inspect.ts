@@ -1,5 +1,6 @@
 import { CustodyError, type RippleCustody } from "@florent-uzio/custody"
 import type { Client, LedgerEntry } from "xrpl"
+
 import type { Participant } from "./accounts.js"
 import { CUSTODY, POLLING } from "./config.js"
 

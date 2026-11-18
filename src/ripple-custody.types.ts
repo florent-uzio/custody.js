@@ -87,7 +87,13 @@ export type CustodyDebugClient = "api" | "auth"
  * claiming more than Axios guarantees.
  */
 export type CustodyHttpMethod =
-  "DELETE" | "GET" | "PATCH" | "POST" | "PUT" | "UNKNOWN" | (string & {})
+  | "DELETE"
+  | "GET"
+  | "PATCH"
+  | "POST"
+  | "PUT"
+  | "UNKNOWN"
+  | (string & {})
 
 /** Fields every {@link CustodyDebugEvent} carries. */
 type CustodyDebugEventBase = {

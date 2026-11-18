@@ -1,4 +1,5 @@
 import type { AxiosRequestConfig } from "axios"
+
 import type { ApiService } from "../services/apis/api.service.js"
 import { VersionGuard } from "../versioning/version-guard.js"
 import { splitParams } from "./split-params.js"

@@ -4,7 +4,9 @@ import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 // @ts-expect-error - works
 import { fileURLToPath } from "node:url"
+
 import { describe, expect, it } from "vitest"
+
 import { extractCapabilities } from "../../scripts/generate-custody-types/capabilities.mjs"
 import { extractCapabilitiesFromSpec } from "./detect.js"
 

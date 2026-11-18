@@ -1,4 +1,5 @@
 import crypto, { generateKeyPairSync } from "crypto"
+
 import { isString, isStringifiedObject } from "../../helpers/index.js"
 import { CustodyError } from "../../models/custody-error.js"
 import type { KeyPair, KeypairDefinition } from "./keypairs.types.js"

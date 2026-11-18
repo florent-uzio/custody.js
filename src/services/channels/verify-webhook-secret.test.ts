@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { verifyWebhookSecret } from "./verify-webhook-secret.js"
 
 describe("verifyWebhookSecret", () => {

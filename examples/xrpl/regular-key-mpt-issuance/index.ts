@@ -24,6 +24,7 @@ import {
   MPTokenIssuanceCreateFlags,
   type SubmittableTransaction,
 } from "xrpl"
+
 // @ts-expect-error use your own way of importing the keys and URLs
 import { API_URL, AUTH_URL, PRIVATE_KEY, PUBLIC_KEY, XRPL_URL } from "./config"
 

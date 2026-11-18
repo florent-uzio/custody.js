@@ -1,4 +1,5 @@
 import { vi } from "vitest"
+
 import type { Transport } from "../transport/index.js"
 
 /**

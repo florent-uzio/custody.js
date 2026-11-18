@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { CustodyError } from "./custody-error.js"
 
 describe("CustodyError", () => {

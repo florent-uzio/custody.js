@@ -1,7 +1,9 @@
-import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios"
 import crypto from "crypto"
+
+import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios"
 import qs from "qs"
 import { v4 as uuidv4 } from "uuid"
+
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
 import { canonicalizeRequest, isObject, isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError, type Core_ErrorMessage } from "../../models/custody-error.js"

@@ -1,4 +1,5 @@
 import { v7 as uuidv7 } from "uuid"
+
 import { isUndefined } from "../../helpers/index.js"
 import type { components } from "../../models/custody-types.js"
 import { buildRequestEnvelope } from "../../namespaces/intents.js"

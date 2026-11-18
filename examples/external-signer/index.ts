@@ -1,5 +1,6 @@
-import { type CustodySigner, RippleCustody } from "@florent-uzio/custody"
 import crypto from "crypto"
+
+import { type CustodySigner, RippleCustody } from "@florent-uzio/custody"
 
 /**
  * Example: Authenticate with an external signer instead of a raw private key

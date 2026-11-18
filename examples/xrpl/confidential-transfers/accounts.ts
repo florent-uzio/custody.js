@@ -1,5 +1,6 @@
 import type { RippleCustody } from "@florent-uzio/custody"
 import { xrpToDrops, type Client, type Wallet } from "xrpl"
+
 import { CUSTODY, POLLING, ROLES, XRPL, existingAddress, type Role } from "./config.js"
 import { address, releaseQuarantine, sleep, submit } from "./custody-helpers.js"
 

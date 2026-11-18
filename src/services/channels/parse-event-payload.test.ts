@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { CustodyError } from "../../models/custody-error.js"
 import type { EDS_Event } from "./channels.types.js"
 import { parseEventPayload } from "./parse-event-payload.js"

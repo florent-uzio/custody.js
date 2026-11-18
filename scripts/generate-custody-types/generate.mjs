@@ -19,7 +19,9 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+
 import openapiTS, { astToString } from "openapi-typescript"
+
 import { buildCapabilityDataset, renderCapabilitiesModule } from "./capabilities.mjs"
 import { INTERNAL_SURFACE, mergeOpenApiDocsBySurface, PUBLIC_SURFACE } from "./merge.mjs"
 

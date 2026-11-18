@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { quarantineStatusHint } from "./quarantine-status-hint.js"
 
 describe("quarantineStatusHint", () => {

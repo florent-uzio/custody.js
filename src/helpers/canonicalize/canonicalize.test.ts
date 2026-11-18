@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { CustodyError } from "../../models/custody-error.js"
 import { canonicalizeRequest } from "./canonicalize.js"
 

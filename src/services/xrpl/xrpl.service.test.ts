@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { GlobalFlags, type SubmittableTransaction } from "xrpl"
+
 import { CustodyError } from "../../models/index.js"
 import type { Core_IntentStatus } from "../../namespaces/intents.types.js"
 import type {

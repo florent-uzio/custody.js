@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+
 import { UnsupportedInVersionError, VersionGuard } from "../versioning/version-guard.js"
 import { TypedTransport } from "./typed-transport.js"
 

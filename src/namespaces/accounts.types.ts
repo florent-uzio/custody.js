@@ -172,7 +172,11 @@ export type Core_TrustedDepositInstructions =
  * literals itself.
  */
 export type ParametersComputeStatus =
-  "Pending" | "Preparing" | "Completed" | "Failed" | (string & {})
+  | "Pending"
+  | "Preparing"
+  | "Completed"
+  | "Failed"
+  | (string & {})
 
 export type Core_ApiInitiateParametersComputeResponse = Prettify<
   Omit<

@@ -1,4 +1,5 @@
 import canonicalize from "canonicalize"
+
 import { CustodyError } from "../../models/custody-error.js"
 
 /**

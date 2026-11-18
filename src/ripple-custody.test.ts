@@ -1,5 +1,7 @@
 import { generateKeyPairSync } from "node:crypto"
+
 import { describe, expect, it, vi } from "vitest"
+
 import type { KnownAppVersion } from "./models/capabilities.generated.js"
 import { CustodyError } from "./models/index.js"
 import { RippleCustody } from "./ripple-custody.js"

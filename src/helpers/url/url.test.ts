@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { getHostname, replacePathParams, replacePathParamsSafe } from "./url.js"
 
 describe("getHostname", () => {
