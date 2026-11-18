@@ -40,7 +40,7 @@
     "fetch:openapi-spec": "node ./scripts/fetch-openapi-release.mjs",
     "format": "prettier --write .",
     "generate:custody-types": "node ./scripts/generate-custody-types/generate.mjs && prettier --write ./src/models/custody-types.ts ./src/models/custody-internal-types.ts ./src/models/capabilities.generated.ts",
-    "lint": "eslint src",
+    "lint": "oxlint --type-aware src",
     "local-release": "changeset version && changeset publish",
     "prepare": "git config core.hooksPath .githooks || true && npm run build",
     "release": "changeset publish",
@@ -69,18 +69,18 @@
     "@vitest/coverage-v8": "^5.0.3",
     "@vitest/ui": "^5.0.3",
     "dotenv": "^18.0.7",
-    "eslint": "^10.12.0",
     "lint-staged": "^17.6.1",
     "openapi-typescript": "^7.13.0",
+    "oxlint": "^1.94.0",
+    "oxlint-tsgolint": "^7.0.2007",
     "prettier": "^3.9.10",
     "prettier-plugin-organize-imports": "^4.3.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.71.1",
     "vitest": "^5.0.3"
   },
   "lint-staged": {
-    "src/**/*.ts": "eslint --fix --cache",
+    "src/**/*.ts": "oxlint --type-aware --fix",
     "*": "prettier --write --ignore-unknown --cache"
   }
 }

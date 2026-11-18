@@ -48,7 +48,7 @@ export type CursorPage<TItem> = {
 //
 // The aliases are unreferenced by construction — being *declared* is what runs
 // the check — so `no-unused-vars` is off for the block. `argsIgnorePattern: "^_"`
-// in eslint.config.js covers parameters only, not type aliases.
+// in .oxlintrc.json covers parameters only, not type aliases.
 // ───────────────────────────────────────────────────────────────────────────────
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
