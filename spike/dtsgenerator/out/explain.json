@@ -1,0 +1,2236 @@
+[
+  {
+    "surface": "public",
+    "line": 222,
+    "kind": "schema",
+    "id": "Core_IntentDetails",
+    "old": "Old.components[\"schemas\"][\"Core_IntentDetails\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentDetails\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 223,
+    "kind": "schema",
+    "id": "Core_IntentDryRunRequest",
+    "old": "Old.components[\"schemas\"][\"Core_IntentDryRunRequest\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentDryRunRequest\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 271,
+    "kind": "schema",
+    "id": "Core_IntentEntity",
+    "old": "Old.components[\"schemas\"][\"Core_IntentEntity\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentEntity\"]",
+    "diffs": [
+      {
+        "path": "$.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 353,
+    "kind": "schema",
+    "id": "Core_Propose",
+    "old": "Old.components[\"schemas\"][\"Core_Propose\"]",
+    "new": "New.components[\"schemas\"][\"Core_Propose\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 354,
+    "kind": "schema",
+    "id": "Core_ProposeIntentBody",
+    "old": "Old.components[\"schemas\"][\"Core_ProposeIntentBody\"]",
+    "new": "New.components[\"schemas\"][\"Core_ProposeIntentBody\"]",
+    "diffs": [
+      {
+        "path": "$.request.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 356,
+    "kind": "schema",
+    "id": "Core_ProposeUserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Core_ProposeUserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Core_ProposeUserIntentPayload\"]",
+    "diffs": [
+      {
+        "path": "$|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 574,
+    "kind": "schema",
+    "id": "Core_TrustedIntent",
+    "old": "Old.components[\"schemas\"][\"Core_TrustedIntent\"]",
+    "new": "New.components[\"schemas\"][\"Core_TrustedIntent\"]",
+    "diffs": [
+      {
+        "path": "$.data.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 575,
+    "kind": "schema",
+    "id": "Core_TrustedIntentsCollection",
+    "old": "Old.components[\"schemas\"][\"Core_TrustedIntentsCollection\"]",
+    "new": "New.components[\"schemas\"][\"Core_TrustedIntentsCollection\"]",
+    "diffs": [
+      {
+        "path": "$.items[].data.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 595,
+    "kind": "schema",
+    "id": "Core_UserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Core_UserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Core_UserIntentPayload\"]",
+    "diffs": [
+      {
+        "path": "$|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 699,
+    "kind": "schema",
+    "id": "Core_v0_ExecuteExtension",
+    "old": "Old.components[\"schemas\"][\"Core_v0_ExecuteExtension\"]",
+    "new": "New.components[\"schemas\"][\"Core_v0_ExecuteExtension\"]",
+    "diffs": [
+      {
+        "path": "$.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 809,
+    "kind": "schema",
+    "id": "Compliance_PolicyPayloadRequest",
+    "old": "Old.components[\"schemas\"][\"Compliance_PolicyPayloadRequest\"]",
+    "new": "New.components[\"schemas\"][\"Compliance_PolicyPayloadRequest\"]",
+    "diffs": [
+      {
+        "path": "$.approvalWorkflow",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 810,
+    "kind": "schema",
+    "id": "Compliance_PolicyResponse",
+    "old": "Old.components[\"schemas\"][\"Compliance_PolicyResponse\"]",
+    "new": "New.components[\"schemas\"][\"Compliance_PolicyResponse\"]",
+    "diffs": [
+      {
+        "path": "$.approvalWorkflow",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 812,
+    "kind": "schema",
+    "id": "Compliance_DomainPayloadRequest",
+    "old": "Old.components[\"schemas\"][\"Compliance_DomainPayloadRequest\"]",
+    "new": "New.components[\"schemas\"][\"Compliance_DomainPayloadRequest\"]",
+    "diffs": [
+      {
+        "path": "$.permissions",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 862,
+    "kind": "schema",
+    "id": "EDS_WebhookChannelCreate",
+    "old": "Old.components[\"schemas\"][\"EDS_WebhookChannelCreate\"]",
+    "new": "New.components[\"schemas\"][\"EDS_WebhookChannelCreate\"]",
+    "diffs": [
+      {
+        "path": "$.id",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      },
+      {
+        "path": "$.name",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      },
+      {
+        "path": "$.supportedEventTypes",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string[]"
+      },
+      {
+        "path": "$.status",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "\"DISABLED\" | \"ACTIVE\" | undefined"
+      },
+      {
+        "path": "$.maxRetries",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "number | undefined"
+      },
+      {
+        "path": "$.createdBy",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      },
+      {
+        "path": "$.type",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "\"WEBHOOK\""
+      },
+      {
+        "path": "$.url",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 879,
+    "kind": "schema",
+    "id": "GasStation_SponsorableDomainDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_SponsorableDomainDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_SponsorableDomainDto\"]",
+    "diffs": [
+      {
+        "path": "$.parentId",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 880,
+    "kind": "schema",
+    "id": "GasStation_SponsorableDomainsResponseDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_SponsorableDomainsResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_SponsorableDomainsResponseDto\"]",
+    "diffs": [
+      {
+        "path": "$.items[].parentId",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 890,
+    "kind": "schema",
+    "id": "GasStation_AuditEventDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_AuditEventDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_AuditEventDto\"]",
+    "diffs": [
+      {
+        "path": "$.payload",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 891,
+    "kind": "schema",
+    "id": "GasStation_EventsResponseDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_EventsResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_EventsResponseDto\"]",
+    "diffs": [
+      {
+        "path": "$.items[].payload",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 961,
+    "kind": "schema",
+    "id": "Core_IntentBody",
+    "old": "Old.components[\"schemas\"][\"Core_IntentBody\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentBody\"]",
+    "diffs": [
+      {
+        "path": "$|?.request.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 969,
+    "kind": "schema",
+    "id": "Core_SystemSigned",
+    "old": "Old.components[\"schemas\"][\"Core_SystemSigned\"]",
+    "new": "New.components[\"schemas\"][\"Core_SystemSigned\"]",
+    "diffs": [
+      {
+        "path": "$.request.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 970,
+    "kind": "schema",
+    "id": "Core_SystemSignedRequest",
+    "old": "Old.components[\"schemas\"][\"Core_SystemSignedRequest\"]",
+    "new": "New.components[\"schemas\"][\"Core_SystemSignedRequest\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 973,
+    "kind": "schema",
+    "id": "Core_UserSigned",
+    "old": "Old.components[\"schemas\"][\"Core_UserSigned\"]",
+    "new": "New.components[\"schemas\"][\"Core_UserSigned\"]",
+    "diffs": [
+      {
+        "path": "$.request.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1004,
+    "kind": "schema",
+    "id": "Export_MovementExportDto",
+    "old": "Old.components[\"schemas\"][\"Export_MovementExportDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_MovementExportDto\"]",
+    "diffs": [
+      {
+        "path": "$.custodyStatus",
+        "cat": "optionality",
+        "old": "required",
+        "new": "optional"
+      },
+      {
+        "path": "$.ledgerStatus",
+        "cat": "optionality",
+        "old": "required",
+        "new": "optional"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1025,
+    "kind": "schema",
+    "id": "Export_ExportMetadataDto",
+    "old": "Old.components[\"schemas\"][\"Export_ExportMetadataDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_ExportMetadataDto\"]",
+    "diffs": [
+      {
+        "path": "$.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1027,
+    "kind": "schema",
+    "id": "Export_PositionReportResponseDto",
+    "old": "Old.components[\"schemas\"][\"Export_PositionReportResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_PositionReportResponseDto\"]",
+    "diffs": [
+      {
+        "path": "$.metadata.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1029,
+    "kind": "schema",
+    "id": "Export_MovementReportResponseDto",
+    "old": "Old.components[\"schemas\"][\"Export_MovementReportResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_MovementReportResponseDto\"]",
+    "diffs": [
+      {
+        "path": "$.metadata.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1032,
+    "kind": "schema",
+    "id": "Export_OmnibusExportMetadataDto",
+    "old": "Old.components[\"schemas\"][\"Export_OmnibusExportMetadataDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_OmnibusExportMetadataDto\"]",
+    "diffs": [
+      {
+        "path": "$.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1034,
+    "kind": "schema",
+    "id": "Export_OmnibusPositionReportResponseDto",
+    "old": "Old.components[\"schemas\"][\"Export_OmnibusPositionReportResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_OmnibusPositionReportResponseDto\"]",
+    "diffs": [
+      {
+        "path": "$.metadata.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1372,
+    "kind": "requestBody.json",
+    "id": "post /v1/intents (createIntent)",
+    "old": "Body<Old.paths[\"/v1/intents\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/intents\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$|?.request.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1406,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/intents (getIntents) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/intents\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/intents\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.items[].data.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1410,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/intents/{intentId} (getIntent) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/intents/{intentId}\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/intents/{intentId}\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.data.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1419,
+    "kind": "requestBody.json",
+    "id": "post /v1/intents/dry-run (intentDryRun)",
+    "old": "Body<Old.paths[\"/v1/intents/dry-run\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/intents/dry-run\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1573,
+    "kind": "requestBody.json",
+    "id": "post /v1/domains/{domainId}/compliance/policy (CreatePolicyPayload)",
+    "old": "Body<Old.paths[\"/v1/domains/{domainId}/compliance/policy\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/domains/{domainId}/compliance/policy\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$.approvalWorkflow",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1576,
+    "kind": "requestBody.json",
+    "id": "post /v1/domains/{domainId}/compliance/domain (CreateDomainPayload)",
+    "old": "Body<Old.paths[\"/v1/domains/{domainId}/compliance/domain\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/domains/{domainId}/compliance/domain\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$.permissions",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1595,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType} (GetPolicy) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType}\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType}\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.approvalWorkflow",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1630,
+    "kind": "requestBody.json",
+    "id": "post /v1/domains/{domainId}/channels (createChannel)",
+    "old": "Body<Old.paths[\"/v1/domains/{domainId}/channels\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/domains/{domainId}/channels\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$.id",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      },
+      {
+        "path": "$.name",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      },
+      {
+        "path": "$.supportedEventTypes",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string[]"
+      },
+      {
+        "path": "$.status",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "\"DISABLED\" | \"ACTIVE\" | undefined"
+      },
+      {
+        "path": "$.maxRetries",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "number | undefined"
+      },
+      {
+        "path": "$.createdBy",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      },
+      {
+        "path": "$.type",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "\"WEBHOOK\""
+      },
+      {
+        "path": "$.url",
+        "cat": "prop-extra-in-new",
+        "old": "",
+        "new": "string"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1667,
+    "kind": "response.json",
+    "id": "get /v1/domain/{domainId}/account/{entityId}/sponsorable-domains (SponsorListController_getSponsorableDomains_legacyDomain) -> 200",
+    "old": "Json<Old.paths[\"/v1/domain/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domain/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.items[].parentId",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1681,
+    "kind": "response.json",
+    "id": "get /v1/domain/{domainId}/sponsor/events (EventController_getEvents_legacyDomain) -> 200",
+    "old": "Json<Old.paths[\"/v1/domain/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domain/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.items[].payload",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1715,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/account/{entityId}/sponsorable-domains (SponsorListController_getSponsorableDomains) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.items[].parentId",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1731,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/sponsor/events (EventController_getEvents) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.items[].payload",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1849,
+    "kind": "response.json",
+    "id": "post /v1/exports/position (PositionReportController_generatePositionReport) -> 201",
+    "old": "Json<Old.paths[\"/v1/exports/position\"][\"post\"][\"responses\"][\"201\"]>",
+    "new": "Json<New.paths[\"/v1/exports/position\"][\"post\"][\"responses\"][\"201\"]>",
+    "diffs": [
+      {
+        "path": "$.metadata.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1856,
+    "kind": "requestBody.json",
+    "id": "post /v1/exports/movement (MovementReportController_generateMovementReport)",
+    "old": "Body<Old.paths[\"/v1/exports/movement\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/exports/movement\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$.custodyStatus",
+        "cat": "optionality",
+        "old": "required",
+        "new": "optional"
+      },
+      {
+        "path": "$.ledgerStatus",
+        "cat": "optionality",
+        "old": "required",
+        "new": "optional"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1858,
+    "kind": "response.json",
+    "id": "post /v1/exports/movement (MovementReportController_generateMovementReport) -> 201",
+    "old": "Json<Old.paths[\"/v1/exports/movement\"][\"post\"][\"responses\"][\"201\"]>",
+    "new": "Json<New.paths[\"/v1/exports/movement\"][\"post\"][\"responses\"][\"201\"]>",
+    "diffs": [
+      {
+        "path": "$.metadata.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "public",
+    "line": 1888,
+    "kind": "response.json",
+    "id": "post /v1/exports/position/omnibus (OmnibusPositionReportController_generateOmnibusPositionReport) -> 201",
+    "old": "Json<Old.paths[\"/v1/exports/position/omnibus\"][\"post\"][\"responses\"][\"201\"]>",
+    "new": "Json<New.paths[\"/v1/exports/position/omnibus\"][\"post\"][\"responses\"][\"201\"]>",
+    "diffs": [
+      {
+        "path": "$.metadata.filters",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 35,
+    "kind": "schema",
+    "id": "Internal_ApiTicker",
+    "old": "Old.components[\"schemas\"][\"Internal_ApiTicker\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ApiTicker\"]",
+    "diffs": [
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "{ properties: { type: \"Native\"; } | { type: \"Native\"; } | { type: \"Native\"; } | { address: string; tokenId: string; type: \"ERC1155\"; } | { a...",
+        "new": "(none)"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalAlgorandTickerPropertiesNative; type: \"Algorand\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalBitcoinTickerPropertiesNative; type: \"Bitcoin\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalCardanoTickerPropertiesNative; type: \"Cardano\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalEthereumTickerProperties; type: \"Ethereum\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalHederaTickerProperties; type: \"Hedera\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalSolanaTickerProperties; type: \"Solana\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalStellarTickerProperties; type: \"Stellar\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalSubstrateTickerPropertiesNative; type: \"Substrate\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalTezosTickerPropertiesNative; type: \"Tezos\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalTronTickerProperties; type: \"Tron\"; }"
+      },
+      {
+        "path": "$.ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalXrplTickerProperties; type: \"XRPL\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 139,
+    "kind": "schema",
+    "id": "Internal_EvaluationContext",
+    "old": "Old.components[\"schemas\"][\"Internal_EvaluationContext\"]",
+    "new": "New.components[\"schemas\"][\"Internal_EvaluationContext\"]",
+    "diffs": [
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 140,
+    "kind": "schema",
+    "id": "Internal_EvaluationContextReferences",
+    "old": "Old.components[\"schemas\"][\"Internal_EvaluationContextReferences\"]",
+    "new": "New.components[\"schemas\"][\"Internal_EvaluationContextReferences\"]",
+    "diffs": [
+      {
+        "path": "$",
+        "cat": "no-structural-diff-found",
+        "old": "{ backups: { [key: string]: { id: string; data: { vaultId: string; data: { acknowledged: boolean; encryptedSeed: string; hash: string; }; ty...",
+        "new": "{ backups: InternalMapBackup; users: InternalMapUser; domains: InternalMapDomain; policies: InternalMapPolicy; ledgers: InternalMapLedger; e..."
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 167,
+    "kind": "schema",
+    "id": "Internal_IntentContextResponse",
+    "old": "Old.components[\"schemas\"][\"Internal_IntentContextResponse\"]",
+    "new": "New.components[\"schemas\"][\"Internal_IntentContextResponse\"]",
+    "diffs": [
+      {
+        "path": "$.intents[].data.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "{ properties: { type: \"Native\"; } | { type: \"Native\"; } | { type: \"Native\"; } | { address: string; tokenId: string; type: \"ERC1155\"; } | { a...",
+        "new": "(none)"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalAlgorandTickerPropertiesNative; type: \"Algorand\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalBitcoinTickerPropertiesNative; type: \"Bitcoin\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalCardanoTickerPropertiesNative; type: \"Cardano\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalEthereumTickerProperties; type: \"Ethereum\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalHederaTickerProperties; type: \"Hedera\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalSolanaTickerProperties; type: \"Solana\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalStellarTickerProperties; type: \"Stellar\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalSubstrateTickerPropertiesNative; type: \"Substrate\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalTezosTickerPropertiesNative; type: \"Tezos\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalTronTickerProperties; type: \"Tron\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalXrplTickerProperties; type: \"XRPL\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 169,
+    "kind": "schema",
+    "id": "Internal_IntentDetails",
+    "old": "Old.components[\"schemas\"][\"Internal_IntentDetails\"]",
+    "new": "New.components[\"schemas\"][\"Internal_IntentDetails\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 170,
+    "kind": "schema",
+    "id": "Internal_IntentEntity",
+    "old": "Old.components[\"schemas\"][\"Internal_IntentEntity\"]",
+    "new": "New.components[\"schemas\"][\"Internal_IntentEntity\"]",
+    "diffs": [
+      {
+        "path": "$.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 223,
+    "kind": "schema",
+    "id": "Internal_Map_TransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_Map_TransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_Map_TransactionOrder\"]",
+    "diffs": [
+      {
+        "path": "$",
+        "cat": "no-structural-diff-found",
+        "old": "{ [key: string]: { id: string; domainId: string; accountId: string; ledgerId?: string | undefined; parameters: { operation: { destination: {...",
+        "new": "{ [name: string]: InternalTransactionOrder; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 256,
+    "kind": "schema",
+    "id": "Internal_ProposalPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_ProposalPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ProposalPayload\"]",
+    "diffs": [
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 257,
+    "kind": "schema",
+    "id": "Internal_Propose",
+    "old": "Old.components[\"schemas\"][\"Internal_Propose\"]",
+    "new": "New.components[\"schemas\"][\"Internal_Propose\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 258,
+    "kind": "schema",
+    "id": "Internal_ProposeTransactionOrderParameters",
+    "old": "Old.components[\"schemas\"][\"Internal_ProposeTransactionOrderParameters\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ProposeTransactionOrderParameters\"]",
+    "diffs": [
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 259,
+    "kind": "schema",
+    "id": "Internal_ProposeUserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_ProposeUserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ProposeUserIntentPayload\"]",
+    "diffs": [
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      },
+      {
+        "path": "$|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 260,
+    "kind": "schema",
+    "id": "Internal_Propose_v0_CreateTransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_Propose_v0_CreateTransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_Propose_v0_CreateTransactionOrder\"]",
+    "diffs": [
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 285,
+    "kind": "schema",
+    "id": "Internal_ServicePropose",
+    "old": "Old.components[\"schemas\"][\"Internal_ServicePropose\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ServicePropose\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 346,
+    "kind": "schema",
+    "id": "Internal_SubstratePallet",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstratePallet\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstratePallet\"]",
+    "diffs": [
+      {
+        "path": "$|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 349,
+    "kind": "schema",
+    "id": "Internal_SubstratePallet_Staking",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstratePallet_Staking\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstratePallet_Staking\"]",
+    "diffs": [
+      {
+        "path": "$.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 351,
+    "kind": "schema",
+    "id": "Internal_SubstrateStakingMethod",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstrateStakingMethod\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstrateStakingMethod\"]",
+    "diffs": [
+      {
+        "path": "$|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 352,
+    "kind": "schema",
+    "id": "Internal_SubstrateStakingMethod_Bond",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstrateStakingMethod_Bond\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstrateStakingMethod_Bond\"]",
+    "diffs": [
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 357,
+    "kind": "schema",
+    "id": "Internal_SubstrateStakingMethod_SetController",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstrateStakingMethod_SetController\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstrateStakingMethod_SetController\"]",
+    "diffs": [
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 414,
+    "kind": "schema",
+    "id": "Internal_TransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrder\"]",
+    "diffs": [
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 415,
+    "kind": "schema",
+    "id": "Internal_TransactionOrderParameters",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrderParameters\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrderParameters\"]",
+    "diffs": [
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 424,
+    "kind": "schema",
+    "id": "Internal_TransactionOrderParameters_Substrate",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrderParameters_Substrate\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrderParameters_Substrate\"]",
+    "diffs": [
+      {
+        "path": "$.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 427,
+    "kind": "schema",
+    "id": "Internal_TransactionOrderParameters_XRPL",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrderParameters_XRPL\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrderParameters_XRPL\"]",
+    "diffs": [
+      {
+        "path": "$.destination",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.destination",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.destination",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.destination",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 456,
+    "kind": "schema",
+    "id": "Internal_TrustedIntent",
+    "old": "Old.components[\"schemas\"][\"Internal_TrustedIntent\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TrustedIntent\"]",
+    "diffs": [
+      {
+        "path": "$.data.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$.data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 462,
+    "kind": "schema",
+    "id": "Internal_TrustedTransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_TrustedTransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TrustedTransactionOrder\"]",
+    "diffs": [
+      {
+        "path": "$.data.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.data.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.data.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.data.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 470,
+    "kind": "schema",
+    "id": "Internal_UserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_UserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_UserIntentPayload\"]",
+    "diffs": [
+      {
+        "path": "$|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 473,
+    "kind": "schema",
+    "id": "Internal_UserRequestPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_UserRequestPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_UserRequestPayload\"]",
+    "diffs": [
+      {
+        "path": "$|type=Propose.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 475,
+    "kind": "schema",
+    "id": "Internal_UserRequestPayload_Propose",
+    "old": "Old.components[\"schemas\"][\"Internal_UserRequestPayload_Propose\"]",
+    "new": "New.components[\"schemas\"][\"Internal_UserRequestPayload_Propose\"]",
+    "diffs": [
+      {
+        "path": "$.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 589,
+    "kind": "schema",
+    "id": "Internal_v0_CreateTransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_v0_CreateTransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_v0_CreateTransactionOrder\"]",
+    "diffs": [
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 593,
+    "kind": "schema",
+    "id": "Internal_v0_ExecuteExtension",
+    "old": "Old.components[\"schemas\"][\"Internal_v0_ExecuteExtension\"]",
+    "new": "New.components[\"schemas\"][\"Internal_v0_ExecuteExtension\"]",
+    "diffs": [
+      {
+        "path": "$.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 638,
+    "kind": "schema",
+    "id": "Notification_SignWeb",
+    "old": "Old.components[\"schemas\"][\"Notification_SignWeb\"]",
+    "new": "New.components[\"schemas\"][\"Notification_SignWeb\"]",
+    "diffs": [
+      {
+        "path": "$.entity",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 640,
+    "kind": "schema",
+    "id": "Notification_EntityToSign",
+    "old": "Old.components[\"schemas\"][\"Notification_EntityToSign\"]",
+    "new": "New.components[\"schemas\"][\"Notification_EntityToSign\"]",
+    "diffs": [
+      {
+        "path": "$.entity",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 641,
+    "kind": "schema",
+    "id": "Notification_ExtendedEntityToSign",
+    "old": "Old.components[\"schemas\"][\"Notification_ExtendedEntityToSign\"]",
+    "new": "New.components[\"schemas\"][\"Notification_ExtendedEntityToSign\"]",
+    "diffs": [
+      {
+        "path": "$.intentContext",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      },
+      {
+        "path": "$.entity",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 720,
+    "kind": "response.json",
+    "id": "get /internal/v1/scripting (getExampleContextV0) -> 200",
+    "old": "Json<Old.paths[\"/internal/v1/scripting\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/internal/v1/scripting\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      },
+      {
+        "path": "$.request|type=Propose.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 721,
+    "kind": "requestBody.json",
+    "id": "post /internal/v1/intents/context (intentContext)",
+    "old": "Body<Old.paths[\"/internal/v1/intents/context\"][\"post\"]>",
+    "new": "Body<New.paths[\"/internal/v1/intents/context\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$|type=Propose.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$|type=Propose.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 723,
+    "kind": "response.json",
+    "id": "post /internal/v1/intents/context (intentContext) -> 200",
+    "old": "Json<Old.paths[\"/internal/v1/intents/context\"][\"post\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/internal/v1/intents/context\"][\"post\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.intents[].data.details.payload|type=v0_ExecuteExtension.payload",
+        "cat": "index-signature",
+        "old": "[k]: { [x: string]: never; }",
+        "new": "[k]: { [key: string]: any; }"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "{}",
+        "new": "(none)"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ accountId: string; type: \"Account\"; }"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ address: string; type: \"Address\"; }"
+      },
+      {
+        "path": "$.intents[].data.details.payload|type=v0_CreateTransactionOrder.parameters|type=Substrate.pallet|type=Staking.method|type=Bond.controller",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ endpointId: string; type: \"Endpoint\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "{ properties: { type: \"Native\"; } | { type: \"Native\"; } | { type: \"Native\"; } | { address: string; tokenId: string; type: \"ERC1155\"; } | { a...",
+        "new": "(none)"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalAlgorandTickerPropertiesNative; type: \"Algorand\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalBitcoinTickerPropertiesNative; type: \"Bitcoin\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalCardanoTickerPropertiesNative; type: \"Cardano\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalEthereumTickerProperties; type: \"Ethereum\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalHederaTickerProperties; type: \"Hedera\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalSolanaTickerProperties; type: \"Solana\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalStellarTickerProperties; type: \"Stellar\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalSubstrateTickerPropertiesNative; type: \"Substrate\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalTezosTickerPropertiesNative; type: \"Tezos\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalTronTickerProperties; type: \"Tron\"; }"
+      },
+      {
+        "path": "$.tickers[].ledgerDetails",
+        "cat": "union-member-unmatched",
+        "old": "(none)",
+        "new": "{ properties: InternalXrplTickerProperties; type: \"XRPL\"; }"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 747,
+    "kind": "requestBody.json",
+    "id": "post /api/notifications/sign-web (NotificationController.signWeb)",
+    "old": "Body<Old.paths[\"/api/notifications/sign-web\"][\"post\"]>",
+    "new": "Body<New.paths[\"/api/notifications/sign-web\"][\"post\"]>",
+    "diffs": [
+      {
+        "path": "$.entity",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 754,
+    "kind": "response.json",
+    "id": "get /api/notifications/entity/{hash} (NotificationController.getEntity) -> 200",
+    "old": "Json<Old.paths[\"/api/notifications/entity/{hash}\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/api/notifications/entity/{hash}\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.entity",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 756,
+    "kind": "response.json",
+    "id": "delete /api/notifications/entity/{hash} (NotificationController.deleteEntity) -> 200",
+    "old": "Json<Old.paths[\"/api/notifications/entity/{hash}\"][\"delete\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/api/notifications/entity/{hash}\"][\"delete\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.entity",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  },
+  {
+    "surface": "internal",
+    "line": 760,
+    "kind": "response.json",
+    "id": "get /api/notifications/entities (NotificationController.getEntities) -> 200",
+    "old": "Json<Old.paths[\"/api/notifications/entities\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/api/notifications/entities\"][\"get\"][\"responses\"][\"200\"]>",
+    "diffs": [
+      {
+        "path": "$.entity",
+        "cat": "index-signature",
+        "old": "[k]: never",
+        "new": "[k]: any"
+      }
+    ]
+  }
+]

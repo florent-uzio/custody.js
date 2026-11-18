@@ -1,0 +1,666 @@
+[
+  {
+    "surface": "public",
+    "line": 222,
+    "kind": "schema",
+    "id": "Core_IntentDetails",
+    "old": "Old.components[\"schemas\"][\"Core_IntentDetails\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentDetails\"]"
+  },
+  {
+    "surface": "public",
+    "line": 223,
+    "kind": "schema",
+    "id": "Core_IntentDryRunRequest",
+    "old": "Old.components[\"schemas\"][\"Core_IntentDryRunRequest\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentDryRunRequest\"]"
+  },
+  {
+    "surface": "public",
+    "line": 271,
+    "kind": "schema",
+    "id": "Core_IntentEntity",
+    "old": "Old.components[\"schemas\"][\"Core_IntentEntity\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentEntity\"]"
+  },
+  {
+    "surface": "public",
+    "line": 353,
+    "kind": "schema",
+    "id": "Core_Propose",
+    "old": "Old.components[\"schemas\"][\"Core_Propose\"]",
+    "new": "New.components[\"schemas\"][\"Core_Propose\"]"
+  },
+  {
+    "surface": "public",
+    "line": 354,
+    "kind": "schema",
+    "id": "Core_ProposeIntentBody",
+    "old": "Old.components[\"schemas\"][\"Core_ProposeIntentBody\"]",
+    "new": "New.components[\"schemas\"][\"Core_ProposeIntentBody\"]"
+  },
+  {
+    "surface": "public",
+    "line": 356,
+    "kind": "schema",
+    "id": "Core_ProposeUserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Core_ProposeUserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Core_ProposeUserIntentPayload\"]"
+  },
+  {
+    "surface": "public",
+    "line": 574,
+    "kind": "schema",
+    "id": "Core_TrustedIntent",
+    "old": "Old.components[\"schemas\"][\"Core_TrustedIntent\"]",
+    "new": "New.components[\"schemas\"][\"Core_TrustedIntent\"]"
+  },
+  {
+    "surface": "public",
+    "line": 575,
+    "kind": "schema",
+    "id": "Core_TrustedIntentsCollection",
+    "old": "Old.components[\"schemas\"][\"Core_TrustedIntentsCollection\"]",
+    "new": "New.components[\"schemas\"][\"Core_TrustedIntentsCollection\"]"
+  },
+  {
+    "surface": "public",
+    "line": 595,
+    "kind": "schema",
+    "id": "Core_UserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Core_UserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Core_UserIntentPayload\"]"
+  },
+  {
+    "surface": "public",
+    "line": 699,
+    "kind": "schema",
+    "id": "Core_v0_ExecuteExtension",
+    "old": "Old.components[\"schemas\"][\"Core_v0_ExecuteExtension\"]",
+    "new": "New.components[\"schemas\"][\"Core_v0_ExecuteExtension\"]"
+  },
+  {
+    "surface": "public",
+    "line": 809,
+    "kind": "schema",
+    "id": "Compliance_PolicyPayloadRequest",
+    "old": "Old.components[\"schemas\"][\"Compliance_PolicyPayloadRequest\"]",
+    "new": "New.components[\"schemas\"][\"Compliance_PolicyPayloadRequest\"]"
+  },
+  {
+    "surface": "public",
+    "line": 810,
+    "kind": "schema",
+    "id": "Compliance_PolicyResponse",
+    "old": "Old.components[\"schemas\"][\"Compliance_PolicyResponse\"]",
+    "new": "New.components[\"schemas\"][\"Compliance_PolicyResponse\"]"
+  },
+  {
+    "surface": "public",
+    "line": 812,
+    "kind": "schema",
+    "id": "Compliance_DomainPayloadRequest",
+    "old": "Old.components[\"schemas\"][\"Compliance_DomainPayloadRequest\"]",
+    "new": "New.components[\"schemas\"][\"Compliance_DomainPayloadRequest\"]"
+  },
+  {
+    "surface": "public",
+    "line": 862,
+    "kind": "schema",
+    "id": "EDS_WebhookChannelCreate",
+    "old": "Old.components[\"schemas\"][\"EDS_WebhookChannelCreate\"]",
+    "new": "New.components[\"schemas\"][\"EDS_WebhookChannelCreate\"]"
+  },
+  {
+    "surface": "public",
+    "line": 879,
+    "kind": "schema",
+    "id": "GasStation_SponsorableDomainDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_SponsorableDomainDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_SponsorableDomainDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 880,
+    "kind": "schema",
+    "id": "GasStation_SponsorableDomainsResponseDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_SponsorableDomainsResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_SponsorableDomainsResponseDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 890,
+    "kind": "schema",
+    "id": "GasStation_AuditEventDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_AuditEventDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_AuditEventDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 891,
+    "kind": "schema",
+    "id": "GasStation_EventsResponseDto",
+    "old": "Old.components[\"schemas\"][\"GasStation_EventsResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"GasStation_EventsResponseDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 961,
+    "kind": "schema",
+    "id": "Core_IntentBody",
+    "old": "Old.components[\"schemas\"][\"Core_IntentBody\"]",
+    "new": "New.components[\"schemas\"][\"Core_IntentBody\"]"
+  },
+  {
+    "surface": "public",
+    "line": 969,
+    "kind": "schema",
+    "id": "Core_SystemSigned",
+    "old": "Old.components[\"schemas\"][\"Core_SystemSigned\"]",
+    "new": "New.components[\"schemas\"][\"Core_SystemSigned\"]"
+  },
+  {
+    "surface": "public",
+    "line": 970,
+    "kind": "schema",
+    "id": "Core_SystemSignedRequest",
+    "old": "Old.components[\"schemas\"][\"Core_SystemSignedRequest\"]",
+    "new": "New.components[\"schemas\"][\"Core_SystemSignedRequest\"]"
+  },
+  {
+    "surface": "public",
+    "line": 973,
+    "kind": "schema",
+    "id": "Core_UserSigned",
+    "old": "Old.components[\"schemas\"][\"Core_UserSigned\"]",
+    "new": "New.components[\"schemas\"][\"Core_UserSigned\"]"
+  },
+  {
+    "surface": "public",
+    "line": 1004,
+    "kind": "schema",
+    "id": "Export_MovementExportDto",
+    "old": "Old.components[\"schemas\"][\"Export_MovementExportDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_MovementExportDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 1025,
+    "kind": "schema",
+    "id": "Export_ExportMetadataDto",
+    "old": "Old.components[\"schemas\"][\"Export_ExportMetadataDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_ExportMetadataDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 1027,
+    "kind": "schema",
+    "id": "Export_PositionReportResponseDto",
+    "old": "Old.components[\"schemas\"][\"Export_PositionReportResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_PositionReportResponseDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 1029,
+    "kind": "schema",
+    "id": "Export_MovementReportResponseDto",
+    "old": "Old.components[\"schemas\"][\"Export_MovementReportResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_MovementReportResponseDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 1032,
+    "kind": "schema",
+    "id": "Export_OmnibusExportMetadataDto",
+    "old": "Old.components[\"schemas\"][\"Export_OmnibusExportMetadataDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_OmnibusExportMetadataDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 1034,
+    "kind": "schema",
+    "id": "Export_OmnibusPositionReportResponseDto",
+    "old": "Old.components[\"schemas\"][\"Export_OmnibusPositionReportResponseDto\"]",
+    "new": "New.components[\"schemas\"][\"Export_OmnibusPositionReportResponseDto\"]"
+  },
+  {
+    "surface": "public",
+    "line": 1372,
+    "kind": "requestBody.json",
+    "id": "post /v1/intents (createIntent)",
+    "old": "Body<Old.paths[\"/v1/intents\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/intents\"][\"post\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1406,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/intents (getIntents) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/intents\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/intents\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1410,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/intents/{intentId} (getIntent) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/intents/{intentId}\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/intents/{intentId}\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1419,
+    "kind": "requestBody.json",
+    "id": "post /v1/intents/dry-run (intentDryRun)",
+    "old": "Body<Old.paths[\"/v1/intents/dry-run\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/intents/dry-run\"][\"post\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1573,
+    "kind": "requestBody.json",
+    "id": "post /v1/domains/{domainId}/compliance/policy (CreatePolicyPayload)",
+    "old": "Body<Old.paths[\"/v1/domains/{domainId}/compliance/policy\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/domains/{domainId}/compliance/policy\"][\"post\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1576,
+    "kind": "requestBody.json",
+    "id": "post /v1/domains/{domainId}/compliance/domain (CreateDomainPayload)",
+    "old": "Body<Old.paths[\"/v1/domains/{domainId}/compliance/domain\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/domains/{domainId}/compliance/domain\"][\"post\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1595,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType} (GetPolicy) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType}\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/compliance/policy/{policyType}/transaction/{transactionType}\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1630,
+    "kind": "requestBody.json",
+    "id": "post /v1/domains/{domainId}/channels (createChannel)",
+    "old": "Body<Old.paths[\"/v1/domains/{domainId}/channels\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/domains/{domainId}/channels\"][\"post\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1667,
+    "kind": "response.json",
+    "id": "get /v1/domain/{domainId}/account/{entityId}/sponsorable-domains (SponsorListController_getSponsorableDomains_legacyDomain) -> 200",
+    "old": "Json<Old.paths[\"/v1/domain/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domain/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1681,
+    "kind": "response.json",
+    "id": "get /v1/domain/{domainId}/sponsor/events (EventController_getEvents_legacyDomain) -> 200",
+    "old": "Json<Old.paths[\"/v1/domain/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domain/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1715,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/account/{entityId}/sponsorable-domains (SponsorListController_getSponsorableDomains) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/account/{entityId}/sponsorable-domains\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1731,
+    "kind": "response.json",
+    "id": "get /v1/domains/{domainId}/sponsor/events (EventController_getEvents) -> 200",
+    "old": "Json<Old.paths[\"/v1/domains/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/v1/domains/{domainId}/sponsor/events\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1849,
+    "kind": "response.json",
+    "id": "post /v1/exports/position (PositionReportController_generatePositionReport) -> 201",
+    "old": "Json<Old.paths[\"/v1/exports/position\"][\"post\"][\"responses\"][\"201\"]>",
+    "new": "Json<New.paths[\"/v1/exports/position\"][\"post\"][\"responses\"][\"201\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1856,
+    "kind": "requestBody.json",
+    "id": "post /v1/exports/movement (MovementReportController_generateMovementReport)",
+    "old": "Body<Old.paths[\"/v1/exports/movement\"][\"post\"]>",
+    "new": "Body<New.paths[\"/v1/exports/movement\"][\"post\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1858,
+    "kind": "response.json",
+    "id": "post /v1/exports/movement (MovementReportController_generateMovementReport) -> 201",
+    "old": "Json<Old.paths[\"/v1/exports/movement\"][\"post\"][\"responses\"][\"201\"]>",
+    "new": "Json<New.paths[\"/v1/exports/movement\"][\"post\"][\"responses\"][\"201\"]>"
+  },
+  {
+    "surface": "public",
+    "line": 1888,
+    "kind": "response.json",
+    "id": "post /v1/exports/position/omnibus (OmnibusPositionReportController_generateOmnibusPositionReport) -> 201",
+    "old": "Json<Old.paths[\"/v1/exports/position/omnibus\"][\"post\"][\"responses\"][\"201\"]>",
+    "new": "Json<New.paths[\"/v1/exports/position/omnibus\"][\"post\"][\"responses\"][\"201\"]>"
+  },
+  {
+    "surface": "internal",
+    "line": 35,
+    "kind": "schema",
+    "id": "Internal_ApiTicker",
+    "old": "Old.components[\"schemas\"][\"Internal_ApiTicker\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ApiTicker\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 139,
+    "kind": "schema",
+    "id": "Internal_EvaluationContext",
+    "old": "Old.components[\"schemas\"][\"Internal_EvaluationContext\"]",
+    "new": "New.components[\"schemas\"][\"Internal_EvaluationContext\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 140,
+    "kind": "schema",
+    "id": "Internal_EvaluationContextReferences",
+    "old": "Old.components[\"schemas\"][\"Internal_EvaluationContextReferences\"]",
+    "new": "New.components[\"schemas\"][\"Internal_EvaluationContextReferences\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 167,
+    "kind": "schema",
+    "id": "Internal_IntentContextResponse",
+    "old": "Old.components[\"schemas\"][\"Internal_IntentContextResponse\"]",
+    "new": "New.components[\"schemas\"][\"Internal_IntentContextResponse\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 169,
+    "kind": "schema",
+    "id": "Internal_IntentDetails",
+    "old": "Old.components[\"schemas\"][\"Internal_IntentDetails\"]",
+    "new": "New.components[\"schemas\"][\"Internal_IntentDetails\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 170,
+    "kind": "schema",
+    "id": "Internal_IntentEntity",
+    "old": "Old.components[\"schemas\"][\"Internal_IntentEntity\"]",
+    "new": "New.components[\"schemas\"][\"Internal_IntentEntity\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 223,
+    "kind": "schema",
+    "id": "Internal_Map_TransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_Map_TransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_Map_TransactionOrder\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 256,
+    "kind": "schema",
+    "id": "Internal_ProposalPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_ProposalPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ProposalPayload\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 257,
+    "kind": "schema",
+    "id": "Internal_Propose",
+    "old": "Old.components[\"schemas\"][\"Internal_Propose\"]",
+    "new": "New.components[\"schemas\"][\"Internal_Propose\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 258,
+    "kind": "schema",
+    "id": "Internal_ProposeTransactionOrderParameters",
+    "old": "Old.components[\"schemas\"][\"Internal_ProposeTransactionOrderParameters\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ProposeTransactionOrderParameters\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 259,
+    "kind": "schema",
+    "id": "Internal_ProposeUserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_ProposeUserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ProposeUserIntentPayload\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 260,
+    "kind": "schema",
+    "id": "Internal_Propose_v0_CreateTransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_Propose_v0_CreateTransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_Propose_v0_CreateTransactionOrder\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 285,
+    "kind": "schema",
+    "id": "Internal_ServicePropose",
+    "old": "Old.components[\"schemas\"][\"Internal_ServicePropose\"]",
+    "new": "New.components[\"schemas\"][\"Internal_ServicePropose\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 346,
+    "kind": "schema",
+    "id": "Internal_SubstratePallet",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstratePallet\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstratePallet\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 349,
+    "kind": "schema",
+    "id": "Internal_SubstratePallet_Staking",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstratePallet_Staking\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstratePallet_Staking\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 351,
+    "kind": "schema",
+    "id": "Internal_SubstrateStakingMethod",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstrateStakingMethod\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstrateStakingMethod\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 352,
+    "kind": "schema",
+    "id": "Internal_SubstrateStakingMethod_Bond",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstrateStakingMethod_Bond\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstrateStakingMethod_Bond\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 357,
+    "kind": "schema",
+    "id": "Internal_SubstrateStakingMethod_SetController",
+    "old": "Old.components[\"schemas\"][\"Internal_SubstrateStakingMethod_SetController\"]",
+    "new": "New.components[\"schemas\"][\"Internal_SubstrateStakingMethod_SetController\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 414,
+    "kind": "schema",
+    "id": "Internal_TransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrder\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 415,
+    "kind": "schema",
+    "id": "Internal_TransactionOrderParameters",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrderParameters\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrderParameters\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 424,
+    "kind": "schema",
+    "id": "Internal_TransactionOrderParameters_Substrate",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrderParameters_Substrate\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrderParameters_Substrate\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 427,
+    "kind": "schema",
+    "id": "Internal_TransactionOrderParameters_XRPL",
+    "old": "Old.components[\"schemas\"][\"Internal_TransactionOrderParameters_XRPL\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TransactionOrderParameters_XRPL\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 456,
+    "kind": "schema",
+    "id": "Internal_TrustedIntent",
+    "old": "Old.components[\"schemas\"][\"Internal_TrustedIntent\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TrustedIntent\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 462,
+    "kind": "schema",
+    "id": "Internal_TrustedTransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_TrustedTransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_TrustedTransactionOrder\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 470,
+    "kind": "schema",
+    "id": "Internal_UserIntentPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_UserIntentPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_UserIntentPayload\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 473,
+    "kind": "schema",
+    "id": "Internal_UserRequestPayload",
+    "old": "Old.components[\"schemas\"][\"Internal_UserRequestPayload\"]",
+    "new": "New.components[\"schemas\"][\"Internal_UserRequestPayload\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 475,
+    "kind": "schema",
+    "id": "Internal_UserRequestPayload_Propose",
+    "old": "Old.components[\"schemas\"][\"Internal_UserRequestPayload_Propose\"]",
+    "new": "New.components[\"schemas\"][\"Internal_UserRequestPayload_Propose\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 589,
+    "kind": "schema",
+    "id": "Internal_v0_CreateTransactionOrder",
+    "old": "Old.components[\"schemas\"][\"Internal_v0_CreateTransactionOrder\"]",
+    "new": "New.components[\"schemas\"][\"Internal_v0_CreateTransactionOrder\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 593,
+    "kind": "schema",
+    "id": "Internal_v0_ExecuteExtension",
+    "old": "Old.components[\"schemas\"][\"Internal_v0_ExecuteExtension\"]",
+    "new": "New.components[\"schemas\"][\"Internal_v0_ExecuteExtension\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 638,
+    "kind": "schema",
+    "id": "Notification_SignWeb",
+    "old": "Old.components[\"schemas\"][\"Notification_SignWeb\"]",
+    "new": "New.components[\"schemas\"][\"Notification_SignWeb\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 640,
+    "kind": "schema",
+    "id": "Notification_EntityToSign",
+    "old": "Old.components[\"schemas\"][\"Notification_EntityToSign\"]",
+    "new": "New.components[\"schemas\"][\"Notification_EntityToSign\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 641,
+    "kind": "schema",
+    "id": "Notification_ExtendedEntityToSign",
+    "old": "Old.components[\"schemas\"][\"Notification_ExtendedEntityToSign\"]",
+    "new": "New.components[\"schemas\"][\"Notification_ExtendedEntityToSign\"]"
+  },
+  {
+    "surface": "internal",
+    "line": 720,
+    "kind": "response.json",
+    "id": "get /internal/v1/scripting (getExampleContextV0) -> 200",
+    "old": "Json<Old.paths[\"/internal/v1/scripting\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/internal/v1/scripting\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "internal",
+    "line": 721,
+    "kind": "requestBody.json",
+    "id": "post /internal/v1/intents/context (intentContext)",
+    "old": "Body<Old.paths[\"/internal/v1/intents/context\"][\"post\"]>",
+    "new": "Body<New.paths[\"/internal/v1/intents/context\"][\"post\"]>"
+  },
+  {
+    "surface": "internal",
+    "line": 723,
+    "kind": "response.json",
+    "id": "post /internal/v1/intents/context (intentContext) -> 200",
+    "old": "Json<Old.paths[\"/internal/v1/intents/context\"][\"post\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/internal/v1/intents/context\"][\"post\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "internal",
+    "line": 747,
+    "kind": "requestBody.json",
+    "id": "post /api/notifications/sign-web (NotificationController.signWeb)",
+    "old": "Body<Old.paths[\"/api/notifications/sign-web\"][\"post\"]>",
+    "new": "Body<New.paths[\"/api/notifications/sign-web\"][\"post\"]>"
+  },
+  {
+    "surface": "internal",
+    "line": 754,
+    "kind": "response.json",
+    "id": "get /api/notifications/entity/{hash} (NotificationController.getEntity) -> 200",
+    "old": "Json<Old.paths[\"/api/notifications/entity/{hash}\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/api/notifications/entity/{hash}\"][\"get\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "internal",
+    "line": 756,
+    "kind": "response.json",
+    "id": "delete /api/notifications/entity/{hash} (NotificationController.deleteEntity) -> 200",
+    "old": "Json<Old.paths[\"/api/notifications/entity/{hash}\"][\"delete\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/api/notifications/entity/{hash}\"][\"delete\"][\"responses\"][\"200\"]>"
+  },
+  {
+    "surface": "internal",
+    "line": 760,
+    "kind": "response.json",
+    "id": "get /api/notifications/entities (NotificationController.getEntities) -> 200",
+    "old": "Json<Old.paths[\"/api/notifications/entities\"][\"get\"][\"responses\"][\"200\"]>",
+    "new": "Json<New.paths[\"/api/notifications/entities\"][\"get\"][\"responses\"][\"200\"]>"
+  }
+]
