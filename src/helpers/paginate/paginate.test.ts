@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
+
 import { CustodyError } from "../../models/custody-error.js"
 import type { CursorPage } from "./paginate.js"
 import { paginate } from "./paginate.js"

@@ -4,7 +4,10 @@
  * when the API adds a new XRPL ledger.
  */
 export type XrplLedgerId =
-  "xrpl" | "xrpl-testnet-august-2024" | "xrpl-custody-devnet" | (string & {})
+  | "xrpl"
+  | "xrpl-testnet-august-2024"
+  | "xrpl-custody-devnet"
+  | (string & {})
 
 /**
  * Known ledger IDs for non-XRPL namespaces. Trailing `(string & {})` keeps

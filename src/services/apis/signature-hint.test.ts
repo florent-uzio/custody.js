@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { signatureMismatchHint } from "./signature-hint.js"
 
 describe("signatureMismatchHint", () => {

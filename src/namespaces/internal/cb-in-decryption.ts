@@ -81,11 +81,13 @@ async function waitForCbInDecryption(
         }
       }
     } catch (error) {
-      if (!(
-        error instanceof CustodyError &&
-        !isUndefined(error.statusCode) &&
-        TRANSIENT_POLL_STATUS_CODES.includes(error.statusCode)
-      )) {
+      if (
+        !(
+          error instanceof CustodyError &&
+          !isUndefined(error.statusCode) &&
+          TRANSIENT_POLL_STATUS_CODES.includes(error.statusCode)
+        )
+      ) {
         throw error
       }
       // Transient → the decryption is not readable yet, keep polling.

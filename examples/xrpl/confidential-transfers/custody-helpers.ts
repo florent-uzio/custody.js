@@ -1,4 +1,5 @@
 import type { RippleCustody } from "@florent-uzio/custody"
+
 import { CUSTODY, POLLING } from "./config.js"
 
 /**

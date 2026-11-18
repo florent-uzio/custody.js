@@ -21,6 +21,7 @@ import {
   TrustSetFlags,
   type TrustSetFlagsInterface,
 } from "xrpl"
+
 import { isObject, isString, isUndefined } from "../../helpers/index.js"
 import { CustodyError } from "../../models/index.js"
 import type {

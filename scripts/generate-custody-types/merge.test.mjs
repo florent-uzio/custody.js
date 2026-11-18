@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { mergeOpenApiDocs, mergeOpenApiDocsBySurface } from "./merge.mjs"
 
 /** Minimal OpenAPI doc factory for tests. `v` is the x-app-version. */

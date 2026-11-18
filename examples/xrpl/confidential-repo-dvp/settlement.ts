@@ -1,5 +1,6 @@
 import { batchToCustodyBatchPayload, type RippleCustody } from "@florent-uzio/custody"
 import { BatchFlags, type Batch, type Client, type ConfidentialMPTSend } from "xrpl"
+
 import { DOMAIN_ID, LEDGER_ID, MMF_ID, RLUSD_ID, WALLET_SUBMITTER, working_data } from "./config.js"
 import { getTicket, mergeInbox, waitForIntentTransaction } from "./custody-helpers.js"
 import type { Wallet } from "./types.js"

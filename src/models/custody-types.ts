@@ -3866,7 +3866,12 @@ export interface components {
     }
     /** @enum {string} */
     Core_AccountProcessingStatus:
-      "Pending" | "Preparing" | "Tracked" | "Recovering" | "Completed" | "Interrupted"
+      | "Pending"
+      | "Preparing"
+      | "Tracked"
+      | "Recovering"
+      | "Completed"
+      | "Interrupted"
     Core_AccountProviderInformation:
       | components["schemas"]["Core_AccountProviderInformation_Vault"]
       | components["schemas"]["Core_AccountProviderInformation_External"]
@@ -4105,7 +4110,10 @@ export interface components {
     }
     /** @enum {string} */
     Core_ApiBroadcastingTransactionProcessingHint:
-      "CurrentlyFeesTooSmall" | "CurrentlyRejectedByLedger" | "InternalError" | "TransientIssue"
+      | "CurrentlyFeesTooSmall"
+      | "CurrentlyRejectedByLedger"
+      | "InternalError"
+      | "TransientIssue"
     /** @enum {string} */
     Core_ApiDryRunTransactionProcessingHint:
       | "AccountAlreadyActivatedOnLedger"
@@ -5856,7 +5864,13 @@ export interface components {
     }
     /** @enum {string} */
     Core_IntentStatus:
-      "Open" | "Approved" | "Executed" | "Failed" | "Expired" | "Rejected" | "Executing"
+      | "Open"
+      | "Approved"
+      | "Executed"
+      | "Failed"
+      | "Expired"
+      | "Rejected"
+      | "Executing"
     /** @enum {string} */
     Core_IntentType:
       | "v0_NotarizeData"
@@ -8346,7 +8360,10 @@ export interface components {
     }
     /** @enum {string} */
     Core_TrustedPublicKeyPurpose:
-      "ApiSignatures" | "TrustedCollectionSignatures" | "MessagingSignatures" | "SystemSignatures"
+      | "ApiSignatures"
+      | "TrustedCollectionSignatures"
+      | "MessagingSignatures"
+      | "SystemSignatures"
     Core_TrustedPublicKeyUpdated: {
       /** Format: base64 */
       publicKey: string
@@ -9860,10 +9877,19 @@ export interface components {
     }
     /** @enum {string} */
     CoreExtensions_InvitationStatus:
-      "Pending" | "DeviceRegistered" | "Expired" | "Cancelled" | "Completed"
+      | "Pending"
+      | "DeviceRegistered"
+      | "Expired"
+      | "Cancelled"
+      | "Completed"
     /** @enum {string} */
     CoreExtensions_InvitationStatusQuery:
-      "Pending" | "DeviceRegistered" | "Expired" | "Cancelled" | "Completed" | "Active"
+      | "Pending"
+      | "DeviceRegistered"
+      | "Expired"
+      | "Cancelled"
+      | "Completed"
+      | "Active"
     CoreExtensions_Metadata: {
       /** Format: date-time */
       createdAt: string
@@ -10145,7 +10171,11 @@ export interface components {
     }
     /** @enum {string} */
     VirtualAccounting_VirtualAccountSortBy:
-      "Id" | "Alias" | "VirtualLedgerId" | "CreatedAt" | "LastUpdatedAt"
+      | "Id"
+      | "Alias"
+      | "VirtualLedgerId"
+      | "CreatedAt"
+      | "LastUpdatedAt"
     VirtualAccounting_VirtualAccountUpdate: {
       alias: string
       description: string
@@ -10278,7 +10308,11 @@ export interface components {
     Compliance_RiskLevelAction_Elliptic: {
       /** @enum {string} */
       condition:
-        "EQUALS" | "GREATER_THAN" | "LESS_THAN" | "GREATER_THAN_OR_EQUALS" | "LESS_THAN_OR_EQUALS"
+        | "EQUALS"
+        | "GREATER_THAN"
+        | "LESS_THAN"
+        | "GREATER_THAN_OR_EQUALS"
+        | "LESS_THAN_OR_EQUALS"
       threshold: number
       /** @enum {string} */
       action: "APPROVE" | "REJECT" | "REQUIRE_EXPLICIT_DECISION"
@@ -10348,7 +10382,8 @@ export interface components {
       permissions: Record<string, never>
       childrenDomainIds?: string[]
       additionalPolicies?: (
-        "ADD_POLICY_FOR_OUTGOING_ORDERS" | "ADD_POLICY_FOR_AUTOMATIC_RELEASE_QUARANTINED_TRANSFERS"
+        | "ADD_POLICY_FOR_OUTGOING_ORDERS"
+        | "ADD_POLICY_FOR_AUTOMATIC_RELEASE_QUARANTINED_TRANSFERS"
       )[]
     }
     Compliance_User: {
@@ -10488,7 +10523,13 @@ export interface components {
           screeningStatus: string
           /** @enum {string} */
           riskLevel?:
-            "UNKNOWN" | "SEVERE" | "HIGH" | "MEDIUM" | "LOW" | "NO_RISK_DETECTED" | "NOT_SCREENABLE"
+            | "UNKNOWN"
+            | "SEVERE"
+            | "HIGH"
+            | "MEDIUM"
+            | "LOW"
+            | "NO_RISK_DETECTED"
+            | "NOT_SCREENABLE"
           screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Chainalysis"]
         }
     Compliance_ComplianceAnalysisResponse: {
@@ -10564,7 +10605,13 @@ export interface components {
           warningDetails?: string
           /** @enum {string} */
           riskLevel?:
-            "UNKNOWN" | "SEVERE" | "HIGH" | "MEDIUM" | "LOW" | "NO_RISK_DETECTED" | "NOT_SCREENABLE"
+            | "UNKNOWN"
+            | "SEVERE"
+            | "HIGH"
+            | "MEDIUM"
+            | "LOW"
+            | "NO_RISK_DETECTED"
+            | "NOT_SCREENABLE"
           screeningDetail?: components["schemas"]["Compliance_ScreeningDetail_Chainalysis"]
         }
       | {
@@ -11887,7 +11934,8 @@ export interface components {
       domainId: string
     }
     Core_IntentBody:
-      components["schemas"]["Core_SystemSigned"] | components["schemas"]["Core_UserSigned"]
+      | components["schemas"]["Core_SystemSigned"]
+      | components["schemas"]["Core_UserSigned"]
     Core_IntentDryRunResponse_v0_RegisterTrustedPublicKey: {
       success: boolean
       errors?: string[]
@@ -12322,7 +12370,12 @@ export interface components {
       transferId: string
       /** @enum {string} */
       status:
-        "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED" | "PENDING_VERIFICATION"
+        | "PENDING"
+        | "IN_PROGRESS"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "PENDING_VERIFICATION"
       sourceTenant: components["schemas"]["Omnibus_TenantRef"]
       destTenant: components["schemas"]["Omnibus_TenantRef"]
       /** @description Transfer amount in the ticker's smallest unit (positive integer string) */
@@ -14765,7 +14818,12 @@ export interface operations {
         startingAfter?: string
         /** @description Property name used to sort the query results. */
         sortBy?:
-          "id" | "parentId" | "alias" | "lock" | "metadata.createdAt" | "metadata.lastModifiedAt"
+          | "id"
+          | "parentId"
+          | "alias"
+          | "lock"
+          | "metadata.createdAt"
+          | "metadata.lastModifiedAt"
         /** @description Sort order applied to the query results. */
         sortOrder?: components["schemas"]["Core_SortOrder"]
         /**
@@ -15405,7 +15463,12 @@ export interface operations {
         startingAfter?: string
         /** @description Property name used to sort the query results. */
         sortBy?:
-          "id" | "alias" | "ledgerId" | "lock" | "metadata.createdAt" | "metadata.lastModifiedAt"
+          | "id"
+          | "alias"
+          | "ledgerId"
+          | "lock"
+          | "metadata.createdAt"
+          | "metadata.lastModifiedAt"
         /** @description Sort order applied to the query results. */
         sortOrder?: components["schemas"]["Core_SortOrder"]
         /**
@@ -16681,7 +16744,13 @@ export interface operations {
         startingAfter?: string
         /** @description Property name used to sort the query results. */
         sortBy?:
-          "id" | "transactionId" | "tickerId" | "quarantined" | "value" | "kind" | "registeredAt"
+          | "id"
+          | "transactionId"
+          | "tickerId"
+          | "quarantined"
+          | "value"
+          | "kind"
+          | "registeredAt"
         /** @description Sort order applied to the query results. */
         sortOrder?: components["schemas"]["Core_SortOrder"]
         /**
@@ -21995,7 +22064,10 @@ export interface operations {
         startingAfter?: string
         /** @description Property name used to sort the query results. */
         sortBy?:
-          "data.id" | "data.alias" | "data.metadata.createdAt" | "data.metadata.lastModifiedAt"
+          | "data.id"
+          | "data.alias"
+          | "data.metadata.createdAt"
+          | "data.metadata.lastModifiedAt"
         /** @description Sort order applied to the query results. */
         sortOrder?: components["schemas"]["Core_SortOrder"]
         /**
@@ -22725,7 +22797,12 @@ export interface operations {
         /** @description Restrict tenantId filter to SOURCE or DEST role; requires tenantId */
         role?: "SOURCE" | "DEST"
         status?: (
-          "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED" | "PENDING_VERIFICATION"
+          | "PENDING"
+          | "IN_PROGRESS"
+          | "COMPLETED"
+          | "FAILED"
+          | "CANCELLED"
+          | "PENDING_VERIFICATION"
         )[]
         tickerId?: string
         /** @description Filter by one or more ledgers (OR semantics). */

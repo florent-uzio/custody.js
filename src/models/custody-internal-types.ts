@@ -2105,7 +2105,13 @@ export interface components {
     }
     /** @enum {string} */
     Internal_IntentStatus:
-      "Open" | "Approved" | "Executed" | "Failed" | "Expired" | "Rejected" | "Executing"
+      | "Open"
+      | "Approved"
+      | "Executed"
+      | "Failed"
+      | "Expired"
+      | "Rejected"
+      | "Executing"
     /** @enum {string} */
     Internal_IntentType:
       | "v0_NotarizeData"
@@ -2712,7 +2718,8 @@ export interface components {
      */
     Internal_PreferredAddressForChange: "PrimaryAddress"
     Internal_ProposalPayload:
-      components["schemas"]["Internal_Propose"] | components["schemas"]["Internal_ServicePropose"]
+      | components["schemas"]["Internal_Propose"]
+      | components["schemas"]["Internal_ServicePropose"]
     Internal_Propose: {
       author: components["schemas"]["Internal_UserReference"]
       /** Format: date-time */
@@ -3315,7 +3322,8 @@ export interface components {
       signedPayload: string
     }
     Internal_Submitter:
-      components["schemas"]["Internal_Service"] | components["schemas"]["Internal_User1"]
+      | components["schemas"]["Internal_Service"]
+      | components["schemas"]["Internal_User1"]
     Internal_SubstrateBalancesMethod: components["schemas"]["Internal_SubstrateBalancesMethod_TransferKeepAlive"]
     Internal_SubstrateBalancesMethod_TransferKeepAlive: {
       destination: components["schemas"]["Internal_TransactionDestination"]
@@ -4290,7 +4298,10 @@ export interface components {
     }
     /** @enum {string} */
     Internal_TrustedPublicKeyPurpose:
-      "ApiSignatures" | "TrustedCollectionSignatures" | "MessagingSignatures" | "SystemSignatures"
+      | "ApiSignatures"
+      | "TrustedCollectionSignatures"
+      | "MessagingSignatures"
+      | "SystemSignatures"
     Internal_TrustedPublicKeyUpdated: {
       /** Format: base64 */
       publicKey: string
@@ -4666,7 +4677,10 @@ export interface components {
       | components["schemas"]["Internal_VaultAccountProviderInformation_Key_VaultRandom"]
     /** @enum {string} */
     Internal_VaultAccountProviderInformation_KeyId:
-      "SECP256K1_CUSTODY_1" | "ED25519_CUSTODY_1" | "ED25519_CUSTODY_2" | "ED25519_STAKING_1"
+      | "SECP256K1_CUSTODY_1"
+      | "ED25519_CUSTODY_1"
+      | "ED25519_CUSTODY_2"
+      | "ED25519_STAKING_1"
     Internal_VaultAccountProviderInformation_Key_VaultDerived: {
       id: components["schemas"]["Internal_VaultAccountProviderInformation_KeyId"]
       derivationPath: string

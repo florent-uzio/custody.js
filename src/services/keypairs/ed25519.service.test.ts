@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest"
+
 import { CustodyError } from "../../models/custody-error.js"
 import { Ed25519Service } from "./ed25519.service"
 

@@ -1,4 +1,5 @@
 import type { RippleCustody } from "@florent-uzio/custody"
+
 import type { Participant } from "./accounts.js"
 import { CUSTODY, POLLING, TOKEN } from "./config.js"
 import { address, releaseQuarantine, submit, tokenId } from "./custody-helpers.js"

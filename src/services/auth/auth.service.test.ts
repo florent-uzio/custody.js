@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
 import { DEFAULT_TIMEOUT_MS } from "../../constants/index.js"
 import { CustodyError } from "../../models/custody-error.js"
 import { AuthService } from "./auth.service.js"

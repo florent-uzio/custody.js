@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+
 import { diffOpenApiSpecs, formatDiff } from "./diff-openapi.mjs"
 
 function doc(v, { paths = {}, schemas = {} } = {}) {

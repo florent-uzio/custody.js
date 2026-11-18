@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript"],
+  "categories": { "correctness": "off" },
+  "ignorePatterns": [
+    "src/models/custody-types.ts",
+    "src/models/custody-internal-types.ts",
+    "src/models/capabilities.generated.ts",
+    "src/main.ts",
+    "src/main.helpers.ts"
+  ],
+  "rules": {
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/await-thenable": "error",
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+  }
+}

@@ -1,5 +1,7 @@
 import crypto from "crypto"
+
 import { describe, expect, it } from "vitest"
+
 import { CustodyError } from "../../models/custody-error.js"
 import { KeypairService } from "./keypair.service.js"
 import type { KeypairAlgorithm } from "./keypairs.types.js"

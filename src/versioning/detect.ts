@@ -1,4 +1,5 @@
 import axios from "axios"
+
 import type { ApiSurface, ResolvedCapabilities } from "./version-guard.js"
 
 /**

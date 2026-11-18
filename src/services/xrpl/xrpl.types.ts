@@ -15,6 +15,7 @@ import type {
   TicketCreate,
   TrustSet,
 } from "xrpl"
+
 import type { components } from "../../models/custody-types.js"
 import type { DomainUserReference } from "../../models/domain-resolver.js"
 import type { XrplLedgerId } from "../../models/ledger-ids.js"

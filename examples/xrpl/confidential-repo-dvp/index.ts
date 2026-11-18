@@ -1,6 +1,7 @@
 import { RippleCustody } from "@florent-uzio/custody"
 import "dotenv/config"
 import { Client } from "xrpl"
+
 import {
   DOMAIN_ID,
   MMF_ID,
