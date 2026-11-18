@@ -3,16 +3,19 @@
   "version": "3.0.0",
   "description": "An SDK to interact with the Ripple Custody API",
   "keywords": [
-    "Ripple Custody",
-    "Custody"
+    "Custody",
+    "Ripple Custody"
   ],
   "homepage": "https://github.com/florent-uzio/custody.js",
+  "license": "MIT",
+  "author": "Florent Uzio",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/florent-uzio/custody.js"
   },
-  "license": "MIT",
-  "author": "Florent Uzio",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,9 +26,6 @@
     },
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -46,7 +46,6 @@
     "release": "changeset publish",
     "prepublishOnly": "npm run build && npm run check-format && npm run test",
     "sandbox": "tsx --env-file=.env sandbox/main.ts",
-    "sort-package": "npx sort-package-json",
     "test": "vitest run --reporter verbose",
     "test:coverage": "vitest run --coverage",
     "test:coverage:ui": "vitest --coverage --ui",

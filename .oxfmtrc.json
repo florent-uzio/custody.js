@@ -3,7 +3,7 @@
   "semi": false,
   "tabWidth": 2,
   "printWidth": 100,
-  "sortPackageJson": false,
+  "sortPackageJson": true,
   "ignorePatterns": ["CHANGELOG.md", ".changeset/pre.json", "openapi/"],
   "sortImports": {}
 }
