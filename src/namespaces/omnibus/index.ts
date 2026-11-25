@@ -11,6 +11,8 @@ import type {
   ListOmnibusDepositWalletsQueryParams,
   ListOmnibusInternalTransfersPathParams,
   ListOmnibusInternalTransfersQueryParams,
+  ListOmnibusTransfersPathParams,
+  ListOmnibusTransfersQueryParams,
   LockOmnibusPathParams,
   Omnibus_CreateOmnibusRequest,
   Omnibus_CreateOmnibusResponse,
@@ -19,6 +21,7 @@ import type {
   Omnibus_InternalTransferResponse,
   Omnibus_OmnibusHierarchyResponse,
   Omnibus_OmnibusResponse,
+  Omnibus_OmnibusTransferPageResponse,
   Omnibus_UpdateOmnibusRequest,
   UnlockOmnibusPathParams,
   UpdateOmnibusPathParams,
@@ -74,6 +77,11 @@ export function createOmnibus(t: Transport) {
     getInternalTransfer: (
       params: GetOmnibusInternalTransferPathParams,
     ): Promise<Omnibus_InternalTransferResponse> => t.get(URLs.omnibusInternalTransfer, params),
+
+    listTransfers: (
+      params: ListOmnibusTransfersPathParams,
+      query?: ListOmnibusTransfersQueryParams,
+    ): Promise<Omnibus_OmnibusTransferPageResponse> => t.get(URLs.omnibusTransfers, params, query),
 
     listDepositWallets: (
       params: ListOmnibusDepositWalletsPathParams,

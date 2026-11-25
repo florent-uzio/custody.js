@@ -3573,6 +3573,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/domains/{domainId}/omnibus/{omnibusId}/transfers": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List every transfer leg of an omnibus structure created in a time window (paginated, totals always populated)
+     * @description Read-only listing of the omnibus transfer table for bulk/reconciliation consumers (e.g. Portfolio Data Export). Returns every persisted ONCHAIN and OFFCHAIN leg whose source or destination tenant belongs to the structure, regardless of status, with the operation header left-joined (null on deposit legs, which carry no operation since deposits stopped creating one) and the source / destination tenant refs left-joined (null where the leg has no tenant on that side). The window is on createdAt (omnibus server time), half-open [createdAfter, createdBefore), required on both ends and at most 31 days wide. Results are sorted by (createdAt, id) ascending with no sort parameter, and totalElements/totalPages are populated on every page so a consumer can detect a partial read by comparing them across pages. A page walk is stable when no status filter is given and createdBefore is at least 60 seconds in the past: a leg becomes visible only once committed, so a bound inside the last minute (commit latency, replica clock skew) can admit a late row into a page already read. With transferStatuses or operationStatuses a leg changing state between two page reads shifts the rows after it, which the totals may not reveal; treat such a walk as a snapshot and restart it when totalElements changes. The response reflects committed state at request time; nothing is derived server-side. No balances and no addresses other than destAddress are returned.
+     */
+    get: operations["getOmnibusTransfers"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/v1/domains/{domainId}/accounts/{accountId}/sponsorships": {
     parameters: {
       query?: never
@@ -13557,6 +13577,70 @@ export interface components {
        */
       type: "VaultReserved"
     }
+    Omnibus_JsonNullableOffsetDateTime: {
+      present?: boolean
+    }
+    Omnibus_JsonNullableOmnibusTransferOperation: {
+      present?: boolean
+    }
+    Omnibus_JsonNullableString: {
+      present?: boolean
+    }
+    Omnibus_JsonNullableTenantRef: {
+      present?: boolean
+    }
+    Omnibus_OmnibusTransferPageResponse: {
+      omnibus: components["schemas"]["Omnibus_OmnibusTransferStructure"]
+      content: components["schemas"]["Omnibus_OmnibusTransferSummary"][]
+      page: components["schemas"]["Omnibus_PageMetadata"]
+    }
+    /** @description Structure header, repeated on every page. */
+    Omnibus_OmnibusTransferStructure: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      domainId: string
+      /**
+       * Format: uuid
+       * @description The omnibus wallet's custody account.
+       */
+      custodyAccountId: string
+      hostTenantId?: components["schemas"]["Omnibus_JsonNullableUUID"]
+    }
+    /** @description One transfer leg as persisted, with its operation header and tenant refs joined. */
+    Omnibus_OmnibusTransferSummary: {
+      /** Format: uuid */
+      transferId: string
+      /** @enum {string} */
+      transferType: "ONCHAIN" | "OFFCHAIN"
+      /** @enum {string} */
+      transferStatus:
+        | "PENDING"
+        | "READY_FOR_SWEEP"
+        | "SWEEPING"
+        | "CONFIRMED"
+        | "FAILED"
+        | "PENDING_VERIFICATION"
+      sourceTenant?: components["schemas"]["Omnibus_JsonNullableTenantRef"]
+      destTenant?: components["schemas"]["Omnibus_JsonNullableTenantRef"]
+      /** Format: uuid */
+      tickerId: string
+      ledgerId: string
+      /** @description Transfer amount in the ticker's smallest unit (non-negative integer string). */
+      amount: string
+      /** @description Network fee charged to the host tenant on this leg, in the ticker's smallest unit; "0" when none was recorded. Carried as stored, independent of the leg's status. */
+      feeAmount: string
+      destAddress?: components["schemas"]["Omnibus_JsonNullableString"]
+      custodyTransferId?: components["schemas"]["Omnibus_JsonNullableUUID"]
+      custodyTransactionId?: components["schemas"]["Omnibus_JsonNullableUUID"]
+      custodyTransactionOrderId?: components["schemas"]["Omnibus_JsonNullableUUID"]
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+      confirmedAt?: components["schemas"]["Omnibus_JsonNullableOffsetDateTime"]
+      operation?: components["schemas"]["Omnibus_JsonNullableOmnibusTransferOperation"]
+    }
     Core_ApiBatchSignerSigningData: {
       participant: components["schemas"]["Core_Participant"]
       account: string
@@ -23503,6 +23587,90 @@ export interface operations {
            *     }
            */
           "application/json": components["schemas"]["Export_ExportErrorDto"]
+        }
+      }
+    }
+  }
+  getOmnibusTransfers: {
+    parameters: {
+      query: {
+        /** @description Inclusive lower bound on the transfer's createdAt. */
+        createdAfter: string
+        /** @description Exclusive upper bound on the transfer's createdAt. Must be strictly after createdAfter and at most 31 days after it, else 400. For a stable page walk set it at least 60 seconds before the current time. */
+        createdBefore: string
+        /** @description Restricts results to these transfer types. Absent means both. */
+        transferTypes?: ("ONCHAIN" | "OFFCHAIN")[]
+        /** @description Restricts results to these transfer statuses. Absent means all. */
+        transferStatuses?: (
+          | "PENDING"
+          | "READY_FOR_SWEEP"
+          | "SWEEPING"
+          | "CONFIRMED"
+          | "FAILED"
+          | "PENDING_VERIFICATION"
+        )[]
+        /** @description Restricts results to legs whose operation header is in one of these statuses. Absent means all. Deposit legs never match: they carry no header, or a legacy DEPOSIT header that this filter ignores, so they are excluded whenever the filter is given; use transferStatuses to select deposits by state. PENDING also matches the internal RECEIVED intake state, which this API surfaces as PENDING. */
+        operationStatuses?: (
+          | "PENDING"
+          | "IN_PROGRESS"
+          | "COMPLETED"
+          | "FAILED"
+          | "CANCELLED"
+          | "PENDING_VERIFICATION"
+        )[]
+        /** @description Restricts results to legs involving this tenant. */
+        tenantId?: string
+        /** @description Restricts the tenantId filter to legs where the tenant is the source or the destination. Absent means either side. Requires tenantId, else 400. */
+        role?: "SOURCE" | "DEST"
+        /** @description Restricts results to these tickers (OR semantics). At most 100. */
+        tickerIds?: string[]
+        page?: number
+        /** @description Page size, at most 1000. Absent means the server's configured default applies (currently 20; runtime-configurable, not a fixed contract value). */
+        size?: number
+      }
+      header?: never
+      path: {
+        domainId: string
+        omnibusId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusTransferPageResponse"]
+        }
+      }
+      /** @description Invalid request parameters: createdAfter not before createdBefore, window wider than 31 days, role without tenantId, size above 1000, more than 100 tickerIds, or page × size beyond 2^31 - 1 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusTransferPageResponse"]
+        }
+      }
+      /** @description Domain or omnibus structure not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusTransferPageResponse"]
+        }
+      }
+      /** @description The listing did not complete within the server's bounded query time (10 s by default); nothing was returned, retry later or narrow the window */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["Omnibus_OmnibusTransferPageResponse"]
         }
       }
     }

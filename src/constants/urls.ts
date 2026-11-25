@@ -218,6 +218,7 @@ export const URLs = createURLs({
   omnibusInternalTransfers: "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers",
   omnibusInternalTransfer:
     "/v1/domains/{domainId}/omnibus/{omnibusId}/internal-transfers/{operationId}",
+  omnibusTransfers: "/v1/domains/{domainId}/omnibus/{omnibusId}/transfers",
   omnibusDepositWallets: "/v1/domains/{domainId}/omnibus/{omnibusId}/deposit-wallets",
   omnibusTenants: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants",
   omnibusTenant: "/v1/domains/{domainId}/omnibus/{omnibusId}/tenants/{tenantId}",

@@ -26,6 +26,10 @@ export type ListOmnibusInternalTransfersQueryParams =
 export type GetOmnibusInternalTransferPathParams =
   operations["getInternalTransfer"]["parameters"]["path"]
 
+export type ListOmnibusTransfersPathParams = operations["getOmnibusTransfers"]["parameters"]["path"]
+export type ListOmnibusTransfersQueryParams =
+  operations["getOmnibusTransfers"]["parameters"]["query"]
+
 export type ListOmnibusDepositWalletsPathParams =
   operations["listDepositWallets"]["parameters"]["path"]
 export type ListOmnibusDepositWalletsQueryParams =
@@ -63,6 +67,8 @@ export type Omnibus_OmnibusHierarchyResponse =
 export type Omnibus_CreateOmnibusRequest = components["schemas"]["Omnibus_CreateOmnibusRequest"]
 export type Omnibus_CreateOmnibusResponse = components["schemas"]["Omnibus_CreateOmnibusResponse"]
 export type Omnibus_UpdateOmnibusRequest = components["schemas"]["Omnibus_UpdateOmnibusRequest"]
+export type Omnibus_OmnibusTransferPageResponse =
+  components["schemas"]["Omnibus_OmnibusTransferPageResponse"]
 export type Omnibus_InternalTransferPageResponse =
   components["schemas"]["Omnibus_InternalTransferPageResponse"]
 export type Omnibus_DepositWalletSummaryPageResponse =
