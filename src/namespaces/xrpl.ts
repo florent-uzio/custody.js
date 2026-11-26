@@ -26,10 +26,17 @@ import type {
   WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
+  XrplReleaseQuarantinedTransfersAndWaitOptions,
+  XrplReleaseQuarantinedTransfersOptions,
+  XrplReleaseQuarantinedTransfersParams,
   XrplService,
   XrplTransactionOrderParams,
 } from "../services/xrpl/index.js"
 import type { Core_IntentResponse } from "./intents.types.js"
+import type {
+  ReleaseQuarantinedTransfersAndWaitResult,
+  ReleaseQuarantinedTransfersResult,
+} from "./transactions.types.js"
 
 /**
  * XRPL namespace — propose XRPL transaction intents, raw-sign transactions,
@@ -103,6 +110,60 @@ export function createXrpl(getService: () => XrplService) {
       params: XrplTransactionOrderParams,
       options?: ProposeIntentAndWaitOptions,
     ): Promise<ProposeIntentAndWaitResult> => getService().proposeIntentAndWait(params, options),
+
+    /**
+     * Release the transfers Ripple Custody holds in quarantine for an XRPL
+     * address, so the funds become spendable.
+     *
+     * A quarantined amount is unavailable: spending it fails the dry run with
+     * `CurrentlyNotEnoughFunds` although the funds are on the ledger. Resolves
+     * the address to its account, finds the quarantined transfers across every
+     * page, and proposes one `v0_ReleaseQuarantinedTransfers` intent.
+     *
+     * A release bypasses custody's compliance review of those transfers, so
+     * pass explicit `transferIds` or `all: true` — there is no default. Narrow
+     * `all: true` with `issuanceId` (both of an MPT issuance's tickers) or
+     * `tickerId` (XRP, IOUs). Proposes nothing (`proposed: false`) when nothing
+     * is quarantined.
+     *
+     * ```ts
+     * const result = await custody.xrpl.releaseQuarantinedTransfers({
+     *   address: "r...",
+     *   all: true,
+     *   issuanceId: "00000AA1...",
+     * })
+     * if (result.proposed) console.log(result.intentId, result.transferIds)
+     * ```
+     *
+     * @param params - The address, and which of its quarantined transfers to release
+     * @param options - Envelope fields, and `domainId` / `ledgerId` when the
+     *   address alone is ambiguous
+     * @returns `proposed: false` when there was nothing to release; otherwise
+     *   the release intent's ids and the transfers it covers
+     */
+    releaseQuarantinedTransfers: async (
+      params: XrplReleaseQuarantinedTransfersParams,
+      options?: XrplReleaseQuarantinedTransfersOptions,
+    ): Promise<ReleaseQuarantinedTransfersResult> =>
+      getService().releaseQuarantinedTransfers(params, options),
+
+    /**
+     * `releaseQuarantinedTransfers`, then wait for the release intent to reach
+     * a terminal status. A release has no ledger transaction, so it is done
+     * when its intent is. Defaults to 10 attempts 3s apart: fine for
+     * auto-approved policies and tests, not for a human approver — in
+     * production prefer `releaseQuarantinedTransfers` and follow the intent up.
+     *
+     * @param params - The address, and which of its quarantined transfers to release
+     * @param options - Envelope fields, address disambiguation, and polling
+     * @returns `proposed: false` when there was nothing to release; otherwise
+     *   the intent's wait outcome, its ids and the transfers it covers
+     */
+    releaseQuarantinedTransfersAndWait: async (
+      params: XrplReleaseQuarantinedTransfersParams,
+      options?: XrplReleaseQuarantinedTransfersAndWaitOptions,
+    ): Promise<ReleaseQuarantinedTransfersAndWaitResult> =>
+      getService().releaseQuarantinedTransfersAndWait(params, options),
 
     /**
      * Provision the ElGamal key pair a confidential MPT (cMPT) account needs.

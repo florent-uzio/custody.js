@@ -14,10 +14,13 @@ import type {
   Core_ProposeIntentBody,
   Core_TrustedIntent,
 } from "../../namespaces/intents.types.js"
+import type { XrplMptIssuanceTickers } from "../../namespaces/tickers.types.js"
 import type {
   Core_TransactionDetails,
   Core_TransactionsCollection,
+  Core_TransfersCollection,
   GetTransactionsQueryParams,
+  TransferTransactionOrderQueryParams,
 } from "../../namespaces/transactions.types.js"
 import type { IntentContext } from "./xrpl.types.js"
 
@@ -97,4 +100,21 @@ export interface XrplPorts {
    * Wraps GET /v1/domains/{domainId}/transactions/{transactionId}.
    */
   getTransaction(domainId: string, transactionId: string): Promise<Core_TransactionDetails>
+
+  /**
+   * Lists one page of the domain's transfers, filtered by the given query (the
+   * SDK uses it to find an account's quarantined transfers).
+   * Wraps GET /v1/domains/{domainId}/transactions/transfers.
+   */
+  listTransfers(
+    domainId: string,
+    query: TransferTransactionOrderQueryParams,
+  ): Promise<Core_TransfersCollection>
+
+  /**
+   * Finds the custody ticker(s) of an XRPL MPT issuance on a ledger: the public
+   * one and, when the issuance is confidential, the confidential one.
+   * Wraps `tickers.findByXrplMptIssuanceId` (GET /v1/tickers, every page).
+   */
+  findMptTickers(issuanceId: string, ledgerId: string): Promise<XrplMptIssuanceTickers>
 }

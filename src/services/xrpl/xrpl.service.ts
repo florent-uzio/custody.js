@@ -11,7 +11,16 @@ import type {
   Core_IntentResponse,
   Core_ProposeIntentBody,
 } from "../../namespaces/intents.types.js"
-import { waitForOrderTransaction } from "../../namespaces/transactions.js"
+import {
+  collectQuarantinedTransferIds,
+  explicitTransferIds,
+  releasePayload,
+  waitForOrderTransaction,
+} from "../../namespaces/transactions.js"
+import type {
+  ReleaseQuarantinedTransfersAndWaitResult,
+  ReleaseQuarantinedTransfersResult,
+} from "../../namespaces/transactions.types.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
 import { isPresent, isSendCryptographicFields } from "./xrpl.adapters.js"
 import {
@@ -53,6 +62,9 @@ import type {
   WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
+  XrplReleaseQuarantinedTransfersAndWaitOptions,
+  XrplReleaseQuarantinedTransfersOptions,
+  XrplReleaseQuarantinedTransfersParams,
   XrplTransactionOrderParams,
 } from "./xrpl.types.js"
 import { validateBatchSequencing } from "./xrpl.validators.js"
@@ -303,6 +315,177 @@ export class XrplService {
     }
 
     return response
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Quarantine
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Releases the transfers Ripple Custody holds in quarantine for an XRPL
+   * address, so the funds become spendable.
+   *
+   * Custody quarantines incoming transfers for compliance review. Until they
+   * are released the amount is unavailable, and spending it fails the dry run
+   * with `CurrentlyNotEnoughFunds` although the funds are on the ledger.
+   *
+   * Resolves the address to its custody account, finds the quarantined
+   * transfers (across every page) and proposes one `v0_ReleaseQuarantinedTransfers`
+   * intent for them. With `issuanceId`, both of the issuance's tickers are
+   * covered — the public one and, when the issuance is confidential, the
+   * confidential one.
+   *
+   * A release bypasses the compliance review of those transfers, so the
+   * selection has no default: pass explicit `transferIds` or `all: true`.
+   *
+   * Proposes nothing when nothing is quarantined (`proposed: false`). Custody
+   * registers an incoming transfer a few seconds after the ledger validates
+   * it, so straight after a receive that can be the answer; retrying is the
+   * caller's call.
+   *
+   * @param params - The address, and which of its quarantined transfers to release
+   * @param options - Envelope fields, and `domainId` / `ledgerId` when the
+   *   address alone is ambiguous
+   * @returns `proposed: false` when there was nothing to release; otherwise
+   *   the release intent's ids and the transfers it covers
+   * @throws {CustodyError} If the address is invalid or resolves to no or
+   *   several accounts, the selection names neither `transferIds` nor
+   *   `all: true`, custody has no ticker for `issuanceId`, or the propose call
+   *   is rejected
+   */
+  public async releaseQuarantinedTransfers(
+    params: XrplReleaseQuarantinedTransfersParams,
+    options: XrplReleaseQuarantinedTransfersOptions = {},
+  ): Promise<ReleaseQuarantinedTransfersResult> {
+    const { context, transferIds } = await this.selectQuarantinedTransfers(
+      params,
+      options,
+      "xrpl.releaseQuarantinedTransfers",
+    )
+    const { domainId } = context
+
+    if (transferIds.length === 0) return { proposed: false, transferIds: [], domainId }
+
+    const result = await this.proposeRelease(context, transferIds, options)
+    return { ...result, domainId, proposed: true, transferIds }
+  }
+
+  /**
+   * {@link releaseQuarantinedTransfers}, then waits for the release intent to
+   * reach a terminal status. A release has no ledger transaction behind it, so
+   * it is finished when its intent is.
+   *
+   * The default wait is 10 attempts 3s apart. A release gated on a custodian
+   * approving it can take minutes: `isTerminal: false` then means "still
+   * awaiting approval", not "failed". In production prefer
+   * {@link releaseQuarantinedTransfers} and follow the intent up later.
+   *
+   * @param params - The address, and which of its quarantined transfers to release
+   * @param options - Envelope fields, address disambiguation, and polling
+   * @returns `proposed: false` when there was nothing to release; otherwise
+   *   the intent's wait outcome, its ids and the transfers it covers
+   * @throws {CustodyError} As {@link releaseQuarantinedTransfers}, or if the
+   *   intent is never registered
+   */
+  public async releaseQuarantinedTransfersAndWait(
+    params: XrplReleaseQuarantinedTransfersParams,
+    options: XrplReleaseQuarantinedTransfersAndWaitOptions = {},
+  ): Promise<ReleaseQuarantinedTransfersAndWaitResult> {
+    const { context, transferIds } = await this.selectQuarantinedTransfers(
+      params,
+      options,
+      "xrpl.releaseQuarantinedTransfersAndWait",
+    )
+    const { domainId } = context
+
+    if (transferIds.length === 0) return { proposed: false, transferIds: [], domainId }
+
+    const { intentId, requestId } = await this.proposeRelease(context, transferIds, options)
+    const outcome = await waitForExecution(
+      () => this.ports.getIntent(domainId, intentId),
+      intentId,
+      options,
+    )
+
+    return { ...outcome, intentId, requestId, domainId, proposed: true, transferIds }
+  }
+
+  /**
+   * Resolves the address and turns the selection into transfer ids: explicit
+   * ids as given, otherwise every quarantined transfer of the account,
+   * narrowed to the issuance's tickers or the given ticker.
+   * @private
+   */
+  private async selectQuarantinedTransfers(
+    params: XrplReleaseQuarantinedTransfersParams,
+    options: XrplReleaseQuarantinedTransfersOptions,
+    method: string,
+  ): Promise<{ context: IntentContext; transferIds: string[] }> {
+    assertValidAddress(params.address)
+    const explicit = explicitTransferIds(params, method)
+
+    const context = await this.ports.resolveContext(params.address, {
+      domainId: options.domainId,
+      ledgerId: options.ledgerId,
+    })
+
+    if (!isUndefined(explicit)) return { context, transferIds: explicit }
+
+    const tickerIds = await this.quarantineTickerIds(params, context)
+    const transferIds = await collectQuarantinedTransferIds(
+      (query) => this.ports.listTransfers(context.domainId, query),
+      context.accountId,
+      tickerIds,
+    )
+
+    return { context, transferIds }
+  }
+
+  /**
+   * The tickers an `all: true` release is narrowed to: both of an issuance's
+   * tickers, the given ticker, or `undefined` for no narrowing.
+   * @private
+   */
+  private async quarantineTickerIds(
+    params: XrplReleaseQuarantinedTransfersParams,
+    context: IntentContext,
+  ): Promise<string[] | undefined> {
+    if (!isUndefined(params.tickerId)) return [params.tickerId]
+    if (isUndefined(params.issuanceId)) return undefined
+
+    const tickers = await this.ports.findMptTickers(params.issuanceId, context.ledgerId)
+    const tickerIds = [tickers.public?.id, tickers.confidential?.id].filter(isPresent)
+
+    if (tickerIds.length === 0) {
+      throw new CustodyError({
+        reason:
+          `No custody ticker found for XRPL MPT issuance ${params.issuanceId} ` +
+          `on ledger ${context.ledgerId}, so there are no transfers of it to release.`,
+      })
+    }
+
+    return tickerIds
+  }
+
+  /**
+   * Builds and submits the release intent for the resolved account.
+   * @private
+   */
+  private async proposeRelease(
+    context: IntentContext,
+    transferIds: string[],
+    options: XrplReleaseQuarantinedTransfersOptions,
+  ): Promise<{ intentId: string; requestId: string }> {
+    const requestEnvelope = buildRequestEnvelope(
+      context,
+      options,
+      releasePayload(context.accountId, transferIds),
+    )
+    const { requestId } = await this.ports.submitIntent({
+      request: { ...requestEnvelope, type: "Propose" },
+    })
+
+    return { intentId: requestEnvelope.id, requestId }
   }
 
   // ───────────────────────────────────────────────────────────────────────────

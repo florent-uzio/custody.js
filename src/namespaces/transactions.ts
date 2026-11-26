@@ -1,6 +1,8 @@
 import { URLs } from "../constants/urls.js"
-import { isUndefined, sleep } from "../helpers/index.js"
+import { isUndefined, paginate, sleep } from "../helpers/index.js"
+import { CustodyError } from "../models/index.js"
 import type { Transport } from "../transport/index.js"
+import { createIntents } from "./intents.js"
 import {
   TERMINAL_TRANSACTION_STATUSES,
   type Core_DryRunTransactionParameters,
@@ -11,6 +13,7 @@ import {
   type Core_TransfersCollection,
   type Core_TrustedTransactionOrderDetails,
   type Core_TrustedTransactionOrdersCollection,
+  type Core_v0_ReleaseQuarantinedTransfers,
   type DryRunTransactionPathParams,
   type GetTransactionDetailsPathParams,
   type GetTransactionOrderDetailsPathParams,
@@ -19,6 +22,11 @@ import {
   type GetTransactionsPathParams,
   type GetTransactionsQueryParams,
   type GetTransferDetailsPathParams,
+  type ReleaseQuarantinedTransfersAndWaitOptions,
+  type ReleaseQuarantinedTransfersAndWaitResult,
+  type ReleaseQuarantinedTransfersOptions,
+  type ReleaseQuarantinedTransfersParams,
+  type ReleaseQuarantinedTransfersResult,
   type TransferTransactionOrderPathParams,
   type TransferTransactionOrderQueryParams,
   type WaitForTransactionOptions,
@@ -145,7 +153,102 @@ export async function waitForOrderTransaction(
   }
 }
 
+/**
+ * Reads the ids of every transfer currently quarantined for an account,
+ * walking every page of the collection.
+ *
+ * Filters on the deprecated `quarantined: true` rather than
+ * `quarantineStatus: "Quarantined"`: some Ripple Custody versions answer the
+ * latter with a 500 (#238), and the two return the same rows for this case.
+ * The boolean only loses `Released` vs `Skipped`, which a release never needs.
+ *
+ * With `tickerIds`, runs one walk per ticker (the endpoint filters on a single
+ * `tickerId`) and returns their union.
+ *
+ * Takes the lookup as a callback rather than a transport, so `XrplService` can
+ * drive it through its ports.
+ */
+export async function collectQuarantinedTransferIds(
+  listTransfers: (query: TransferTransactionOrderQueryParams) => Promise<Core_TransfersCollection>,
+  accountId: string,
+  tickerIds?: string[],
+): Promise<string[]> {
+  const ids = new Set<string>()
+
+  for (const tickerId of tickerIds ?? [undefined]) {
+    const fetchPage = (startingAfter: string | undefined) =>
+      listTransfers({
+        "recipient.accountId": [accountId],
+        quarantined: true,
+        limit: 100,
+        startingAfter,
+        ...(!isUndefined(tickerId) && { tickerId }),
+      })
+
+    for await (const transfer of paginate(fetchPage)) {
+      ids.add(transfer.id)
+    }
+  }
+
+  return [...ids]
+}
+
+/**
+ * Reads the explicit transfer ids off a release selection: the list for
+ * `{ transferIds }`, `undefined` for `{ all: true }`.
+ *
+ * The types already require exactly one of the two; this catches untyped
+ * callers that pass neither, before anything is looked up or proposed.
+ */
+export function explicitTransferIds(
+  selection: { all?: true; transferIds?: string[] },
+  method: string,
+): string[] | undefined {
+  if (selection.all === true) return undefined
+
+  if (!Array.isArray(selection.transferIds)) {
+    throw new CustodyError({
+      reason:
+        `${method} needs either \`transferIds\` or \`all: true\`. ` +
+        "A release bypasses custody's compliance review, so nothing is released by default.",
+    })
+  }
+
+  return selection.transferIds
+}
+
+/** The release intent's payload. */
+export const releasePayload = (
+  accountId: string,
+  transferIds: string[],
+): Core_v0_ReleaseQuarantinedTransfers => ({
+  type: "v0_ReleaseQuarantinedTransfers",
+  accountId,
+  transferIds,
+})
+
 export function createTransactions(t: Transport) {
+  const intents = createIntents(t)
+
+  /** Resolves a selection to the transfer ids it names. */
+  const selectTransferIds = async (
+    params: ReleaseQuarantinedTransfersParams,
+  ): Promise<string[]> => {
+    const explicit = explicitTransferIds(params, "transactions.releaseQuarantinedTransfers")
+    if (!isUndefined(explicit)) return explicit
+
+    return collectQuarantinedTransferIds(
+      (query) =>
+        t.get<Core_TransfersCollection>(
+          URLs.transactionTransfers,
+          { domainId: params.domainId },
+          query,
+        ),
+      params.accountId,
+      isUndefined(params.tickerId) ? undefined : [params.tickerId],
+    )
+  }
+
   return {
     orders: (
       params: GetTransactionOrdersPathParams,
@@ -164,6 +267,81 @@ export function createTransactions(t: Transport) {
 
     transfer: (params: GetTransferDetailsPathParams): Promise<Core_TransferDetails> =>
       t.get(URLs.transactionTransfer, params),
+
+    /**
+     * Releases the transfers custody holds in quarantine for an account, so
+     * the funds become spendable.
+     *
+     * A quarantined amount is unavailable: spending it fails the dry run with
+     * `CurrentlyNotEnoughFunds` although the funds are on the ledger. With
+     * `all: true`, reads every quarantined transfer of the account (every
+     * page, optionally for one `tickerId`) and proposes one
+     * `v0_ReleaseQuarantinedTransfers` intent; explicit `transferIds` are
+     * proposed as given.
+     *
+     * Works by custody account on any ledger. For an XRPL address, prefer
+     * `xrpl.releaseQuarantinedTransfers`, which resolves the address and an
+     * MPT issuance's tickers itself.
+     *
+     * A release bypasses custody's compliance review of those transfers, so
+     * the selection has no default. Proposes nothing (`proposed: false`) when
+     * nothing is quarantined; custody registers an incoming transfer a few
+     * seconds after the ledger validates it, so retrying is the caller's call.
+     *
+     * @param params - Domain, account, and which quarantined transfers to release
+     * @param options - Envelope fields
+     * @returns `proposed: false` when there was nothing to release; otherwise
+     *   the release intent's ids and the transfers it covers
+     * @throws {CustodyError} If the selection names neither `transferIds` nor
+     *   `all: true`, or the propose call is rejected
+     */
+    releaseQuarantinedTransfers: async (
+      params: ReleaseQuarantinedTransfersParams,
+      options: ReleaseQuarantinedTransfersOptions = {},
+    ): Promise<ReleaseQuarantinedTransfersResult> => {
+      const { domainId, accountId } = params
+      const transferIds = await selectTransferIds(params)
+
+      if (transferIds.length === 0) return { proposed: false, transferIds: [], domainId }
+
+      const result = await intents.proposePayload(releasePayload(accountId, transferIds), {
+        ...options,
+        domainId,
+      })
+
+      return { ...result, proposed: true, transferIds }
+    },
+
+    /**
+     * `releaseQuarantinedTransfers`, then polls the release intent to a
+     * terminal status. A release has no ledger transaction, so it is done when
+     * its intent is. Same approval caveat as `intents.proposeAndWait`: a human
+     * approver outlasts the default 30-second wait, which then reports
+     * `isTerminal: false` rather than failing.
+     *
+     * @param params - Domain, account, and which quarantined transfers to release
+     * @param options - Envelope fields, plus polling configuration
+     * @returns `proposed: false` when there was nothing to release; otherwise
+     *   the intent's wait outcome, its ids and the transfers it covers
+     * @throws {CustodyError} As `releaseQuarantinedTransfers`, or if the
+     *   intent is never registered
+     */
+    releaseQuarantinedTransfersAndWait: async (
+      params: ReleaseQuarantinedTransfersParams,
+      options: ReleaseQuarantinedTransfersAndWaitOptions = {},
+    ): Promise<ReleaseQuarantinedTransfersAndWaitResult> => {
+      const { domainId, accountId } = params
+      const transferIds = await selectTransferIds(params)
+
+      if (transferIds.length === 0) return { proposed: false, transferIds: [], domainId }
+
+      const result = await intents.proposeAndWait(releasePayload(accountId, transferIds), {
+        ...options,
+        domainId,
+      })
+
+      return { ...result, proposed: true, transferIds }
+    },
 
     transactions: (
       params: GetTransactionsPathParams,

@@ -379,4 +379,44 @@ describe("createHttpPorts", () => {
       expect(result).toEqual({ id: "tx-1" })
     })
   })
+
+  describe("listTransfers", () => {
+    it("gets URLs.transactionTransfers with domainId and forwards the query", async () => {
+      mockTransport.get.mockResolvedValue({ items: [], count: 0 })
+      const ports = createHttpPorts(mockTransport)
+      const query = { "recipient.accountId": ["acc-1"], quarantined: true, limit: 100 }
+
+      const result = await ports.listTransfers("domain-1", query)
+
+      expect(mockTransport.get).toHaveBeenCalledWith(
+        URLs.transactionTransfers,
+        { domainId: "domain-1" },
+        query,
+      )
+      expect(result).toEqual({ items: [], count: 0 })
+    })
+  })
+
+  describe("findMptTickers", () => {
+    it("looks the issuance up among the ledger's tickers", async () => {
+      const ticker = {
+        id: "tk-1",
+        ledgerDetails: {
+          type: "XRPL",
+          properties: { type: "MultiPurposeToken", issuanceId: "ISSUANCE" },
+        },
+      }
+      mockTransport.get.mockResolvedValue({ items: [{ data: ticker }], count: 1 })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.findMptTickers("ISSUANCE", "xrpl-testnet")
+
+      expect(mockTransport.get).toHaveBeenCalledWith(
+        URLs.tickers,
+        undefined,
+        expect.objectContaining({ ledgerId: ["xrpl-testnet"] }),
+      )
+      expect(result).toEqual({ public: ticker })
+    })
+  })
 })

@@ -1,4 +1,11 @@
 import type { components, operations } from "../models/custody-types.js"
+import type { Prettify } from "../type-utils/index.js"
+import type {
+  IntentEnvelopeOptions,
+  ProposePayloadAndWaitOptions,
+  ProposePayloadAndWaitResult,
+  ProposePayloadResult,
+} from "./intents.types.js"
 
 // Request types
 export type GetTransactionOrdersPathParams = operations["getOrders"]["parameters"]["path"]
@@ -121,3 +128,92 @@ export type WaitForTransactionResult = {
    */
   reason?: string
 }
+
+// Quarantine release
+
+export type Core_v0_ReleaseQuarantinedTransfers =
+  components["schemas"]["Core_v0_ReleaseQuarantinedTransfers"]
+
+/**
+ * Which of an account's quarantined transfers to release: exactly one of
+ * explicit `transferIds`, or `all: true` (optionally narrowed to one ticker).
+ *
+ * There is deliberately no default. A release bypasses custody's compliance
+ * review of those transfers, so "release everything" has to be asked for by
+ * name rather than fall out of an omitted field.
+ */
+export type QuarantinedTransferSelection =
+  | {
+      /** Release exactly these transfers. Passed to custody as-is, unchecked. */
+      transferIds: string[]
+      all?: never
+      tickerId?: never
+    }
+  | {
+      /** Release every transfer currently quarantined for the account. */
+      all: true
+      /** Only release transfers of this ticker. */
+      tickerId?: string
+      transferIds?: never
+    }
+
+/** Parameters of `transactions.releaseQuarantinedTransfers`. */
+export type ReleaseQuarantinedTransfersParams = {
+  /** Domain the account belongs to. */
+  domainId: string
+  /** Custody account (UUID) the quarantined transfers were received by. */
+  accountId: string
+} & QuarantinedTransferSelection
+
+/** Envelope options for a release. The domain comes from the params. */
+export type ReleaseQuarantinedTransfersOptions = Omit<IntentEnvelopeOptions, "domainId">
+
+/** Envelope options for a release, plus how long to wait for its intent. */
+export type ReleaseQuarantinedTransfersAndWaitOptions = Omit<
+  ProposePayloadAndWaitOptions,
+  "domainId"
+>
+
+/**
+ * Outcome of a release that found nothing to release: no intent was proposed.
+ *
+ * Custody registers an incoming transfer a few seconds after the ledger
+ * validates it, so this can be the answer straight after a receive. That is
+ * the caller's to retry; the release does not poll for transfers to appear.
+ */
+export type NothingToRelease = {
+  proposed: false
+  transferIds: []
+  /** The domain the lookup ran in */
+  domainId: string
+}
+
+/**
+ * Outcome of `releaseQuarantinedTransfers`: either nothing to release, or the
+ * ids of the release intent and the transfers it covers.
+ */
+export type ReleaseQuarantinedTransfersResult =
+  | NothingToRelease
+  | Prettify<
+      ProposePayloadResult & {
+        proposed: true
+        /** The transfers the release intent covers */
+        transferIds: string[]
+      }
+    >
+
+/**
+ * Outcome of `releaseQuarantinedTransfersAndWait`: either nothing to release,
+ * or the release intent's wait outcome ({@link ProposePayloadAndWaitResult})
+ * and the transfers it covers. A release has no ledger transaction behind it,
+ * so it is finished when its intent is.
+ */
+export type ReleaseQuarantinedTransfersAndWaitResult =
+  | NothingToRelease
+  | Prettify<
+      ProposePayloadAndWaitResult & {
+        proposed: true
+        /** The transfers the release intent covers */
+        transferIds: string[]
+      }
+    >
