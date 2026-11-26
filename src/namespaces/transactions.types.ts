@@ -1,6 +1,10 @@
 import type { components, operations } from "../models/custody-types.js"
+import type { DomainUserReference } from "../models/domain-resolver.js"
 import type { Prettify } from "../type-utils/index.js"
 import type {
+  Core_IntentResponse,
+  Core_ProposeIntentBody,
+  Core_TrustedIntent,
   IntentEnvelopeOptions,
   ProposePayloadAndWaitOptions,
   ProposePayloadAndWaitResult,
@@ -134,6 +138,22 @@ export type WaitForTransactionResult = {
 export type Core_v0_ReleaseQuarantinedTransfers =
   components["schemas"]["Core_v0_ReleaseQuarantinedTransfers"]
 
+/** Release exactly these transfers. */
+export type ReleaseTransferIdsSelection = {
+  /** The transfers to release. Passed to custody as-is, unchecked. */
+  transferIds: string[]
+  all?: never
+  tickerId?: never
+}
+
+/** Release every transfer currently quarantined for the account. */
+export type ReleaseAllSelection = {
+  all: true
+  /** Only release transfers of this ticker. */
+  tickerId?: string
+  transferIds?: never
+}
+
 /**
  * Which of an account's quarantined transfers to release: exactly one of
  * explicit `transferIds`, or `all: true` (optionally narrowed to one ticker).
@@ -142,20 +162,7 @@ export type Core_v0_ReleaseQuarantinedTransfers =
  * review of those transfers, so "release everything" has to be asked for by
  * name rather than fall out of an omitted field.
  */
-export type QuarantinedTransferSelection =
-  | {
-      /** Release exactly these transfers. Passed to custody as-is, unchecked. */
-      transferIds: string[]
-      all?: never
-      tickerId?: never
-    }
-  | {
-      /** Release every transfer currently quarantined for the account. */
-      all: true
-      /** Only release transfers of this ticker. */
-      tickerId?: string
-      transferIds?: never
-    }
+export type QuarantinedTransferSelection = ReleaseTransferIdsSelection | ReleaseAllSelection
 
 /** Parameters of `transactions.releaseQuarantinedTransfers`. */
 export type ReleaseQuarantinedTransfersParams = {
@@ -217,3 +224,39 @@ export type ReleaseQuarantinedTransfersAndWaitResult =
         transferIds: string[]
       }
     >
+
+/** The account a release is for, and the user its intent is authored by. */
+export type QuarantineReleaseAccount = DomainUserReference & { accountId: string }
+
+/**
+ * The I/O a release needs. `XrplPorts` satisfies it as-is; the `transactions`
+ * namespace backs it with the transport.
+ */
+export type QuarantineReleasePorts = {
+  /** One page of the domain's transfers (GET /v1/domains/{domainId}/transactions/transfers) */
+  listTransfers(
+    domainId: string,
+    query: TransferTransactionOrderQueryParams,
+  ): Promise<Core_TransfersCollection>
+  /** Proposes an intent (POST /v1/intents) */
+  submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse>
+  /** Reads an intent back, for the wait (GET /v1/domains/{domainId}/intents/{intentId}) */
+  getIntent(domainId: string, intentId: string): Promise<Core_TrustedIntent>
+}
+
+/**
+ * What a caller of the shared release flow supplies: the selection, and how
+ * to find the account and the tickers an `all: true` release is narrowed to.
+ * This is the only part that differs between `transactions.*` (by account id)
+ * and `xrpl.*` (by address, and MPT issuance). `TAccount` lets a caller hand
+ * its own richer account (the XRPL one carries its `ledgerId`) to
+ * `resolveTickerIds`.
+ */
+export type QuarantineReleaseTarget<
+  TAccount extends QuarantineReleaseAccount = QuarantineReleaseAccount,
+> = {
+  selection: { all?: true; transferIds?: string[] }
+  resolveAccount: () => Promise<TAccount>
+  /** `undefined` releases every ticker. Only called for `all: true`. */
+  resolveTickerIds: (account: TAccount) => Promise<string[] | undefined>
+}

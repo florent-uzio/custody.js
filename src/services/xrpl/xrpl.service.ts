@@ -12,12 +12,12 @@ import type {
   Core_ProposeIntentBody,
 } from "../../namespaces/intents.types.js"
 import {
-  collectQuarantinedTransferIds,
-  explicitTransferIds,
-  releasePayload,
+  proposeRelease,
+  proposeReleaseAndWait,
   waitForOrderTransaction,
 } from "../../namespaces/transactions.js"
 import type {
+  QuarantineReleaseTarget,
   ReleaseQuarantinedTransfersAndWaitResult,
   ReleaseQuarantinedTransfersResult,
 } from "../../namespaces/transactions.types.js"
@@ -357,17 +357,7 @@ export class XrplService {
     params: XrplReleaseQuarantinedTransfersParams,
     options: XrplReleaseQuarantinedTransfersOptions = {},
   ): Promise<ReleaseQuarantinedTransfersResult> {
-    const { context, transferIds } = await this.selectQuarantinedTransfers(
-      params,
-      options,
-      "xrpl.releaseQuarantinedTransfers",
-    )
-    const { domainId } = context
-
-    if (transferIds.length === 0) return { proposed: false, transferIds: [], domainId }
-
-    const result = await this.proposeRelease(context, transferIds, options)
-    return { ...result, domainId, proposed: true, transferIds }
+    return proposeRelease(this.ports, this.releaseTarget(params, options), options)
   }
 
   /**
@@ -391,54 +381,30 @@ export class XrplService {
     params: XrplReleaseQuarantinedTransfersParams,
     options: XrplReleaseQuarantinedTransfersAndWaitOptions = {},
   ): Promise<ReleaseQuarantinedTransfersAndWaitResult> {
-    const { context, transferIds } = await this.selectQuarantinedTransfers(
-      params,
-      options,
-      "xrpl.releaseQuarantinedTransfersAndWait",
-    )
-    const { domainId } = context
-
-    if (transferIds.length === 0) return { proposed: false, transferIds: [], domainId }
-
-    const { intentId, requestId } = await this.proposeRelease(context, transferIds, options)
-    const outcome = await waitForExecution(
-      () => this.ports.getIntent(domainId, intentId),
-      intentId,
-      options,
-    )
-
-    return { ...outcome, intentId, requestId, domainId, proposed: true, transferIds }
+    return proposeReleaseAndWait(this.ports, this.releaseTarget(params, options), options)
   }
 
   /**
-   * Resolves the address and turns the selection into transfer ids: explicit
-   * ids as given, otherwise every quarantined transfer of the account,
-   * narrowed to the issuance's tickers or the given ticker.
+   * The release target for an XRPL address: the account comes from the
+   * address, and an `issuanceId` narrows to both of the issuance's tickers.
+   * The address is checked here, before any request goes out.
    * @private
    */
-  private async selectQuarantinedTransfers(
+  private releaseTarget(
     params: XrplReleaseQuarantinedTransfersParams,
     options: XrplReleaseQuarantinedTransfersOptions,
-    method: string,
-  ): Promise<{ context: IntentContext; transferIds: string[] }> {
+  ): QuarantineReleaseTarget<IntentContext> {
     assertValidAddress(params.address)
-    const explicit = explicitTransferIds(params, method)
 
-    const context = await this.ports.resolveContext(params.address, {
-      domainId: options.domainId,
-      ledgerId: options.ledgerId,
-    })
-
-    if (!isUndefined(explicit)) return { context, transferIds: explicit }
-
-    const tickerIds = await this.quarantineTickerIds(params, context)
-    const transferIds = await collectQuarantinedTransferIds(
-      (query) => this.ports.listTransfers(context.domainId, query),
-      context.accountId,
-      tickerIds,
-    )
-
-    return { context, transferIds }
+    return {
+      selection: params,
+      resolveAccount: () =>
+        this.ports.resolveContext(params.address, {
+          domainId: options.domainId,
+          ledgerId: options.ledgerId,
+        }),
+      resolveTickerIds: (account) => this.quarantineTickerIds(params, account.ledgerId),
+    }
   }
 
   /**
@@ -448,44 +414,23 @@ export class XrplService {
    */
   private async quarantineTickerIds(
     params: XrplReleaseQuarantinedTransfersParams,
-    context: IntentContext,
+    ledgerId: string,
   ): Promise<string[] | undefined> {
     if (!isUndefined(params.tickerId)) return [params.tickerId]
     if (isUndefined(params.issuanceId)) return undefined
 
-    const tickers = await this.ports.findMptTickers(params.issuanceId, context.ledgerId)
+    const tickers = await this.ports.findMptTickers(params.issuanceId, ledgerId)
     const tickerIds = [tickers.public?.id, tickers.confidential?.id].filter(isPresent)
 
     if (tickerIds.length === 0) {
       throw new CustodyError({
         reason:
           `No custody ticker found for XRPL MPT issuance ${params.issuanceId} ` +
-          `on ledger ${context.ledgerId}, so there are no transfers of it to release.`,
+          `on ledger ${ledgerId}, so there are no transfers of it to release.`,
       })
     }
 
     return tickerIds
-  }
-
-  /**
-   * Builds and submits the release intent for the resolved account.
-   * @private
-   */
-  private async proposeRelease(
-    context: IntentContext,
-    transferIds: string[],
-    options: XrplReleaseQuarantinedTransfersOptions,
-  ): Promise<{ intentId: string; requestId: string }> {
-    const requestEnvelope = buildRequestEnvelope(
-      context,
-      options,
-      releasePayload(context.accountId, transferIds),
-    )
-    const { requestId } = await this.ports.submitIntent({
-      request: { ...requestEnvelope, type: "Propose" },
-    })
-
-    return { intentId: requestEnvelope.id, requestId }
   }
 
   // ───────────────────────────────────────────────────────────────────────────

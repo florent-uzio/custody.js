@@ -27,6 +27,8 @@ import type {
   WaitForExecutionResult,
 } from "../../namespaces/intents.types.js"
 import type {
+  ReleaseAllSelection,
+  ReleaseTransferIdsSelection,
   WaitForTransactionOptions,
   WaitForTransactionResult,
 } from "../../namespaces/transactions.types.js"
@@ -715,32 +717,16 @@ export type GetBatchSignatureParams = {
  * custody's compliance review, so releasing everything is asked for by name.
  */
 export type XrplQuarantinedTransferSelection =
-  | {
-      /** Release exactly these transfers. Passed to custody as-is, unchecked. */
-      transferIds: string[]
-      all?: never
-      issuanceId?: never
-      tickerId?: never
-    }
-  | {
-      /** Release every transfer currently quarantined for the address. */
-      all: true
+  | (ReleaseTransferIdsSelection & { issuanceId?: never })
+  | (ReleaseAllSelection & { issuanceId?: never })
+  | (Omit<ReleaseAllSelection, "tickerId"> & {
       /**
        * Only release transfers of this XRPL MPT issuance — under its public
        * and, when the issuance is confidential, its confidential ticker.
        */
       issuanceId?: string
       tickerId?: never
-      transferIds?: never
-    }
-  | {
-      /** Release every transfer currently quarantined for the address. */
-      all: true
-      /** Only release transfers of this custody ticker (e.g. XRP or an IOU). */
-      tickerId?: string
-      issuanceId?: never
-      transferIds?: never
-    }
+    })
 
 /** Parameters of `xrpl.releaseQuarantinedTransfers`. */
 export type XrplReleaseQuarantinedTransfersParams = {
