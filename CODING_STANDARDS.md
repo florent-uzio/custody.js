@@ -2,7 +2,8 @@
 
 Judgement calls for reviewing a diff. Each is a rule a linter or test cannot
 express; mechanical rules live in `npm run ci` instead (oxlint, tsc, the
-`docs/namespaces.md` check in `src/namespaces-doc.test.ts`). The type rules in
+`docs/namespaces.md` check in `src/namespaces-doc.test.ts`, the public export
+snapshot in `src/public-exports.test.ts`). The type rules in
 [`CLAUDE.md`](CLAUDE.md) and the decisions in [`docs/adr/`](docs/adr/) apply on
 top of these.
 
@@ -36,7 +37,8 @@ and says so.
 
 Every `src/namespaces/**/*.types.ts` is re-exported from `src/index.ts` with
 `export type *`, so each type added there is public API from the next
-release. For each new export, confirm a caller handles it (a param, option or
-result type). A type only the SDK's own plumbing needs — a ports bag, an
+release. A diff of `src/__snapshots__/public-exports.txt` lists exactly
+those additions and removals. For each new export, confirm a caller handles
+it (a param, option or result type). A type only the SDK's own plumbing needs — a ports bag, an
 internal callback shape — is a public-surface decision the changeset names,
 not an accident of where it was declared.
