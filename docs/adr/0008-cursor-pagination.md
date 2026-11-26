@@ -177,7 +177,7 @@ the README.
 - **The page/offset endpoints are out of scope.** `omnibus.tenants.list` and
   `domains.sweepThresholds` do not satisfy `CursorPage` and will not compile
   against `paginate`, which is the correct outcome rather than a silent misuse.
-- CONTEXT.md gains **Cursor page** and **Cursor collection**.
+- GLOSSARY.md gains **Cursor page** and **Cursor collection**.
 
 ## Rejected alternatives
 

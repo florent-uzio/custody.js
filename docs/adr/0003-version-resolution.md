@@ -39,7 +39,7 @@ one warning is emitted, and the backend rejects anything unsupported itself.
 This **replaces** the original "default to the highest version" idea. Defaulting
 to the highest bundled version would gate confidently _wrong_ against any
 instance that isn't exactly that version (blocking endpoints it has, allowing
-features it lacks) — see the non-monotonic finding in `CONTEXT.md`.
+features it lacks) — see the non-monotonic finding in `GLOSSARY.md`.
 
 ## Consequences
 

@@ -98,7 +98,7 @@ Deferred.
   `mergeOpenApiDocs` (channel-aware two-phase merge), `buildCapabilityDataset`
   (official-only input). The runtime layer (`version-guard.ts`, `detect.ts`) is
   untouched.
-- `CONTEXT.md` glossary gains **Channel**, **Official spec**, **Devbox spec**,
+- `GLOSSARY.md` glossary gains **Channel**, **Official spec**, **Devbox spec**,
   **Preview feature**.
 
 ## Rejected alternatives

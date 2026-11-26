@@ -148,7 +148,7 @@ against the generated internal types, and will hang off a single
 - Namespace branches start on working plumbing: an internal namespace is an
   ordinary namespace that imports the internal types and passes
   `{ sign: false, surface: "internal" }`. No transport, auth or service changes.
-- CONTEXT.md gains **Surface**, **Public spec** and **Internal spec**.
+- GLOSSARY.md gains **Surface**, **Public spec** and **Internal spec**.
 
 ## Follow-up
 
@@ -158,7 +158,7 @@ and it needed no plumbing change — only `src/constants/internal-urls.ts`
 (`InternalURLs`, typed against the internal `paths` and, unlike the public
 `URLs`, deliberately non-exhaustive with no completeness assertion, since the
 SDK names only the internal endpoints it implements). The resulting conventions
-are recorded in CONTEXT.md under **Internal namespace**.
+are recorded in GLOSSARY.md under **Internal namespace**.
 
 ## Rejected alternatives
 

@@ -1,4 +1,4 @@
-# Context — custody.js
+# Glossary — custody.js
 
 A TypeScript SDK for the Ripple Custody API. All SDK types derive from an
 OpenAPI-generated file (`src/models/custody-types.ts`); see `CLAUDE.md` for the

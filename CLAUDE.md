@@ -19,7 +19,7 @@ surface (channel root = public, `<channel>/internal/` = internal):
   `getAllEvents`).
 
 See [ADR-0005](docs/adr/0005-official-vs-devbox-channels.md),
-[ADR-0007](docs/adr/0007-public-vs-internal-surfaces.md) and `CONTEXT.md`.
+[ADR-0007](docs/adr/0007-public-vs-internal-surfaces.md) and `GLOSSARY.md`.
 
 Reference the generated types via the two top-level exports:
 
@@ -73,4 +73,4 @@ Default triage vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-
 
 ### Domain docs
 
-Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
