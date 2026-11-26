@@ -97,6 +97,35 @@ an account, applies a fee strategy, and returns the payload id.
 `intents.propose` still takes a fully-assembled `Core_ProposeIntentBody` for
 callers who build the envelope themselves.
 
+### Releasing quarantined transfers
+
+Releasing quarantined transfers has dedicated helpers, by XRPL address or by
+custody account. Custody
+quarantines incoming transfers, and a quarantined amount is unavailable: the
+next send fails its dry run with `CurrentlyNotEnoughFunds` although the funds
+are on the ledger. Building the release by hand means finding the account's
+quarantined transfers — across **every page**, and with `quarantined: true`
+rather than `quarantineStatus`, which some versions answer with a 500 — before
+proposing the payload above. The helpers do all of it:
+
+```ts
+// By XRPL address — resolves the account, and an MPT issuance's tickers
+const result = await custody.xrpl.releaseQuarantinedTransfers({
+  address: "r...",
+  all: true,
+  issuanceId: "00000AA1...", // optional; or `tickerId` for XRP / an IOU
+})
+
+// By custody account, on any ledger
+await custody.transactions.releaseQuarantinedTransfers({ domainId, accountId, all: true })
+```
+
+A release bypasses custody's compliance review of those transfers, so the
+selection has no default: pass `all: true` or explicit `transferIds`. When
+nothing is quarantined, nothing is proposed and the result reads
+`proposed: false`. Both have an `AndWait` twin; a release has no ledger
+transaction, so it is finished when its intent is.
+
 ## Approval flows: do not wait in production
 
 `proposeAndWait` and `getAndWait` default to 10 attempts 3s apart — **30
@@ -196,3 +225,5 @@ rejected signature) still throw `CustodyError`.
   the XRPL path, including reading the two failure branches apart
 - [`examples/intents/release-quarantined-transfers`](../examples/intents/release-quarantined-transfers/index.ts) —
   the generic path, and why to prefer `proposePayload` in production
+- [`examples/xrpl/release-quarantined-transfers`](../examples/xrpl/release-quarantined-transfers/index.ts) —
+  releasing quarantined transfers by XRPL address

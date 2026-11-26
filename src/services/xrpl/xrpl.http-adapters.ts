@@ -19,10 +19,13 @@ import type {
   Core_ProposeIntentBody,
   Core_TrustedIntent,
 } from "../../namespaces/intents.types.js"
+import { findByXrplMptIssuanceId } from "../../namespaces/tickers.js"
 import type {
   Core_TransactionDetails,
   Core_TransactionsCollection,
+  Core_TransfersCollection,
   GetTransactionsQueryParams,
+  TransferTransactionOrderQueryParams,
 } from "../../namespaces/transactions.types.js"
 import type { Core_MeReference } from "../../namespaces/users.types.js"
 import type { Transport } from "../../transport/index.js"
@@ -38,6 +41,8 @@ import type { XrplPorts } from "./xrpl.ports.js"
  * - manifest retrieval (GET /v1/domains/.../manifests/...)
  * - account details (GET /v1/domains/.../accounts/...)
  * - parameters computation (POST + GET /v1/domains/.../parameters-compute)
+ * - transfers (GET /v1/domains/.../transactions/transfers)
+ * - MPT issuance tickers (GET /v1/tickers, via findByXrplMptIssuanceId)
  */
 export function createHttpPorts(transport: Transport): XrplPorts {
   return {
@@ -106,6 +111,17 @@ export function createHttpPorts(transport: Transport): XrplPorts {
 
     getTransaction(domainId: string, transactionId: string): Promise<Core_TransactionDetails> {
       return transport.get<Core_TransactionDetails>(URLs.transaction, { domainId, transactionId })
+    },
+
+    listTransfers(
+      domainId: string,
+      query: TransferTransactionOrderQueryParams,
+    ): Promise<Core_TransfersCollection> {
+      return transport.get<Core_TransfersCollection>(URLs.transactionTransfers, { domainId }, query)
+    },
+
+    findMptTickers(issuanceId: string, ledgerId: string) {
+      return findByXrplMptIssuanceId(transport, issuanceId, { ledgerId })
     },
   }
 }

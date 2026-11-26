@@ -170,6 +170,8 @@ function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
       overrides.initiateParametersComputeAndWait ?? (async () => completedSendCompute()),
     listTransactions:
       overrides.listTransactions ?? (async () => ({ items: [{ id: mockTransactionId }] }) as any),
+    listTransfers: overrides.listTransfers ?? (async () => ({ items: [], count: 0 })),
+    findMptTickers: overrides.findMptTickers ?? (async () => ({})),
     getTransaction:
       overrides.getTransaction ??
       (async () =>
@@ -2897,5 +2899,209 @@ describe("XrplService version gating", () => {
         Destination: mockAddress,
       } as SubmittableTransaction),
     ).resolves.toBeDefined()
+  })
+})
+
+// ── releaseQuarantinedTransfers ─────────────────────────────────
+
+describe("XrplService.releaseQuarantinedTransfers", () => {
+  /** A transfers page holding the given ids; only `id` is read. */
+  const transfers = (...ids: string[]) =>
+    ({ items: ids.map((id) => ({ id })), count: ids.length }) as any
+
+  /** Ports that record every transfers query and the submitted payload. */
+  function recordingPorts(overrides: Partial<XrplPorts> = {}) {
+    const queries: { domainId: string; query: any }[] = []
+    const submitted: any[] = []
+    const ports = createTestPorts({
+      listTransfers: async (domainId, query) => {
+        queries.push({ domainId, query })
+        return transfers("t-1")
+      },
+      submitIntent: async (body) => {
+        submitted.push(body.request.payload)
+        return { requestId: "request-123" } as any
+      },
+      ...overrides,
+    })
+    return { service: new XrplService(ports), queries, submitted }
+  }
+
+  it("resolves the address and releases every quarantined transfer of its account", async () => {
+    const { service, queries, submitted } = recordingPorts()
+
+    const result = await service.releaseQuarantinedTransfers({ address: mockAddress, all: true })
+
+    expect(queries).toEqual([
+      {
+        domainId: mockDomainId,
+        query: expect.objectContaining({
+          "recipient.accountId": [mockAccountId],
+          quarantined: true,
+        }),
+      },
+    ])
+    expect(submitted).toEqual([
+      { type: "v0_ReleaseQuarantinedTransfers", accountId: mockAccountId, transferIds: ["t-1"] },
+    ])
+    expect(result).toMatchObject({
+      proposed: true,
+      transferIds: ["t-1"],
+      requestId: "request-123",
+      domainId: mockDomainId,
+    })
+  })
+
+  it("with `issuanceId`, releases the transfers of both the public and the confidential ticker", async () => {
+    let tickerLookup: unknown[] = []
+    const { service, queries, submitted } = recordingPorts({
+      findMptTickers: async (issuanceId, ledgerId) => {
+        tickerLookup = [issuanceId, ledgerId]
+        return { public: { id: "tk-public" }, confidential: { id: "tk-conf" } } as any
+      },
+      listTransfers: async (domainId, query) => {
+        queries.push({ domainId, query })
+        return query.tickerId === "tk-public" ? transfers("t-1", "t-2") : transfers("t-3")
+      },
+    })
+
+    const result = await service.releaseQuarantinedTransfers({
+      address: mockAddress,
+      all: true,
+      issuanceId: mockIssuanceId,
+    })
+
+    expect(tickerLookup).toEqual([mockIssuanceId, mockLedgerId])
+    expect(queries.map(({ query }) => query.tickerId)).toEqual(["tk-public", "tk-conf"])
+    expect(submitted[0].transferIds).toEqual(["t-1", "t-2", "t-3"])
+    expect(result).toMatchObject({ proposed: true, transferIds: ["t-1", "t-2", "t-3"] })
+  })
+
+  it("throws when custody has no ticker for the issuance, and proposes nothing", async () => {
+    const { service, submitted } = recordingPorts({ findMptTickers: async () => ({}) })
+
+    await expect(
+      service.releaseQuarantinedTransfers({
+        address: mockAddress,
+        all: true,
+        issuanceId: mockIssuanceId,
+      }),
+    ).rejects.toThrow(CustodyError)
+    expect(submitted).toEqual([])
+  })
+
+  it("with `tickerId`, narrows to that ticker without a ticker lookup", async () => {
+    let looked = false
+    const { service, queries } = recordingPorts({
+      findMptTickers: async () => {
+        looked = true
+        return {}
+      },
+    })
+
+    await service.releaseQuarantinedTransfers({ address: mockAddress, all: true, tickerId: "tk-1" })
+
+    expect(looked).toBe(false)
+    expect(queries.map(({ query }) => query.tickerId)).toEqual(["tk-1"])
+  })
+
+  it("with explicit `transferIds`, proposes them for the resolved account without a lookup", async () => {
+    const { service, queries, submitted } = recordingPorts()
+
+    await service.releaseQuarantinedTransfers({ address: mockAddress, transferIds: ["t-9"] })
+
+    expect(queries).toEqual([])
+    expect(submitted).toEqual([
+      { type: "v0_ReleaseQuarantinedTransfers", accountId: mockAccountId, transferIds: ["t-9"] },
+    ])
+  })
+
+  it("proposes nothing when no transfer is quarantined", async () => {
+    const { service, submitted } = recordingPorts({ listTransfers: async () => transfers() })
+
+    const result = await service.releaseQuarantinedTransfers({ address: mockAddress, all: true })
+
+    expect(submitted).toEqual([])
+    expect(result).toEqual({ proposed: false, transferIds: [], domainId: mockDomainId })
+  })
+
+  it("passes `domainId` / `ledgerId` to the address resolution", async () => {
+    let resolveOpts: unknown
+    const { service } = recordingPorts({
+      resolveContext: async (_address, opts) => {
+        resolveOpts = opts
+        return mockContext
+      },
+    })
+
+    await service.releaseQuarantinedTransfers(
+      { address: mockAddress, all: true },
+      { domainId: "d-x", ledgerId: "l-x" },
+    )
+
+    expect(resolveOpts).toEqual({ domainId: "d-x", ledgerId: "l-x" })
+  })
+
+  it("rejects an invalid address before any lookup", async () => {
+    let resolved = false
+    const { service } = recordingPorts({
+      resolveContext: async () => {
+        resolved = true
+        return mockContext
+      },
+    })
+
+    await expect(
+      service.releaseQuarantinedTransfers({ address: "not-an-address", all: true }),
+    ).rejects.toThrow("Invalid address: not-an-address")
+    expect(resolved).toBe(false)
+  })
+
+  describe("AndWait", () => {
+    it("waits for the release intent and reports its outcome", async () => {
+      let polled: unknown[] = []
+      const { service } = recordingPorts({
+        getIntent: async (domainId, intentId) => {
+          polled = [domainId, intentId]
+          return intentWithStatus("Executed")
+        },
+      })
+
+      const result = await service.releaseQuarantinedTransfersAndWait({
+        address: mockAddress,
+        all: true,
+      })
+
+      expect(polled[0]).toBe(mockDomainId)
+      expect(result).toMatchObject({
+        proposed: true,
+        transferIds: ["t-1"],
+        isTerminal: true,
+        isSuccess: true,
+        status: "Executed",
+        intentId: polled[1],
+        requestId: "request-123",
+        domainId: mockDomainId,
+      })
+    })
+
+    it("does not wait when there is nothing to release", async () => {
+      let polled = false
+      const { service } = recordingPorts({
+        listTransfers: async () => transfers(),
+        getIntent: async () => {
+          polled = true
+          return intentWithStatus("Executed")
+        },
+      })
+
+      const result = await service.releaseQuarantinedTransfersAndWait({
+        address: mockAddress,
+        all: true,
+      })
+
+      expect(polled).toBe(false)
+      expect(result).toEqual({ proposed: false, transferIds: [], domainId: mockDomainId })
+    })
   })
 })

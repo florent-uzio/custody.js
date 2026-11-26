@@ -27,6 +27,8 @@ import type {
   WaitForExecutionResult,
 } from "../../namespaces/intents.types.js"
 import type {
+  ReleaseAllSelection,
+  ReleaseTransferIdsSelection,
   WaitForTransactionOptions,
   WaitForTransactionResult,
 } from "../../namespaces/transactions.types.js"
@@ -703,3 +705,46 @@ export type GetBatchSignatureParams = {
   /** The compressed secp256k1 public key in uppercase hex */
   signingPubKey: string
 }
+
+// Quarantine release
+
+/**
+ * Which of an address's quarantined transfers to release: exactly one of
+ * explicit `transferIds`, or `all: true`, optionally narrowed to one MPT
+ * issuance (`issuanceId`) or one custody ticker (`tickerId`, for XRP and IOUs).
+ *
+ * No default, as for `transactions.releaseQuarantinedTransfers`: a release bypasses
+ * custody's compliance review, so releasing everything is asked for by name.
+ */
+export type XrplQuarantinedTransferSelection =
+  | (ReleaseTransferIdsSelection & { issuanceId?: never })
+  | (ReleaseAllSelection & { issuanceId?: never })
+  | (Omit<ReleaseAllSelection, "tickerId"> & {
+      /**
+       * Only release transfers of this XRPL MPT issuance — under its public
+       * and, when the issuance is confidential, its confidential ticker.
+       */
+      issuanceId?: string
+      tickerId?: never
+    })
+
+/** Parameters of `xrpl.releaseQuarantinedTransfers`. */
+export type XrplReleaseQuarantinedTransfersParams = {
+  /** XRPL address of the account that received the quarantined transfers */
+  address: string
+} & XrplQuarantinedTransferSelection
+
+/**
+ * Options of `xrpl.releaseQuarantinedTransfers`: the envelope fields, plus
+ * `domainId` / `ledgerId` when the address alone is ambiguous. A release is
+ * not a transaction order, so the payload-id options do not apply.
+ */
+export type XrplReleaseQuarantinedTransfersOptions = Omit<
+  XrplIntentOptions,
+  "payloadId" | "payloadCustomProperties"
+>
+
+/** Options of `xrpl.releaseQuarantinedTransfersAndWait`: the above, plus polling. */
+export type XrplReleaseQuarantinedTransfersAndWaitOptions = Prettify<
+  XrplReleaseQuarantinedTransfersOptions & WaitForExecutionOptions
+>

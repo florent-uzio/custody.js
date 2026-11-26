@@ -11,7 +11,16 @@ import type {
   Core_IntentResponse,
   Core_ProposeIntentBody,
 } from "../../namespaces/intents.types.js"
-import { waitForOrderTransaction } from "../../namespaces/transactions.js"
+import {
+  proposeRelease,
+  proposeReleaseAndWait,
+  waitForOrderTransaction,
+} from "../../namespaces/transactions.js"
+import type {
+  QuarantineReleaseTarget,
+  ReleaseQuarantinedTransfersAndWaitResult,
+  ReleaseQuarantinedTransfersResult,
+} from "../../namespaces/transactions.types.js"
 import { VersionGuard, xrplOperationSchema } from "../../versioning/version-guard.js"
 import { isPresent, isSendCryptographicFields } from "./xrpl.adapters.js"
 import {
@@ -53,6 +62,9 @@ import type {
   WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplIntentOptions,
+  XrplReleaseQuarantinedTransfersAndWaitOptions,
+  XrplReleaseQuarantinedTransfersOptions,
+  XrplReleaseQuarantinedTransfersParams,
   XrplTransactionOrderParams,
 } from "./xrpl.types.js"
 import { validateBatchSequencing } from "./xrpl.validators.js"
@@ -303,6 +315,122 @@ export class XrplService {
     }
 
     return response
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Quarantine
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Releases the transfers Ripple Custody holds in quarantine for an XRPL
+   * address, so the funds become spendable.
+   *
+   * Custody quarantines incoming transfers for compliance review. Until they
+   * are released the amount is unavailable, and spending it fails the dry run
+   * with `CurrentlyNotEnoughFunds` although the funds are on the ledger.
+   *
+   * Resolves the address to its custody account, finds the quarantined
+   * transfers (across every page) and proposes one `v0_ReleaseQuarantinedTransfers`
+   * intent for them. With `issuanceId`, both of the issuance's tickers are
+   * covered — the public one and, when the issuance is confidential, the
+   * confidential one.
+   *
+   * A release bypasses the compliance review of those transfers, so the
+   * selection has no default: pass explicit `transferIds` or `all: true`.
+   *
+   * Proposes nothing when nothing is quarantined (`proposed: false`). Custody
+   * registers an incoming transfer a few seconds after the ledger validates
+   * it, so straight after a receive that can be the answer; retrying is the
+   * caller's call.
+   *
+   * @param params - The address, and which of its quarantined transfers to release
+   * @param options - Envelope fields, and `domainId` / `ledgerId` when the
+   *   address alone is ambiguous
+   * @returns `proposed: false` when there was nothing to release; otherwise
+   *   the release intent's ids and the transfers it covers
+   * @throws {CustodyError} If the address is invalid or resolves to no or
+   *   several accounts, the selection names neither `transferIds` nor
+   *   `all: true`, custody has no ticker for `issuanceId`, or the propose call
+   *   is rejected
+   */
+  public async releaseQuarantinedTransfers(
+    params: XrplReleaseQuarantinedTransfersParams,
+    options: XrplReleaseQuarantinedTransfersOptions = {},
+  ): Promise<ReleaseQuarantinedTransfersResult> {
+    return proposeRelease(this.ports, this.releaseTarget(params, options), options)
+  }
+
+  /**
+   * {@link releaseQuarantinedTransfers}, then waits for the release intent to
+   * reach a terminal status. A release has no ledger transaction behind it, so
+   * it is finished when its intent is.
+   *
+   * The default wait is 10 attempts 3s apart. A release gated on a custodian
+   * approving it can take minutes: `isTerminal: false` then means "still
+   * awaiting approval", not "failed". In production prefer
+   * {@link releaseQuarantinedTransfers} and follow the intent up later.
+   *
+   * @param params - The address, and which of its quarantined transfers to release
+   * @param options - Envelope fields, address disambiguation, and polling
+   * @returns `proposed: false` when there was nothing to release; otherwise
+   *   the intent's wait outcome, its ids and the transfers it covers
+   * @throws {CustodyError} As {@link releaseQuarantinedTransfers}, or if the
+   *   intent is never registered
+   */
+  public async releaseQuarantinedTransfersAndWait(
+    params: XrplReleaseQuarantinedTransfersParams,
+    options: XrplReleaseQuarantinedTransfersAndWaitOptions = {},
+  ): Promise<ReleaseQuarantinedTransfersAndWaitResult> {
+    return proposeReleaseAndWait(this.ports, this.releaseTarget(params, options), options)
+  }
+
+  /**
+   * The release target for an XRPL address: the account comes from the
+   * address, and an `issuanceId` narrows to both of the issuance's tickers.
+   * The address is checked here, before any request goes out.
+   * @private
+   */
+  private releaseTarget(
+    params: XrplReleaseQuarantinedTransfersParams,
+    options: XrplReleaseQuarantinedTransfersOptions,
+  ): QuarantineReleaseTarget<IntentContext> {
+    assertValidAddress(params.address)
+
+    return {
+      selection: params,
+      resolveAccount: () =>
+        this.ports.resolveContext(params.address, {
+          domainId: options.domainId,
+          ledgerId: options.ledgerId,
+        }),
+      resolveTickerIds: (account) => this.quarantineTickerIds(params, account.ledgerId),
+    }
+  }
+
+  /**
+   * The tickers an `all: true` release is narrowed to: both of an issuance's
+   * tickers, the given ticker, or `undefined` for no narrowing.
+   * @private
+   */
+  private async quarantineTickerIds(
+    params: XrplReleaseQuarantinedTransfersParams,
+    ledgerId: string,
+  ): Promise<string[] | undefined> {
+    if (!isUndefined(params.tickerId)) return [params.tickerId]
+    if (isUndefined(params.issuanceId)) return undefined
+
+    const tickers = await this.ports.findMptTickers(params.issuanceId, ledgerId)
+    const tickerIds = [tickers.public?.id, tickers.confidential?.id].filter(isPresent)
+
+    if (tickerIds.length === 0) {
+      throw new CustodyError({
+        reason:
+          `No custody ticker found for XRPL MPT issuance ${params.issuanceId} ` +
+          `on ledger ${ledgerId}, so there are no transfers of it to release.`,
+      })
+    }
+
+    return tickerIds
   }
 
   // ───────────────────────────────────────────────────────────────────────────

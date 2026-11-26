@@ -68,8 +68,9 @@ export async function submit(
  * Releases the funds custody holds in quarantine for an account.
  *
  * Ripple Custody quarantines incoming transfers (faucet XRP, an MPT payment…)
- * and a quarantined amount cannot be spent. Releasing it is an intent of its
- * own (`v0_ReleaseQuarantinedTransfers`).
+ * and a quarantined amount cannot be spent: the next send fails its dry run
+ * with `CurrentlyNotEnoughFunds`. `releaseQuarantinedTransfersAndWait` finds
+ * every quarantined transfer of the account and releases them in one intent.
  *
  * Custody registers the incoming transfer a few seconds after the transaction
  * is validated, so this checks a few times before concluding there is nothing
@@ -82,24 +83,17 @@ export async function releaseQuarantine(
   attempts = 3,
 ) {
   for (let attempt = 1; attempt <= attempts; attempt++) {
-    const { items } = await custody.transactions.transfers(
-      { domainId: CUSTODY.domainId },
-      { "recipient.accountId": [accountId], quarantined: true },
+    // `all: true` is required: a release bypasses custody's compliance review,
+    // so releasing everything is never the default.
+    const result = await custody.transactions.releaseQuarantinedTransfersAndWait(
+      { domainId: CUSTODY.domainId, accountId, all: true },
+      POLLING,
     )
 
-    if (items.length > 0) {
-      // `proposePayload` builds the intent envelope (author, expiry, ids) for us.
-      const { intentId } = await custody.intents.proposePayload(
-        { type: "v0_ReleaseQuarantinedTransfers", accountId, transferIds: items.map((t) => t.id) },
-        { domainId: CUSTODY.domainId },
-      )
-      const intent = await custody.intents.getAndWait(
-        { domainId: CUSTODY.domainId, intentId },
-        POLLING,
-      )
-      if (!intent.isSuccess) throw new Error(`[release quarantine ${label}] ${intent.reason}`)
+    if (result.proposed) {
+      if (!result.isSuccess) throw new Error(`[release quarantine ${label}] ${result.reason}`)
 
-      console.log(`  ✓ released ${items.length} quarantined transfer(s) for ${label}`)
+      console.log(`  ✓ released ${result.transferIds.length} quarantined transfer(s) for ${label}`)
       return
     }
 

@@ -219,3 +219,16 @@ stay consistent.
   transaction wait requires both halves. This is why ledger-writing intents have
   two waits, and why `xrpl.proposeIntentAndWait` covers both. See
   [docs/intents.md](docs/intents.md).
+
+- **Quarantine** — custody holding an incoming transfer back for compliance
+  review. Until it is released, the transferred amount counts as unavailable:
+  spending it fails the dry run with `CurrentlyNotEnoughFunds` although the
+  funds are on the ledger. Any received asset can be quarantined (XRP, IOU,
+  MPT). A transfer's `quarantineStatus` is `Quarantined`, `Released`, or
+  `Skipped` (never quarantined); the deprecated `quarantined` boolean is `true`
+  only for `Quarantined`.
+
+- **Release** — the `v0_ReleaseQuarantinedTransfers` intent: makes one
+  account's quarantined transfers spendable, bypassing their compliance review.
+  Finished when its intent is — there is no ledger transaction behind it.
+  Avoid "unlock" and "unfreeze", which name different things on the ledger.
