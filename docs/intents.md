@@ -31,15 +31,15 @@ carries a `reason`.
 
 ## Which method to reach for
 
-| You want to…                                    | Call                                                                      | Returns                                                           |
-| ----------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Write to the XRPL and know it landed            | `xrpl.proposeIntentAndWait(params, options?)`                             | Both stages' outcome, plus `requestId` / `payloadId` / `domainId` |
-| Write to the XRPL, follow it up yourself        | `xrpl.proposeIntent(params, options?)`                                    | `{ requestId, payloadId }`                                        |
-| Propose any other intent and know it executed   | `intents.proposeAndWait(payload, options?)`                               | The intent outcome, plus `requestId` / `domainId`                 |
-| Propose any other intent, follow it up yourself | `intents.proposePayload(payload, options?)`                               | `{ requestId, domainId }`                                         |
-| Send a request envelope you assembled yourself  | `intents.propose(body)`                                                   | `{ requestId }`                                                   |
-| Wait on an intent you already proposed          | `intents.getAndWait({ domainId, intentId }, options?)`                    | The intent outcome                                                |
-| Wait on the transaction an order produced       | `transactions.byOrderAndWait({ domainId, transactionOrderId }, options?)` | The transaction outcome                                           |
+| You want to…                                    | Call                                                                      | Returns                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Write to the XRPL and know it landed            | `xrpl.proposeIntentAndWait(params, options?)`                             | Both stages' outcome, plus `intentId` / `payloadId` / `domainId` |
+| Write to the XRPL, follow it up yourself        | `xrpl.proposeIntent(params, options?)`                                    | `{ intentId, payloadId }`                                        |
+| Propose any other intent and know it executed   | `intents.proposeAndWait(payload, options?)`                               | The intent outcome, plus `intentId` / `domainId`                 |
+| Propose any other intent, follow it up yourself | `intents.proposePayload(payload, options?)`                               | `{ intentId, domainId }`                                         |
+| Send a request envelope you assembled yourself  | `intents.propose(body)`                                                   | `{ requestId }`; the intent id is the `request.id` you set       |
+| Wait on an intent you already proposed          | `intents.getAndWait({ domainId, intentId }, options?)`                    | The intent outcome                                               |
+| Wait on the transaction an order produced       | `transactions.byOrderAndWait({ domainId, transactionOrderId }, options?)` | The transaction outcome                                          |
 
 ## The XRPL path
 
@@ -81,7 +81,7 @@ envelope — `type: "Propose"`, `author`, `targetDomainId`, `expiryAt`, `id`,
 `customProperties` — is built for you from the resolved domain context:
 
 ```ts
-const { requestId, domainId } = await custody.intents.proposePayload(
+const { intentId, domainId } = await custody.intents.proposePayload(
   { type: "v0_ReleaseQuarantinedTransfers", accountId, transferIds },
   { description: "Release the transfers held for review", expiryDays: 7 },
 )
@@ -145,31 +145,32 @@ person; the right budget is a property of the operator's deployment, not of the
 SDK. In production:
 
 ```ts
-const { requestId, domainId } = await custody.intents.proposePayload(payload)
+const { intentId, domainId } = await custody.intents.proposePayload(payload)
 // …persist the ids, then pick the intent up when the approval lands —
 // from a webhook (client.channels), the event log (client.events), or a sweep
-const intent = await custody.intents.get({ domainId, intentId: requestId })
+const intent = await custody.intents.get({ domainId, intentId })
 ```
 
 Reserve the waiting variants for development, auto-approved policies, and tests.
 
-## The two ids
+## The ids
 
-They are different ids and they are not interchangeable:
+A propose returns up to three ids, and they are not interchangeable:
 
 | Id          | What it identifies                                          | Where it comes from                                                                              |
 | ----------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `requestId` | The **intent** — poll and approve by this                   | Returned by every propose method; override with `options.requestId`                              |
+| `intentId`  | The **intent** — poll and approve by this                   | The request envelope's `id`. Returned by every propose method; pin it with `options.requestId`   |
+| `requestId` | The propose **request** itself, as custody echoes it back   | Returned by every propose method; not the id to poll or approve by                               |
 | `payloadId` | The **transaction order** — look the transaction up by this | Returned by `xrpl.proposeIntent` / `proposeBatch` / `rawSign`; override with `options.payloadId` |
 
-Both are generated as UUID v7s when you do not supply them, and both are
-returned — you never have to pre-mint an id to learn what the SDK is about to
+`intentId` and `payloadId` are generated as UUID v7s when you do not supply
+them, and both are returned — you never have to pre-mint an id to learn what the SDK is about to
 use:
 
 ```ts
-const { requestId, payloadId } = await custody.xrpl.proposeIntent({ Account, operation })
+const { intentId, payloadId } = await custody.xrpl.proposeIntent({ Account, operation })
 
-await custody.intents.getAndWait({ domainId, intentId: requestId })
+await custody.intents.getAndWait({ domainId, intentId })
 await custody.transactions.byOrderAndWait({ domainId, transactionOrderId: payloadId })
 const issuanceId = await custody.xrpl.getMptIssuanceIdAndWait({ domainId, payloadId })
 ```
