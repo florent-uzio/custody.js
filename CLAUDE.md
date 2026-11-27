@@ -45,6 +45,9 @@ Type aliases live beside the namespace that uses them (`src/namespaces/<name>.ty
 next to `src/namespaces/<name>.ts`), not under `src/services/`. `src/services/` is
 reserved for the modules with real implementation logic (`apis`, `auth`, `channels`,
 `keypairs`, `xrpl`) — everything else is a namespace, and its types co-locate with it.
+The exception is plumbing-only types no caller handles (a ports bag, an internal callback
+shape): they live with the code that uses them, in a module `src/index.ts` does not re-export,
+because every `*.types.ts` is public. See "Public by declaration" in `CODING_STANDARDS.md`.
 
 ## Do not hand-author types that duplicate or conflict with the generated file
 

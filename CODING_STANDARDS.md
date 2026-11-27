@@ -39,6 +39,9 @@ Every `src/namespaces/**/*.types.ts` is re-exported from `src/index.ts` with
 `export type *`, so each type added there is public API from the next
 release. A diff of `src/__snapshots__/public-exports.txt` lists exactly
 those additions and removals. For each new export, confirm a caller handles
-it (a param, option or result type). A type only the SDK's own plumbing needs — a ports bag, an
-internal callback shape — is a public-surface decision the changeset names,
-not an accident of where it was declared.
+it (a param, option or result type).
+
+A type only the SDK's own plumbing needs — a ports bag, an internal callback
+shape — lives with the code that uses it, in a module `src/index.ts` does not
+re-export. `src/namespaces/quarantine-release.ts` is the reference. Making
+such a type public is a decision the changeset names.

@@ -1,10 +1,6 @@
 import type { components, operations } from "../models/custody-types.js"
-import type { DomainUserReference } from "../models/domain-resolver.js"
 import type { Prettify } from "../type-utils/index.js"
 import type {
-  Core_IntentResponse,
-  Core_ProposeIntentBody,
-  Core_TrustedIntent,
   IntentEnvelopeOptions,
   ProposePayloadAndWaitOptions,
   ProposePayloadAndWaitResult,
@@ -224,39 +220,3 @@ export type ReleaseQuarantinedTransfersAndWaitResult =
         transferIds: string[]
       }
     >
-
-/** The account a release is for, and the user its intent is authored by. */
-export type QuarantineReleaseAccount = DomainUserReference & { accountId: string }
-
-/**
- * The I/O a release needs. `XrplPorts` satisfies it as-is; the `transactions`
- * namespace backs it with the transport.
- */
-export type QuarantineReleasePorts = {
-  /** One page of the domain's transfers (GET /v1/domains/{domainId}/transactions/transfers) */
-  listTransfers(
-    domainId: string,
-    query: TransferTransactionOrderQueryParams,
-  ): Promise<Core_TransfersCollection>
-  /** Proposes an intent (POST /v1/intents) */
-  submitIntent(body: Core_ProposeIntentBody): Promise<Core_IntentResponse>
-  /** Reads an intent back, for the wait (GET /v1/domains/{domainId}/intents/{intentId}) */
-  getIntent(domainId: string, intentId: string): Promise<Core_TrustedIntent>
-}
-
-/**
- * What a caller of the shared release flow supplies: the selection, and how
- * to find the account and the tickers an `all: true` release is narrowed to.
- * This is the only part that differs between `transactions.*` (by account id)
- * and `xrpl.*` (by address, and MPT issuance). `TAccount` lets a caller hand
- * its own richer account (the XRPL one carries its `ledgerId`) to
- * `resolveTickerIds`.
- */
-export type QuarantineReleaseTarget<
-  TAccount extends QuarantineReleaseAccount = QuarantineReleaseAccount,
-> = {
-  selection: { all?: true; transferIds?: string[] }
-  resolveAccount: () => Promise<TAccount>
-  /** `undefined` releases every ticker. Only called for `all: true`. */
-  resolveTickerIds: (account: TAccount) => Promise<string[] | undefined>
-}

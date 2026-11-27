@@ -417,9 +417,6 @@ type  ProposePayloadAndWaitOptions
 type  ProposePayloadAndWaitResult
 type  ProposePayloadResult
 type  QuarantinedTransferSelection
-type  QuarantineReleaseAccount
-type  QuarantineReleasePorts
-type  QuarantineReleaseTarget
 type  RawSignAndWaitOptions
 type  RawSignAndWaitResult
 type  ReadinessResponse

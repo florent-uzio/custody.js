@@ -14,10 +14,10 @@ import type {
 import {
   proposeRelease,
   proposeReleaseAndWait,
-  waitForOrderTransaction,
-} from "../../namespaces/transactions.js"
+  type QuarantineReleaseTarget,
+} from "../../namespaces/quarantine-release.js"
+import { waitForOrderTransaction } from "../../namespaces/transactions.js"
 import type {
-  QuarantineReleaseTarget,
   ReleaseQuarantinedTransfersAndWaitResult,
   ReleaseQuarantinedTransfersResult,
 } from "../../namespaces/transactions.types.js"
