@@ -331,8 +331,9 @@ export class XrplService {
    *
    * Resolves the address to its custody account, finds the quarantined
    * transfers (across every page) and proposes one `v0_ReleaseQuarantinedTransfers`
-   * intent for them. With `issuanceId`, both of the issuance's tickers are
-   * covered — the public one and, when the issuance is confidential, the
+   * intent for them. `asset` narrows `all: true` to one XRPL asset: an IOU,
+   * XRP, a custody ticker, or an MPT issuance — which covers both of its
+   * tickers, the public one and, when the issuance is confidential, the
    * confidential one.
    *
    * A release bypasses the compliance review of those transfers, so the
@@ -350,7 +351,7 @@ export class XrplService {
    *   the release intent's ids and the transfers it covers
    * @throws {CustodyError} If the address is invalid or resolves to no or
    *   several accounts, the selection names neither `transferIds` nor
-   *   `all: true`, custody has no ticker for `issuanceId`, or the propose call
+   *   `all: true`, custody has no ticker for the `asset`, or the propose call
    *   is rejected
    */
   public async releaseQuarantinedTransfers(
@@ -386,7 +387,7 @@ export class XrplService {
 
   /**
    * The release target for an XRPL address: the account comes from the
-   * address, and an `issuanceId` narrows to both of the issuance's tickers.
+   * address, and an `asset` narrows to that asset's ticker(s).
    * The address is checked here, before any request goes out.
    * @private
    */
@@ -408,25 +409,51 @@ export class XrplService {
   }
 
   /**
-   * The tickers an `all: true` release is narrowed to: both of an issuance's
-   * tickers, the given ticker, or `undefined` for no narrowing.
+   * The tickers an `all: true` release is narrowed to, from its `asset`: both
+   * of an MPT issuance's tickers, an IOU's or XRP's ticker, the given ticker,
+   * or `undefined` (no `asset`) for no narrowing.
+   *
+   * @throws {CustodyError} When custody tracks no ticker for the asset on the
+   *   ledger: the caller named an asset this ledger does not know, which is a
+   *   mistake to report rather than "nothing to release".
    * @private
    */
   private async quarantineTickerIds(
     params: XrplReleaseQuarantinedTransfersParams,
     ledgerId: string,
   ): Promise<string[] | undefined> {
-    if (!isUndefined(params.tickerId)) return [params.tickerId]
-    if (isUndefined(params.issuanceId)) return undefined
+    const { asset } = params
+    if (isUndefined(asset)) return undefined
 
-    const tickers = await this.ports.findMptTickers(params.issuanceId, ledgerId)
-    const tickerIds = [tickers.public?.id, tickers.confidential?.id].filter(isPresent)
+    let tickerIds: string[]
+    let label: string
+
+    switch (asset.type) {
+      case "TickerId":
+        return [asset.tickerId]
+      case "MultiPurposeToken": {
+        const tickers = await this.ports.findMptTickers(asset.issuanceId, ledgerId)
+        tickerIds = [tickers.public?.id, tickers.confidential?.id].filter(isPresent)
+        label = `XRPL MPT issuance ${asset.issuanceId}`
+        break
+      }
+      case "Currency": {
+        const ticker = await this.ports.findIouTicker(asset.code, asset.issuer, ledgerId)
+        tickerIds = [ticker?.id].filter(isPresent)
+        label = `XRPL IOU ${asset.code} issued by ${asset.issuer}`
+        break
+      }
+      case "Native": {
+        const ticker = await this.ports.findNativeTicker(ledgerId)
+        tickerIds = [ticker?.id].filter(isPresent)
+        label = "XRP"
+        break
+      }
+    }
 
     if (tickerIds.length === 0) {
       throw new CustodyError({
-        reason:
-          `No custody ticker found for XRPL MPT issuance ${params.issuanceId} ` +
-          `on ledger ${ledgerId}, so there are no transfers of it to release.`,
+        reason: `No custody ticker found for ${label} on ledger ${ledgerId}, so there are no transfers of it to release.`,
       })
     }
 

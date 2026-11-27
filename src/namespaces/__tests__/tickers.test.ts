@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { CustodyError } from "../../models/index.js"
 import { createFakeTransport } from "../../testing/fake-transport.js"
-import { findByXrplMptIssuanceId } from "../tickers.js"
+import { findByXrplIou, findByXrplMptIssuanceId, findXrplNative } from "../tickers.js"
 import type { Core_ApiTicker, Core_ApiTickerData } from "../tickers.types.js"
 
 const mockTransport = createFakeTransport()
@@ -191,5 +191,152 @@ describe("findByXrplMptIssuanceId", () => {
     await findByXrplMptIssuanceId(mockTransport, ISSUANCE, { ledgerId: LEDGER })
 
     expect(mockTransport.get).toHaveBeenCalledTimes(2)
+  })
+})
+
+const ISSUER = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh"
+const RLUSD_HEX = "524C555344000000000000000000000000000000"
+
+/** An XRPL IOU (`FungibleToken`) ticker for `currencyCode` issued by `issuer`. */
+const iou = (currencyCode: string, issuer = ISSUER, id = `ticker-${currencyCode}`) =>
+  makeTicker({
+    id,
+    ledgerDetails: { type: "XRPL", properties: { type: "FungibleToken", currencyCode, issuer } },
+  })
+
+describe("findByXrplIou", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("matches a ticker stored with the hex code when given the text code", async () => {
+    const rlusd = iou(RLUSD_HEX)
+    mockTransport.get.mockResolvedValue({ items: [makeTicker(), rlusd] })
+
+    const result = await findByXrplIou(mockTransport, "RLUSD", ISSUER, { ledgerId: LEDGER })
+
+    expect(result).toEqual(rlusd.data)
+  })
+
+  it("matches a ticker stored with the text code when given the hex code", async () => {
+    const rlusd = iou("RLUSD")
+    mockTransport.get.mockResolvedValue({ items: [rlusd] })
+
+    const result = await findByXrplIou(mockTransport, RLUSD_HEX, ISSUER, { ledgerId: LEDGER })
+
+    expect(result).toEqual(rlusd.data)
+  })
+
+  it("matches a standard 3-character code against its 160-bit hex form", async () => {
+    const usd = iou("0000000000000000000000005553440000000000")
+    mockTransport.get.mockResolvedValue({ items: [usd] })
+
+    expect(await findByXrplIou(mockTransport, "USD", ISSUER, { ledgerId: LEDGER })).toEqual(
+      usd.data,
+    )
+  })
+
+  it("does not match the same code from another issuer", async () => {
+    mockTransport.get.mockResolvedValue({ items: [iou("RLUSD", "rOtherIssuer")] })
+
+    expect(await findByXrplIou(mockTransport, "RLUSD", ISSUER, { ledgerId: LEDGER })).toBe(
+      undefined,
+    )
+  })
+
+  it("throws when two tickers claim the same currency and issuer", async () => {
+    mockTransport.get.mockResolvedValue({
+      items: [iou("RLUSD", ISSUER, "t-a"), iou(RLUSD_HEX, ISSUER, "t-b")],
+    })
+
+    await expect(
+      findByXrplIou(mockTransport, "RLUSD", ISSUER, { ledgerId: LEDGER }),
+    ).rejects.toThrow(CustodyError)
+  })
+
+  it("finds a match on a later page, filtering by ledger server-side", async () => {
+    const rlusd = iou(RLUSD_HEX)
+    mockTransport.get
+      .mockResolvedValueOnce({ items: [makeTicker()], nextStartingAfter: "ticker-1" })
+      .mockResolvedValueOnce({ items: [rlusd] })
+
+    expect(await findByXrplIou(mockTransport, "RLUSD", ISSUER, { ledgerId: LEDGER })).toEqual(
+      rlusd.data,
+    )
+    expect(mockTransport.get).toHaveBeenNthCalledWith(2, "/v1/tickers", undefined, {
+      ledgerId: [LEDGER],
+      limit: 100,
+      startingAfter: "ticker-1",
+    })
+  })
+
+  it("throws on a duplicate that only becomes visible across pages", async () => {
+    mockTransport.get
+      .mockResolvedValueOnce({ items: [iou("RLUSD", ISSUER, "t-a")], nextStartingAfter: "t-a" })
+      .mockResolvedValueOnce({ items: [iou(RLUSD_HEX, ISSUER, "t-b")] })
+
+    await expect(
+      findByXrplIou(mockTransport, "RLUSD", ISSUER, { ledgerId: LEDGER }),
+    ).rejects.toThrow(CustodyError)
+  })
+
+  it("keeps a 3-character non-ASCII code as a non-standard (hex) code", async () => {
+    const euros = iou("E282ACE282ACE282AC0000000000000000000000")
+    mockTransport.get.mockResolvedValue({ items: [euros] })
+
+    expect(await findByXrplIou(mockTransport, "€€€", ISSUER, { ledgerId: LEDGER })).toEqual(
+      euros.data,
+    )
+  })
+
+  it.each([
+    ["XRP", "is not an IOU"],
+    ["0000000000000000000000005852500000000000", "is not an IOU"],
+    ["0000000000000000000000000000000000000000", "is not an IOU"],
+    ["", "Invalid currency code"],
+    ["A_CODE_LONGER_THAN_20_BYTES", "Invalid currency code"],
+  ])("rejects %j before any request", async (code, message) => {
+    await expect(findByXrplIou(mockTransport, code, ISSUER, { ledgerId: LEDGER })).rejects.toThrow(
+      message,
+    )
+    expect(mockTransport.get).not.toHaveBeenCalled()
+  })
+})
+
+/** The ledger's native XRP ticker. */
+const native = (id = "ticker-xrp") =>
+  makeTicker({
+    id,
+    kind: "Native",
+    ledgerDetails: { type: "XRPL", properties: { type: "Native" } },
+  })
+
+describe("findXrplNative", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("returns the ledger's XRP ticker among its tokens", async () => {
+    const xrp = native()
+    mockTransport.get.mockResolvedValue({ items: [makeTicker(), iou("RLUSD"), xrp] })
+
+    expect(await findXrplNative(mockTransport, { ledgerId: LEDGER })).toEqual(xrp.data)
+    expect(mockTransport.get).toHaveBeenCalledWith("/v1/tickers", undefined, {
+      ledgerId: [LEDGER],
+      limit: 100,
+      startingAfter: undefined,
+    })
+  })
+
+  it("returns undefined when custody tracks no XRP ticker on the ledger", async () => {
+    mockTransport.get.mockResolvedValue({ items: [makeTicker()] })
+
+    expect(await findXrplNative(mockTransport, { ledgerId: LEDGER })).toBe(undefined)
+  })
+
+  it("throws when two XRP tickers exist on the ledger", async () => {
+    mockTransport.get.mockResolvedValue({ items: [native("x-1"), native("x-2")] })
+
+    await expect(findXrplNative(mockTransport, { ledgerId: LEDGER })).rejects.toThrow(CustodyError)
   })
 })

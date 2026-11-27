@@ -709,22 +709,31 @@ export type GetBatchSignatureParams = {
 // Quarantine release
 
 /**
+ * An XRPL asset, as custody names it in a Payment: an IOU (`Currency`, by
+ * `code` and `issuer`), an MPT issuance (`MultiPurposeToken`), a custody ticker
+ * (`TickerId`), or XRP (`Native`). Composed from the generated
+ * `Core_XrplPaymentCurrency` and `Core_XrplTickerProperties_Native`.
+ */
+export type XrplAsset =
+  | components["schemas"]["Core_XrplPaymentCurrency"]
+  | components["schemas"]["Core_XrplTickerProperties_Native"]
+
+/**
  * Which of an address's quarantined transfers to release: exactly one of
- * explicit `transferIds`, or `all: true`, optionally narrowed to one MPT
- * issuance (`issuanceId`) or one custody ticker (`tickerId`, for XRP and IOUs).
+ * explicit `transferIds`, or `all: true`, optionally narrowed to one `asset`.
  *
- * No default, as for `transactions.releaseQuarantinedTransfers`: a release bypasses
- * custody's compliance review, so releasing everything is asked for by name.
+ * No default, as for `transactions.releaseQuarantinedTransfers`: a release
+ * bypasses custody's compliance review, so releasing everything is asked for
+ * by name.
  */
 export type XrplQuarantinedTransferSelection =
-  | (ReleaseTransferIdsSelection & { issuanceId?: never })
-  | (ReleaseAllSelection & { issuanceId?: never })
+  | (ReleaseTransferIdsSelection & { asset?: never })
   | (Omit<ReleaseAllSelection, "tickerId"> & {
       /**
-       * Only release transfers of this XRPL MPT issuance — under its public
-       * and, when the issuance is confidential, its confidential ticker.
+       * Only release transfers of this asset. An MPT issuance covers its public
+       * ticker and, when the issuance is confidential, its confidential one.
        */
-      issuanceId?: string
+      asset?: XrplAsset
       tickerId?: never
     })
 

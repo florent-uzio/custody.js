@@ -220,6 +220,7 @@ type  ExportPreparedOperationsPathParams
 type  FillUserInvitationPathParams
 type  FindByAddressOptions
 type  FindByXrplMptIssuanceIdOptions
+type  FindXrplTickerOptions
 type  ForceUpdateAccountBalancesPathParams
 type  ForceUpdateAccountBalancesQueryParams
 type  GasStation_AccountSponsorResponseDto
@@ -466,9 +467,14 @@ type  WaitForSignatureOptions
 type  WaitForTransactionOptions
 type  WaitForTransactionResult
 type  XrplAccountReference
+type  XrplAsset
 type  XrplIntentOptions
 type  XrplLedgerId
 type  XrplMptIssuanceTickers
 type  XrplPorts
+type  XrplQuarantinedTransferSelection
+type  XrplReleaseQuarantinedTransfersAndWaitOptions
+type  XrplReleaseQuarantinedTransfersOptions
+type  XrplReleaseQuarantinedTransfersParams
 type  XrplTransactionOrderFields
 type  XrplTransactionOrderParams

@@ -172,6 +172,8 @@ function createTestPorts(overrides: Partial<XrplPorts> = {}): XrplPorts {
       overrides.listTransactions ?? (async () => ({ items: [{ id: mockTransactionId }] }) as any),
     listTransfers: overrides.listTransfers ?? (async () => ({ items: [], count: 0 })),
     findMptTickers: overrides.findMptTickers ?? (async () => ({})),
+    findIouTicker: overrides.findIouTicker ?? (async () => undefined),
+    findNativeTicker: overrides.findNativeTicker ?? (async () => undefined),
     getTransaction:
       overrides.getTransaction ??
       (async () =>
@@ -2952,7 +2954,7 @@ describe("XrplService.releaseQuarantinedTransfers", () => {
     })
   })
 
-  it("with `issuanceId`, releases the transfers of both the public and the confidential ticker", async () => {
+  it("with an MPT asset, releases the transfers of both the public and the confidential ticker", async () => {
     let tickerLookup: unknown[] = []
     const { service, queries, submitted } = recordingPorts({
       findMptTickers: async (issuanceId, ledgerId) => {
@@ -2968,7 +2970,7 @@ describe("XrplService.releaseQuarantinedTransfers", () => {
     const result = await service.releaseQuarantinedTransfers({
       address: mockAddress,
       all: true,
-      issuanceId: mockIssuanceId,
+      asset: { type: "MultiPurposeToken", issuanceId: mockIssuanceId },
     })
 
     expect(tickerLookup).toEqual([mockIssuanceId, mockLedgerId])
@@ -2977,29 +2979,84 @@ describe("XrplService.releaseQuarantinedTransfers", () => {
     expect(result).toMatchObject({ proposed: true, transferIds: ["t-1", "t-2", "t-3"] })
   })
 
-  it("throws when custody has no ticker for the issuance, and proposes nothing", async () => {
-    const { service, submitted } = recordingPorts({ findMptTickers: async () => ({}) })
+  it("with an IOU asset, narrows to the ticker of that currency and issuer", async () => {
+    let tickerLookup: unknown[] = []
+    const { service, queries } = recordingPorts({
+      findIouTicker: async (code, issuer, ledgerId) => {
+        tickerLookup = [code, issuer, ledgerId]
+        return { id: "tk-rlusd" } as any
+      },
+    })
 
-    await expect(
-      service.releaseQuarantinedTransfers({
-        address: mockAddress,
-        all: true,
-        issuanceId: mockIssuanceId,
-      }),
-    ).rejects.toThrow(CustodyError)
-    expect(submitted).toEqual([])
+    await service.releaseQuarantinedTransfers({
+      address: mockAddress,
+      all: true,
+      asset: { type: "Currency", code: "RLUSD", issuer: "rIssuer" },
+    })
+
+    expect(tickerLookup).toEqual(["RLUSD", "rIssuer", mockLedgerId])
+    expect(queries.map(({ query }) => query.tickerId)).toEqual(["tk-rlusd"])
   })
 
-  it("with `tickerId`, narrows to that ticker without a ticker lookup", async () => {
+  it("with the XRP asset, narrows to the ledger's native ticker", async () => {
+    let tickerLookup: unknown
+    const { service, queries } = recordingPorts({
+      findNativeTicker: async (ledgerId) => {
+        tickerLookup = ledgerId
+        return { id: "tk-xrp" } as any
+      },
+    })
+
+    await service.releaseQuarantinedTransfers({
+      address: mockAddress,
+      all: true,
+      asset: { type: "Native" },
+    })
+
+    expect(tickerLookup).toBe(mockLedgerId)
+    expect(queries.map(({ query }) => query.tickerId)).toEqual(["tk-xrp"])
+  })
+
+  it.each([
+    ["an MPT issuance", { type: "MultiPurposeToken", issuanceId: mockIssuanceId }],
+    ["an IOU", { type: "Currency", code: "RLUSD", issuer: "rIssuer" }],
+    ["XRP", { type: "Native" }],
+  ] as const)(
+    "throws when custody has no ticker for %s, and proposes nothing",
+    async (_, asset) => {
+      const { service, submitted } = recordingPorts({
+        findMptTickers: async () => ({}),
+        findIouTicker: async () => undefined,
+        findNativeTicker: async () => undefined,
+      })
+
+      await expect(
+        service.releaseQuarantinedTransfers({ address: mockAddress, all: true, asset }),
+      ).rejects.toThrow(CustodyError)
+      expect(submitted).toEqual([])
+    },
+  )
+
+  it("with a TickerId asset, narrows to that ticker without a ticker lookup", async () => {
     let looked = false
+    const lookup = async () => {
+      looked = true
+      return undefined
+    }
     const { service, queries } = recordingPorts({
       findMptTickers: async () => {
         looked = true
         return {}
       },
+      findIouTicker: lookup,
+      findNativeTicker: lookup,
     })
 
-    await service.releaseQuarantinedTransfers({ address: mockAddress, all: true, tickerId: "tk-1" })
+    await service.releaseQuarantinedTransfers({
+      address: mockAddress,
+      all: true,
+      asset: { type: "TickerId", tickerId: "tk-1" },
+    })
 
     expect(looked).toBe(false)
     expect(queries.map(({ query }) => query.tickerId)).toEqual(["tk-1"])
