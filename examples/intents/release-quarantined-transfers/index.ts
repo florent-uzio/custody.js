@@ -22,7 +22,7 @@ const releaseQuarantinedTransfers = async () => {
     // Fire-and-forget: the intent is proposed, and the ids to follow it up with
     // come back. This is the shape to use in production, where a custodian
     // approves the intent minutes later — see the note below
-    const { requestId, domainId } = await custody.intents.proposePayload(
+    const { intentId, domainId } = await custody.intents.proposePayload(
       {
         type: "v0_ReleaseQuarantinedTransfers",
         accountId: "00000000-0000-0000-0000-000000000000",
@@ -36,11 +36,11 @@ const releaseQuarantinedTransfers = async () => {
       },
     )
 
-    console.log({ requestId, domainId })
+    console.log({ intentId, domainId })
 
     // Pick it up whenever the approval lands — from a webhook, a scheduled
     // sweep, or a manual check
-    const intent = await custody.intents.get({ domainId, intentId: requestId })
+    const intent = await custody.intents.get({ domainId, intentId })
     console.log(intent.data.state.status)
 
     // ── Or, when an approval is not in the way ────────────────────────────
@@ -67,9 +67,9 @@ const releaseQuarantinedTransfers = async () => {
 
     if (!result.isTerminal) {
       // Still open — the intent is alive, so re-poll with
-      // `intents.getAndWait({ domainId, intentId: result.requestId })` rather
+      // `intents.getAndWait({ domainId, intentId: result.intentId })` rather
       // than proposing it a second time
-      console.log("Still pending:", result.requestId)
+      console.log("Still pending:", result.intentId)
     }
   } catch (error) {
     console.log(error)

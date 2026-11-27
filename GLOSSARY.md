@@ -131,11 +131,14 @@ links.
   objects with distinct ids and distinct failures. See
   [docs/intents.md](docs/intents.md).
 
-- **Request id vs payload id** — the two ids a ledger-writing propose generates,
-  not interchangeable. The **request id** identifies the _intent_: poll and
-  approve by it. The **payload id** identifies the _transaction order_ inside
-  it: look the resulting transaction up by it, where it appears as
-  `orderReference.Id`. Non-transaction-order intents have only a request id.
+- **Intent id vs payload id** — the two ids a ledger-writing propose
+  generates, not interchangeable. The **intent id** identifies the _intent_:
+  it is the request envelope's id, and you poll and approve by it. The
+  **payload id** identifies the _transaction order_ inside it: look the
+  resulting transaction up by it, where it appears as `orderReference.Id`.
+  Non-transaction-order intents have only an intent id. Custody also returns a
+  **request id** for the propose request itself; avoid it for the intent — it
+  is not the id to poll or approve by.
 
 - **Terminal** — a status the work will not move on from. For an **intent**:
   `Executed`, `Failed`, `Expired`, `Rejected`; `Open`, `Approved` and

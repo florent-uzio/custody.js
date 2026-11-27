@@ -261,7 +261,7 @@ const endpoint = await custody.endpoints.get({
 // Intent Operations
 // Propose a `v0_*` payload — the SDK builds the signed request envelope
 // (author, expiryAt, id, targetDomainId, customProperties) around it.
-const { requestId, domainId } = await custody.intents.proposePayload(
+const { intentId, domainId } = await custody.intents.proposePayload(
   { type: "v0_ReleaseQuarantinedTransfers", accountId: "account-id", transferIds: ["transfer-id"] },
   { description: "Release the transfers held for review", expiryDays: 7 },
 )
@@ -521,7 +521,7 @@ if (result.isSuccess) {
 
 The top level of the result **is** `transactions.byOrderAndWait`'s — `status`,
 `isTerminal`, `isSuccess`, `transaction`, `reason` — with the intent stage on
-`result.intent` and the resolved `requestId` / `payloadId` / `domainId`
+`result.intent` and the resolved `intentId` / `payloadId` / `domainId`
 alongside. The transaction stage is skipped when the intent does not execute:
 no transaction is coming, so there is nothing to wait for.
 
@@ -582,7 +582,7 @@ webhook route is treated as a genuine Custody event.
 | `description`             | `string`                 | -       | Human-readable description on the request (`request.description`)                                    |
 | `requestCustomProperties` | `Record<string, string>` | `{}`    | Custom metadata on the request                                                                       |
 | `payloadCustomProperties` | `Record<string, string>` | `{}`    | Custom metadata on the payload                                                                       |
-| `requestId`               | `string`                 | auto    | Override the auto-generated request ID                                                               |
+| `requestId`               | `string`                 | auto    | Pin the intent's id (returned as `intentId`) instead of a generated one                              |
 | `payloadId`               | `string`                 | auto    | Override the auto-generated payload ID                                                               |
 
 `domainId`, `expiryDays`, `description`, `requestCustomProperties` and
@@ -602,20 +602,22 @@ plus the `payloadId` the intent was proposed under, so follow-up lookups need no
 pre-generated UUID:
 
 ```typescript
-const { requestId, payloadId } = await custody.xrpl.proposeIntent({
+const { intentId, payloadId } = await custody.xrpl.proposeIntent({
   Account: "rIssuer...",
   operation: { type: "MPTokenIssuanceCreate", assetScale: 2, maximumAmount: "1000", flags: [] },
 })
 
-await custody.intents.getAndWait({ domainId, intentId: requestId })
+await custody.intents.getAndWait({ domainId, intentId })
 const issuanceId = await custody.xrpl.getMptIssuanceIdAndWait({ domainId, payloadId })
 ```
 
-The two ids are **not** interchangeable: `requestId` identifies the _intent_
+The two ids are **not** interchangeable: `intentId` identifies the _intent_
 (poll and approve by it), `payloadId` identifies the _transaction order_ inside
 it (look the resulting transaction up by it, where it appears as
 `orderReference.Id`). Both default to a generated UUID v7 and both come back, so
-you never have to pre-mint one to learn what the SDK is about to use.
+you never have to pre-mint one to learn what the SDK is about to use. The
+`requestId` custody also returns names the propose request itself, not the
+intent.
 
 ## Error Handling
 
