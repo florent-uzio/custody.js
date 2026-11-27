@@ -1,5 +1,30 @@
 # custody
 
+## 3.1.0
+
+### Minor Changes
+
+- 41ba7f0: When an XRPL dry run fails with `CurrentlyNotEnoughFunds` and the sending account has quarantined transfers, say so: `xrpl.dryRunIntent` sets the new optional `quarantineHint` on `DryRunIntentResult`, and `xrpl.proposeIntent*` with `dryRun: true` append it to the `CustodyError`. The hint counts the account's quarantined transfers across every asset and points at `releaseQuarantinedTransfers`. The lookup runs only on that failure, and a failed lookup leaves the error as Custody gave it.
+- 263b19f: Sync OpenAPI specs to Custody 1.43.7 (and 1.34.27) and regenerate types. Compliance: the Chainalysis risk-level policy gains an optional `notScreenable` action, `Compliance_WalletAnalysisRequest` gains an `ELLIPTIC` provider variant, and `previewAnalysis` now documents 500/501/502 error responses. No new endpoints or schemas.
+- 10db04e: Sync OpenAPI specs to Custody 1.43.8 (and 1.34.28) and regenerate types. No API changes: no new endpoints or schemas, and the generated models are unchanged. Only the known-version capability map gains `1.43.8` and `1.34.28`.
+- 4ac001c: Sync OpenAPI specs to Custody 1.43.9 (and 1.34.29) and regenerate types. 1.43.9 adds the `GET /v1/domains/{domainId}/omnibus/{omnibusId}/transfers` operation (`getOmnibusTransfers`) and the `Omnibus_JsonNullableOffsetDateTime`, `Omnibus_JsonNullableOmnibusTransferOperation`, `Omnibus_JsonNullableString`, `Omnibus_JsonNullableTenantRef`, `Omnibus_OmnibusTransferPageResponse`, `Omnibus_OmnibusTransferStructure` and `Omnibus_OmnibusTransferSummary` schemas. 1.34.29 has no API changes. The known-version capability map gains `1.43.9` and `1.34.29`.
+
+  The SDK exposes the new endpoint as `client.omnibus.listTransfers(params, query?)`.
+
+- bc167c1: Add helpers to release quarantined transfers. Ripple Custody quarantines incoming transfers, and a quarantined amount cannot be spent: the next send fails its dry run with `CurrentlyNotEnoughFunds`.
+
+  - `xrpl.releaseQuarantinedTransfers(params, options?)` takes an XRPL `address`, resolves its account, finds its quarantined transfers across every page and proposes one `v0_ReleaseQuarantinedTransfers` intent. Narrow it with an `asset`: an IOU (`{ type: "Currency", code, issuer }`), XRP (`{ type: "Native" }`), an MPT issuance (`{ type: "MultiPurposeToken", issuanceId }`, both of its tickers) or a custody ticker (`{ type: "TickerId", tickerId }`).
+  - `transactions.releaseQuarantinedTransfers(params, options?)` does the same by `domainId` and `accountId`, on any ledger.
+  - Both have an `AndWait` variant that also waits for the intent.
+
+  The selection is either explicit `transferIds` or `all: true`, with no default, because a release bypasses custody's compliance review. When nothing is quarantined, no intent is proposed and the result is `{ proposed: false }`. Transfers are filtered with `quarantined: true` rather than `quarantineStatus`, which some Custody versions answer with a 500 (#238).
+
+- 1b96646: Add `tickers.findByXrplIou(code, issuer, { ledgerId })` and `tickers.findXrplNative({ ledgerId })`, which find the custody ticker of an XRPL IOU and of a ledger's XRP. Like `findByXrplMptIssuanceId`, they read every page of the ledger's tickers and throw when two tickers match. `findByXrplIou` takes the currency code in either form (`"RLUSD"`, `"USD"` or the 40-character hex code) and compares it with each ticker's code in one canonical form, so it matches whichever form Custody stored.
+
+  `xrpl.releaseQuarantinedTransfers` narrows `all: true` with an `asset` (`XrplAsset`, composed from the generated `Core_XrplPaymentCurrency` and `Core_XrplTickerProperties_Native`) instead of `issuanceId` / `tickerId`, so an IOU or XRP can be named directly. `XrplAsset` and the XRPL release parameter and option types are now exported.
+
+  `XrplPorts` gains two required methods, `findIouTicker` and `findNativeTicker`, on top of `listTransfers` and `findMptTickers` from the unreleased quarantine-release change. A custom `XrplPorts` implementation must add all four. `createHttpPorts` already provides them.
+
 ## 3.0.0
 
 ### Major Changes
@@ -10,13 +35,16 @@
 
   ```ts
   // before
-  const { signingPayload } = await custody.xrpl.dryRunBatch(batchPayload)
-  const signed = await custody.xrpl.signBatchPayloadAndWait(signingPayload, ACCOUNT_1)
+  const { signingPayload } = await custody.xrpl.dryRunBatch(batchPayload);
+  const signed = await custody.xrpl.signBatchPayloadAndWait(
+    signingPayload,
+    ACCOUNT_1
+  );
 
   // after
-  const { signers } = await custody.xrpl.dryRunBatch(batchPayload)
-  const mine = signers.find((s) => s.account === ACCOUNT_1)!
-  const signed = await custody.xrpl.signBatchPayloadAndWait(mine)
+  const { signers } = await custody.xrpl.dryRunBatch(batchPayload);
+  const mine = signers.find((s) => s.account === ACCOUNT_1)!;
+  const signed = await custody.xrpl.signBatchPayloadAndWait(mine);
   ```
 
   Handles you stored from `signBatchPayload` before this release have no `participant`. Sign again to get a new handle.
@@ -26,8 +54,14 @@
 - f8a1bc7: `exports.generateMovementReport`, `generatePositionReport` and `generateOmnibusPositionReport` now narrow their return type by the body's `format`: `format: "CSV"` resolves to `string`, `format: "JSON"` to the report DTO. A `format` typed as `"CSV" | "JSON"` still gives the union. `GenerateMovementReportResponse`, `GeneratePositionReportResponse` and `GenerateOmnibusPositionReportResponse` take an optional format parameter (for example `GeneratePositionReportResponse<"JSON">`) that defaults to both formats.
 
   ```ts
-  const csv = await custody.exports.generatePositionReport({ ...filters, format: "CSV" }) // string
-  const report = await custody.exports.generatePositionReport({ ...filters, format: "JSON" }) // Export_PositionReportResponseDto
+  const csv = await custody.exports.generatePositionReport({
+    ...filters,
+    format: "CSV",
+  }); // string
+  const report = await custody.exports.generatePositionReport({
+    ...filters,
+    format: "JSON",
+  }); // Export_PositionReportResponseDto
   ```
 
 - b8ed35a: `batchToCustodyBatchPayload` now maps the outer Batch's XLS-68 `Sponsor` + `SponsorFlags` to order-level `sponsorship`. Before, the outer sponsorship was silently dropped. The key is left off when the Batch has no `Sponsor`, and inconsistent sponsor fields throw a `CustodyError`. Only `spfSponsorFee` is valid on an outer Batch: the ledger rejects `spfSponsorReserve` there.
@@ -95,12 +129,13 @@
   Every `.list()`-style method in this SDK returns **exactly one page**, and nothing in the response says so at the call site. Roughly 40 methods across 20 namespaces are affected — `tickers.list`, `accounts.getAccountBalances`, `transactions.transfers`, `events.list`, `users.list`, every `virtualLedgers.*` list, and the rest. `startingAfter` has been in the generated types all along and nothing in `src/` ever passed it. So code that lists a collection and filters `items` itself gets `undefined` from a `.find()` and concludes the record does not exist — no error, no warning, no truncation signal of any kind.
 
   ```ts
-  import { paginate } from "@florent-uzio/custody"
+  import { paginate } from "@florent-uzio/custody";
 
-  const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+  const fetchTickers = (startingAfter) =>
+    custody.tickers.list({ limit: 100, startingAfter });
 
   for await (const ticker of paginate(fetchTickers)) {
-    if (ticker.ledgerId === "xrpl-testnet") return ticker
+    if (ticker.ledgerId === "xrpl-testnet") return ticker;
   }
   ```
 
@@ -153,8 +188,8 @@
   ```ts
   const { requestId, domainId } = await client.intents.proposePayload(
     { type: "v0_ReleaseQuarantinedTransfers", accountId, transferIds },
-    { description: "Release the transfers held for review", expiryDays: 7 },
-  )
+    { description: "Release the transfers held for review", expiryDays: 7 }
+  );
   ```
 
   `author.id` also forced a bootstrap on the caller — `users.me()`, then find the domain, then read `userReference.id`, usually cached in a module-level mutable. Both propose methods absorb it, and `domains.me()` exposes the same resolution as `{ domainId, userId }` for anyone who needs the ids directly. `users.me()` still returns the raw reference for callers who want the public key, aliases or roles.
@@ -166,9 +201,9 @@
   Also adds `reason?: string` to `WaitForExecutionResult`, matching what `WaitForTransactionResult` already carries: one sentence saying why a wait did not succeed, `undefined` exactly when `isSuccess` is true. It prefers `state.error`, which carries a rejection code and a message from the policy engine and which nothing in the SDK surfaced before:
 
   ```ts
-  "Intent 1e9… was Rejected (PolicyViolation): approval threshold not met"
-  "Intent 1e9… was still awaiting approval after 10 attempts."
-  "Intent 1e9… did not execute (status: Expired)."
+  "Intent 1e9… was Rejected (PolicyViolation): approval threshold not met";
+  "Intent 1e9… was still awaiting approval after 10 attempts.";
+  "Intent 1e9… did not execute (status: Expired).";
   ```
 
   `intents.getAndWait` gains it too, and `xrpl.proposeIntentAndWait`'s intent-stage reason now comes from this one composition rather than a second hand-rolled one. As with the transaction `reason`, it is a message and not a contract — narrow on `status` and read `intent.data.state.error` for anything the code has to branch on.
@@ -234,15 +269,15 @@
   Following a write through took three calls — `xrpl.proposeIntent`, then `intents.getAndWait`, then `transactions.byOrderAndWait` — plus a `users.me()` bootstrap to learn the domain id. The sequencing is SDK knowledge, not application knowledge: an intent reporting `Executed` only means custody accepted the transaction order, and the transaction can still fail while custody prepares it or once it is on chain. Every consumer following a write was rewriting the same loop.
 
   ```ts
-  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation });
 
   if (result.isSuccess) {
     // The transaction completed and the ledger accepted it
-    console.log(result.transaction)
+    console.log(result.transaction);
   } else if (!result.intent.isSuccess) {
     // Rejected by policy, expired, or still open when the attempts ran out —
     // no transaction was ever created
-    console.log(result.intent.status)
+    console.log(result.intent.status);
   }
   ```
 
@@ -277,13 +312,13 @@
   "Given an MPT issuance ID, what are my tickers?" is the first question any confidential-MPT flow asks: the confidential ticker id is the only way to read a confidential balance, and neither id is derivable from the issuance ID. `getTickers` has no `issuanceId` query parameter, so answering it meant listing a ledger's tickers and scanning `data.ledgerDetails.properties` client-side — twice per asset, once for `MultiPurposeToken` and once for `ConfidentialMultiPurposeToken`.
 
   ```ts
-  const { public: mmf, confidential: mmfConf } = await custody.tickers.findByXrplMptIssuanceId(
-    MMF_ISSUANCE_ID,
-    { ledgerId: "xrpl-testnet-august-2024" },
-  )
+  const { public: mmf, confidential: mmfConf } =
+    await custody.tickers.findByXrplMptIssuanceId(MMF_ISSUANCE_ID, {
+      ledgerId: "xrpl-testnet-august-2024",
+    });
 
-  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
-  const scale = mmf.decimals ?? 0
+  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.");
+  const scale = mmf.decimals ?? 0;
   ```
 
   It takes the ID `xrpl.getMptIssuanceId` produces, and the names match so the pairing is visible.
@@ -305,10 +340,10 @@
   `transactions.byOrderAndWait` and `xrpl.proposeIntentAndWait` deliberately never throw, so every caller that wanted to log or re-throw the failure was writing the same assembly: dig `hint` out of `processing` with an `in` check because the union only carries it on some statuses, pull `reason` and `cause` off an `Interrupted` one, then append `ledgerTransactionData.failure` for the on-chain case. The SDK is the only place that knows which of those three surfaces applies.
 
   ```ts
-  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation });
 
   if (!result.isSuccess) {
-    throw new Error(result.reason)
+    throw new Error(result.reason);
     // "Transaction 6f0… was rejected by the ledger (FailedOnChain)."
     // "Transaction 6f0… failed before it reached the ledger (InvalidUserPayload)."
     // "No transaction was registered for the order after 10 attempts."
@@ -344,13 +379,13 @@
     issuanceId,
     amount: "1000",
     ticketSequence,
-  })
+  });
 
-  batch.RawTransactions.push({ RawTransaction: leg.transaction })
+  batch.RawTransactions.push({ RawTransaction: leg.transaction });
 
   const payload = batchToCustodyBatchPayload(autofilled, {
     confidentialSends: { [senderAddress]: leg.entryFields },
-  })
+  });
   ```
 
   `sender` and `destination` are XRPL addresses, as everywhere else in `custody.xrpl` — the sender's domain, account id and ledger are resolved from its address through the same `resolveContext` the other methods use, so callers no longer have to carry custody account ids alongside addresses. Pass `domainId` / `ledgerId` only when the address is registered more than once, and `polling` to raise the computation's default budget of 10 attempts 3s apart.
@@ -545,12 +580,13 @@
   Every `.list()`-style method in this SDK returns **exactly one page**, and nothing in the response says so at the call site. Roughly 40 methods across 20 namespaces are affected — `tickers.list`, `accounts.getAccountBalances`, `transactions.transfers`, `events.list`, `users.list`, every `virtualLedgers.*` list, and the rest. `startingAfter` has been in the generated types all along and nothing in `src/` ever passed it. So code that lists a collection and filters `items` itself gets `undefined` from a `.find()` and concludes the record does not exist — no error, no warning, no truncation signal of any kind.
 
   ```ts
-  import { paginate } from "@florent-uzio/custody"
+  import { paginate } from "@florent-uzio/custody";
 
-  const fetchTickers = (startingAfter) => custody.tickers.list({ limit: 100, startingAfter })
+  const fetchTickers = (startingAfter) =>
+    custody.tickers.list({ limit: 100, startingAfter });
 
   for await (const ticker of paginate(fetchTickers)) {
-    if (ticker.ledgerId === "xrpl-testnet") return ticker
+    if (ticker.ledgerId === "xrpl-testnet") return ticker;
   }
   ```
 
@@ -575,13 +611,13 @@
   "Given an MPT issuance ID, what are my tickers?" is the first question any confidential-MPT flow asks: the confidential ticker id is the only way to read a confidential balance, and neither id is derivable from the issuance ID. `getTickers` has no `issuanceId` query parameter, so answering it meant listing a ledger's tickers and scanning `data.ledgerDetails.properties` client-side — twice per asset, once for `MultiPurposeToken` and once for `ConfidentialMultiPurposeToken`.
 
   ```ts
-  const { public: mmf, confidential: mmfConf } = await custody.tickers.findByXrplMptIssuanceId(
-    MMF_ISSUANCE_ID,
-    { ledgerId: "xrpl-testnet-august-2024" },
-  )
+  const { public: mmf, confidential: mmfConf } =
+    await custody.tickers.findByXrplMptIssuanceId(MMF_ISSUANCE_ID, {
+      ledgerId: "xrpl-testnet-august-2024",
+    });
 
-  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.")
-  const scale = mmf.decimals ?? 0
+  if (mmf === undefined) throw new Error("MMF not found in Ripple Custody.");
+  const scale = mmf.decimals ?? 0;
   ```
 
   It takes the ID `xrpl.getMptIssuanceId` produces, and the names match so the pairing is visible.
@@ -616,8 +652,8 @@
   ```ts
   const { requestId, domainId } = await client.intents.proposePayload(
     { type: "v0_ReleaseQuarantinedTransfers", accountId, transferIds },
-    { description: "Release the transfers held for review", expiryDays: 7 },
-  )
+    { description: "Release the transfers held for review", expiryDays: 7 }
+  );
   ```
 
   `author.id` also forced a bootstrap on the caller — `users.me()`, then find the domain, then read `userReference.id`, usually cached in a module-level mutable. Both propose methods absorb it, and `domains.me()` exposes the same resolution as `{ domainId, userId }` for anyone who needs the ids directly. `users.me()` still returns the raw reference for callers who want the public key, aliases or roles.
@@ -629,9 +665,9 @@
   Also adds `reason?: string` to `WaitForExecutionResult`, matching what `WaitForTransactionResult` already carries: one sentence saying why a wait did not succeed, `undefined` exactly when `isSuccess` is true. It prefers `state.error`, which carries a rejection code and a message from the policy engine and which nothing in the SDK surfaced before:
 
   ```ts
-  "Intent 1e9… was Rejected (PolicyViolation): approval threshold not met"
-  "Intent 1e9… was still awaiting approval after 10 attempts."
-  "Intent 1e9… did not execute (status: Expired)."
+  "Intent 1e9… was Rejected (PolicyViolation): approval threshold not met";
+  "Intent 1e9… was still awaiting approval after 10 attempts.";
+  "Intent 1e9… did not execute (status: Expired).";
   ```
 
   `intents.getAndWait` gains it too, and `xrpl.proposeIntentAndWait`'s intent-stage reason now comes from this one composition rather than a second hand-rolled one. As with the transaction `reason`, it is a message and not a contract — narrow on `status` and read `intent.data.state.error` for anything the code has to branch on.
@@ -643,15 +679,15 @@
   Following a write through took three calls — `xrpl.proposeIntent`, then `intents.getAndWait`, then `transactions.byOrderAndWait` — plus a `users.me()` bootstrap to learn the domain id. The sequencing is SDK knowledge, not application knowledge: an intent reporting `Executed` only means custody accepted the transaction order, and the transaction can still fail while custody prepares it or once it is on chain. Every consumer following a write was rewriting the same loop.
 
   ```ts
-  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation });
 
   if (result.isSuccess) {
     // The transaction completed and the ledger accepted it
-    console.log(result.transaction)
+    console.log(result.transaction);
   } else if (!result.intent.isSuccess) {
     // Rejected by policy, expired, or still open when the attempts ran out —
     // no transaction was ever created
-    console.log(result.intent.status)
+    console.log(result.intent.status);
   }
   ```
 
@@ -676,10 +712,10 @@
   `transactions.byOrderAndWait` and `xrpl.proposeIntentAndWait` deliberately never throw, so every caller that wanted to log or re-throw the failure was writing the same assembly: dig `hint` out of `processing` with an `in` check because the union only carries it on some statuses, pull `reason` and `cause` off an `Interrupted` one, then append `ledgerTransactionData.failure` for the on-chain case. The SDK is the only place that knows which of those three surfaces applies.
 
   ```ts
-  const result = await client.xrpl.proposeIntentAndWait({ Account, operation })
+  const result = await client.xrpl.proposeIntentAndWait({ Account, operation });
 
   if (!result.isSuccess) {
-    throw new Error(result.reason)
+    throw new Error(result.reason);
     // "Transaction 6f0… was rejected by the ledger (FailedOnChain)."
     // "Transaction 6f0… failed before it reached the ledger (InvalidUserPayload)."
     // "No transaction was registered for the order after 10 attempts."
@@ -703,13 +739,13 @@
     issuanceId,
     amount: "1000",
     ticketSequence,
-  })
+  });
 
-  batch.RawTransactions.push({ RawTransaction: leg.transaction })
+  batch.RawTransactions.push({ RawTransaction: leg.transaction });
 
   const payload = batchToCustodyBatchPayload(autofilled, {
     confidentialSends: { [senderAddress]: leg.entryFields },
-  })
+  });
   ```
 
   `sender` and `destination` are XRPL addresses, as everywhere else in `custody.xrpl` — the sender's domain, account id and ledger are resolved from its address through the same `resolveContext` the other methods use, so callers no longer have to carry custody account ids alongside addresses. Pass `domainId` / `ledgerId` only when the address is registered more than once, and `polling` to raise the computation's default budget of 10 attempts 3s apart.
@@ -1178,6 +1214,7 @@
   The nested `getIntentWithRetry` loop would throw a 404 that bypassed the outer
   `waitForExecution` retry loop, causing `getAndWait` to fail immediately when the
   intent was not yet available (e.g. right after proposing) instead of polling for it.
+
   - Merged `getIntentWithRetry` into `waitForExecution` as a single retry loop that
     treats a 404 as "not available yet" and keeps polling until `maxRetries`.
   - A persistent 404 (intent never materializes) now throws a `CustodyError` with
@@ -1258,9 +1295,11 @@
   New namespaces on RippleCustody
 
   client.events
+
   - list(params, query?) — fetches a paginated Core_EventsCollection from the Core events endpoint.
 
   client.channels (EDS — Event Delivery Service)
+
   - list(params) — list all channels for a domain
   - get(params) — get a single channel
   - create(params, body) — create a channel (sent unsigned, no signed-envelope wrapping)
@@ -1276,6 +1315,7 @@
   parseEventPayload(event: EDS_Event): Core_HarmonizeEvent — parses the JSON-encoded payload string on an EDS_Event into a fully typed Core_HarmonizeEvent. Narrows the inner payload.type discriminator so callers can switch on the event variant. Throws CustodyError on missing payload, invalid JSON, or missing type discriminator.
 
   Transport layer changes
+
   - Added patch<T> and delete<T> methods to TypedTransport and ApiService
   - Added sign?: boolean option to post() — when false, the request body is forwarded as-is without canonicalization or signed-envelope wrapping (used by channel create/test which use a flat body format)
 
@@ -1312,6 +1352,7 @@
 - 2d9684c: fix: flatten manifest polling retry logic in waitForManifestSignature
 
   The nested `getManifestWithRetry` loop would throw a 404 that bypassed the outer `waitForManifestSignature` retry loop, causing `rawSignAndWait` and `rawSignInnerBatchAndWait` to fail immediately when the manifest wasn't ready yet.
+
   - Merged `getManifestWithRetry` into `waitForManifestSignature` as a single retry loop that handles both 404s and missing signatures
   - Removed `notFoundRetries` and `notFoundIntervalMs` from `WaitForSignatureOptions`
   - Changed `maxRetries` default from 10 to 3
@@ -1323,6 +1364,7 @@
 - 68ca3ed: rawSignInnerBatchAndWait now returns batchSigner (xrpl.js BatchSigner format) and custodyBatchSigner (Ripple Custody API format) alongside the existing signature and signingPubKey fields. This removes the need for callers to manually construct BatchSigner objects or call batchSignersToCustodyBatchSigners after signing.
 
   Changes
+
   - src/services/xrpl/xrpl.types.ts — Added RawSignInnerBatchAndWaitResult type extending RawSignAndWaitResult with batchSigner and custodyBatchSigner fields.
   - src/services/xrpl/xrpl.service.ts — Updated rawSignInnerBatchAndWait to return the new type, constructing both batch signer formats from the signer address, public key, and signature.
   - src/index.ts — Exported RawSignInnerBatchAndWaitResult.
@@ -1350,7 +1392,7 @@
     Account: "rSender...",
     amount: "100",
     destination: { address: "rDest...", type: "Address" },
-  })
+  });
   ```
 
   **After:**
@@ -1363,12 +1405,13 @@
       amount: "100",
       destination: { address: "rDest...", type: "Address" },
     },
-  })
+  });
   ```
 
   New XRPL transaction types are supported automatically when the OpenAPI spec is regenerated — no new SDK method required.
 
   ### Other changes
+
   - `XrplService` now accepts an `XrplPorts` interface for I/O dependencies, enabling simpler testing with in-memory adapters instead of mock-heavy setups.
   - `DomainResolverService` has been removed. Its domain resolution and user validation logic is now internal to the HTTP port adapter.
   - `rawSign`, `rawSignAndWait`, `rawSignInnerBatch`, `rawSignInnerBatchAndWait`, and `getPublicKey` are unchanged.
