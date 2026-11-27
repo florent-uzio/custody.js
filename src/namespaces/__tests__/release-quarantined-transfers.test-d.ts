@@ -33,24 +33,42 @@ describe("releaseQuarantinedTransfers selection", () => {
     }
   })
 
-  it("XRPL: narrows by `issuanceId` or `tickerId`, not both", () => {
+  it("XRPL: narrows `all: true` by one asset", () => {
     ;() => {
       void xrpl.releaseQuarantinedTransfers({ address, transferIds: ["t-1"] })
       void xrpl.releaseQuarantinedTransfers({ address, all: true })
-      void xrpl.releaseQuarantinedTransfers({ address, all: true, issuanceId: "00" })
-      void xrpl.releaseQuarantinedTransfers({ address, all: true, tickerId: "tk-1" })
-
-      // @ts-expect-error — neither
-      void xrpl.releaseQuarantinedTransfers({ address })
-      // @ts-expect-error — both filters
       void xrpl.releaseQuarantinedTransfers({
         address,
         all: true,
-        issuanceId: "00",
-        tickerId: "tk",
+        asset: { type: "MultiPurposeToken", issuanceId: "00" },
       })
-      // @ts-expect-error — filters only narrow `all: true`
-      void xrpl.releaseQuarantinedTransfers({ address, transferIds: ["t-1"], issuanceId: "00" })
+      void xrpl.releaseQuarantinedTransfers({
+        address,
+        all: true,
+        asset: { type: "Currency", code: "RLUSD", issuer: address },
+      })
+      void xrpl.releaseQuarantinedTransfers({ address, all: true, asset: { type: "Native" } })
+      void xrpl.releaseQuarantinedTransfers({
+        address,
+        all: true,
+        asset: { type: "TickerId", tickerId: "tk-1" },
+      })
+
+      // @ts-expect-error — neither
+      void xrpl.releaseQuarantinedTransfers({ address })
+      // @ts-expect-error — the ticker goes in `asset`, not beside it
+      void xrpl.releaseQuarantinedTransfers({ address, all: true, tickerId: "tk" })
+      const missingIssuer = {
+        address,
+        all: true as const,
+        asset: { type: "Currency" as const, code: "RLUSD" },
+      }
+      // @ts-expect-error — an IOU needs its issuer
+      void xrpl.releaseQuarantinedTransfers(missingIssuer)
+
+      const assetWithIds = { address, transferIds: ["t-1"], asset: { type: "Native" as const } }
+      // @ts-expect-error — `asset` only narrows `all: true`
+      void xrpl.releaseQuarantinedTransfers(assetWithIds)
     }
   })
 })

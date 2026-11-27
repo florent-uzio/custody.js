@@ -7,14 +7,18 @@ export type GetTickersQueryParams = operations["getTickers"]["parameters"]["quer
 
 export type GetTickerPathParams = operations["getTicker"]["parameters"]["path"]
 
-export type FindByXrplMptIssuanceIdOptions = {
+/** Options of the XRPL ticker lookups (`findByXrplIou`, `findXrplNative`). */
+export type FindXrplTickerOptions = {
   /**
-   * The XRPL ledger to search. Required: an MPT issuance ID only identifies a
-   * token within one network, and this is the single filter `getTickers`
-   * applies server-side.
+   * The XRPL ledger to search. Required: an asset only identifies a token
+   * within one network, and this is the single filter `getTickers` applies
+   * server-side.
    */
   ledgerId: XrplLedgerId
 }
+
+/** Options of `findByXrplMptIssuanceId`: the same `ledgerId` as every XRPL ticker lookup. */
+export type FindByXrplMptIssuanceIdOptions = FindXrplTickerOptions
 
 // Response types
 

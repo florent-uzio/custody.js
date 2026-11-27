@@ -19,7 +19,7 @@ import type {
   Core_ProposeIntentBody,
   Core_TrustedIntent,
 } from "../../namespaces/intents.types.js"
-import { findByXrplMptIssuanceId } from "../../namespaces/tickers.js"
+import { findByXrplIou, findByXrplMptIssuanceId, findXrplNative } from "../../namespaces/tickers.js"
 import type {
   Core_TransactionDetails,
   Core_TransactionsCollection,
@@ -42,7 +42,8 @@ import type { XrplPorts } from "./xrpl.ports.js"
  * - account details (GET /v1/domains/.../accounts/...)
  * - parameters computation (POST + GET /v1/domains/.../parameters-compute)
  * - transfers (GET /v1/domains/.../transactions/transfers)
- * - MPT issuance tickers (GET /v1/tickers, via findByXrplMptIssuanceId)
+ * - XRPL asset tickers (GET /v1/tickers, via findByXrplMptIssuanceId,
+ *   findByXrplIou and findXrplNative)
  */
 export function createHttpPorts(transport: Transport): XrplPorts {
   return {
@@ -122,6 +123,14 @@ export function createHttpPorts(transport: Transport): XrplPorts {
 
     findMptTickers(issuanceId: string, ledgerId: string) {
       return findByXrplMptIssuanceId(transport, issuanceId, { ledgerId })
+    },
+
+    findIouTicker(code: string, issuer: string, ledgerId: string) {
+      return findByXrplIou(transport, code, issuer, { ledgerId })
+    },
+
+    findNativeTicker(ledgerId: string) {
+      return findXrplNative(transport, { ledgerId })
     },
   }
 }

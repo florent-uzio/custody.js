@@ -419,4 +419,44 @@ describe("createHttpPorts", () => {
       expect(result).toEqual({ public: ticker })
     })
   })
+
+  describe("findIouTicker", () => {
+    it("looks the currency and issuer up among the ledger's tickers", async () => {
+      const ticker = {
+        id: "tk-rlusd",
+        ledgerDetails: {
+          type: "XRPL",
+          properties: {
+            type: "FungibleToken",
+            currencyCode: "524C555344000000000000000000000000000000",
+            issuer: "rIssuer",
+          },
+        },
+      }
+      mockTransport.get.mockResolvedValue({ items: [{ data: ticker }], count: 1 })
+      const ports = createHttpPorts(mockTransport)
+
+      const result = await ports.findIouTicker("RLUSD", "rIssuer", "xrpl-testnet")
+
+      expect(mockTransport.get).toHaveBeenCalledWith(
+        URLs.tickers,
+        undefined,
+        expect.objectContaining({ ledgerId: ["xrpl-testnet"] }),
+      )
+      expect(result).toEqual(ticker)
+    })
+  })
+
+  describe("findNativeTicker", () => {
+    it("looks the ledger's XRP ticker up", async () => {
+      const ticker = {
+        id: "tk-xrp",
+        ledgerDetails: { type: "XRPL", properties: { type: "Native" } },
+      }
+      mockTransport.get.mockResolvedValue({ items: [{ data: ticker }], count: 1 })
+      const ports = createHttpPorts(mockTransport)
+
+      expect(await ports.findNativeTicker("xrpl-testnet")).toEqual(ticker)
+    })
+  })
 })

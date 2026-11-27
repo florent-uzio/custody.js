@@ -23,14 +23,15 @@ const releaseQuarantinedTransfers = async () => {
 
     // A release bypasses custody's compliance review of those transfers, so
     // there is no default: name the transfers, or ask for `all: true`.
-    // `issuanceId` narrows it to one MPT, under both its public and (if the
-    // issuance is confidential) its confidential ticker. Use `tickerId` for XRP
-    // or an IOU.
+    // `asset` narrows it to one asset: an MPT issuance (under both its public
+    // and, if the issuance is confidential, its confidential ticker), an IOU
+    // ({ type: "Currency", code, issuer }), XRP ({ type: "Native" }) or a
+    // custody ticker ({ type: "TickerId", tickerId }).
     const result = await custody.xrpl.releaseQuarantinedTransfers(
       {
         address: "r...", // The holder that received the transfers
         all: true,
-        issuanceId: "00000AA1...", // Optional: only this MPT
+        asset: { type: "MultiPurposeToken", issuanceId: "00000AA1..." }, // Optional: only this MPT
       },
       { description: "Release received MPT for spending" },
     )

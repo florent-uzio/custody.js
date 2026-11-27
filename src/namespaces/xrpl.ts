@@ -122,15 +122,16 @@ export function createXrpl(getService: () => XrplService) {
      *
      * A release bypasses custody's compliance review of those transfers, so
      * pass explicit `transferIds` or `all: true` — there is no default. Narrow
-     * `all: true` with `issuanceId` (both of an MPT issuance's tickers) or
-     * `tickerId` (XRP, IOUs). Proposes nothing (`proposed: false`) when nothing
-     * is quarantined.
+     * `all: true` to one `asset`: an IOU (`Currency`), XRP (`Native`), a custody
+     * ticker (`TickerId`), or an MPT issuance (`MultiPurposeToken`, both of its
+     * tickers). Proposes nothing (`proposed: false`) when nothing is
+     * quarantined.
      *
      * ```ts
      * const result = await custody.xrpl.releaseQuarantinedTransfers({
      *   address: "r...",
      *   all: true,
-     *   issuanceId: "00000AA1...",
+     *   asset: { type: "Currency", code: "RLUSD", issuer: "r..." },
      * })
      * if (result.proposed) console.log(result.intentId, result.transferIds)
      * ```

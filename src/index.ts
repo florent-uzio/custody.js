@@ -197,8 +197,13 @@ export type {
   WaitForMptIssuanceIdOptions,
   WaitForSignatureOptions,
   XrplAccountReference,
+  XrplAsset,
   XrplIntentOptions,
   XrplPorts,
+  XrplQuarantinedTransferSelection,
+  XrplReleaseQuarantinedTransfersAndWaitOptions,
+  XrplReleaseQuarantinedTransfersOptions,
+  XrplReleaseQuarantinedTransfersParams,
   XrplTransactionOrderFields,
   XrplTransactionOrderParams,
 } from "./services/xrpl/index.js"

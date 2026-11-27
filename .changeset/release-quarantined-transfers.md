@@ -4,7 +4,7 @@
 
 Add helpers to release quarantined transfers. Ripple Custody quarantines incoming transfers, and a quarantined amount cannot be spent: the next send fails its dry run with `CurrentlyNotEnoughFunds`.
 
-- `xrpl.releaseQuarantinedTransfers(params, options?)` takes an XRPL `address`, resolves its account, finds its quarantined transfers across every page and proposes one `v0_ReleaseQuarantinedTransfers` intent. Narrow it with `issuanceId` (both of an MPT issuance's tickers) or `tickerId`.
+- `xrpl.releaseQuarantinedTransfers(params, options?)` takes an XRPL `address`, resolves its account, finds its quarantined transfers across every page and proposes one `v0_ReleaseQuarantinedTransfers` intent. Narrow it with an `asset`: an IOU (`{ type: "Currency", code, issuer }`), XRP (`{ type: "Native" }`), an MPT issuance (`{ type: "MultiPurposeToken", issuanceId }`, both of its tickers) or a custody ticker (`{ type: "TickerId", tickerId }`).
 - `transactions.releaseQuarantinedTransfers(params, options?)` does the same by `domainId` and `accountId`, on any ledger.
 - Both have an `AndWait` variant that also waits for the intent.
 

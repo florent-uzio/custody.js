@@ -14,7 +14,7 @@ import type {
   Core_ProposeIntentBody,
   Core_TrustedIntent,
 } from "../../namespaces/intents.types.js"
-import type { XrplMptIssuanceTickers } from "../../namespaces/tickers.types.js"
+import type { Core_ApiTickerData, XrplMptIssuanceTickers } from "../../namespaces/tickers.types.js"
 import type {
   Core_TransactionDetails,
   Core_TransactionsCollection,
@@ -117,4 +117,21 @@ export interface XrplPorts {
    * Wraps `tickers.findByXrplMptIssuanceId` (GET /v1/tickers, every page).
    */
   findMptTickers(issuanceId: string, ledgerId: string): Promise<XrplMptIssuanceTickers>
+
+  /**
+   * Finds the custody ticker of an XRPL IOU (currency `code`, either spelling,
+   * issued by `issuer`) on a ledger, or `undefined`.
+   * Wraps `tickers.findByXrplIou` (GET /v1/tickers, every page).
+   */
+  findIouTicker(
+    code: string,
+    issuer: string,
+    ledgerId: string,
+  ): Promise<Core_ApiTickerData | undefined>
+
+  /**
+   * Finds the custody ticker of a ledger's XRP, or `undefined`.
+   * Wraps `tickers.findXrplNative` (GET /v1/tickers, every page).
+   */
+  findNativeTicker(ledgerId: string): Promise<Core_ApiTickerData | undefined>
 }

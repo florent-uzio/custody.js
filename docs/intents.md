@@ -109,11 +109,13 @@ rather than `quarantineStatus`, which some versions answer with a 500 — before
 proposing the payload above. The helpers do all of it:
 
 ```ts
-// By XRPL address — resolves the account, and an MPT issuance's tickers
+// By XRPL address — resolves the account, and the asset's ticker(s)
 const result = await custody.xrpl.releaseQuarantinedTransfers({
   address: "r...",
   all: true,
-  issuanceId: "00000AA1...", // optional; or `tickerId` for XRP / an IOU
+  // optional: one asset — an IOU, XRP ({ type: "Native" }), an MPT issuance
+  // ({ type: "MultiPurposeToken", issuanceId }) or a ticker ({ type: "TickerId", tickerId })
+  asset: { type: "Currency", code: "RLUSD", issuer: "r..." },
 })
 
 // By custody account, on any ledger
