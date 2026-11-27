@@ -2290,6 +2290,117 @@ describe("XrplService", () => {
       expect(dryRunIntent).not.toHaveBeenCalled()
     })
 
+    describe("when the dry run fails with CurrentlyNotEnoughFunds", () => {
+      const notEnoughFunds = {
+        ...mockDryRunResponse,
+        success: false,
+        errors: ["Not enough available funds (CurrentlyNotEnoughFunds)"],
+        result: {
+          type: "Failure" as const,
+          hint: "CurrentlyNotEnoughFunds" as const,
+          reason: "Not enough available funds",
+        },
+      }
+
+      const quarantinedPages = (query: any) =>
+        query.startingAfter === undefined
+          ? { items: [{ id: "t-1" }, { id: "t-2" }], count: 2, nextStartingAfter: "t-2" }
+          : { items: [{ id: "t-3" }], count: 1 }
+
+      it("proposeIntent with dryRun hints at the sender's quarantined transfers", async () => {
+        const queries: any[] = []
+        const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
+        ports = createTestPorts({
+          submitIntent,
+          dryRunIntent: async () => notEnoughFunds,
+          listTransfers: async (domainId, query) => {
+            queries.push({ domainId, ...query })
+            return quarantinedPages(query) as any
+          },
+        })
+        service = new XrplService(ports)
+
+        const error = await service
+          .proposeIntent(paymentParams, { dryRun: true })
+          .catch((caught: unknown) => caught)
+
+        expect(String(error)).toContain(
+          "Dry run failed, intent not proposed: Not enough available funds (CurrentlyNotEnoughFunds)",
+        )
+        expect(String(error)).toContain("3 quarantined transfers")
+        expect(String(error)).toContain("releaseQuarantinedTransfers")
+        expect(queries).toEqual([
+          expect.objectContaining({
+            domainId: mockContext.domainId,
+            "recipient.accountId": [mockContext.accountId],
+            quarantined: true,
+            startingAfter: undefined,
+          }),
+          expect.objectContaining({ startingAfter: "t-2" }),
+        ])
+        expect(submitIntent).not.toHaveBeenCalled()
+      })
+
+      it("dryRunIntent returns the hint beside Custody's errors, which it leaves as they are", async () => {
+        ports = createTestPorts({
+          dryRunIntent: async () => notEnoughFunds,
+          listTransfers: async (_domainId, query) => quarantinedPages(query) as any,
+        })
+        service = new XrplService(ports)
+
+        const result = await service.dryRunIntent(paymentParams)
+
+        expect(result.success).toBe(false)
+        expect(result.errors).toEqual(notEnoughFunds.errors)
+        expect(result.quarantineHint).toBe(
+          "The sending account has 3 quarantined transfers, and a quarantined amount is " +
+            "unavailable until it is released. Release them with `releaseQuarantinedTransfers`.",
+        )
+      })
+
+      it("gives no hint when nothing is quarantined", async () => {
+        ports = createTestPorts({ dryRunIntent: async () => notEnoughFunds })
+        service = new XrplService(ports)
+
+        const result = await service.dryRunIntent(paymentParams)
+
+        expect(result).not.toHaveProperty("quarantineHint")
+        await expect(service.proposeIntent(paymentParams, { dryRun: true })).rejects.toThrow(
+          /^Dry run failed, intent not proposed: Not enough available funds \(CurrentlyNotEnoughFunds\)$/,
+        )
+      })
+
+      it("keeps Custody's errors and gives no hint when the quarantine lookup fails", async () => {
+        ports = createTestPorts({
+          dryRunIntent: async () => notEnoughFunds,
+          listTransfers: async () => {
+            throw new Error("Internal server error")
+          },
+        })
+        service = new XrplService(ports)
+
+        await expect(service.proposeIntent(paymentParams, { dryRun: true })).rejects.toThrow(
+          /^Dry run failed, intent not proposed: Not enough available funds \(CurrentlyNotEnoughFunds\)$/,
+        )
+      })
+    })
+
+    it("looks nothing up when the dry run fails for another reason", async () => {
+      const listTransfers = vi.fn(async () => ({ items: [], count: 0 }))
+      const invalidAmount = {
+        ...failedDryRun,
+        result: { type: "Failure" as const, hint: "InvalidAmount" as const, reason: "Bad amount" },
+      }
+      ports = createTestPorts({ dryRunIntent: async () => invalidAmount, listTransfers })
+      service = new XrplService(ports)
+
+      const result = await service.dryRunIntent(paymentParams)
+      await service.proposeIntent(paymentParams, { dryRun: true }).catch(() => undefined)
+
+      expect(result).not.toHaveProperty("quarantineHint")
+      expect(listTransfers).not.toHaveBeenCalled()
+    })
+
     it("proposeIntentAndWait honours dryRun", async () => {
       const submitIntent = vi.fn(async () => ({ requestId: "request-123" }) as any)
       ports = createTestPorts({ submitIntent, dryRunIntent: async () => failedDryRun })

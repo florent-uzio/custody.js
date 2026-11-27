@@ -128,6 +128,13 @@ nothing is quarantined, nothing is proposed and the result reads
 `proposed: false`. Both have an `AndWait` twin; a release has no ledger
 transaction, so it is finished when its intent is.
 
+`xrpl.dryRunIntent` and `xrpl.proposeIntent(params, { dryRun: true })` point
+here themselves: when the dry run fails with `CurrentlyNotEnoughFunds` and the
+sending account has quarantined transfers, `dryRunIntent` sets `quarantineHint` on its
+result and `proposeIntent` appends the same hint to its `CustodyError`. The
+transfers are looked up only on that failure, across every asset of the
+account, since the error does not say which asset is short.
+
 ## Approval flows: do not wait in production
 
 `proposeAndWait` and `getAndWait` default to 10 attempts 3s apart — **30

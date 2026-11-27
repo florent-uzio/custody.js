@@ -55,7 +55,8 @@ export function createXrpl(getService: () => XrplService) {
      *
      * Pass `dryRun: true` to dry-run the exact request first: it is proposed
      * unchanged only if the dry run passes, otherwise a `CustodyError` lists
-     * Custody's reasons and nothing is proposed.
+     * Custody's reasons and nothing is proposed. On `CurrentlyNotEnoughFunds`,
+     * the error also says how many quarantined transfers the sender has, if any.
      *
      * @param params - The Account address and XRPL operation
      * @param options - Optional configuration for the intent, and `dryRun`
@@ -71,8 +72,10 @@ export function createXrpl(getService: () => XrplService) {
      * Dry-run an XRPL transaction without proposing it — the same request
      * `proposeIntent` would send for the same params and options.
      *
-     * Never throws on a failed dry run: read `success` and `errors`. To propose
-     * exactly what passed, use `proposeIntent(params, { dryRun: true })`.
+     * Never throws on a failed dry run: read `success` and `errors`. On
+     * `CurrentlyNotEnoughFunds`, `quarantineHint` says how many quarantined transfers the
+     * sender has, if any: release them with `releaseQuarantinedTransfers`. To
+     * propose exactly what passed, use `proposeIntent(params, { dryRun: true })`.
      *
      * @param params - The Account address and XRPL operation
      * @param options - Optional configuration for the intent

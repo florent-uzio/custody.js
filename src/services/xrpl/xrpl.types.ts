@@ -307,7 +307,17 @@ export type ProposeIntentOptions = Prettify<
  * `options.payloadId` to propose the same order under the same ids.
  */
 export type DryRunIntentResult = Prettify<
-  Core_IntentDryRunResponse_v0_CreateTransactionOrder & { payloadId: string; intentId: string }
+  Core_IntentDryRunResponse_v0_CreateTransactionOrder & {
+    payloadId: string
+    intentId: string
+    /**
+     * Set by the SDK, not Custody: when the Dry run failed with
+     * `CurrentlyNotEnoughFunds` and the sending account has quarantined
+     * transfers, says how many and points at `releaseQuarantinedTransfers`.
+     * A quarantined amount is unavailable, though it is on the ledger.
+     */
+    quarantineHint?: string
+  }
 >
 
 /**

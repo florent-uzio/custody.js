@@ -14,6 +14,7 @@ import type {
 import {
   proposeRelease,
   proposeReleaseAndWait,
+  quarantinedFundsHint,
   type QuarantineReleaseTarget,
 } from "../../namespaces/quarantine-release.js"
 import { waitForOrderTransaction } from "../../namespaces/transactions.js"
@@ -226,8 +227,11 @@ export class XrplService {
       const response = await this.dryRunTransactionOrder(dryRunBody)
 
       if (!response.success) {
+        const hint = await this.quarantineHint(context, response.result)
         throw new CustodyError({
-          reason: `Dry run failed, intent not proposed: ${response.errors?.join(", ") ?? "unknown error"}`,
+          reason:
+            `Dry run failed, intent not proposed: ${response.errors?.join(", ") ?? "unknown error"}` +
+            (isUndefined(hint) ? "" : `. ${hint}`),
         })
       }
     }
@@ -241,7 +245,9 @@ export class XrplService {
    *
    * Builds the request `proposeIntent` would send for the same params and
    * options. A failed dry run is reported, not thrown: read `success` and
-   * `errors`. To propose exactly the request that passed, prefer
+   * `errors`. When it failed with `CurrentlyNotEnoughFunds` and the sender
+   * has quarantined transfers, `quarantineHint` says so. To propose exactly the request
+   * that passed, prefer
    * `proposeIntent(params, { dryRun: true })`; otherwise pass the returned
    * `intentId` / `payloadId` back as `options.requestId` / `options.payloadId`
    * (only the expiry is recomputed).
@@ -258,14 +264,22 @@ export class XrplService {
     params: XrplTransactionOrderParams,
     options: XrplIntentOptions = {},
   ): Promise<DryRunIntentResult> {
-    const { dryRunBody, payloadId, intentId } = await this.buildTransactionOrder(
+    const { context, dryRunBody, payloadId, intentId } = await this.buildTransactionOrder(
       params,
       options,
       "xrpl.dryRunIntent",
     )
 
     const response = await this.dryRunTransactionOrder(dryRunBody)
-    return { ...response, payloadId, intentId }
+    if (response.success) return { ...response, payloadId, intentId }
+
+    const quarantineHint = await this.quarantineHint(context, response.result)
+    return {
+      ...response,
+      payloadId,
+      intentId,
+      ...(!isUndefined(quarantineHint) && { quarantineHint }),
+    }
   }
 
   /**
@@ -296,6 +310,22 @@ export class XrplService {
     })
 
     return { context, ...intent }
+  }
+
+  /**
+   * The quarantine hint for a failed Dry run of `context`'s account, or
+   * `undefined` (see {@link quarantinedFundsHint}).
+   * @private
+   */
+  private quarantineHint(
+    context: IntentContext,
+    result: Core_IntentDryRunResponse_v0_CreateTransactionOrder["result"],
+  ): Promise<string | undefined> {
+    return quarantinedFundsHint(
+      (query) => this.ports.listTransfers(context.domainId, query),
+      context.accountId,
+      result,
+    )
   }
 
   /**

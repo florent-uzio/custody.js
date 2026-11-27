@@ -1,4 +1,5 @@
 import { isUndefined, paginate } from "../helpers/index.js"
+import type { components } from "../models/custody-types.js"
 import type { DomainUserReference } from "../models/domain-resolver.js"
 import { CustodyError } from "../models/index.js"
 import { buildRequestEnvelope, waitForExecution } from "./intents.js"
@@ -17,8 +18,11 @@ import type {
   TransferTransactionOrderQueryParams,
 } from "./transactions.types.js"
 
-// The release flow behind `transactions.releaseQuarantinedTransfers` and
-// `xrpl.releaseQuarantinedTransfers`.
+// Quarantined transfers: the release flow behind
+// `transactions.releaseQuarantinedTransfers` and
+// `xrpl.releaseQuarantinedTransfers`, and the Dry run hint that points at it
+// (`quarantinedFundsHint`). Both share one lookup of an account's
+// quarantined transfers.
 //
 // Internal: `src/index.ts` does not re-export this module, so its types are
 // not public API. The public option and result types stay in
@@ -194,4 +198,46 @@ export async function proposeReleaseAndWait<TAccount extends QuarantineReleaseAc
   )
 
   return { ...outcome, ...released }
+}
+
+/**
+ * A hint for a Dry run whose result is a `CurrentlyNotEnoughFunds` failure
+ * while the sending account has quarantined transfers.
+ *
+ * Custody holds incoming transfers in quarantine, and a quarantined amount is
+ * unavailable, so spending it fails the Dry run as if the balance were short.
+ * The failure never mentions quarantine. This hint names the count and points
+ * at `releaseQuarantinedTransfers`.
+ *
+ * Counts every quarantined transfer of the account, not only the spent
+ * ticker's: the failure does not say which asset is short, and a missing XRP
+ * fee fails an IOU payment just the same.
+ *
+ * Looks the transfers up only on that failure, so a passing Dry run costs no
+ * request. The hint is best effort: a failed lookup yields `undefined` rather
+ * than hiding the Dry run's own failure behind an unrelated one.
+ *
+ * @param listTransfers - One page of the account's domain's transfers
+ * @param accountId - The sending account
+ * @param result - The Dry run's result
+ * @returns The hint, or `undefined` when the result is not a
+ *   `CurrentlyNotEnoughFunds` failure, nothing is quarantined, or the lookup
+ *   failed
+ */
+export async function quarantinedFundsHint(
+  listTransfers: (query: TransferTransactionOrderQueryParams) => Promise<Core_TransfersCollection>,
+  accountId: string,
+  result: components["schemas"]["Core_TransactionDryRunResult"],
+): Promise<string | undefined> {
+  if (result.type !== "Failure" || result.hint !== "CurrentlyNotEnoughFunds") return undefined
+
+  const transferIds = await collectQuarantinedTransferIds(listTransfers, accountId).catch(() => [])
+  if (transferIds.length === 0) return undefined
+
+  const count = transferIds.length
+  return (
+    `The sending account has ${count} quarantined transfer${count === 1 ? "" : "s"}, ` +
+    `and a quarantined amount is unavailable until it is released. ` +
+    `Release them with \`releaseQuarantinedTransfers\`.`
+  )
 }
